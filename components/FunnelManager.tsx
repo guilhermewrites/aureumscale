@@ -1,11 +1,11 @@
 import React, { useState, useRef, useCallback } from 'react';
 import {
-  Plus, Trash2, ExternalLink, Eye, DollarSign, MousePointerClick,
+  Plus, Trash2, ExternalLink,
   Globe, Play, Mail, ShoppingCart, Gift, FileText,
   Check, X, Megaphone, ZoomIn, ZoomOut, Maximize2,
   ArrowLeft, Package, BookOpen, MonitorPlay, Download, Box
 } from 'lucide-react';
-import { Funnel, FunnelStep, FunnelStepType, FunnelStepAd } from '../types';
+import { Funnel, FunnelStep, FunnelStepType } from '../types';
 import useLocalStorage from '../hooks/useLocalStorage';
 
 // ─── Step type config ───────────────────────────────────────────
@@ -49,7 +49,7 @@ if (typeof document !== 'undefined' && !document.getElementById(NEON_STYLE_ID)) 
   style.id = NEON_STYLE_ID;
   style.textContent = `
     .neon-line-subtle {
-      filter: drop-shadow(0 0 2px rgba(52,211,153,0.25));
+      filter: drop-shadow(0 0 2px rgba(180,180,180,0.25));
     }
   `;
   document.head.appendChild(style);
@@ -60,6 +60,8 @@ const FunnelManager: React.FC<FunnelManagerProps> = ({ storagePrefix }) => {
   const [selectedFunnelId, setSelectedFunnelId] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [newFunnelName, setNewFunnelName] = useState('');
+  const [editingFunnelId, setEditingFunnelId] = useState<string | null>(null);
+  const [editingFunnelName, setEditingFunnelName] = useState('');
 
   // Canvas
   const canvasRef = useRef<HTMLDivElement>(null);
@@ -78,19 +80,13 @@ const FunnelManager: React.FC<FunnelManagerProps> = ({ storagePrefix }) => {
   const [connecting, setConnecting] = useState<string | null>(null);
   const [connectMouse, setConnectMouse] = useState<Position>({ x: 0, y: 0 });
   const [selectedConnection, setSelectedConnection] = useState<{ from: string; to: string } | null>(null);
+  const [alignmentGuides, setAlignmentGuides] = useState<{ x: number[]; y: number[] }>({ x: [], y: [] });
+  const [playingAdStepId, setPlayingAdStepId] = useState<string | null>(null);
 
   // Step editing
   const [editingStepId, setEditingStepId] = useState<string | null>(null);
   const [editField, setEditField] = useState<string | null>(null);
   const [editValue, setEditValue] = useState('');
-
-  // Ads on step
-  const [addingAdToStep, setAddingAdToStep] = useState<string | null>(null);
-  const [newAdName, setNewAdName] = useState('');
-  const [newAdPlatform, setNewAdPlatform] = useState<'Facebook' | 'Google' | 'LinkedIn' | 'TikTok'>('Facebook');
-  const [newAdType, setNewAdType] = useState<'marketing' | 'remarketing'>('marketing');
-  const [newAdSpend, setNewAdSpend] = useState('');
-  const [newAdClicks, setNewAdClicks] = useState('');
 
   // Side panel
   const [selectedStepId, setSelectedStepId] = useState<string | null>(null);
@@ -117,6 +113,20 @@ const FunnelManager: React.FC<FunnelManagerProps> = ({ storagePrefix }) => {
     if (selectedFunnelId === id) { setSelectedFunnelId(null); setSelectedStepId(null); }
   };
 
+  const startEditFunnel = (funnelId: string, name: string) => {
+    setEditingFunnelId(funnelId);
+    setEditingFunnelName(name);
+  };
+
+  const saveEditFunnel = () => {
+    if (!editingFunnelId) return;
+    const nextName = editingFunnelName.trim();
+    if (nextName) {
+      setFunnels(prev => prev.map(f => f.id === editingFunnelId ? { ...f, name: nextName } : f));
+    }
+    setEditingFunnelId(null);
+  };
+
   // ─── Canvas step ops ───────────────────────────────────────
   const addStepToCanvas = (type: FunnelStepType) => {
     if (!selectedFunnel) return;
@@ -126,7 +136,7 @@ const FunnelManager: React.FC<FunnelManagerProps> = ({ storagePrefix }) => {
     const off = selectedFunnel.steps.length * 40;
     const step: CanvasStep = {
       id: Date.now().toString(), name: getStepConfig(type).label, type,
-      views: 0, ads: [], order: selectedFunnel.steps.length,
+      views: 0, clicks: 0, conversions: 0, ads: [], order: selectedFunnel.steps.length,
       position: { x: cx + off - CARD_W / 2, y: cy + (off % 80) - CARD_H / 2 },
     };
     setFunnels(prev => prev.map(f => f.id === selectedFunnel.id ? { ...f, steps: [...f.steps, step] } : f));
@@ -183,7 +193,46 @@ const FunnelManager: React.FC<FunnelManagerProps> = ({ storagePrefix }) => {
     if (draggingStepId) {
       const dx = (e.clientX - dragStartMouse.x) / zoom;
       const dy = (e.clientY - dragStartMouse.y) / zoom;
-      updateStep(draggingStepId, { position: { x: dragStartPos.x + dx, y: dragStartPos.y + dy } });
+      const nextPos = { x: dragStartPos.x + dx, y: dragStartPos.y + dy };
+      const snapThreshold = 6;
+      const xOffsets = [0, CARD_W / 2, CARD_W];
+      const yOffsets = [0, CARD_H / 2, CARD_H];
+      let snappedX = nextPos.x;
+      let snappedY = nextPos.y;
+      let bestX = { diff: Infinity, guide: null as number | null };
+      let bestY = { diff: Infinity, guide: null as number | null };
+
+      const others = selectedFunnel?.steps.filter(s => s.id !== draggingStepId) || [];
+      others.forEach(step => {
+        xOffsets.forEach(offset => {
+          const candidate = nextPos.x + offset;
+          xOffsets.forEach(otherOffset => {
+            const target = step.position.x + otherOffset;
+            const diff = Math.abs(candidate - target);
+            if (diff < snapThreshold && diff < bestX.diff) {
+              bestX = { diff, guide: target };
+              snappedX = target - offset;
+            }
+          });
+        });
+        yOffsets.forEach(offset => {
+          const candidate = nextPos.y + offset;
+          yOffsets.forEach(otherOffset => {
+            const target = step.position.y + otherOffset;
+            const diff = Math.abs(candidate - target);
+            if (diff < snapThreshold && diff < bestY.diff) {
+              bestY = { diff, guide: target };
+              snappedY = target - offset;
+            }
+          });
+        });
+      });
+
+      setAlignmentGuides({
+        x: bestX.guide !== null ? [bestX.guide] : [],
+        y: bestY.guide !== null ? [bestY.guide] : [],
+      });
+      updateStep(draggingStepId, { position: { x: snappedX, y: snappedY } });
     }
     if (connecting) {
       const rect = canvasRef.current?.getBoundingClientRect();
@@ -191,10 +240,11 @@ const FunnelManager: React.FC<FunnelManagerProps> = ({ storagePrefix }) => {
         setConnectMouse({ x: (e.clientX - rect.left - canvasOffset.x) / zoom, y: (e.clientY - rect.top - canvasOffset.y) / zoom });
       }
     }
-  }, [isPanning, panStart, panOffsetStart, draggingStepId, dragStartMouse, dragStartPos, zoom, connecting, canvasOffset]);
+  }, [isPanning, panStart, panOffsetStart, draggingStepId, dragStartMouse, dragStartPos, zoom, connecting, canvasOffset, selectedFunnel]);
 
   const handleCanvasMouseUp = useCallback(() => {
     setIsPanning(false); setDraggingStepId(null);
+    setAlignmentGuides({ x: [], y: [] });
     // If connecting and released on empty space, cancel
     if (connecting) setConnecting(null);
   }, [connecting]);
@@ -203,6 +253,7 @@ const FunnelManager: React.FC<FunnelManagerProps> = ({ storagePrefix }) => {
     e.stopPropagation();
     const step = selectedFunnel?.steps.find(s => s.id === stepId);
     if (!step) return;
+    setSelectedStepId(stepId);
     setDraggingStepId(stepId);
     setDragStartMouse({ x: e.clientX, y: e.clientY });
     setDragStartPos({ x: step.position.x, y: step.position.y });
@@ -230,30 +281,15 @@ const FunnelManager: React.FC<FunnelManagerProps> = ({ storagePrefix }) => {
   const saveEdit = () => {
     if (!editingStepId || !editField) return;
     if (editField === 'views') updateStep(editingStepId, { views: parseInt(editValue) || 0 });
+    else if (editField === 'clicks') updateStep(editingStepId, { clicks: parseInt(editValue) || 0 });
+    else if (editField === 'conversions') updateStep(editingStepId, { conversions: parseInt(editValue) || 0 });
     else if (editField === 'url') updateStep(editingStepId, { url: editValue || undefined });
     else if (editField === 'name') updateStep(editingStepId, { name: editValue });
     setEditingStepId(null); setEditField(null);
   };
 
-  // ─── Ad ops ────────────────────────────────────────────────
-  const handleAddAd = () => {
-    if (!selectedFunnel || !addingAdToStep || !newAdName.trim()) return;
-    const ad: FunnelStepAd = { id: Date.now().toString(), campaignName: newAdName.trim(), platform: newAdPlatform, type: newAdType, spend: parseFloat(newAdSpend) || 0, clicks: parseInt(newAdClicks) || 0, impressions: 0 };
-    setFunnels(prev => prev.map(f =>
-      f.id === selectedFunnel.id ? { ...f, steps: f.steps.map(s => s.id === addingAdToStep ? { ...s, ads: [...s.ads, ad] } : s) } : f
-    ));
-    setNewAdName(''); setNewAdSpend(''); setNewAdClicks(''); setAddingAdToStep(null);
-  };
-
-  const deleteAd = (stepId: string, adId: string) => {
-    if (!selectedFunnel) return;
-    setFunnels(prev => prev.map(f =>
-      f.id === selectedFunnel.id ? { ...f, steps: f.steps.map(s => s.id === stepId ? { ...s, ads: s.ads.filter(a => a.id !== adId) } : s) } : f
-    ));
-  };
-
   // ─── Arrow path ────────────────────────────────────────────
-  const CARD_W = 220, CARD_H = 150;
+  const CARD_W = 210, CARD_H = 260;
   const HANDLE_SIZE = 14;
   const HANDLE_OFFSET = HANDLE_SIZE / 2;
 
@@ -288,12 +324,14 @@ const FunnelManager: React.FC<FunnelManagerProps> = ({ storagePrefix }) => {
 
   // ─── Totals ────────────────────────────────────────────────
   const getFunnelTotals = (f: CanvasFunnel) => {
-    let v = 0, s = 0, c = 0;
-    f.steps.forEach(st => { v += st.views; st.ads.forEach(a => { s += a.spend; c += a.clicks; }); });
-    return { totalViews: v, totalSpend: s, totalClicks: c };
+    let v = 0, c = 0, cv = 0;
+    f.steps.forEach(st => { v += st.views; c += (st.clicks || 0); cv += (st.conversions || 0); });
+    return { totalViews: v, totalSpend: 0, totalClicks: c, totalConversions: cv };
   };
 
-  const getUrlDomain = (url: string) => { try { return new URL(url.startsWith('http') ? url : `https://${url}`).hostname; } catch { return null; } };
+  const getNormalizedUrl = (url: string) => (url.startsWith('http') ? url : `https://${url}`);
+  const getUrlDomain = (url: string) => { try { return new URL(getNormalizedUrl(url)).hostname; } catch { return null; } };
+  const isDirectVideoUrl = (url: string) => /\.(mp4|webm|ogg)(\?.*)?$/i.test(url);
 
   // ═══════════════════════ FUNNEL LIST VIEW ═══════════════════
   if (!selectedFunnelId) {
@@ -301,33 +339,33 @@ const FunnelManager: React.FC<FunnelManagerProps> = ({ storagePrefix }) => {
       <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-xl font-bold text-white">Funnels</h2>
-            <p className="text-sm text-gray-500">Build and visualize your marketing funnels</p>
+            <h2 className="text-xl font-bold text-[#ECECEC]">Funnels</h2>
+            <p className="text-sm text-[#9B9B9B]">Build and visualize your marketing funnels</p>
           </div>
-          <button onClick={() => setIsCreating(true)} className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-sm font-medium transition-colors">
+          <button onClick={() => setIsCreating(true)} className="flex items-center gap-2 px-4 py-2 bg-white hover:bg-[#e5e5e5] text-[#212121] rounded-lg text-sm font-medium transition-none">
             <Plus size={16} /> New Funnel
           </button>
         </div>
 
         {isCreating && (
-          <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 animate-in slide-in-from-top-2">
-            <h3 className="text-sm font-semibold text-white mb-3">Create New Funnel</h3>
+          <div className="bg-[#2f2f2f] border border-[#3a3a3a] rounded-xl p-6 animate-in slide-in-from-top-2">
+            <h3 className="text-sm font-semibold text-[#ECECEC] mb-3">Create New Funnel</h3>
             <div className="flex gap-3">
               <input value={newFunnelName} onChange={e => setNewFunnelName(e.target.value)} placeholder="Funnel name..."
-                className="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
+                className="flex-1 bg-[#3a3a3a] border border-[#3a3a3a] rounded-lg px-4 py-2.5 text-sm text-[#ECECEC] placeholder-[#666666] focus:outline-none focus:ring-2 focus:ring-[#555555]"
                 onKeyDown={e => { if (e.key === 'Enter') handleCreateFunnel(); if (e.key === 'Escape') setIsCreating(false); }} autoFocus />
-              <button onClick={handleCreateFunnel} className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-sm font-medium">Create</button>
-              <button onClick={() => setIsCreating(false)} className="px-5 py-2.5 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-sm font-medium">Cancel</button>
+              <button onClick={handleCreateFunnel} className="px-5 py-2.5 bg-white hover:bg-[#e5e5e5] text-[#212121] rounded-lg text-sm font-medium">Create</button>
+              <button onClick={() => setIsCreating(false)} className="px-5 py-2.5 bg-[#3a3a3a] hover:bg-[#3a3a3a] text-[#b4b4b4] rounded-lg text-sm font-medium">Cancel</button>
             </div>
           </div>
         )}
 
         {funnels.length === 0 && !isCreating ? (
           <div className="flex flex-col items-center justify-center py-24 text-center">
-            <div className="w-16 h-16 rounded-2xl bg-gray-900 border border-gray-800 flex items-center justify-center mb-4"><Plus size={24} className="text-gray-600" /></div>
-            <p className="text-gray-400 font-medium mb-1">No funnels yet</p>
-            <p className="text-gray-600 text-sm mb-4">Create your first funnel to start mapping your customer journey</p>
-            <button onClick={() => setIsCreating(true)} className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-sm font-medium">Create First Funnel</button>
+            <div className="w-16 h-16 rounded-xl bg-[#2f2f2f] border border-[#3a3a3a] flex items-center justify-center mb-4"><Plus size={24} className="text-[#666666]" /></div>
+            <p className="text-[#9B9B9B] font-medium mb-1">No funnels yet</p>
+            <p className="text-[#666666] text-sm mb-4">Create your first funnel to start mapping your customer journey</p>
+            <button onClick={() => setIsCreating(true)} className="px-4 py-2 bg-white hover:bg-[#e5e5e5] text-[#212121] rounded-lg text-sm font-medium">Create First Funnel</button>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -335,10 +373,25 @@ const FunnelManager: React.FC<FunnelManagerProps> = ({ storagePrefix }) => {
               const { totalViews, totalSpend } = getFunnelTotals(funnel);
               return (
                 <button key={funnel.id} onClick={() => { setSelectedFunnelId(funnel.id); setCanvasOffset({ x: 0, y: 0 }); setZoom(1); }}
-                  className="text-left bg-gray-900 border border-gray-800 rounded-xl p-5 hover:border-emerald-500/30 hover:shadow-lg hover:shadow-emerald-500/5 transition-all group">
+                  className="text-left bg-[#2f2f2f] border border-[#3a3a3a] rounded-xl p-5 hover:border-[#4a4a4a] transition-all group">
                   <div className="flex items-start justify-between mb-3">
-                    <h3 className="font-semibold text-white group-hover:text-emerald-400 transition-colors">{funnel.name}</h3>
-                    <button onClick={e => { e.stopPropagation(); handleDeleteFunnel(funnel.id); }} className="p-1 text-gray-700 hover:text-rose-400 transition-colors opacity-0 group-hover:opacity-100"><Trash2 size={14} /></button>
+                    {editingFunnelId === funnel.id ? (
+                      <input
+                        value={editingFunnelName}
+                        onChange={e => setEditingFunnelName(e.target.value)}
+                        onBlur={saveEditFunnel}
+                        onKeyDown={e => { if (e.key === 'Enter') saveEditFunnel(); if (e.key === 'Escape') setEditingFunnelId(null); }}
+                        className="w-full bg-[#3a3a3a] border border-[#3a3a3a] rounded px-2 py-1 text-sm text-[#ECECEC] focus:outline-none"
+                        autoFocus
+                        onClick={e => e.stopPropagation()}
+                      />
+                    ) : (
+                      <h3 className="font-semibold text-[#ECECEC] group-hover:text-[#ECECEC] transition-none cursor-text"
+                        onClick={e => { e.stopPropagation(); startEditFunnel(funnel.id, funnel.name); }}>
+                        {funnel.name}
+                      </h3>
+                    )}
+                    <button onClick={e => { e.stopPropagation(); handleDeleteFunnel(funnel.id); }} className="p-1 text-[#666666] hover:text-rose-400 transition-none opacity-0 group-hover:opacity-100"><Trash2 size={14} /></button>
                   </div>
                   <div className="flex items-center gap-1.5 mb-3 overflow-hidden">
                     {funnel.steps.slice(0, 6).map((step, i) => {
@@ -352,10 +405,10 @@ const FunnelManager: React.FC<FunnelManagerProps> = ({ storagePrefix }) => {
                         </React.Fragment>
                       );
                     })}
-                    {funnel.steps.length > 6 && <span className="text-[10px] text-gray-500 ml-1">+{funnel.steps.length - 6}</span>}
-                    {funnel.steps.length === 0 && <span className="text-xs text-gray-600">Empty funnel</span>}
+                    {funnel.steps.length > 6 && <span className="text-[10px] text-[#9B9B9B] ml-1">+{funnel.steps.length - 6}</span>}
+                    {funnel.steps.length === 0 && <span className="text-xs text-[#666666]">Empty funnel</span>}
                   </div>
-                  <div className="flex items-center gap-4 text-xs text-gray-500">
+                  <div className="flex items-center gap-4 text-xs text-[#9B9B9B]">
                     <span>{funnel.steps.length} steps</span>
                     <span>{totalViews.toLocaleString()} views</span>
                     <span>${totalSpend.toLocaleString()}</span>
@@ -371,44 +424,57 @@ const FunnelManager: React.FC<FunnelManagerProps> = ({ storagePrefix }) => {
 
   // ═══════════════════════ CANVAS VIEW ════════════════════════
   if (!selectedFunnel) return null;
-  const { totalViews, totalSpend, totalClicks } = getFunnelTotals(selectedFunnel);
-  const gridSize = 24 * zoom;
-  const gridMajor = 120 * zoom;
+  const { totalViews, totalSpend, totalClicks, totalConversions } = getFunnelTotals(selectedFunnel);
 
   return (
     <div className="flex flex-col h-[calc(100vh-8rem)] animate-in fade-in duration-300">
       {/* Toolbar */}
       <div className="flex items-center justify-between mb-3 flex-shrink-0">
         <div className="flex items-center gap-3">
-          <button onClick={() => { setSelectedFunnelId(null); setSelectedStepId(null); }} className="p-2 text-gray-400 hover:text-white hover:bg-gray-900 rounded-lg transition-colors"><ArrowLeft size={18} /></button>
+          <button onClick={() => { setSelectedFunnelId(null); setSelectedStepId(null); }} className="p-2 text-[#9B9B9B] hover:text-white hover:bg-[rgba(255,255,255,0.05)] rounded-lg transition-none"><ArrowLeft size={18} /></button>
           <div>
-            <h2 className="text-lg font-bold text-white">{selectedFunnel.name}</h2>
-            <div className="flex items-center gap-4 text-xs text-gray-500">
+            {editingFunnelId === selectedFunnel.id ? (
+              <input
+                value={editingFunnelName}
+                onChange={e => setEditingFunnelName(e.target.value)}
+                onBlur={saveEditFunnel}
+                onKeyDown={e => { if (e.key === 'Enter') saveEditFunnel(); if (e.key === 'Escape') setEditingFunnelId(null); }}
+                className="bg-[#3a3a3a] border border-[#3a3a3a] rounded px-2 py-1 text-sm text-[#ECECEC] focus:outline-none"
+                autoFocus
+              />
+            ) : (
+              <h2 className="text-lg font-bold text-[#ECECEC] cursor-text"
+                onClick={() => startEditFunnel(selectedFunnel.id, selectedFunnel.name)}>
+                {selectedFunnel.name}
+              </h2>
+            )}
+            <div className="flex items-center gap-4 text-xs text-[#9B9B9B]">
               <span>{selectedFunnel.steps.length} steps</span>
               <span>{totalViews.toLocaleString()} views</span>
               <span>${totalSpend.toLocaleString()} spend</span>
               <span>{totalClicks.toLocaleString()} clicks</span>
+              <span>{totalConversions.toLocaleString()} conversions</span>
             </div>
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1 bg-gray-900/80 backdrop-blur border border-gray-800 rounded-lg px-2 py-1">
-            <button onClick={() => handleZoom(-0.15)} className="p-1 text-gray-400 hover:text-white"><ZoomOut size={14} /></button>
-            <span className="text-[10px] text-gray-400 w-10 text-center font-mono">{Math.round(zoom * 100)}%</span>
-            <button onClick={() => handleZoom(0.15)} className="p-1 text-gray-400 hover:text-white"><ZoomIn size={14} /></button>
-            <div className="w-px h-4 bg-gray-800 mx-0.5" />
-            <button onClick={resetView} className="p-1 text-gray-400 hover:text-white"><Maximize2 size={14} /></button>
+          <div className="flex items-center gap-1 bg-[#2f2f2f] backdrop-blur border border-[#3a3a3a] rounded-lg px-2 py-1">
+            <button onClick={() => handleZoom(-0.15)} className="p-1 text-[#9B9B9B] hover:text-white"><ZoomOut size={14} /></button>
+            <span className="text-[10px] text-[#9B9B9B] w-10 text-center font-mono">{Math.round(zoom * 100)}%</span>
+            <button onClick={() => handleZoom(0.15)} className="p-1 text-[#9B9B9B] hover:text-white"><ZoomIn size={14} /></button>
+            <div className="w-px h-4 bg-[#3a3a3a] mx-0.5" />
+            <button onClick={resetView} className="p-1 text-[#9B9B9B] hover:text-white"><Maximize2 size={14} /></button>
           </div>
           <div className="relative">
-            <button onClick={() => setPaletteOpen(!paletteOpen)} className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-sm font-medium transition-colors shadow-lg shadow-emerald-900/20">
+            <button onClick={() => setPaletteOpen(!paletteOpen)} className="flex items-center gap-2 px-4 py-2 bg-white hover:bg-[#e5e5e5] text-[#212121] rounded-lg text-sm font-medium transition-none">
               <Plus size={16} /> Add Element
             </button>
             {paletteOpen && (
-              <div className="absolute right-0 top-full mt-2 bg-gray-900 border border-gray-800 rounded-xl shadow-2xl p-2 w-72 z-50 animate-in fade-in slide-in-from-top-2 duration-200 grid grid-cols-3 gap-1">
+              <div className="absolute right-0 top-full mt-2 bg-[#2f2f2f] border border-[#3a3a3a] rounded-xl shadow-2xl p-2 w-72 z-50 animate-in fade-in slide-in-from-top-2 duration-200 grid grid-cols-3 gap-1">
                 {STEP_TYPES.map(st => (
                   <button key={st.value} onClick={() => addStepToCanvas(st.value)}
-                    className="flex flex-col items-center gap-1.5 px-2 py-3 rounded-lg text-[10px] font-medium text-gray-400 hover:text-white transition-all hover:bg-gray-800 group">
-                    <div className="w-8 h-8 rounded-lg flex items-center justify-center transition-all group-hover:scale-110" style={{ backgroundColor: st.color + '15', border: `1px solid ${st.color}30`, boxShadow: `0 0 0px ${st.color}00` }}>
+                    className="flex flex-col items-center gap-1.5 px-2 py-3 rounded-lg text-[10px] font-medium text-[#9B9B9B] hover:text-white transition-none hover:bg-[rgba(255,255,255,0.05)] group">
+                    <div className="w-8 h-8 rounded-lg flex items-center justify-center group-hover:scale-110" style={{ backgroundColor: st.color + '15', border: `1px solid ${st.color}30`, boxShadow: `0 0 0px ${st.color}00` }}>
                       <st.icon size={14} style={{ color: st.color }} />
                     </div>
                     {st.label}
@@ -424,34 +490,30 @@ const FunnelManager: React.FC<FunnelManagerProps> = ({ storagePrefix }) => {
       <div className="flex flex-1 gap-3 min-h-0">
         <div ref={canvasRef}
           className="flex-1 rounded-xl overflow-hidden relative select-none"
-          style={{ cursor: isPanning ? 'grabbing' : connecting ? 'crosshair' : 'default', background: 'linear-gradient(180deg, #0a0f1a 0%, #060b14 100%)' }}
+          style={{ cursor: isPanning ? 'grabbing' : connecting ? 'crosshair' : 'default', background: 'linear-gradient(180deg, #1a1a1a 0%, #171717 100%)' }}
           onMouseDown={handleCanvasMouseDown} onMouseMove={handleCanvasMouseMove} onMouseUp={handleCanvasMouseUp} onMouseLeave={handleCanvasMouseUp}
           onWheel={handleWheel}
-          onClick={() => { if (paletteOpen) setPaletteOpen(false); setSelectedConnection(null); }}>
+          onClick={() => { if (paletteOpen) setPaletteOpen(false); setSelectedConnection(null); setSelectedStepId(null); }}>
 
-          {/* Alignment grid */}
+          {/* Dot grid */}
           <div className="canvas-bg absolute inset-0" style={{
-            backgroundImage: `
-              linear-gradient(to right, rgba(52,211,153,0.08) 1px, transparent 1px),
-              linear-gradient(to bottom, rgba(52,211,153,0.08) 1px, transparent 1px),
-              linear-gradient(to right, rgba(52,211,153,0.16) 1px, transparent 1px),
-              linear-gradient(to bottom, rgba(52,211,153,0.16) 1px, transparent 1px)
-            `,
-            backgroundSize: `${gridSize}px ${gridSize}px, ${gridSize}px ${gridSize}px, ${gridMajor}px ${gridMajor}px, ${gridMajor}px ${gridMajor}px`,
-            backgroundPosition: `
-              ${canvasOffset.x % gridSize}px ${canvasOffset.y % gridSize}px,
-              ${canvasOffset.x % gridSize}px ${canvasOffset.y % gridSize}px,
-              ${canvasOffset.x % gridMajor}px ${canvasOffset.y % gridMajor}px,
-              ${canvasOffset.x % gridMajor}px ${canvasOffset.y % gridMajor}px
-            `,
+            backgroundImage: `radial-gradient(circle, rgba(255,255,255,0.04) 1px, transparent 1px)`,
+            backgroundSize: `${24 * zoom}px ${24 * zoom}px`,
+            backgroundPosition: `${canvasOffset.x % (24 * zoom)}px ${canvasOffset.y % (24 * zoom)}px`,
           }} />
 
           {/* Border glow */}
-          <div className="absolute inset-0 rounded-xl pointer-events-none" style={{ boxShadow: 'inset 0 0 60px rgba(52,211,153,0.03)' }} />
+          <div className="absolute inset-0 rounded-xl pointer-events-none" style={{ boxShadow: 'inset 0 0 60px rgba(255,255,255,0.02)' }} />
 
-          {/* SVG connections */}
+          {/* SVG connections + alignment guides */}
           <svg className="absolute inset-0 w-full h-full neon-line-subtle" style={{ overflow: 'visible' }}>
             <g transform={`translate(${canvasOffset.x}, ${canvasOffset.y}) scale(${zoom})`}>
+              {alignmentGuides.x.map(x => (
+                <line key={`guide-x-${x}`} x1={x} y1={-10000} x2={x} y2={10000} stroke="rgba(180,180,180,0.6)" strokeWidth="1" strokeDasharray="4 4" />
+              ))}
+              {alignmentGuides.y.map(y => (
+                <line key={`guide-y-${y}`} x1={-10000} y1={y} x2={10000} y2={y} stroke="rgba(180,180,180,0.6)" strokeWidth="1" strokeDasharray="4 4" />
+              ))}
               {selectedFunnel.connections.map(conn => {
                 const fromStep = selectedFunnel.steps.find(s => s.id === conn.from);
                 const toStep = selectedFunnel.steps.find(s => s.id === conn.to);
@@ -463,9 +525,9 @@ const FunnelManager: React.FC<FunnelManagerProps> = ({ storagePrefix }) => {
                 return (
                   <g key={`${conn.from}-${conn.to}`}>
                     {/* Single clean neon green line */}
-                    <path d={path} fill="none" stroke={isSelected ? 'rgba(52,211,153,0.7)' : 'rgba(52,211,153,0.35)'} strokeWidth="1.6" strokeLinecap="round" />
+                    <path d={path} fill="none" stroke={isSelected ? 'rgba(180,180,180,0.7)' : 'rgba(180,180,180,0.35)'} strokeWidth="1.6" strokeLinecap="round" />
                     {/* Small arrowhead dot */}
-                    <circle cx={x2} cy={y2} r="2.5" fill="rgba(52,211,153,0.55)" />
+                    <circle cx={x2} cy={y2} r="2.5" fill="rgba(180,180,180,0.55)" />
                     {/* Invisible click target to select */}
                     <path d={path} fill="none" stroke="transparent" strokeWidth="16" style={{ cursor: 'pointer', pointerEvents: 'stroke' }}
                       onMouseDown={e => { e.stopPropagation(); setSelectedConnection({ from: conn.from, to: conn.to }); }} />
@@ -485,7 +547,7 @@ const FunnelManager: React.FC<FunnelManagerProps> = ({ storagePrefix }) => {
                 const fromStep = selectedFunnel.steps.find(s => s.id === connecting);
                 if (!fromStep) return null;
                 const path = getTempArrowPath(fromStep, connectMouse);
-                return <path d={path} fill="none" stroke="rgba(52,211,153,0.5)" strokeWidth="1.5" strokeLinecap="round" strokeDasharray="6 4" />;
+                return <path d={path} fill="none" stroke="rgba(180,180,180,0.5)" strokeWidth="1.5" strokeLinecap="round" strokeDasharray="6 4" />;
               })()}
             </g>
           </svg>
@@ -494,10 +556,8 @@ const FunnelManager: React.FC<FunnelManagerProps> = ({ storagePrefix }) => {
           <div className="absolute inset-0" style={{ transform: `translate(${canvasOffset.x}px, ${canvasOffset.y}px) scale(${zoom})`, transformOrigin: '0 0' }}>
             {selectedFunnel.steps.map(step => {
               const cfg = getStepConfig(step.type);
-              const Icon = cfg.icon;
-              const totalAdSpend = step.ads.reduce((s, a) => s + a.spend, 0);
               const isSelected = selectedStepId === step.id;
-              const domain = step.url ? getUrlDomain(step.url) : null;
+              const normalizedUrl = step.url ? getNormalizedUrl(step.url) : null;
 
               return (
                 <div key={step.id} className="canvas-step absolute"
@@ -506,65 +566,86 @@ const FunnelManager: React.FC<FunnelManagerProps> = ({ storagePrefix }) => {
                   onMouseUp={e => handleStepMouseUp(e, step.id)}
                   onClick={e => { e.stopPropagation(); setSelectedStepId(step.id); }}>
 
-                  {/* Card */}
-                  <div className="rounded-xl overflow-hidden transition-all duration-200" style={{
-                    height: CARD_H,
-                    background: 'linear-gradient(135deg, rgba(17,24,39,0.97) 0%, rgba(10,15,25,0.98) 100%)',
-                    border: `1.5px solid ${isSelected ? cfg.color : 'rgba(55,65,81,0.4)'}`,
-                    boxShadow: isSelected ? `0 0 24px ${cfg.color}20, 0 4px 20px rgba(0,0,0,0.4)` : '0 4px 16px rgba(0,0,0,0.3)',
-                  }}>
-                    {/* Top color accent */}
-                    <div className="h-0.5" style={{ background: `linear-gradient(90deg, transparent, ${cfg.color}60, transparent)` }} />
-
-                    {/* Header */}
-                    <div className="px-4 pt-3.5 pb-2 flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: cfg.color + '12', border: `1px solid ${cfg.color}25` }}>
-                        <Icon size={16} style={{ color: cfg.color }} />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        {editingStepId === step.id && editField === 'name' ? (
+                  {/* Top stats (outside card) */}
+                  <div className="absolute -top-7 left-0 w-full flex items-center justify-between px-1 text-[10px] text-[#9B9B9B]">
+                    <div className="min-w-0 flex items-center gap-2">
+                      {editingStepId === step.id && editField === 'name' ? (
+                        <input value={editValue} onChange={e => setEditValue(e.target.value)} onBlur={saveEdit}
+                          onKeyDown={e => { if (e.key === 'Enter') saveEdit(); if (e.key === 'Escape') { setEditingStepId(null); setEditField(null); } }}
+                          className="w-28 bg-[rgba(255,255,255,0.05)] border border-[#4a4a4a] rounded px-2 py-0.5 text-[10px] text-[#ECECEC] focus:outline-none" autoFocus onMouseDown={e => e.stopPropagation()} />
+                      ) : (
+                        <span className="font-semibold text-[#ECECEC] truncate cursor-text"
+                          onDoubleClick={e => { e.stopPropagation(); startEdit(step.id, 'name', step.name); }}>{step.name}</span>
+                      )}
+                      <span className="text-[9px] uppercase tracking-wider text-[#666666]">{cfg.label}</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="cursor-text hover:text-white transition-none" onDoubleClick={e => { e.stopPropagation(); startEdit(step.id, 'views', (step.views || 0).toString()); }}>
+                        V:{editingStepId === step.id && editField === 'views' ? (
                           <input value={editValue} onChange={e => setEditValue(e.target.value)} onBlur={saveEdit}
                             onKeyDown={e => { if (e.key === 'Enter') saveEdit(); if (e.key === 'Escape') { setEditingStepId(null); setEditField(null); } }}
-                            className="w-full bg-gray-800/80 border border-gray-600 rounded px-2 py-0.5 text-xs text-white focus:outline-none" autoFocus onMouseDown={e => e.stopPropagation()} />
-                        ) : (
-                          <p className="text-xs font-semibold text-white truncate cursor-text hover:text-emerald-300 transition-colors"
-                            onDoubleClick={e => { e.stopPropagation(); startEdit(step.id, 'name', step.name); }}>{step.name}</p>
-                        )}
-                        <p className="text-[9px] uppercase tracking-wider mt-0.5" style={{ color: cfg.color + '80' }}>{cfg.label}</p>
-                      </div>
-                    </div>
-
-                    {/* URL */}
-                    {step.url && domain && (
-                      <a href={step.url.startsWith('http') ? step.url : `https://${step.url}`} target="_blank" rel="noreferrer"
-                        className="mx-4 mb-2 flex items-center gap-1.5 px-2.5 py-1.5 bg-gray-800/40 rounded-md text-[9px] text-gray-500 hover:text-gray-300 transition-colors border border-gray-800/50"
-                        onMouseDown={e => e.stopPropagation()} onClick={e => e.stopPropagation()}>
-                        <img src={`https://www.google.com/s2/favicons?domain=${domain}&sz=16`} alt="" className="w-3.5 h-3.5 rounded-sm" onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-                        <span className="truncate flex-1">{domain}</span>
-                        <ExternalLink size={8} className="flex-shrink-0 opacity-50" />
-                      </a>
-                    )}
-
-                    {/* Stats */}
-                    <div className="px-4 pb-3 flex items-center gap-4 text-[10px]">
-                      <div className="flex items-center gap-1 text-gray-500">
-                        <Eye size={10} />
-                        <span className="cursor-text hover:text-white transition-colors" onDoubleClick={e => { e.stopPropagation(); startEdit(step.id, 'views', step.views.toString()); }}>
-                          {editingStepId === step.id && editField === 'views' ? (
-                            <input value={editValue} onChange={e => setEditValue(e.target.value)} onBlur={saveEdit}
-                              onKeyDown={e => { if (e.key === 'Enter') saveEdit(); if (e.key === 'Escape') { setEditingStepId(null); setEditField(null); } }}
-                              className="w-12 bg-gray-800 border border-gray-600 rounded px-1 text-[10px] text-white focus:outline-none" autoFocus onMouseDown={e => e.stopPropagation()} />
-                          ) : step.views.toLocaleString()}
-                        </span>
-                      </div>
-                      {totalAdSpend > 0 && <div className="flex items-center gap-1 text-gray-500"><DollarSign size={9} />{totalAdSpend.toLocaleString()}</div>}
-                      {step.ads.length > 0 && <div className="flex items-center gap-1 text-gray-500"><Megaphone size={9} />{step.ads.length}</div>}
+                            className="w-10 bg-[#3a3a3a] border border-[#4a4a4a] rounded px-1 text-[10px] text-[#ECECEC] focus:outline-none" autoFocus onMouseDown={e => e.stopPropagation()} />
+                        ) : (step.views || 0).toLocaleString()}
+                      </span>
+                      <span className="cursor-text hover:text-white transition-none" onDoubleClick={e => { e.stopPropagation(); startEdit(step.id, 'clicks', (step.clicks || 0).toString()); }}>
+                        C:{editingStepId === step.id && editField === 'clicks' ? (
+                          <input value={editValue} onChange={e => setEditValue(e.target.value)} onBlur={saveEdit}
+                            onKeyDown={e => { if (e.key === 'Enter') saveEdit(); if (e.key === 'Escape') { setEditingStepId(null); setEditField(null); } }}
+                            className="w-10 bg-[#3a3a3a] border border-[#4a4a4a] rounded px-1 text-[10px] text-[#ECECEC] focus:outline-none" autoFocus onMouseDown={e => e.stopPropagation()} />
+                        ) : (step.clicks || 0).toLocaleString()}
+                      </span>
+                      <span className="cursor-text hover:text-white transition-none" onDoubleClick={e => { e.stopPropagation(); startEdit(step.id, 'conversions', (step.conversions || 0).toString()); }}>
+                        CV:{editingStepId === step.id && editField === 'conversions' ? (
+                          <input value={editValue} onChange={e => setEditValue(e.target.value)} onBlur={saveEdit}
+                            onKeyDown={e => { if (e.key === 'Enter') saveEdit(); if (e.key === 'Escape') { setEditingStepId(null); setEditField(null); } }}
+                            className="w-10 bg-[#3a3a3a] border border-[#4a4a4a] rounded px-1 text-[10px] text-[#ECECEC] focus:outline-none" autoFocus onMouseDown={e => e.stopPropagation()} />
+                        ) : (step.conversions || 0).toLocaleString()}
+                      </span>
                     </div>
                   </div>
 
+                  {/* Card */}
+                  <div className="rounded-xl overflow-hidden transition-all duration-200" style={{
+                    height: CARD_H,
+                    background: 'linear-gradient(135deg, rgba(47,47,47,0.97) 0%, rgba(33,33,33,0.98) 100%)',
+                    border: `1.5px solid ${isSelected ? 'rgba(236,236,236,0.9)' : 'rgba(58,58,58,0.6)'}`,
+                    boxShadow: isSelected ? '0 0 24px rgba(255,255,255,0.1), 0 4px 20px rgba(0,0,0,0.4)' : '0 4px 16px rgba(0,0,0,0.3)',
+                  }}>
+                    {normalizedUrl ? (
+                      <div className="w-full h-full relative">
+                        {step.type === 'ad' ? (
+                          <>
+                            {playingAdStepId === step.id ? (
+                              isDirectVideoUrl(normalizedUrl) ? (
+                                <video src={normalizedUrl} className="absolute inset-0 w-full h-full object-cover" controls autoPlay />
+                              ) : (
+                                <iframe title={`${step.name}-ad`} src={normalizedUrl} className="absolute inset-0 w-full h-full"
+                                  allow="autoplay; encrypted-media; picture-in-picture" sandbox="allow-same-origin allow-scripts allow-forms allow-popups" />
+                              )
+                            ) : (
+                              <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+                                <button className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/80 text-xs text-[#212121] hover:bg-white"
+                                  onMouseDown={e => e.stopPropagation()} onClick={e => { e.stopPropagation(); setPlayingAdStepId(step.id); }}>
+                                  <Play size={12} /> Play ad
+                                </button>
+                              </div>
+                            )}
+                          </>
+                        ) : (
+                          <iframe title={`${step.name}-preview`} src={normalizedUrl} className="absolute inset-0 w-full h-full pointer-events-none"
+                            sandbox="allow-same-origin allow-scripts allow-forms allow-popups" />
+                        )}
+                      </div>
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-xs text-[#666666]">
+                        Paste a URL to see a preview
+                      </div>
+                    )}
+                  </div>
+
                   {/* Connection handles */}
-                  <div className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 w-3.5 h-3.5 rounded-full border-2 transition-all cursor-crosshair z-10 hover:scale-150 hover:border-emerald-400"
-                    style={{ backgroundColor: 'rgba(52,211,153,0.25)', borderColor: 'rgba(52,211,153,0.45)' }}
+                  <div className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 w-3.5 h-3.5 rounded-full border-2 transition-all cursor-crosshair z-10 hover:scale-150 hover:border-[#4a4a4a]"
+                    style={{ backgroundColor: 'rgba(180,180,180,0.25)', borderColor: 'rgba(180,180,180,0.45)' }}
                     onMouseDown={e => {
                       e.stopPropagation();
                       setConnecting(step.id);
@@ -573,8 +654,8 @@ const FunnelManager: React.FC<FunnelManagerProps> = ({ storagePrefix }) => {
                         setConnectMouse({ x: (e.clientX - rect.left - canvasOffset.x) / zoom, y: (e.clientY - rect.top - canvasOffset.y) / zoom });
                       }
                     }} />
-                  <div className={`absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 w-3.5 h-3.5 rounded-full border-2 transition-all z-10 ${connecting && connecting !== step.id ? 'scale-150 border-emerald-400' : ''}`}
-                    style={{ backgroundColor: connecting && connecting !== step.id ? 'rgba(52,211,153,0.5)' : 'rgba(55,65,81,0.4)', borderColor: connecting && connecting !== step.id ? 'rgba(52,211,153,0.7)' : 'rgba(55,65,81,0.25)' }} />
+                  <div className={`absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 w-3.5 h-3.5 rounded-full border-2 transition-all z-10 ${connecting && connecting !== step.id ? 'scale-150 border-[#4a4a4a]' : ''}`}
+                    style={{ backgroundColor: connecting && connecting !== step.id ? 'rgba(180,180,180,0.5)' : 'rgba(58,58,58,0.4)', borderColor: connecting && connecting !== step.id ? 'rgba(180,180,180,0.8)' : 'rgba(58,58,58,0.25)' }} />
                 </div>
               );
             })}
@@ -583,15 +664,15 @@ const FunnelManager: React.FC<FunnelManagerProps> = ({ storagePrefix }) => {
           {/* Empty state */}
           {selectedFunnel.steps.length === 0 && (
             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-              <div className="w-14 h-14 rounded-2xl bg-gray-900/50 border border-gray-800 flex items-center justify-center mb-3"><Plus size={20} className="text-gray-600" /></div>
-              <p className="text-gray-500 text-sm">Empty canvas</p>
-              <p className="text-gray-600 text-xs">Click "Add Element" to build your funnel</p>
+              <div className="w-14 h-14 rounded-xl bg-[#212121] border border-[#3a3a3a] flex items-center justify-center mb-3"><Plus size={20} className="text-[#666666]" /></div>
+              <p className="text-[#9B9B9B] text-sm">Empty canvas</p>
+              <p className="text-[#666666] text-xs">Click "Add Element" to build your funnel</p>
             </div>
           )}
 
           {/* Connecting indicator */}
           {connecting && (
-            <div className="absolute top-3 left-1/2 -translate-x-1/2 px-4 py-2 bg-gray-900/90 backdrop-blur border border-emerald-500/30 rounded-full text-xs text-emerald-400 font-medium z-50 shadow-lg shadow-emerald-500/10">
+            <div className="absolute top-3 left-1/2 -translate-x-1/2 px-4 py-2 bg-[#2f2f2f] backdrop-blur border border-[#3a3a3a] rounded-full text-xs text-[#ECECEC] font-medium z-50">
               Drop on a step to connect · Release to cancel
             </div>
           )}
@@ -599,7 +680,7 @@ const FunnelManager: React.FC<FunnelManagerProps> = ({ storagePrefix }) => {
 
         {/* Side panel */}
         {selectedStep && (
-          <div className="w-72 flex-shrink-0 bg-gray-900/80 backdrop-blur border border-gray-800 rounded-xl p-4 overflow-y-auto animate-in slide-in-from-right-4 duration-200 space-y-4">
+          <div className="w-72 flex-shrink-0 bg-[#2f2f2f] backdrop-blur border border-[#3a3a3a] rounded-xl p-4 overflow-y-auto animate-in slide-in-from-right-4 duration-200 space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 {(() => { const cfg = getStepConfig(selectedStep.type); return (
@@ -607,80 +688,46 @@ const FunnelManager: React.FC<FunnelManagerProps> = ({ storagePrefix }) => {
                     <cfg.icon size={14} style={{ color: cfg.color }} />
                   </div>
                 ); })()}
-                <h3 className="text-sm font-semibold text-white">{selectedStep.name}</h3>
+                <h3 className="text-sm font-semibold text-[#ECECEC]">{selectedStep.name}</h3>
               </div>
               <div className="flex gap-1">
-                <button onClick={() => deleteStep(selectedStep.id)} className="p-1 text-gray-500 hover:text-rose-400"><Trash2 size={14} /></button>
-                <button onClick={() => setSelectedStepId(null)} className="p-1 text-gray-500 hover:text-white"><X size={14} /></button>
+                <button onClick={() => deleteStep(selectedStep.id)} className="p-1 text-[#9B9B9B] hover:text-rose-400"><Trash2 size={14} /></button>
+                <button onClick={() => setSelectedStepId(null)} className="p-1 text-[#9B9B9B] hover:text-white"><X size={14} /></button>
               </div>
             </div>
 
-            <div><label className="text-[10px] uppercase tracking-wider text-gray-500 font-medium">Type</label>
+            <div><label className="text-[10px] uppercase tracking-wider text-[#9B9B9B] font-medium">Type</label>
               <select value={selectedStep.type} onChange={e => updateStep(selectedStep.id, { type: e.target.value as FunnelStepType })}
-                className="w-full mt-1 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none">
+                className="w-full mt-1 bg-[#3a3a3a] border border-[#3a3a3a] rounded-lg px-3 py-2 text-sm text-[#ECECEC] focus:outline-none">
                 {STEP_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
               </select>
             </div>
 
-            <div><label className="text-[10px] uppercase tracking-wider text-gray-500 font-medium">Page URL</label>
+            <div><label className="text-[10px] uppercase tracking-wider text-[#9B9B9B] font-medium">Page URL</label>
               <input value={selectedStep.url || ''} onChange={e => updateStep(selectedStep.id, { url: e.target.value || undefined })} placeholder="https://..."
-                className="w-full mt-1 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50" />
+                className="w-full mt-1 bg-[#3a3a3a] border border-[#3a3a3a] rounded-lg px-3 py-2 text-sm text-[#ECECEC] placeholder-[#666666] focus:outline-none focus:ring-2 focus:ring-[#555555]" />
               {selectedStep.url && getUrlDomain(selectedStep.url) && (
                 <a href={selectedStep.url.startsWith('http') ? selectedStep.url : `https://${selectedStep.url}`} target="_blank" rel="noreferrer"
-                  className="mt-2 flex items-center gap-2 px-3 py-2 bg-gray-800/60 rounded-lg text-xs text-gray-400 hover:text-gray-200 transition-colors">
+                  className="mt-2 flex items-center gap-2 px-3 py-2 bg-[rgba(255,255,255,0.05)] rounded-lg text-xs text-[#9B9B9B] hover:text-[#ECECEC] transition-none">
                   <img src={`https://www.google.com/s2/favicons?domain=${getUrlDomain(selectedStep.url)}&sz=32`} alt="" className="w-4 h-4 rounded" onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                   <span className="truncate flex-1">{getUrlDomain(selectedStep.url)}</span><ExternalLink size={12} />
                 </a>
               )}
             </div>
 
-            <div><label className="text-[10px] uppercase tracking-wider text-gray-500 font-medium">Page Views</label>
+            <div><label className="text-[10px] uppercase tracking-wider text-[#9B9B9B] font-medium">Page Views</label>
               <input type="number" value={selectedStep.views} onChange={e => updateStep(selectedStep.id, { views: parseInt(e.target.value) || 0 })}
-                className="w-full mt-1 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/50" />
+                className="w-full mt-1 bg-[#3a3a3a] border border-[#3a3a3a] rounded-lg px-3 py-2 text-sm text-[#ECECEC] focus:outline-none focus:ring-2 focus:ring-[#555555]" />
             </div>
 
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <label className="text-[10px] uppercase tracking-wider text-gray-500 font-medium">Ads ({selectedStep.ads.length})</label>
-                <button onClick={() => setAddingAdToStep(selectedStep.id)} className="text-[10px] text-emerald-400 hover:text-emerald-300 flex items-center gap-0.5"><Plus size={10} /> Add</button>
-              </div>
-              {selectedStep.ads.length === 0 && addingAdToStep !== selectedStep.id && <p className="text-xs text-gray-600 text-center py-3">No ads attached</p>}
-              <div className="space-y-2">
-                {selectedStep.ads.map(ad => (
-                  <div key={ad.id} className="bg-gray-800/50 rounded-lg p-2.5 flex items-start justify-between">
-                    <div className="min-w-0 flex-1">
-                      <p className="text-[11px] font-medium text-gray-200 truncate">{ad.campaignName}</p>
-                      <div className="flex items-center gap-2 mt-0.5">
-                        <span className={`text-[9px] px-1.5 py-0.5 rounded-full ${ad.type === 'marketing' ? 'bg-blue-500/20 text-blue-400' : 'bg-orange-500/20 text-orange-400'}`}>{ad.type}</span>
-                        <span className="text-[9px] text-gray-500">{ad.platform}</span>
-                      </div>
-                      <div className="flex gap-3 mt-1 text-[9px] text-gray-400"><span>${ad.spend.toLocaleString()}</span><span>{ad.clicks} clicks</span></div>
-                    </div>
-                    <button onClick={() => deleteAd(selectedStep.id, ad.id)} className="p-0.5 text-gray-600 hover:text-rose-400"><Trash2 size={10} /></button>
-                  </div>
-                ))}
-              </div>
-              {addingAdToStep === selectedStep.id && (
-                <div className="bg-gray-800/50 rounded-lg p-2.5 space-y-2 mt-2">
-                  <input value={newAdName} onChange={e => setNewAdName(e.target.value)} placeholder="Campaign name..." className="w-full bg-gray-900 border border-gray-700 rounded px-2 py-1.5 text-[11px] text-white placeholder-gray-500 focus:outline-none" autoFocus />
-                  <div className="flex gap-1">
-                    <select value={newAdPlatform} onChange={e => setNewAdPlatform(e.target.value as any)} className="flex-1 bg-gray-900 border border-gray-700 rounded px-2 py-1.5 text-[10px] text-white focus:outline-none">
-                      <option value="Facebook">Facebook</option><option value="Google">Google</option><option value="LinkedIn">LinkedIn</option><option value="TikTok">TikTok</option>
-                    </select>
-                    <select value={newAdType} onChange={e => setNewAdType(e.target.value as any)} className="flex-1 bg-gray-900 border border-gray-700 rounded px-2 py-1.5 text-[10px] text-white focus:outline-none">
-                      <option value="marketing">Marketing</option><option value="remarketing">Remarketing</option>
-                    </select>
-                  </div>
-                  <div className="flex gap-1">
-                    <input value={newAdSpend} onChange={e => setNewAdSpend(e.target.value)} placeholder="Spend $" type="number" className="flex-1 bg-gray-900 border border-gray-700 rounded px-2 py-1.5 text-[10px] text-white placeholder-gray-500 focus:outline-none" />
-                    <input value={newAdClicks} onChange={e => setNewAdClicks(e.target.value)} placeholder="Clicks" type="number" className="flex-1 bg-gray-900 border border-gray-700 rounded px-2 py-1.5 text-[10px] text-white placeholder-gray-500 focus:outline-none" />
-                  </div>
-                  <div className="flex gap-1">
-                    <button onClick={handleAddAd} className="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-[10px]">Add</button>
-                    <button onClick={() => setAddingAdToStep(null)} className="px-3 py-1 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded text-[10px]">Cancel</button>
-                  </div>
-                </div>
-              )}
+            <div><label className="text-[10px] uppercase tracking-wider text-[#9B9B9B] font-medium">Clicks</label>
+              <input type="number" value={selectedStep.clicks || 0} onChange={e => updateStep(selectedStep.id, { clicks: parseInt(e.target.value) || 0 })}
+                className="w-full mt-1 bg-[#3a3a3a] border border-[#3a3a3a] rounded-lg px-3 py-2 text-sm text-[#ECECEC] focus:outline-none focus:ring-2 focus:ring-[#555555]" />
+            </div>
+
+            <div><label className="text-[10px] uppercase tracking-wider text-[#9B9B9B] font-medium">Conversions</label>
+              <input type="number" value={selectedStep.conversions || 0} onChange={e => updateStep(selectedStep.id, { conversions: parseInt(e.target.value) || 0 })}
+                className="w-full mt-1 bg-[#3a3a3a] border border-[#3a3a3a] rounded-lg px-3 py-2 text-sm text-[#ECECEC] focus:outline-none focus:ring-2 focus:ring-[#555555]" />
             </div>
 
           </div>

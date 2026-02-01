@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
-import { 
-  AreaChart, 
-  Area, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  ResponsiveContainer, 
-  BarChart, 
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  BarChart,
   Bar,
   ReferenceLine
 } from 'recharts';
@@ -23,8 +23,8 @@ interface AnalyticsChartProps {
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
     return (
-      <div className="bg-gray-900 border border-gray-800 p-3 rounded-lg shadow-xl backdrop-blur-md bg-opacity-90">
-        <p className="text-gray-400 text-xs mb-1">{label}</p>
+      <div className="bg-[#2f2f2f] border border-[#3a3a3a] p-3 rounded-lg shadow-xl backdrop-blur-md bg-opacity-90">
+        <p className="text-[#9B9B9B] text-xs mb-1">{label}</p>
         {payload.map((entry: any, index: number) => (
           <p key={index} className="text-sm font-medium" style={{ color: entry.color }}>
             {entry.name}: {typeof entry.value === 'number' && entry.name !== 'Days Ahead' ? `$${entry.value.toLocaleString()}` : entry.value}
@@ -55,40 +55,40 @@ const AnalyticsChart: React.FC<AnalyticsChartProps> = ({ view, onChangeView, rev
                   <stop offset="95%" stopColor="#6366f1" stopOpacity={0}/>
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" vertical={false} />
-              <XAxis 
-                dataKey="date" 
-                stroke="#6b7280" 
-                fontSize={12} 
-                tickLine={false} 
+              <CartesianGrid strokeDasharray="3 3" stroke="#3a3a3a" vertical={false} />
+              <XAxis
+                dataKey="date"
+                stroke="#666666"
+                fontSize={12}
+                tickLine={false}
                 axisLine={false}
                 dy={10}
                 minTickGap={30}
               />
-              <YAxis 
-                stroke="#6b7280" 
-                fontSize={12} 
-                tickLine={false} 
+              <YAxis
+                stroke="#666666"
+                fontSize={12}
+                tickLine={false}
                 axisLine={false}
                 tickFormatter={(value) => `$${value/1000}k`}
               />
               <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#374151', strokeWidth: 1, strokeDasharray: '4 4' }} />
-              <Area 
-                type="monotone" 
-                dataKey="goal" 
-                name="Monthly Goal" 
-                stroke="#6366f1" 
-                strokeWidth={2} 
+              <Area
+                type="monotone"
+                dataKey="goal"
+                name="Monthly Goal"
+                stroke="#6366f1"
+                strokeWidth={2}
                 strokeDasharray="5 5"
-                fill="url(#colorGoal)" 
+                fill="url(#colorGoal)"
               />
-              <Area 
-                type="monotone" 
-                dataKey="revenue" 
-                name="Cumulative Revenue" 
-                stroke="#10b981" 
-                strokeWidth={3} 
-                fill="url(#colorRevenue)" 
+              <Area
+                type="monotone"
+                dataKey="revenue"
+                name="Cumulative Revenue"
+                stroke="#10b981"
+                strokeWidth={3}
+                fill="url(#colorRevenue)"
                 animationDuration={1500}
               />
             </AreaChart>
@@ -99,28 +99,28 @@ const AnalyticsChart: React.FC<AnalyticsChartProps> = ({ view, onChangeView, rev
         return (
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={CONTENT_DATA} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" vertical={false} />
-              <XAxis 
-                dataKey="date" 
-                stroke="#6b7280" 
-                fontSize={12} 
-                tickLine={false} 
+              <CartesianGrid strokeDasharray="3 3" stroke="#3a3a3a" vertical={false} />
+              <XAxis
+                dataKey="date"
+                stroke="#666666"
+                fontSize={12}
+                tickLine={false}
                 axisLine={false}
                 dy={10}
               />
-              <YAxis 
-                stroke="#6b7280" 
-                fontSize={12} 
-                tickLine={false} 
+              <YAxis
+                stroke="#666666"
+                fontSize={12}
+                tickLine={false}
                 axisLine={false}
               />
               <Tooltip content={<CustomTooltip />} cursor={{ fill: '#1f2937', opacity: 0.4 }} />
               <ReferenceLine y={7} stroke="#eab308" strokeDasharray="3 3" label={{ value: 'Target Buffer', position: 'right', fill: '#eab308', fontSize: 10 }} />
-              <Bar 
-                dataKey="daysAhead" 
-                name="Days Ahead" 
-                fill="#3b82f6" 
-                radius={[4, 4, 0, 0]} 
+              <Bar
+                dataKey="daysAhead"
+                name="Days Ahead"
+                fill="#3b82f6"
+                radius={[4, 4, 0, 0]}
                 barSize={40}
               />
             </BarChart>
@@ -137,37 +137,37 @@ const AnalyticsChart: React.FC<AnalyticsChartProps> = ({ view, onChangeView, rev
                   <stop offset="95%" stopColor="#f43f5e" stopOpacity={0}/>
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" vertical={false} />
-              <XAxis 
-                dataKey="date" 
-                stroke="#6b7280" 
-                fontSize={12} 
-                tickLine={false} 
+              <CartesianGrid strokeDasharray="3 3" stroke="#3a3a3a" vertical={false} />
+              <XAxis
+                dataKey="date"
+                stroke="#666666"
+                fontSize={12}
+                tickLine={false}
                 axisLine={false}
                 dy={10}
               />
-              <YAxis 
-                stroke="#6b7280" 
-                fontSize={12} 
-                tickLine={false} 
+              <YAxis
+                stroke="#666666"
+                fontSize={12}
+                tickLine={false}
                 axisLine={false}
                 tickFormatter={(value) => `$${value}`}
               />
               <Tooltip content={<CustomTooltip />} />
-              <Area 
-                type="monotone" 
-                dataKey="spend" 
-                name="Spend" 
-                stroke="#f43f5e" 
-                strokeWidth={3} 
-                fill="url(#colorSpend)" 
+              <Area
+                type="monotone"
+                dataKey="spend"
+                name="Spend"
+                stroke="#f43f5e"
+                strokeWidth={3}
+                fill="url(#colorSpend)"
               />
-              <Area 
-                type="monotone" 
-                dataKey="budget" 
-                name="Budget Limit" 
-                stroke="#9ca3af" 
-                strokeWidth={1} 
+              <Area
+                type="monotone"
+                dataKey="budget"
+                name="Budget Limit"
+                stroke="#9ca3af"
+                strokeWidth={1}
                 strokeDasharray="4 4"
                 fill="transparent"
               />
@@ -180,43 +180,41 @@ const AnalyticsChart: React.FC<AnalyticsChartProps> = ({ view, onChangeView, rev
   };
 
   return (
-    <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 shadow-sm relative overflow-hidden">
-        {/* Subtle background glow effect */}
-        <div className="absolute top-0 right-0 w-96 h-96 bg-blue-500/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
+    <div className="bg-[#2f2f2f] border border-[#3a3a3a] rounded-xl p-6 shadow-sm relative overflow-hidden">
 
       <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4 relative z-10">
         <div>
-          <h2 className="text-lg font-semibold text-white">Performance Overview</h2>
-          <p className="text-sm text-gray-500">Track your key performance indicators over time.</p>
+          <h2 className="text-lg font-semibold text-[#ECECEC]">Performance Overview</h2>
+          <p className="text-sm text-[#9B9B9B]">Track your key performance indicators over time.</p>
         </div>
-        
-        <div className="bg-gray-950 p-1 rounded-xl border border-gray-800 flex items-center">
-          <button 
+
+        <div className="bg-[#212121] p-1 rounded-xl border border-[#3a3a3a] flex items-center">
+          <button
             onClick={() => onChangeView(ChartViewType.REVENUE)}
-            className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${
-              view === ChartViewType.REVENUE 
-                ? 'bg-gray-800 text-white shadow-sm' 
-                : 'text-gray-500 hover:text-gray-300'
+            className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-none ${
+              view === ChartViewType.REVENUE
+                ? 'bg-[#3a3a3a] text-[#ECECEC] shadow-sm'
+                : 'text-[#9B9B9B] hover:text-[#ECECEC]'
             }`}
           >
             Revenue
           </button>
-          <button 
+          <button
             onClick={() => onChangeView(ChartViewType.CONTENT_SCHEDULE)}
-            className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${
-              view === ChartViewType.CONTENT_SCHEDULE 
-                ? 'bg-gray-800 text-white shadow-sm' 
-                : 'text-gray-500 hover:text-gray-300'
+            className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-none ${
+              view === ChartViewType.CONTENT_SCHEDULE
+                ? 'bg-[#3a3a3a] text-[#ECECEC] shadow-sm'
+                : 'text-[#9B9B9B] hover:text-[#ECECEC]'
             }`}
           >
             Content
           </button>
-          <button 
+          <button
             onClick={() => onChangeView(ChartViewType.TEAM_SPEND)}
-            className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${
-              view === ChartViewType.TEAM_SPEND 
-                ? 'bg-gray-800 text-white shadow-sm' 
-                : 'text-gray-500 hover:text-gray-300'
+            className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-none ${
+              view === ChartViewType.TEAM_SPEND
+                ? 'bg-[#3a3a3a] text-[#ECECEC] shadow-sm'
+                : 'text-[#9B9B9B] hover:text-[#ECECEC]'
             }`}
           >
             Team

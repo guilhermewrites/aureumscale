@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Camera, Check, X, Plus, FileText } from 'lucide-react';
+import { Camera, Check, X, Plus, FileText, Trash2 } from 'lucide-react';
 import { TeamMember } from '../types';
 import { TEAM_MEMBERS } from '../constants';
 import useLocalStorage from '../hooks/useLocalStorage';
@@ -79,6 +79,14 @@ const TeamManager: React.FC<TeamManagerProps> = ({ storagePrefix }) => {
     e.target.value = '';
   };
 
+  // --- Delete member ---
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+
+  const handleDeleteMember = (id: string) => {
+    setMembers(prev => prev.filter(m => m.id !== id));
+    setConfirmDeleteId(null);
+  };
+
   // --- Add member ---
   const [isAddingMember, setIsAddingMember] = useState(false);
   const [newMemberName, setNewMemberName] = useState('');
@@ -120,48 +128,48 @@ const TeamManager: React.FC<TeamManagerProps> = ({ storagePrefix }) => {
 
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex flex-col gap-1">
-          <h2 className="text-xl font-bold text-white">Team Members</h2>
-          <p className="text-gray-500 text-sm">Meet the squad behind Aureum Scale.</p>
+          <h2 className="text-xl font-bold text-[#ECECEC]">Team Members</h2>
+          <p className="text-[#9B9B9B] text-sm">Meet the squad behind Aureum Scale.</p>
         </div>
         <button
           onClick={() => setIsAddingMember(!isAddingMember)}
-          className="flex items-center gap-2 px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-white rounded-lg text-sm font-semibold transition-colors shadow-lg shadow-emerald-500/20"
+          className="flex items-center gap-2 px-4 py-2 bg-white hover:bg-[#e5e5e5] text-[#212121] rounded-lg text-sm font-semibold transition-none"
         >
-          <Plus size={16} className={isAddingMember ? 'rotate-45 transition-transform' : ''} />
+          <Plus size={16} className={isAddingMember ? 'rotate-45' : ''} />
           <span>{isAddingMember ? 'Cancel' : 'Add Member'}</span>
         </button>
       </div>
 
       {/* Add Member Form */}
       {isAddingMember && (
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 animate-in slide-in-from-top-2">
+        <div className="bg-[#2f2f2f] border border-[#3a3a3a] rounded-xl p-6 animate-in slide-in-from-top-2">
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="flex-1 space-y-1.5">
-              <label className="text-xs text-gray-500 font-medium ml-1">Name</label>
+              <label className="text-xs text-[#9B9B9B] font-medium ml-1">Name</label>
               <input
                 type="text"
                 placeholder="e.g. John Doe"
                 value={newMemberName}
                 onChange={e => setNewMemberName(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Enter') handleAddMember(); }}
-                className="w-full bg-gray-950 border border-gray-800 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                className="w-full bg-[#212121] border border-[#3a3a3a] rounded-lg px-3 py-2 text-sm text-[#ECECEC] focus:outline-none focus:ring-1 focus:ring-[#555555] placeholder-[#666666]"
               />
             </div>
             <div className="flex-1 space-y-1.5">
-              <label className="text-xs text-gray-500 font-medium ml-1">Role</label>
+              <label className="text-xs text-[#9B9B9B] font-medium ml-1">Role</label>
               <input
                 type="text"
                 placeholder="e.g. Designer"
                 value={newMemberRole}
                 onChange={e => setNewMemberRole(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Enter') handleAddMember(); }}
-                className="w-full bg-gray-950 border border-gray-800 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                className="w-full bg-[#212121] border border-[#3a3a3a] rounded-lg px-3 py-2 text-sm text-[#ECECEC] focus:outline-none focus:ring-1 focus:ring-[#555555] placeholder-[#666666]"
               />
             </div>
             <div className="flex items-end">
               <button
                 onClick={handleAddMember}
-                className="bg-emerald-500 hover:bg-emerald-400 text-white px-6 py-2 rounded-lg text-sm font-bold transition-colors shadow-lg shadow-emerald-500/20"
+                className="bg-white hover:bg-[#e5e5e5] text-[#212121] px-6 py-2 rounded-lg text-sm font-bold transition-none"
               >
                 Add
               </button>
@@ -172,13 +180,40 @@ const TeamManager: React.FC<TeamManagerProps> = ({ storagePrefix }) => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {members.map((member) => (
-          <div key={member.id} className="group bg-gray-900 border border-gray-800 p-6 rounded-2xl hover:border-emerald-500/30 transition-all duration-300 hover:shadow-lg hover:shadow-emerald-900/10">
+          <div key={member.id} className="group relative bg-[#2f2f2f] border border-[#3a3a3a] p-6 rounded-xl hover:border-[#4a4a4a] transition-none">
+            {/* Delete button */}
+            {confirmDeleteId === member.id ? (
+              <div className="absolute top-3 right-3 flex items-center gap-1.5 bg-[#212121] border border-red-500/30 rounded-lg px-2.5 py-1.5 z-10">
+                <span className="text-xs text-[#9B9B9B]">Delete?</span>
+                <button
+                  onClick={() => handleDeleteMember(member.id)}
+                  className="text-red-400 hover:text-red-300 text-xs font-medium"
+                >
+                  Yes
+                </button>
+                <button
+                  onClick={() => setConfirmDeleteId(null)}
+                  className="text-[#9B9B9B] hover:text-[#ECECEC] text-xs font-medium"
+                >
+                  No
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => setConfirmDeleteId(member.id)}
+                className="absolute top-3 right-3 p-1.5 rounded-lg text-[#666666] hover:text-red-400 hover:bg-red-500/10 opacity-0 group-hover:opacity-100 transition-none"
+                title="Remove member"
+              >
+                <Trash2 size={14} />
+              </button>
+            )}
+
             <div className="flex items-start gap-5">
               {/* Avatar / Photo */}
               <div className="relative shrink-0">
                 {member.photoUrl ? (
                   <div
-                    className="w-16 h-16 rounded-2xl overflow-hidden cursor-pointer ring-4 ring-gray-900 group-hover:ring-emerald-900/30 transition-all"
+                    className="w-16 h-16 rounded-xl overflow-hidden cursor-pointer ring-4 ring-[#2f2f2f]"
                     onClick={() => triggerPhotoUpload(member.id)}
                     title="Click to change photo"
                   >
@@ -186,13 +221,13 @@ const TeamManager: React.FC<TeamManagerProps> = ({ storagePrefix }) => {
                   </div>
                 ) : (
                   <div
-                    className={`w-16 h-16 rounded-2xl ${member.color} flex items-center justify-center text-xl font-bold text-white shadow-lg ring-4 ring-gray-900 group-hover:scale-105 transition-transform duration-300 cursor-pointer relative`}
+                    className={`w-16 h-16 rounded-xl ${member.color} flex items-center justify-center text-xl font-bold text-white ring-4 ring-[#2f2f2f] cursor-pointer relative`}
                     onClick={() => triggerPhotoUpload(member.id)}
                     title="Click to add photo"
                   >
                     {member.initials}
-                    <div className="absolute inset-0 bg-black/0 hover:bg-black/30 rounded-2xl transition-colors flex items-center justify-center">
-                      <Camera size={16} className="text-white opacity-0 group-hover:opacity-70 transition-opacity" />
+                    <div className="absolute inset-0 bg-black/0 hover:bg-black/30 rounded-xl flex items-center justify-center">
+                      <Camera size={16} className="text-white opacity-0 group-hover:opacity-70" />
                     </div>
                   </div>
                 )}
@@ -208,14 +243,14 @@ const TeamManager: React.FC<TeamManagerProps> = ({ storagePrefix }) => {
                       onChange={e => setEditValue(e.target.value)}
                       onKeyDown={e => { if (e.key === 'Enter') saveEdit(); if (e.key === 'Escape') cancelEdit(); }}
                       autoFocus
-                      className="flex-1 bg-gray-950 border border-emerald-500/50 rounded px-2 py-1 text-sm text-white focus:outline-none font-bold"
+                      className="flex-1 bg-[#212121] border border-[#4a4a4a] rounded px-2 py-1 text-sm text-[#ECECEC] focus:outline-none font-bold"
                     />
-                    <button onClick={saveEdit} className="p-0.5 text-emerald-500 hover:text-emerald-400"><Check size={14} /></button>
-                    <button onClick={cancelEdit} className="p-0.5 text-gray-500 hover:text-gray-300"><X size={14} /></button>
+                    <button onClick={saveEdit} className="p-0.5 text-[#ECECEC] hover:text-white"><Check size={14} /></button>
+                    <button onClick={cancelEdit} className="p-0.5 text-[#9B9B9B] hover:text-[#ECECEC]"><X size={14} /></button>
                   </div>
                 ) : (
                   <h3
-                    className="text-lg font-bold text-white group-hover:text-emerald-400 transition-colors cursor-pointer truncate"
+                    className="text-lg font-bold text-[#ECECEC] cursor-pointer truncate"
                     onClick={() => startEditing(member.id, 'name', member.name)}
                     title="Click to edit name"
                   >
@@ -232,15 +267,15 @@ const TeamManager: React.FC<TeamManagerProps> = ({ storagePrefix }) => {
                       onChange={e => setEditValue(e.target.value)}
                       onKeyDown={e => { if (e.key === 'Enter') saveEdit(); if (e.key === 'Escape') cancelEdit(); }}
                       autoFocus
-                      className="flex-1 bg-gray-950 border border-emerald-500/50 rounded px-2 py-0.5 text-xs text-white focus:outline-none"
+                      className="flex-1 bg-[#212121] border border-[#4a4a4a] rounded px-2 py-0.5 text-xs text-[#ECECEC] focus:outline-none"
                     />
-                    <button onClick={saveEdit} className="p-0.5 text-emerald-500 hover:text-emerald-400"><Check size={12} /></button>
-                    <button onClick={cancelEdit} className="p-0.5 text-gray-500 hover:text-gray-300"><X size={12} /></button>
+                    <button onClick={saveEdit} className="p-0.5 text-[#ECECEC] hover:text-white"><Check size={12} /></button>
+                    <button onClick={cancelEdit} className="p-0.5 text-[#9B9B9B] hover:text-[#ECECEC]"><X size={12} /></button>
                   </div>
                 ) : (
                   <div className="flex items-center gap-2 mt-1.5">
                     <span
-                      className="px-2.5 py-1 rounded-md bg-gray-950 border border-gray-800 text-xs text-gray-400 font-medium uppercase tracking-wide cursor-pointer hover:border-gray-600 hover:text-gray-300 transition-colors"
+                      className="px-2.5 py-1 rounded-md bg-[#212121] border border-[#3a3a3a] text-xs text-[#9B9B9B] font-medium uppercase tracking-wide cursor-pointer hover:border-[#4a4a4a] hover:text-[#ECECEC] transition-none"
                       onClick={() => startEditing(member.id, 'role', member.role)}
                       title="Click to edit role"
                     >
@@ -261,16 +296,16 @@ const TeamManager: React.FC<TeamManagerProps> = ({ storagePrefix }) => {
                     onKeyDown={e => { if (e.key === 'Escape') cancelEdit(); }}
                     autoFocus
                     placeholder="Describe responsibilities, skills, focus areas..."
-                    className="w-full h-20 bg-gray-950 border border-emerald-500/50 rounded-lg px-3 py-2 text-xs text-white focus:outline-none resize-none"
+                    className="w-full h-20 bg-[#212121] border border-[#4a4a4a] rounded-lg px-3 py-2 text-xs text-[#ECECEC] focus:outline-none resize-none placeholder-[#666666]"
                   />
                   <div className="flex justify-end gap-1">
-                    <button onClick={cancelEdit} className="px-2 py-1 text-xs text-gray-500 hover:text-gray-300">Cancel</button>
-                    <button onClick={saveEdit} className="px-2 py-1 text-xs text-emerald-500 hover:text-emerald-400 font-medium">Save</button>
+                    <button onClick={cancelEdit} className="px-2 py-1 text-xs text-[#9B9B9B] hover:text-[#ECECEC]">Cancel</button>
+                    <button onClick={saveEdit} className="px-2 py-1 text-xs text-[#ECECEC] hover:text-white font-medium">Save</button>
                   </div>
                 </div>
               ) : member.description ? (
                 <p
-                  className="text-xs text-gray-500 leading-relaxed cursor-pointer hover:text-gray-400 transition-colors border-t border-gray-800 pt-3"
+                  className="text-xs text-[#9B9B9B] leading-relaxed cursor-pointer hover:text-[#b4b4b4] transition-none border-t border-[#3a3a3a] pt-3"
                   onClick={() => startEditing(member.id, 'description', member.description || '')}
                   title="Click to edit description"
                 >
@@ -278,7 +313,7 @@ const TeamManager: React.FC<TeamManagerProps> = ({ storagePrefix }) => {
                 </p>
               ) : (
                 <p
-                  className="text-xs text-gray-700 italic cursor-pointer hover:text-gray-500 transition-colors border-t border-gray-800 pt-3 flex items-center gap-1.5"
+                  className="text-xs text-[#666666] italic cursor-pointer hover:text-[#9B9B9B] transition-none border-t border-[#3a3a3a] pt-3 flex items-center gap-1.5"
                   onClick={() => startEditing(member.id, 'description', '')}
                   title="Click to add description"
                 >

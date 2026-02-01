@@ -25,16 +25,16 @@ const MetricsTable: React.FC<MetricsTableProps> = ({ data }) => {
   };
 
   return (
-    <div className="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden shadow-sm flex flex-col">
-      <div className="p-6 border-b border-gray-800 flex justify-between items-center bg-gray-900/50 backdrop-blur-sm">
+    <div className="bg-[#2f2f2f] border border-[#3a3a3a] rounded-xl overflow-hidden shadow-sm flex flex-col">
+      <div className="p-6 border-b border-[#3a3a3a] flex justify-between items-center bg-[#2f2f2f] backdrop-blur-sm">
         <div>
-          <h2 className="text-lg font-semibold text-white">Campaign Performance</h2>
-          <p className="text-sm text-gray-500">Real-time tracking across all platforms.</p>
+          <h2 className="text-lg font-semibold text-[#ECECEC]">Campaign Performance</h2>
+          <p className="text-sm text-[#9B9B9B]">Real-time tracking across all platforms.</p>
         </div>
-        <button 
+        <button
           onClick={handleGenerateInsights}
           disabled={loading}
-          className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white rounded-lg text-sm font-medium transition-all shadow-lg shadow-emerald-900/20 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex items-center gap-2 px-4 py-2 bg-white hover:bg-[#e5e5e5] text-[#212121] rounded-lg text-sm font-medium transition-none disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {loading ? <Loader2 className="animate-spin" size={16}/> : <Sparkles size={16} />}
           <span>{loading ? 'Analyzing...' : 'Ask AI Analyst'}</span>
@@ -42,14 +42,14 @@ const MetricsTable: React.FC<MetricsTableProps> = ({ data }) => {
       </div>
 
       {insight && (
-        <div className="bg-gray-800/50 border-b border-gray-700 p-6 animate-in fade-in slide-in-from-top-4 duration-500">
+        <div className="bg-[rgba(255,255,255,0.05)] border-b border-[#3a3a3a] p-6 animate-in fade-in slide-in-from-top-4 duration-500">
            <div className="flex items-start gap-3">
-             <div className="p-2 bg-emerald-500/10 rounded-lg">
-                <Sparkles size={18} className="text-emerald-400" />
+             <div className="p-2 bg-[rgba(255,255,255,0.08)] rounded-lg">
+                <Sparkles size={18} className="text-[#ECECEC]" />
              </div>
              <div>
-                <h3 className="text-sm font-semibold text-emerald-400 mb-2">Gemini Analysis</h3>
-                <div className="text-sm text-gray-300 whitespace-pre-line leading-relaxed">
+                <h3 className="text-sm font-semibold text-[#ECECEC] mb-2">Gemini Analysis</h3>
+                <div className="text-sm text-[#b4b4b4] whitespace-pre-line leading-relaxed">
                   {insight}
                 </div>
              </div>
@@ -60,7 +60,7 @@ const MetricsTable: React.FC<MetricsTableProps> = ({ data }) => {
       <div className="overflow-x-auto">
         <table className="w-full text-left">
           <thead>
-            <tr className="bg-gray-950/50 text-xs uppercase tracking-wider text-gray-500 font-medium">
+            <tr className="bg-[#212121] text-xs uppercase tracking-wider text-[#9B9B9B] font-medium">
               <th className="px-6 py-4">Campaign</th>
               <th className="px-6 py-4">Status</th>
               <th className="px-6 py-4 text-right">CPC</th>
@@ -72,9 +72,9 @@ const MetricsTable: React.FC<MetricsTableProps> = ({ data }) => {
               <th className="px-6 py-4"></th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-800">
+          <tbody className="divide-y divide-[#3a3a3a]">
             {data.map((row) => (
-              <tr key={row.id} className="group hover:bg-gray-800/30 transition-colors">
+              <tr key={row.id} className="group hover:bg-[rgba(255,255,255,0.05)] transition-none">
                 <td className="px-6 py-4">
                   <div className="flex items-center gap-3">
                     <div className={`w-2 h-2 rounded-full ${
@@ -83,8 +83,8 @@ const MetricsTable: React.FC<MetricsTableProps> = ({ data }) => {
                       row.platform === 'TikTok' ? 'bg-pink-500' : 'bg-blue-700'
                     }`} />
                     <div>
-                      <p className="font-medium text-gray-200 text-sm">{row.campaignName}</p>
-                      <p className="text-xs text-gray-500">{row.platform}</p>
+                      <p className="font-medium text-[#ECECEC] text-sm">{row.campaignName}</p>
+                      <p className="text-xs text-[#9B9B9B]">{row.platform}</p>
                     </div>
                   </div>
                 </td>
@@ -97,31 +97,31 @@ const MetricsTable: React.FC<MetricsTableProps> = ({ data }) => {
                     {row.status}
                   </span>
                 </td>
-                <td className="px-6 py-4 text-right text-sm text-gray-300 font-mono">
+                <td className="px-6 py-4 text-right text-sm text-[#b4b4b4] font-mono">
                   ${row.cpc.toFixed(2)}
                 </td>
-                <td className="px-6 py-4 text-right text-sm text-gray-300 font-mono">
+                <td className="px-6 py-4 text-right text-sm text-[#b4b4b4] font-mono">
                   ${row.cpm.toFixed(2)}
                 </td>
                 <td className="px-6 py-4 text-right">
                   <div className="flex items-center justify-end gap-1 text-sm font-mono">
-                    <span className={row.ctr > 1.5 ? 'text-emerald-400' : 'text-gray-300'}>
+                    <span className={row.ctr > 1.5 ? 'text-emerald-400' : 'text-[#b4b4b4]'}>
                       {row.ctr}%
                     </span>
-                    {row.ctr > 1.5 ? <ArrowUpRight size={14} className="text-emerald-500" /> : <ArrowDownRight size={14} className="text-gray-500" />}
+                    {row.ctr > 1.5 ? <ArrowUpRight size={14} className="text-emerald-500" /> : <ArrowDownRight size={14} className="text-[#9B9B9B]" />}
                   </div>
                 </td>
-                <td className="px-6 py-4 text-right text-sm text-gray-300 font-mono">
+                <td className="px-6 py-4 text-right text-sm text-[#b4b4b4] font-mono">
                   ${row.costPerBookedCall}
                 </td>
-                <td className="px-6 py-4 text-right text-sm text-gray-300 font-mono">
+                <td className="px-6 py-4 text-right text-sm text-[#b4b4b4] font-mono">
                   ${row.costPerShowedCall}
                 </td>
-                <td className="px-6 py-4 text-right text-sm font-semibold text-white font-mono">
+                <td className="px-6 py-4 text-right text-sm font-semibold text-[#ECECEC] font-mono">
                   ${row.spend.toLocaleString()}
                 </td>
                 <td className="px-6 py-4 text-right">
-                  <button className="text-gray-500 hover:text-white transition-colors">
+                  <button className="text-[#9B9B9B] hover:text-white transition-none">
                     <MoreHorizontal size={18} />
                   </button>
                 </td>
@@ -130,8 +130,8 @@ const MetricsTable: React.FC<MetricsTableProps> = ({ data }) => {
           </tbody>
         </table>
       </div>
-      <div className="p-4 border-t border-gray-800 bg-gray-950/30 flex justify-center">
-        <button className="text-sm text-gray-400 hover:text-white transition-colors">View All Campaigns &rarr;</button>
+      <div className="p-4 border-t border-[#3a3a3a] bg-[#212121] flex justify-center">
+        <button className="text-sm text-[#9B9B9B] hover:text-white transition-none">View All Campaigns &rarr;</button>
       </div>
     </div>
   );

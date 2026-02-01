@@ -84,7 +84,7 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="flex min-h-screen bg-gray-950 text-gray-100 font-sans selection:bg-emerald-500/30">
+    <div className="flex min-h-screen bg-[#212121] text-[#ECECEC] font-sans selection:bg-[#444444]">
       <Sidebar
         activeItem={activeNav}
         onNavigate={setActiveNav}
@@ -96,22 +96,22 @@ const App: React.FC = () => {
         {/* Header */}
         <header className="flex justify-between items-center mb-10">
           <div>
-            <h1 className="text-2xl font-bold text-white mb-1">{activeNav}</h1>
-            <p className="text-gray-500 text-sm flex items-center gap-2">
+            <h1 className="text-2xl font-bold text-[#ECECEC] mb-1">{activeNav}</h1>
+            <p className="text-[#9B9B9B] text-sm flex items-center gap-2">
                <Calendar size={14} /> {today}
             </p>
           </div>
 
           <div className="flex items-center gap-4">
             <div className="relative hidden md:block">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" size={16} />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[#666666]" size={16} />
               <input
                 type="text"
                 placeholder="Search analytics..."
-                className="bg-gray-900 border border-gray-800 rounded-full pl-10 pr-4 py-2 text-sm text-gray-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 w-64 placeholder-gray-600"
+                className="bg-[#2f2f2f] border border-[#3a3a3a] rounded-full pl-10 pr-4 py-2 text-sm text-[#ECECEC] focus:outline-none focus:ring-1 focus:ring-[#555555] w-64 placeholder-[#666666]"
               />
             </div>
-            <button className="relative p-2 text-gray-400 hover:text-white transition-colors rounded-full hover:bg-gray-900">
+            <button className="relative p-2 text-[#9B9B9B] hover:text-[#ECECEC] transition-none rounded-full hover:bg-[rgba(255,255,255,0.05)]">
               <Bell size={20} />
             </button>
           </div>
@@ -121,33 +121,30 @@ const App: React.FC = () => {
           <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
             {/* Top Stat Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-               <div className="bg-gray-900 border border-gray-800 p-6 rounded-2xl relative overflow-hidden group">
-                  <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/10 rounded-full -translate-y-1/2 translate-x-1/2 group-hover:bg-emerald-500/20 transition-all duration-500"></div>
-                  <p className="text-gray-500 text-sm font-medium mb-2">Total Revenue</p>
-                  <h3 className="text-3xl font-bold text-white mb-1">${totalRevenue.toLocaleString()}</h3>
+               <div className="bg-[#2f2f2f] border border-[#3a3a3a] p-6 rounded-xl">
+                  <p className="text-[#9B9B9B] text-sm font-medium mb-2">Total Revenue</p>
+                  <h3 className="text-3xl font-bold text-[#ECECEC] mb-1">${totalRevenue.toLocaleString()}</h3>
                   <div className="flex items-center gap-2 text-xs">
-                     <span className="text-emerald-400 font-medium">Live</span>
-                     <span className="text-gray-600">updates from Finance</span>
+                     <span className="text-[#ECECEC] font-medium">Live</span>
+                     <span className="text-[#666666]">updates from Finance</span>
                   </div>
                </div>
 
-               <div className="bg-gray-900 border border-gray-800 p-6 rounded-2xl relative overflow-hidden group">
-                  <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/10 rounded-full -translate-y-1/2 translate-x-1/2 group-hover:bg-blue-500/20 transition-all duration-500"></div>
-                  <p className="text-gray-500 text-sm font-medium mb-2">Content Buffer</p>
-                  <h3 className="text-3xl font-bold text-white mb-1">12 Days</h3>
+               <div className="bg-[#2f2f2f] border border-[#3a3a3a] p-6 rounded-xl">
+                  <p className="text-[#9B9B9B] text-sm font-medium mb-2">Content Buffer</p>
+                  <h3 className="text-3xl font-bold text-[#ECECEC] mb-1">12 Days</h3>
                   <div className="flex items-center gap-2 text-xs">
-                     <span className="text-emerald-400 font-medium">+3 days</span>
-                     <span className="text-gray-600">vs target</span>
+                     <span className="text-[#ECECEC] font-medium">+3 days</span>
+                     <span className="text-[#666666]">vs target</span>
                   </div>
                </div>
 
-               <div className="bg-gray-900 border border-gray-800 p-6 rounded-2xl relative overflow-hidden group">
-                  <div className="absolute top-0 right-0 w-24 h-24 bg-rose-500/10 rounded-full -translate-y-1/2 translate-x-1/2 group-hover:bg-rose-500/20 transition-all duration-500"></div>
-                  <p className="text-gray-500 text-sm font-medium mb-2">Team Spend (MTD)</p>
-                  <h3 className="text-3xl font-bold text-white mb-1">$9,600.00</h3>
+               <div className="bg-[#2f2f2f] border border-[#3a3a3a] p-6 rounded-xl">
+                  <p className="text-[#9B9B9B] text-sm font-medium mb-2">Team Spend (MTD)</p>
+                  <h3 className="text-3xl font-bold text-[#ECECEC] mb-1">$9,600.00</h3>
                   <div className="flex items-center gap-2 text-xs">
-                     <span className="text-gray-400 font-medium">96%</span>
-                     <span className="text-gray-600">of budget utilized</span>
+                     <span className="text-[#b4b4b4] font-medium">96%</span>
+                     <span className="text-[#666666]">of budget utilized</span>
                   </div>
                </div>
             </div>
@@ -199,7 +196,7 @@ const App: React.FC = () => {
         )}
 
         {activeNav !== NavigationItem.DASHBOARD && activeNav !== NavigationItem.CONTENT && activeNav !== NavigationItem.FINANCE && activeNav !== NavigationItem.SWIPEFILE && activeNav !== NavigationItem.TEAM && activeNav !== NavigationItem.ADS && activeNav !== NavigationItem.FUNNELS && (
-          <div className="h-96 flex flex-col items-center justify-center text-gray-600 border-2 border-dashed border-gray-800 rounded-3xl">
+          <div className="h-96 flex flex-col items-center justify-center text-[#666666] border-2 border-dashed border-[#3a3a3a] rounded-xl">
             <p className="text-lg font-medium mb-2">Work in Progress</p>
             <p className="text-sm max-w-md text-center">
               The {activeNav.toLowerCase()} view is currently under development. Please return to the Dashboard.

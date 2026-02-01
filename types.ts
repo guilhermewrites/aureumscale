@@ -56,6 +56,9 @@ export interface AppUser {
   label: string; // e.g. "Guilherme" or "The AI Partner"
   initials: string;
   color: string;
+  firstName?: string;
+  lastName?: string;
+  photoUrl?: string;
 }
 
 // --- Funnel Types ---
@@ -77,6 +80,8 @@ export interface FunnelStep {
   type: FunnelStepType;
   url?: string;
   views: number;
+  clicks: number;
+  conversions: number;
   ads: FunnelStepAd[];
   order: number;
 }
@@ -118,6 +123,8 @@ export enum Platform {
 export enum ContentStatus {
   PENDING = 'Pending',
   IN_PROGRESS = 'In Progress',
+  EDITING = 'Editing',
+  SENT = 'Sent',
   DONE = 'Done',
   LIVE = 'Live'
 }
@@ -132,12 +139,24 @@ export interface TeamMember {
   photoUrl?: string;
 }
 
+export enum VideoStyle {
+  MIRO = 'Miro',
+  IPAD = 'iPad',
+  GAMMA = 'Gamma',
+  BLENDED = 'Blended',
+  ED_LAWRENCE = 'Ed Lawrence'
+}
+
 export interface ContentItem {
   id: string;
   title: string;
   description?: string;
   driveLink: string;
+  scriptLink?: string;
+  thumbnailUrl?: string;
+  youtubeUrl?: string;
   status: ContentStatus;
+  style?: VideoStyle;
   team: TeamMember[];
   postDate: string;
   platform: Platform;

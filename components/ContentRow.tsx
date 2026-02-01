@@ -1,10 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { 
-  Folder, Clock, Loader2, CheckCircle2, Radio, 
+import {
+  Folder, Clock, Loader2, CheckCircle2, Radio,
   Trash2, User, Check, Calendar, ExternalLink,
-  ArrowLeftCircle, FilePenLine
+  ArrowLeftCircle, FilePenLine, FileText, Youtube,
+  Instagram, Image, Pencil, Send
 } from 'lucide-react';
-import { ContentItem, ContentStatus, TeamMember } from '../types';
+import { ContentItem, ContentStatus, TeamMember, Platform, VideoStyle } from '../types';
 import { TEAM_MEMBERS } from '../constants';
 
 const getPersistedTeamMembers = (storagePrefix: string): TeamMember[] => {
@@ -26,17 +27,24 @@ interface ContentRowProps {
 
 const ContentRow: React.FC<ContentRowProps> = ({ item, onUpdate, onDelete, onDemote, onEdit, storagePrefix }) => {
   // Edit states
-  const [editingField, setEditingField] = useState<'title' | 'status' | 'team' | 'date' | 'link' | null>(null);
-  
+  const [editingField, setEditingField] = useState<'title' | 'status' | 'style' | 'team' | 'date' | 'link' | 'script' | 'thumbnail' | 'youtube' | null>(null);
+
   // Temporary values for editing
   const [tempTitle, setTempTitle] = useState(item.title);
   const [tempLink, setTempLink] = useState(item.driveLink);
+  const [tempScript, setTempScript] = useState(item.scriptLink || '');
+  const [tempThumbnail, setTempThumbnail] = useState(item.thumbnailUrl || '');
+  const [tempYoutubeUrl, setTempYoutubeUrl] = useState(item.youtubeUrl || '');
   const [tempDate, setTempDate] = useState('');
 
   // Dropdown refs for click outside
   const statusDropdownRef = useRef<HTMLDivElement>(null);
   const teamDropdownRef = useRef<HTMLDivElement>(null);
   const linkDropdownRef = useRef<HTMLDivElement>(null);
+  const scriptDropdownRef = useRef<HTMLDivElement>(null);
+  const thumbnailDropdownRef = useRef<HTMLDivElement>(null);
+  const styleDropdownRef = useRef<HTMLDivElement>(null);
+  const youtubeInputRef = useRef<HTMLInputElement>(null);
   const titleInputRef = useRef<HTMLInputElement>(null);
 
   // Initialize date for input
@@ -61,6 +69,18 @@ const ContentRow: React.FC<ContentRowProps> = ({ item, onUpdate, onDelete, onDem
       if (editingField === 'link' && linkDropdownRef.current && !linkDropdownRef.current.contains(event.target as Node)) {
          setEditingField(null);
       }
+      if (editingField === 'script' && scriptDropdownRef.current && !scriptDropdownRef.current.contains(event.target as Node)) {
+         setEditingField(null);
+      }
+      if (editingField === 'thumbnail' && thumbnailDropdownRef.current && !thumbnailDropdownRef.current.contains(event.target as Node)) {
+         setEditingField(null);
+      }
+      if (editingField === 'style' && styleDropdownRef.current && !styleDropdownRef.current.contains(event.target as Node)) {
+         setEditingField(null);
+      }
+      if (editingField === 'youtube' && youtubeInputRef.current && !youtubeInputRef.current.contains(event.target as Node)) {
+         saveYoutubeUrl();
+      }
       if (editingField === 'title' && titleInputRef.current && !titleInputRef.current.contains(event.target as Node)) {
          saveTitle();
       }
@@ -72,7 +92,7 @@ const ContentRow: React.FC<ContentRowProps> = ({ item, onUpdate, onDelete, onDem
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [editingField, tempTitle, tempLink]); // Dependencies important for save closures
+  }, [editingField, tempTitle, tempLink, tempScript, tempThumbnail, tempYoutubeUrl]); // Dependencies important for save closures
 
   // --- Handlers ---
 
@@ -88,6 +108,21 @@ const ContentRow: React.FC<ContentRowProps> = ({ item, onUpdate, onDelete, onDem
     setEditingField(null);
   };
 
+  const saveScript = () => {
+    onUpdate({ ...item, scriptLink: tempScript });
+    setEditingField(null);
+  };
+
+  const saveThumbnail = () => {
+    onUpdate({ ...item, thumbnailUrl: tempThumbnail });
+    setEditingField(null);
+  };
+
+  const saveYoutubeUrl = () => {
+    onUpdate({ ...item, youtubeUrl: tempYoutubeUrl });
+    setEditingField(null);
+  };
+
   const saveDate = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newDate = e.target.value;
     setTempDate(newDate);
@@ -95,7 +130,7 @@ const ContentRow: React.FC<ContentRowProps> = ({ item, onUpdate, onDelete, onDem
     const dateObj = new Date(newDate);
     const displayDate = new Date(dateObj.getUTCFullYear(), dateObj.getUTCMonth(), dateObj.getUTCDate())
         .toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-        
+
     onUpdate({ ...item, postDate: displayDate });
     setEditingField(null);
   };
@@ -103,6 +138,26 @@ const ContentRow: React.FC<ContentRowProps> = ({ item, onUpdate, onDelete, onDem
   const updateStatus = (newStatus: ContentStatus) => {
     onUpdate({ ...item, status: newStatus });
     setEditingField(null);
+  };
+
+  const updateStyle = (newStyle: VideoStyle | undefined) => {
+    onUpdate({ ...item, style: newStyle });
+    setEditingField(null);
+  };
+
+  const getStyleConfig = (style: VideoStyle) => {
+    switch (style) {
+      case VideoStyle.MIRO:
+        return { color: 'text-yellow-400', bg: 'bg-yellow-500/10', border: 'border-yellow-500/20', dot: 'bg-yellow-400' };
+      case VideoStyle.IPAD:
+        return { color: 'text-sky-400', bg: 'bg-sky-500/10', border: 'border-sky-500/20', dot: 'bg-sky-400' };
+      case VideoStyle.GAMMA:
+        return { color: 'text-violet-400', bg: 'bg-violet-500/10', border: 'border-violet-500/20', dot: 'bg-violet-400' };
+      case VideoStyle.BLENDED:
+        return { color: 'text-teal-400', bg: 'bg-teal-500/10', border: 'border-teal-500/20', dot: 'bg-teal-400' };
+      case VideoStyle.ED_LAWRENCE:
+        return { color: 'text-pink-400', bg: 'bg-pink-500/10', border: 'border-pink-500/20', dot: 'bg-pink-400' };
+    }
   };
 
   const toggleTeamMember = (member: TeamMember) => {
@@ -124,6 +179,10 @@ const ContentRow: React.FC<ContentRowProps> = ({ item, onUpdate, onDelete, onDem
         return { icon: Clock, color: 'text-gray-400', bg: 'bg-gray-500/10', border: 'border-gray-500/20' };
       case ContentStatus.IN_PROGRESS:
         return { icon: Loader2, color: 'text-blue-400', bg: 'bg-blue-500/10', border: 'border-blue-500/20' };
+      case ContentStatus.EDITING:
+        return { icon: Pencil, color: 'text-orange-400', bg: 'bg-orange-500/10', border: 'border-orange-500/20' };
+      case ContentStatus.SENT:
+        return { icon: Send, color: 'text-purple-400', bg: 'bg-purple-500/10', border: 'border-purple-500/20' };
       case ContentStatus.DONE:
         return { icon: CheckCircle2, color: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20' };
       case ContentStatus.LIVE:
@@ -134,78 +193,285 @@ const ContentRow: React.FC<ContentRowProps> = ({ item, onUpdate, onDelete, onDem
   const statusConfig = getStatusConfig(item.status);
   const StatusIcon = statusConfig.icon;
 
+  const getPlatformIcon = () => {
+    switch (item.platform) {
+      case Platform.YOUTUBE:
+        return <Youtube size={16} className="text-[#9B9B9B]" />;
+      case Platform.INSTAGRAM:
+        return <Instagram size={16} className="text-[#9B9B9B]" />;
+      case Platform.TIKTOK:
+        return <span className="text-xs font-bold text-[#9B9B9B]">TT</span>;
+      case Platform.LINKEDIN:
+        return <span className="text-xs font-bold text-[#9B9B9B]">in</span>;
+      default:
+        return null;
+    }
+  };
+
+  const handleThumbnailFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const dataUrl = event.target?.result as string;
+        setTempThumbnail(dataUrl);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const hasThumbnail = !!item.thumbnailUrl;
+
   return (
-    <tr className="group hover:bg-gray-800/30 transition-colors">
-      
+    <tr className={`group hover:bg-[rgba(255,255,255,0.05)] transition-none ${hasThumbnail ? 'align-top' : ''}`}>
+
       {/* TITLE CELL */}
-      <td className="px-6 py-4">
-        {editingField === 'title' ? (
-          <input
-            ref={titleInputRef}
-            type="text"
-            value={tempTitle}
-            onChange={(e) => setTempTitle(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') saveTitle();
-              if (e.key === 'Escape') {
-                  setTempTitle(item.title); 
-                  setEditingField(null);
-              }
-            }}
-            autoFocus
-            className="w-full bg-gray-900 border border-emerald-500/50 rounded px-2 py-1 text-sm text-white focus:outline-none"
-          />
-        ) : (
-          <div className="flex flex-col">
-            <span 
+      <td className={`px-6 ${hasThumbnail ? 'py-3' : 'py-4'} relative`}>
+        <div className="flex items-start gap-3">
+          {/* Thumbnail */}
+          {hasThumbnail && (
+            <div className="relative group/thumb flex-shrink-0">
+              <img 
+                src={item.thumbnailUrl} 
+                alt={item.title}
+                className="w-28 h-16 object-cover rounded-lg border border-[#3a3a3a]"
+              />
+              <button
                 onClick={() => {
-                    setTempTitle(item.title);
-                    setEditingField('title');
+                  setTempThumbnail(item.thumbnailUrl || '');
+                  setEditingField('thumbnail');
                 }}
-                className="font-medium text-gray-200 text-sm block truncate max-w-xs cursor-pointer hover:text-emerald-400 border border-transparent hover:border-gray-700 rounded px-2 -mx-2 py-1 transition-all" 
-                title="Click to edit title"
-            >
-                {item.title}
-            </span>
+                className="absolute inset-0 bg-black/50 opacity-0 group-hover/thumb:opacity-100 transition-opacity rounded-lg flex items-center justify-center"
+              >
+                <Image size={16} className="text-white" />
+              </button>
+            </div>
+          )}
+          
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2">
+              {/* Platform Icon */}
+              <div className="flex-shrink-0 w-5 h-5 flex items-center justify-center">
+                {getPlatformIcon()}
+              </div>
+              
+              {/* Title */}
+              {editingField === 'title' ? (
+                <input
+                  ref={titleInputRef}
+                  type="text"
+                  value={tempTitle}
+                  onChange={(e) => setTempTitle(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') saveTitle();
+                    if (e.key === 'Escape') {
+                        setTempTitle(item.title);
+                        setEditingField(null);
+                    }
+                  }}
+                  autoFocus
+                  className="flex-1 bg-[#2f2f2f] border border-[#4a4a4a] rounded px-2 py-1 text-sm text-[#ECECEC] focus:outline-none"
+                />
+              ) : (
+                <span
+                    onClick={() => {
+                        setTempTitle(item.title);
+                        setEditingField('title');
+                    }}
+                    className="font-medium text-[#ECECEC] text-sm block truncate max-w-xs cursor-pointer hover:text-[#ECECEC] border border-transparent hover:border-[#4a4a4a] rounded px-2 py-1 transition-none"
+                    title="Click to edit title"
+                >
+                    {item.title}
+                </span>
+              )}
+            </div>
+            
             {item.description && (
-                <span className="text-[10px] text-gray-500 px-2 -mx-2 truncate max-w-xs">{item.description}</span>
+                <span className="text-[10px] text-[#9B9B9B] pl-7 block truncate max-w-xs mt-0.5">{item.description}</span>
+            )}
+            
+            {/* YouTube URL */}
+            {editingField === 'youtube' ? (
+              <div className="pl-7 mt-1 flex items-center gap-2">
+                <input
+                  ref={youtubeInputRef}
+                  type="text"
+                  value={tempYoutubeUrl}
+                  onChange={(e) => setTempYoutubeUrl(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') saveYoutubeUrl();
+                    if (e.key === 'Escape') {
+                        setTempYoutubeUrl(item.youtubeUrl || '');
+                        setEditingField(null);
+                    }
+                  }}
+                  placeholder="https://youtube.com/..."
+                  autoFocus
+                  className="flex-1 max-w-xs bg-[#2f2f2f] border border-[#4a4a4a] rounded px-2 py-0.5 text-[10px] text-[#ECECEC] focus:outline-none placeholder-[#666666]"
+                />
+                <button onClick={saveYoutubeUrl} className="text-[#9B9B9B] hover:text-[#ECECEC]">
+                  <Check size={12} />
+                </button>
+              </div>
+            ) : item.youtubeUrl ? (
+              <a 
+                href={item.youtubeUrl} 
+                target="_blank" 
+                rel="noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                onDoubleClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setTempYoutubeUrl(item.youtubeUrl || '');
+                  setEditingField('youtube');
+                }}
+                className="text-[10px] text-[#666666] hover:text-[#9B9B9B] pl-7 mt-1 flex items-center gap-1 truncate max-w-xs"
+                title="Double-click to edit"
+              >
+                <ExternalLink size={10} /> {item.youtubeUrl.replace('https://', '').replace('www.', '').slice(0, 40)}...
+              </a>
+            ) : (
+              <button
+                onClick={() => {
+                  setTempYoutubeUrl('');
+                  setEditingField('youtube');
+                }}
+                className="text-[10px] text-[#666666] hover:text-[#9B9B9B] pl-7 mt-1 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity"
+              >
+                <ExternalLink size={10} /> Add YouTube URL
+              </button>
+            )}
+            
+            {/* Add thumbnail button (when no thumbnail) */}
+            {!hasThumbnail && (
+              <button
+                onClick={() => {
+                  setTempThumbnail('');
+                  setEditingField('thumbnail');
+                }}
+                className="text-[10px] text-[#666666] hover:text-[#9B9B9B] pl-7 mt-1 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity"
+              >
+                <Image size={10} /> Add thumbnail
+              </button>
+            )}
+          </div>
+        </div>
+        
+        {/* Thumbnail edit dropdown */}
+        {editingField === 'thumbnail' && (
+          <div ref={thumbnailDropdownRef} className="absolute mt-2 w-72 bg-[#2f2f2f] border border-[#3a3a3a] rounded-xl shadow-2xl z-50 p-3">
+            <label className="text-xs font-semibold text-[#9B9B9B] mb-2 block">Thumbnail</label>
+            
+            {/* File upload */}
+            <label className="flex items-center justify-center gap-2 w-full py-2 px-3 bg-[#212121] border border-dashed border-[#4a4a4a] rounded-lg text-xs text-[#9B9B9B] hover:text-[#ECECEC] hover:border-[#666666] cursor-pointer transition-colors mb-2">
+              <Image size={14} />
+              <span>Upload from device</span>
+              <input 
+                type="file" 
+                accept="image/*" 
+                className="hidden" 
+                onChange={handleThumbnailFileChange}
+              />
+            </label>
+            
+            {/* URL input */}
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={tempThumbnail}
+                onChange={(e) => setTempThumbnail(e.target.value)}
+                placeholder="Or paste URL..."
+                className="flex-1 bg-[#212121] border border-[#3a3a3a] rounded px-2 py-1 text-xs text-[#ECECEC] focus:ring-1 focus:ring-[#555555] outline-none"
+                onKeyDown={(e) => e.key === 'Enter' && saveThumbnail()}
+              />
+              <button onClick={saveThumbnail} className="p-1 bg-[rgba(255,255,255,0.08)] text-[#ECECEC] rounded hover:bg-[rgba(255,255,255,0.1)]">
+                <Check size={14} />
+              </button>
+            </div>
+            
+            {/* Preview */}
+            {tempThumbnail && (
+              <div className="mt-2">
+                <img src={tempThumbnail} alt="Preview" className="w-full h-20 object-cover rounded border border-[#3a3a3a]" onError={(e) => (e.target as HTMLImageElement).style.display = 'none'} />
+              </div>
             )}
           </div>
         )}
       </td>
 
-      {/* ARCHIVE/LINK CELL */}
-      <td className="px-6 py-4 text-center relative">
+      {/* DRIVE CELL */}
+      <td className="px-3 py-4 text-center relative">
         <div className="relative inline-block">
             <button
                 onClick={() => {
                     setTempLink(item.driveLink);
                     setEditingField('link');
                 }}
-                className={`inline-flex p-2 rounded-lg transition-colors ${item.driveLink ? 'text-gray-500 hover:text-emerald-400 hover:bg-emerald-500/10' : 'text-gray-700 hover:text-gray-400'}`}
+                className={`inline-flex p-2 rounded-lg transition-none ${item.driveLink ? 'text-[#9B9B9B] hover:text-[#ECECEC] hover:bg-[rgba(255,255,255,0.08)]' : 'text-[#666666] hover:text-[#9B9B9B]'}`}
                 title="Edit Drive Link"
             >
                 <Folder size={18} />
             </button>
-            
+
             {editingField === 'link' && (
-                <div ref={linkDropdownRef} className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-64 bg-gray-900 border border-gray-700 rounded-xl shadow-2xl z-50 p-3">
-                    <label className="text-xs font-semibold text-gray-400 mb-2 block">Drive Link</label>
+                <div ref={linkDropdownRef} className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-64 bg-[#2f2f2f] border border-[#3a3a3a] rounded-xl shadow-2xl z-50 p-3">
+                    <label className="text-xs font-semibold text-[#9B9B9B] mb-2 block">Drive Link</label>
                     <div className="flex gap-2">
-                        <input 
-                            type="text" 
+                        <input
+                            type="text"
                             value={tempLink}
                             onChange={(e) => setTempLink(e.target.value)}
                             placeholder="https://..."
-                            className="flex-1 bg-gray-950 border border-gray-800 rounded px-2 py-1 text-xs text-white focus:ring-1 focus:ring-emerald-500 outline-none"
+                            className="flex-1 bg-[#212121] border border-[#3a3a3a] rounded px-2 py-1 text-xs text-[#ECECEC] focus:ring-1 focus:ring-[#555555] outline-none"
                             autoFocus
                             onKeyDown={(e) => e.key === 'Enter' && saveLink()}
                         />
-                        <button onClick={saveLink} className="p-1 bg-emerald-500/10 text-emerald-500 rounded hover:bg-emerald-500/20">
+                        <button onClick={saveLink} className="p-1 bg-[rgba(255,255,255,0.08)] text-[#ECECEC] rounded hover:bg-[rgba(255,255,255,0.1)]">
                             <Check size={14} />
                         </button>
                         {item.driveLink && (
-                            <a href={item.driveLink} target="_blank" rel="noreferrer" className="p-1 text-gray-400 hover:text-white">
+                            <a href={item.driveLink} target="_blank" rel="noreferrer" className="p-1 text-[#9B9B9B] hover:text-white">
+                                <ExternalLink size={14} />
+                            </a>
+                        )}
+                    </div>
+                </div>
+            )}
+        </div>
+      </td>
+
+      {/* SCRIPT CELL */}
+      <td className="px-3 py-4 text-center relative">
+        <div className="relative inline-block">
+            <button
+                onClick={() => {
+                    setTempScript(item.scriptLink || '');
+                    setEditingField('script');
+                }}
+                className={`inline-flex p-2 rounded-lg transition-none ${item.scriptLink ? 'text-[#9B9B9B] hover:text-[#ECECEC] hover:bg-[rgba(255,255,255,0.08)]' : 'text-[#666666] hover:text-[#9B9B9B]'}`}
+                title="Edit Script Link"
+            >
+                <FileText size={18} />
+            </button>
+
+            {editingField === 'script' && (
+                <div ref={scriptDropdownRef} className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-64 bg-[#2f2f2f] border border-[#3a3a3a] rounded-xl shadow-2xl z-50 p-3">
+                    <label className="text-xs font-semibold text-[#9B9B9B] mb-2 block">Script Link (Google Doc)</label>
+                    <div className="flex gap-2">
+                        <input
+                            type="text"
+                            value={tempScript}
+                            onChange={(e) => setTempScript(e.target.value)}
+                            placeholder="https://docs.google.com/..."
+                            className="flex-1 bg-[#212121] border border-[#3a3a3a] rounded px-2 py-1 text-xs text-[#ECECEC] focus:ring-1 focus:ring-[#555555] outline-none"
+                            autoFocus
+                            onKeyDown={(e) => e.key === 'Enter' && saveScript()}
+                        />
+                        <button onClick={saveScript} className="p-1 bg-[rgba(255,255,255,0.08)] text-[#ECECEC] rounded hover:bg-[rgba(255,255,255,0.1)]">
+                            <Check size={14} />
+                        </button>
+                        {item.scriptLink && (
+                            <a href={item.scriptLink} target="_blank" rel="noreferrer" className="p-1 text-[#9B9B9B] hover:text-white">
                                 <ExternalLink size={14} />
                             </a>
                         )}
@@ -216,18 +482,18 @@ const ContentRow: React.FC<ContentRowProps> = ({ item, onUpdate, onDelete, onDem
       </td>
 
       {/* STATUS CELL */}
-      <td className="px-6 py-4 relative">
+      <td className="px-3 py-4 relative">
         <div className="relative inline-block">
-            <button 
+            <button
                 onClick={() => setEditingField('status')}
-                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border transition-all hover:scale-105 cursor-pointer ${statusConfig.bg} ${statusConfig.color} ${statusConfig.border}`}
+                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border transition-none cursor-pointer ${statusConfig.bg} ${statusConfig.color} ${statusConfig.border}`}
             >
                 <StatusIcon size={12} className={item.status === ContentStatus.LIVE ? 'animate-pulse' : ''} />
                 {item.status}
             </button>
 
             {editingField === 'status' && (
-                <div ref={statusDropdownRef} className="absolute top-full left-0 mt-2 w-40 bg-gray-900 border border-gray-700 rounded-xl shadow-2xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-100">
+                <div ref={statusDropdownRef} className="absolute top-full left-0 mt-2 w-40 bg-[#2f2f2f] border border-[#3a3a3a] rounded-xl shadow-2xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-100">
                     {Object.values(ContentStatus).map((status) => {
                         const conf = getStatusConfig(status);
                         const SIcon = conf.icon;
@@ -235,11 +501,62 @@ const ContentRow: React.FC<ContentRowProps> = ({ item, onUpdate, onDelete, onDem
                             <button
                                 key={status}
                                 onClick={() => updateStatus(status)}
-                                className={`w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-gray-800 transition-colors ${item.status === status ? 'bg-gray-800/50' : ''}`}
+                                className={`w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-[rgba(255,255,255,0.05)] transition-none ${item.status === status ? 'bg-[rgba(255,255,255,0.05)]' : ''}`}
                             >
                                 <div className={`w-1.5 h-1.5 rounded-full ${conf.color.replace('text-', 'bg-')}`}></div>
                                 <span className={conf.color}>{status}</span>
-                                {item.status === status && <Check size={12} className="ml-auto text-emerald-500" />}
+                                {item.status === status && <Check size={12} className="ml-auto text-[#ECECEC]" />}
+                            </button>
+                        );
+                    })}
+                </div>
+            )}
+        </div>
+      </td>
+
+      {/* STYLE CELL */}
+      <td className="px-3 py-4 relative">
+        <div className="relative inline-block">
+            {item.style ? (() => {
+              const styleConf = getStyleConfig(item.style);
+              return (
+                <button
+                    onClick={() => setEditingField('style')}
+                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border transition-none cursor-pointer ${styleConf.bg} ${styleConf.color} ${styleConf.border}`}
+                >
+                    {item.style}
+                </button>
+              );
+            })() : (
+              <button
+                  onClick={() => setEditingField('style')}
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border transition-none cursor-pointer bg-transparent text-[#666666] border-[#3a3a3a] hover:text-[#9B9B9B] hover:border-[#4a4a4a]"
+              >
+                  Set style
+              </button>
+            )}
+
+            {editingField === 'style' && (
+                <div ref={styleDropdownRef} className="absolute top-full left-0 mt-2 w-40 bg-[#2f2f2f] border border-[#3a3a3a] rounded-xl shadow-2xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-100">
+                    {item.style && (
+                      <button
+                          onClick={() => updateStyle(undefined)}
+                          className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-[rgba(255,255,255,0.05)] transition-none text-[#666666]"
+                      >
+                          <span>Clear</span>
+                      </button>
+                    )}
+                    {Object.values(VideoStyle).map((style) => {
+                        const conf = getStyleConfig(style);
+                        return (
+                            <button
+                                key={style}
+                                onClick={() => updateStyle(style)}
+                                className={`w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-[rgba(255,255,255,0.05)] transition-none ${item.style === style ? 'bg-[rgba(255,255,255,0.05)]' : ''}`}
+                            >
+                                <div className={`w-1.5 h-1.5 rounded-full ${conf.dot}`}></div>
+                                <span className={conf.color}>{style}</span>
+                                {item.style === style && <Check size={12} className="ml-auto text-[#ECECEC]" />}
                             </button>
                         );
                     })}
@@ -249,11 +566,11 @@ const ContentRow: React.FC<ContentRowProps> = ({ item, onUpdate, onDelete, onDem
       </td>
 
       {/* TEAM CELL */}
-      <td className="px-6 py-4 relative">
+      <td className="px-3 py-4 relative">
         <div className="relative inline-block">
-             <div 
+             <div
                 onClick={() => setEditingField('team')}
-                className="flex -space-x-2 overflow-hidden cursor-pointer hover:opacity-80 transition-opacity p-1 -m-1 rounded-lg hover:bg-gray-800/30"
+                className="flex -space-x-2 overflow-hidden cursor-pointer hover:opacity-80 transition-opacity p-1 -m-1 rounded-lg hover:bg-[rgba(255,255,255,0.05)]"
                 title="Edit Team"
              >
                 {item.team.length > 0 ? item.team.map((member) => (
@@ -262,26 +579,26 @@ const ContentRow: React.FC<ContentRowProps> = ({ item, onUpdate, onDelete, onDem
                             key={member.id}
                             src={member.photoUrl}
                             alt={member.name}
-                            className="inline-block h-8 w-8 rounded-full ring-2 ring-gray-900 object-cover"
+                            className="inline-block h-8 w-8 rounded-full ring-2 ring-[#2f2f2f] object-cover"
                         />
                     ) : (
                         <div
                             key={member.id}
-                            className={`inline-block h-8 w-8 rounded-full ring-2 ring-gray-900 ${member.color} flex items-center justify-center text-[10px] font-bold text-white`}
+                            className={`inline-block h-8 w-8 rounded-full ring-2 ring-[#2f2f2f] ${member.color} flex items-center justify-center text-[10px] font-bold text-[#ECECEC]`}
                         >
                             {member.initials}
                         </div>
                     )
                 )) : (
-                    <div className="h-8 w-8 rounded-full bg-gray-800 border border-dashed border-gray-600 flex items-center justify-center text-gray-500">
+                    <div className="h-8 w-8 rounded-full bg-[#3a3a3a] border border-dashed border-[#4a4a4a] flex items-center justify-center text-[#9B9B9B]">
                         <User size={14} />
                     </div>
                 )}
             </div>
 
             {editingField === 'team' && (
-                <div ref={teamDropdownRef} className="absolute top-full left-0 mt-2 w-56 bg-gray-900 border border-gray-700 rounded-xl shadow-2xl z-50 p-2 animate-in fade-in zoom-in-95 duration-100">
-                    <p className="text-xs font-semibold text-gray-400 mb-2 px-2">Assign Team</p>
+                <div ref={teamDropdownRef} className="absolute top-full left-0 mt-2 w-56 bg-[#2f2f2f] border border-[#3a3a3a] rounded-xl shadow-2xl z-50 p-2 animate-in fade-in zoom-in-95 duration-100">
+                    <p className="text-xs font-semibold text-[#9B9B9B] mb-2 px-2">Assign Team</p>
                     <div className="space-y-1 max-h-48 overflow-y-auto custom-scrollbar">
                         {getPersistedTeamMembers(storagePrefix).map((member) => {
                             const isSelected = item.team.some(t => t.id === member.id);
@@ -289,21 +606,21 @@ const ContentRow: React.FC<ContentRowProps> = ({ item, onUpdate, onDelete, onDem
                                 <button
                                     key={member.id}
                                     onClick={() => toggleTeamMember(member)}
-                                    className={`w-full flex items-center gap-3 p-2 rounded-lg text-left transition-colors ${
-                                        isSelected ? 'bg-emerald-500/10' : 'hover:bg-gray-800'
+                                    className={`w-full flex items-center gap-3 p-2 rounded-lg text-left transition-none ${
+                                        isSelected ? 'bg-[rgba(255,255,255,0.08)]' : 'hover:bg-[rgba(255,255,255,0.05)]'
                                     }`}
                                 >
                                     {member.photoUrl ? (
                                         <img src={member.photoUrl} alt={member.name} className="w-6 h-6 rounded-full object-cover" />
                                     ) : (
-                                        <div className={`w-6 h-6 rounded-full ${member.color} flex items-center justify-center text-[10px] font-bold text-white`}>
+                                        <div className={`w-6 h-6 rounded-full ${member.color} flex items-center justify-center text-[10px] font-bold text-[#ECECEC]`}>
                                             {member.initials}
                                         </div>
                                     )}
                                     <div className="flex-1 min-w-0">
-                                        <p className={`text-xs font-medium truncate ${isSelected ? 'text-white' : 'text-gray-300'}`}>{member.name}</p>
+                                        <p className={`text-xs font-medium truncate ${isSelected ? 'text-[#ECECEC]' : 'text-[#b4b4b4]'}`}>{member.name}</p>
                                     </div>
-                                    {isSelected && <Check size={12} className="text-emerald-500" />}
+                                    {isSelected && <Check size={12} className="text-[#ECECEC]" />}
                                 </button>
                             );
                         })}
@@ -314,20 +631,20 @@ const ContentRow: React.FC<ContentRowProps> = ({ item, onUpdate, onDelete, onDem
       </td>
 
       {/* DATE CELL */}
-      <td className="px-6 py-4 text-right">
+      <td className="px-4 py-4 text-right">
         {editingField === 'date' ? (
-             <input 
+             <input
                 type="date"
                 value={tempDate}
                 onChange={saveDate}
                 onBlur={() => setEditingField(null)}
                 autoFocus
-                className="bg-gray-900 border border-emerald-500/50 rounded px-2 py-1 text-xs text-white focus:outline-none [color-scheme:dark]"
+                className="bg-[#2f2f2f] border border-[#4a4a4a] rounded px-2 py-1 text-xs text-[#ECECEC] focus:outline-none [color-scheme:dark]"
              />
         ) : (
-            <span 
+            <span
                 onClick={() => setEditingField('date')}
-                className="text-sm text-gray-400 font-mono cursor-pointer hover:text-emerald-400 hover:bg-gray-800 px-2 py-1 rounded transition-colors"
+                className="text-sm text-[#9B9B9B] font-mono cursor-pointer hover:text-[#ECECEC] hover:bg-[rgba(255,255,255,0.05)] px-2 py-1 rounded transition-none"
                 title="Click to edit date"
             >
                 {item.postDate}
@@ -336,12 +653,12 @@ const ContentRow: React.FC<ContentRowProps> = ({ item, onUpdate, onDelete, onDem
       </td>
 
       {/* ACTIONS */}
-      <td className="px-6 py-4 text-right">
+      <td className="px-2 py-4 text-right">
         <div className="flex items-center justify-end gap-2 relative z-10">
             <button
                 type="button"
                 onClick={() => onEdit(item)}
-                className="text-gray-600 hover:text-emerald-400 transition-colors p-1.5 hover:bg-emerald-500/10 rounded-lg cursor-pointer"
+                className="text-[#666666] hover:text-[#ECECEC] transition-none p-1.5 hover:bg-[rgba(255,255,255,0.08)] rounded-lg cursor-pointer"
                 title="Edit Details"
             >
                 <FilePenLine size={16} />
@@ -349,18 +666,18 @@ const ContentRow: React.FC<ContentRowProps> = ({ item, onUpdate, onDelete, onDem
             <button
                 type="button"
                 onClick={() => onDemote(item)}
-                className="text-gray-600 hover:text-blue-400 transition-colors p-1.5 hover:bg-blue-500/10 rounded-lg cursor-pointer"
+                className="text-[#666666] hover:text-blue-400 transition-none p-1.5 hover:bg-blue-500/10 rounded-lg cursor-pointer"
                 title="Move back to Ideation"
             >
                 <ArrowLeftCircle size={16} />
             </button>
-            <button 
+            <button
                 type="button"
                 onClick={(e) => {
                     e.stopPropagation();
                     onDelete(item.id);
                 }}
-                className="text-gray-600 hover:text-rose-400 transition-colors p-1.5 hover:bg-rose-500/10 rounded-lg cursor-pointer"
+                className="text-[#666666] hover:text-rose-400 transition-none p-1.5 hover:bg-rose-500/10 rounded-lg cursor-pointer"
                 title="Delete"
             >
                 <Trash2 size={16} />
