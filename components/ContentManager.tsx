@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Youtube,
   Instagram,
@@ -11,7 +11,9 @@ import {
   RefreshCcw,
   Ban,
   AlertTriangle,
-  X
+  X,
+  Cloud,
+  CloudOff
 } from 'lucide-react';
 import { ContentItem, ContentStatus, Platform, ContentIdea } from '../types';
 import { CONTENT_ITEMS } from '../constants';
@@ -19,6 +21,7 @@ import EditContentModal from './EditContentModal';
 import ContentRow from './ContentRow';
 import IdeationBoard from './IdeationBoard';
 import useLocalStorage from '../hooks/useLocalStorage';
+import { supabase } from '../services/supabaseClient';
 
 type ViewMode = 'pipeline' | 'ideation' | 'trash';
 
@@ -49,8 +52,91 @@ const ContentManager: React.FC<ContentManagerProps> = ({ storagePrefix }) => {
   // Storage for Trash
   const [trash, setTrash] = useLocalStorage<ContentItem[]>(`${storagePrefix}_trash`, []);
 
-  // Trash Notification State
+  // Supabase sync state
+  const [isSynced, setIsSynced] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
 
+  // Sync to Supabase helper
+  const syncToSupabase = useCallback(async (item: ContentItem, action: 'upsert' | 'delete') => {
+    try {
+      setIsSyncing(true);
+      if (action === 'upsert') {
+        const { error } = await supabase.from('content_items').upsert({
+          id: item.id,
+          user_id: storagePrefix,
+          title: item.title,
+          description: item.description,
+          drive_link: item.driveLink,
+          script_link: item.scriptLink,
+          thumbnail_url: item.thumbnailUrl,
+          youtube_url: item.youtubeUrl,
+          status: item.status,
+          style: item.style,
+          team: item.team,
+          post_date: item.postDate,
+          platform: item.platform,
+        });
+        if (error) {
+          console.error('❌ Supabase upsert error:', error.message, error);
+          setIsSynced(false);
+          return;
+        }
+      } else {
+        const { error } = await supabase.from('content_items').delete().eq('id', item.id);
+        if (error) {
+          console.error('❌ Supabase delete error:', error.message, error);
+          setIsSynced(false);
+          return;
+        }
+      }
+      console.log('✅ Synced to Supabase:', item.title);
+      setIsSynced(true);
+    } catch (err) {
+      console.error('❌ Supabase sync error:', err);
+      setIsSynced(false);
+    } finally {
+      setIsSyncing(false);
+    }
+  }, [storagePrefix]);
+
+  // Load from Supabase on mount
+  useEffect(() => {
+    const loadFromSupabase = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('content_items')
+          .select('*')
+          .eq('user_id', storagePrefix);
+        
+        if (error) {
+          console.error('Failed to load from Supabase:', error);
+          return;
+        }
+        
+        if (data && data.length > 0) {
+          const supabaseItems: ContentItem[] = data.map(row => ({
+            id: row.id,
+            title: row.title,
+            description: row.description || undefined,
+            driveLink: row.drive_link || '',
+            scriptLink: row.script_link || undefined,
+            thumbnailUrl: row.thumbnail_url || undefined,
+            youtubeUrl: row.youtube_url || undefined,
+            status: row.status as ContentStatus,
+            style: row.style || undefined,
+            team: row.team || [],
+            postDate: row.post_date || '',
+            platform: row.platform as Platform,
+          }));
+          setItems(supabaseItems);
+          setIsSynced(true);
+        }
+      } catch (err) {
+        console.error('Supabase load error:', err);
+      }
+    };
+    loadFromSupabase();
+  }, [storagePrefix, setItems]);
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -84,7 +170,8 @@ const ContentManager: React.FC<ContentManagerProps> = ({ storagePrefix }) => {
         if (itemToDelete) {
             setTrash(prev => [itemToDelete, ...prev]);
             setItems(prev => prev.filter(item => item.id !== itemId));
-
+            // Delete from Supabase
+            syncToSupabase(itemToDelete, 'delete');
         }
         if (editingItem?.id === itemId) {
             setIsModalOpen(false);
@@ -93,14 +180,22 @@ const ContentManager: React.FC<ContentManagerProps> = ({ storagePrefix }) => {
       } else if (type === 'delete_idea' && itemId) {
          setIdeas(prev => prev.filter(idea => idea.id !== itemId));
       } else if (type === 'delete_forever' && itemId) {
+         const itemToDelete = trash.find(i => i.id === itemId);
+         if (itemToDelete) {
+           syncToSupabase(itemToDelete, 'delete');
+         }
          setTrash(prev => prev.filter(i => i.id !== itemId));
       } else if (type === 'empty_trash') {
+         // Delete all trash items from Supabase
+         trash.forEach(item => syncToSupabase(item, 'delete'));
          setTrash([]);
       } else if (type === 'restore_content' && itemId) {
          const itemToRestore = trash.find(i => i.id === itemId);
          if (itemToRestore) {
             setItems(prev => [...prev, itemToRestore]);
             setTrash(prev => prev.filter(i => i.id !== itemId));
+            // Re-add to Supabase
+            syncToSupabase(itemToRestore, 'upsert');
          }
       }
 
@@ -172,6 +267,7 @@ const ContentManager: React.FC<ContentManagerProps> = ({ storagePrefix }) => {
 
   const handleUpdateItem = (updatedItem: ContentItem) => {
     setItems(prev => prev.map(item => item.id === updatedItem.id ? updatedItem : item));
+    syncToSupabase(updatedItem, 'upsert');
   };
 
   const handleSaveContent = (newItem: ContentItem) => {
@@ -179,6 +275,7 @@ const ContentManager: React.FC<ContentManagerProps> = ({ storagePrefix }) => {
       handleUpdateItem(newItem);
     } else {
       setItems(prev => [...prev, newItem]);
+      syncToSupabase(newItem, 'upsert');
     }
     setIsModalOpen(false);
     setEditingItem(undefined);
@@ -286,7 +383,16 @@ const ContentManager: React.FC<ContentManagerProps> = ({ storagePrefix }) => {
       {/* Header Actions */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-           <h2 className="text-xl font-bold text-[#ECECEC]">Content Hub</h2>
+           <div className="flex items-center gap-2">
+             <h2 className="text-xl font-bold text-[#ECECEC]">Content Hub</h2>
+             {isSyncing ? (
+               <Cloud className="w-4 h-4 text-amber-400 animate-pulse" title="Syncing..." />
+             ) : isSynced ? (
+               <Cloud className="w-4 h-4 text-emerald-400" title="Synced to cloud" />
+             ) : (
+               <CloudOff className="w-4 h-4 text-[#9B9B9B]" title="Local only" />
+             )}
+           </div>
            <p className="text-[#9B9B9B] text-sm">Manage creation, review, and publishing schedules.</p>
         </div>
         {viewMode === 'pipeline' && (

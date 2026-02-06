@@ -1,12 +1,14 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import {
   Plus, Trash2, ExternalLink,
   Globe, Play, Mail, ShoppingCart, Gift, FileText,
   Check, X, Megaphone, ZoomIn, ZoomOut, Maximize2,
-  ArrowLeft, Package, BookOpen, MonitorPlay, Download, Box
+  ArrowLeft, Package, BookOpen, MonitorPlay, Download, Box,
+  Cloud, CloudOff
 } from 'lucide-react';
 import { Funnel, FunnelStep, FunnelStepType } from '../types';
 import useLocalStorage from '../hooks/useLocalStorage';
+import { supabase } from '../services/supabaseClient';
 
 // ─── Step type config ───────────────────────────────────────────
 const STEP_TYPES: { value: FunnelStepType; label: string; icon: React.ElementType; color: string; glow: string }[] = [
@@ -63,6 +65,78 @@ const FunnelManager: React.FC<FunnelManagerProps> = ({ storagePrefix }) => {
   const [editingFunnelId, setEditingFunnelId] = useState<string | null>(null);
   const [editingFunnelName, setEditingFunnelName] = useState('');
 
+  // Supabase sync state
+  const [isSynced, setIsSynced] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
+
+  // Sync funnel to Supabase helper
+  const syncFunnelToSupabase = useCallback(async (funnel: CanvasFunnel, action: 'upsert' | 'delete') => {
+    try {
+      setIsSyncing(true);
+      if (action === 'upsert') {
+        const { error } = await supabase.from('funnels').upsert({
+          id: funnel.id,
+          user_id: storagePrefix,
+          name: funnel.name,
+          description: funnel.description,
+          steps: funnel.steps,
+        });
+        if (error) {
+          console.error('❌ Supabase upsert error:', error.message, error);
+          setIsSynced(false);
+          return;
+        }
+      } else {
+        const { error } = await supabase.from('funnels').delete().eq('id', funnel.id);
+        if (error) {
+          console.error('❌ Supabase delete error:', error.message, error);
+          setIsSynced(false);
+          return;
+        }
+      }
+      console.log('✅ Synced funnel to Supabase:', funnel.name);
+      setIsSynced(true);
+    } catch (err) {
+      console.error('❌ Supabase sync error:', err);
+      setIsSynced(false);
+    } finally {
+      setIsSyncing(false);
+    }
+  }, [storagePrefix]);
+
+  // Load from Supabase on mount
+  useEffect(() => {
+    const loadFromSupabase = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('funnels')
+          .select('*')
+          .eq('user_id', storagePrefix);
+        
+        if (error) {
+          console.error('Failed to load funnels from Supabase:', error);
+          return;
+        }
+        
+        if (data && data.length > 0) {
+          const supabaseFunnels: CanvasFunnel[] = data.map(row => ({
+            id: row.id,
+            name: row.name,
+            description: row.description || undefined,
+            steps: (row.steps || []) as CanvasStep[],
+            connections: (row.steps || []).length > 0 ? [] : [],
+            createdAt: row.created_at,
+          }));
+          setFunnels(supabaseFunnels);
+          setIsSynced(true);
+        }
+      } catch (err) {
+        console.error('Supabase load error:', err);
+      }
+    };
+    loadFromSupabase();
+  }, [storagePrefix, setFunnels]);
+
   // Canvas
   const canvasRef = useRef<HTMLDivElement>(null);
   const [canvasOffset, setCanvasOffset] = useState<Position>({ x: 0, y: 0 });
@@ -103,12 +177,17 @@ const FunnelManager: React.FC<FunnelManagerProps> = ({ storagePrefix }) => {
       steps: [], connections: [], createdAt: new Date().toISOString(),
     };
     setFunnels(prev => [...prev, funnel]);
+    syncFunnelToSupabase(funnel, 'upsert');
     setSelectedFunnelId(funnel.id);
     setNewFunnelName(''); setIsCreating(false);
     setCanvasOffset({ x: 0, y: 0 }); setZoom(1);
   };
 
   const handleDeleteFunnel = (id: string) => {
+    const funnel = funnels.find(f => f.id === id);
+    if (funnel) {
+      syncFunnelToSupabase(funnel, 'delete');
+    }
     setFunnels(prev => prev.filter(f => f.id !== id));
     if (selectedFunnelId === id) { setSelectedFunnelId(null); setSelectedStepId(null); }
   };
@@ -122,7 +201,12 @@ const FunnelManager: React.FC<FunnelManagerProps> = ({ storagePrefix }) => {
     if (!editingFunnelId) return;
     const nextName = editingFunnelName.trim();
     if (nextName) {
-      setFunnels(prev => prev.map(f => f.id === editingFunnelId ? { ...f, name: nextName } : f));
+      setFunnels(prev => {
+        const updated = prev.map(f => f.id === editingFunnelId ? { ...f, name: nextName } : f);
+        const updatedFunnel = updated.find(f => f.id === editingFunnelId);
+        if (updatedFunnel) syncFunnelToSupabase(updatedFunnel, 'upsert');
+        return updated;
+      });
     }
     setEditingFunnelId(null);
   };
@@ -139,38 +223,63 @@ const FunnelManager: React.FC<FunnelManagerProps> = ({ storagePrefix }) => {
       views: 0, clicks: 0, conversions: 0, ads: [], order: selectedFunnel.steps.length,
       position: { x: cx + off - CARD_W / 2, y: cy + (off % 80) - CARD_H / 2 },
     };
-    setFunnels(prev => prev.map(f => f.id === selectedFunnel.id ? { ...f, steps: [...f.steps, step] } : f));
+    setFunnels(prev => {
+      const updated = prev.map(f => f.id === selectedFunnel.id ? { ...f, steps: [...f.steps, step] } : f);
+      const updatedFunnel = updated.find(f => f.id === selectedFunnel.id);
+      if (updatedFunnel) syncFunnelToSupabase(updatedFunnel, 'upsert');
+      return updated;
+    });
     setPaletteOpen(false);
   };
 
   const updateStep = (stepId: string, updates: Partial<CanvasStep>) => {
     if (!selectedFunnel) return;
-    setFunnels(prev => prev.map(f =>
-      f.id === selectedFunnel.id ? { ...f, steps: f.steps.map(s => s.id === stepId ? { ...s, ...updates } : s) } : f
-    ));
+    setFunnels(prev => {
+      const updated = prev.map(f =>
+        f.id === selectedFunnel.id ? { ...f, steps: f.steps.map(s => s.id === stepId ? { ...s, ...updates } : s) } : f
+      );
+      const updatedFunnel = updated.find(f => f.id === selectedFunnel.id);
+      if (updatedFunnel) syncFunnelToSupabase(updatedFunnel, 'upsert');
+      return updated;
+    });
   };
 
   const deleteStep = (stepId: string) => {
     if (!selectedFunnel) return;
-    setFunnels(prev => prev.map(f =>
-      f.id === selectedFunnel.id ? { ...f, steps: f.steps.filter(s => s.id !== stepId), connections: f.connections.filter(c => c.from !== stepId && c.to !== stepId) } : f
-    ));
+    setFunnels(prev => {
+      const updated = prev.map(f =>
+        f.id === selectedFunnel.id ? { ...f, steps: f.steps.filter(s => s.id !== stepId), connections: f.connections.filter(c => c.from !== stepId && c.to !== stepId) } : f
+      );
+      const updatedFunnel = updated.find(f => f.id === selectedFunnel.id);
+      if (updatedFunnel) syncFunnelToSupabase(updatedFunnel, 'upsert');
+      return updated;
+    });
     if (selectedStepId === stepId) setSelectedStepId(null);
   };
 
   const addConnection = (from: string, to: string) => {
     if (!selectedFunnel || from === to) return;
     if (selectedFunnel.connections.some(c => c.from === from && c.to === to)) return;
-    setFunnels(prev => prev.map(f =>
-      f.id === selectedFunnel.id ? { ...f, connections: [...f.connections, { from, to }] } : f
-    ));
+    setFunnels(prev => {
+      const updated = prev.map(f =>
+        f.id === selectedFunnel.id ? { ...f, connections: [...f.connections, { from, to }] } : f
+      );
+      const updatedFunnel = updated.find(f => f.id === selectedFunnel.id);
+      if (updatedFunnel) syncFunnelToSupabase(updatedFunnel, 'upsert');
+      return updated;
+    });
   };
 
   const deleteConnection = (from: string, to: string) => {
     if (!selectedFunnel) return;
-    setFunnels(prev => prev.map(f =>
-      f.id === selectedFunnel.id ? { ...f, connections: f.connections.filter(c => !(c.from === from && c.to === to)) } : f
-    ));
+    setFunnels(prev => {
+      const updated = prev.map(f =>
+        f.id === selectedFunnel.id ? { ...f, connections: f.connections.filter(c => !(c.from === from && c.to === to)) } : f
+      );
+      const updatedFunnel = updated.find(f => f.id === selectedFunnel.id);
+      if (updatedFunnel) syncFunnelToSupabase(updatedFunnel, 'upsert');
+      return updated;
+    });
     if (selectedConnection?.from === from && selectedConnection?.to === to) {
       setSelectedConnection(null);
     }
@@ -339,7 +448,16 @@ const FunnelManager: React.FC<FunnelManagerProps> = ({ storagePrefix }) => {
       <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-xl font-bold text-[#ECECEC]">Funnels</h2>
+            <div className="flex items-center gap-2">
+              <h2 className="text-xl font-bold text-[#ECECEC]">Funnels</h2>
+              {isSyncing ? (
+                <Cloud className="w-4 h-4 text-amber-400 animate-pulse" title="Syncing..." />
+              ) : isSynced ? (
+                <Cloud className="w-4 h-4 text-emerald-400" title="Synced to cloud" />
+              ) : (
+                <CloudOff className="w-4 h-4 text-[#9B9B9B]" title="Local only" />
+              )}
+            </div>
             <p className="text-sm text-[#9B9B9B]">Build and visualize your marketing funnels</p>
           </div>
           <button onClick={() => setIsCreating(true)} className="flex items-center gap-2 px-4 py-2 bg-white hover:bg-[#e5e5e5] text-[#212121] rounded-lg text-sm font-medium transition-none">

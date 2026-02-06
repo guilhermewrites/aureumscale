@@ -10,8 +10,9 @@ import FunnelManager from './components/FunnelManager';
 import AdsManager from './components/AdsManager';
 import { ChartViewType, NavigationItem, FinanceItem, InvoiceStatus, RevenueDataPoint } from './types';
 import { AD_METRICS } from './constants';
-import { Bell, Search, Calendar } from 'lucide-react';
+import { Bell, Search, Calendar, CloudUpload, Check, Loader2 } from 'lucide-react';
 import useLocalStorage from './hooks/useLocalStorage';
+import { syncLocalDataToSupabase } from './services/syncLocalToSupabase';
 
 const App: React.FC = () => {
   const [activeNav, setActiveNav] = useState<NavigationItem>(NavigationItem.DASHBOARD);
@@ -20,6 +21,35 @@ const App: React.FC = () => {
 
   // Storage prefix per user - "guilherme" user keeps existing 'writestakeover' prefix so all existing data stays
   const storagePrefix = activeUserId === 'guilherme' ? 'writestakeover' : `writestakeover_${activeUserId}`;
+
+  // Sync state
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [syncResult, setSyncResult] = useState<{ success: boolean; message: string } | null>(null);
+
+  const handleSyncToCloud = async () => {
+    setIsSyncing(true);
+    setSyncResult(null);
+    try {
+      const result = await syncLocalDataToSupabase(storagePrefix);
+      if (result.success) {
+        setSyncResult({
+          success: true,
+          message: `Synced ${result.contentCount} content, ${result.adsCount} ads, ${result.funnelsCount} funnels`
+        });
+      } else {
+        setSyncResult({
+          success: false,
+          message: `Errors: ${result.errors.join(', ')}`
+        });
+      }
+      // Clear message after 5 seconds
+      setTimeout(() => setSyncResult(null), 5000);
+    } catch (err) {
+      setSyncResult({ success: false, message: 'Sync failed' });
+    } finally {
+      setIsSyncing(false);
+    }
+  };
 
   // Mock date
   const today = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'short', day: 'numeric' });
@@ -111,6 +141,23 @@ const App: React.FC = () => {
                 className="bg-[#2f2f2f] border border-[#3a3a3a] rounded-full pl-10 pr-4 py-2 text-sm text-[#ECECEC] focus:outline-none focus:ring-1 focus:ring-[#555555] w-64 placeholder-[#666666]"
               />
             </div>
+            <button 
+              onClick={handleSyncToCloud}
+              disabled={isSyncing}
+              className="relative flex items-center gap-2 px-3 py-2 text-sm font-medium text-[#9B9B9B] hover:text-[#ECECEC] transition-none rounded-lg hover:bg-[rgba(255,255,255,0.05)] disabled:opacity-50"
+              title="Sync local data to cloud"
+            >
+              {isSyncing ? (
+                <Loader2 size={16} className="animate-spin" />
+              ) : syncResult?.success ? (
+                <Check size={16} className="text-emerald-400" />
+              ) : (
+                <CloudUpload size={16} />
+              )}
+              <span className="hidden lg:inline">
+                {isSyncing ? 'Syncing...' : syncResult ? syncResult.message : 'Sync to Cloud'}
+              </span>
+            </button>
             <button className="relative p-2 text-[#9B9B9B] hover:text-[#ECECEC] transition-none rounded-full hover:bg-[rgba(255,255,255,0.05)]">
               <Bell size={20} />
             </button>

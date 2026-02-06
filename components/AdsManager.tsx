@@ -1,13 +1,14 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   Trash2, ExternalLink, Folder,
   Clock, FileText, Video, CheckCircle2,
   Eye, Radio, Pause, AlertTriangle,
   RefreshCcw, Ban, X, Save, ChevronDown,
   Filter, Megaphone, Target, RotateCcw,
-  Plus, GripVertical, Check
+  Plus, GripVertical, Check, Cloud, CloudOff
 } from 'lucide-react';
 import useLocalStorage from '../hooks/useLocalStorage';
+import { supabase } from '../services/supabaseClient';
 
 // --- Types ---
 type AdStatus = 'Unassigned' | 'Pending' | 'Scripted' | 'Recorded' | 'Edited' | 'Needs Review' | 'Live' | 'Paused';
@@ -50,6 +51,88 @@ interface AdsManagerProps {
 const AdsManager: React.FC<AdsManagerProps> = ({ storagePrefix }) => {
   const [ads, setAds] = useLocalStorage<AdItem[]>(`${storagePrefix}_ad_items`, []);
   const [trash, setTrash] = useLocalStorage<AdItem[]>(`${storagePrefix}_ad_items_trash`, []);
+
+  // Supabase sync state
+  const [isSynced, setIsSynced] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
+
+  // Sync to Supabase helper
+  const syncAdToSupabase = useCallback(async (ad: AdItem, action: 'upsert' | 'delete') => {
+    try {
+      setIsSyncing(true);
+      if (action === 'upsert') {
+        const { error } = await supabase.from('ads').upsert({
+          id: ad.id,
+          user_id: storagePrefix,
+          name: ad.name,
+          status: ad.status,
+          drive_link: ad.driveLink,
+          script: ad.script,
+          description: ad.description,
+          funnel_id: ad.funnelId || null,
+          ad_type: ad.adType,
+          order_num: ad.order,
+        });
+        if (error) {
+          console.error('❌ Supabase upsert error:', error.message, error);
+          setIsSynced(false);
+          return;
+        }
+      } else {
+        const { error } = await supabase.from('ads').delete().eq('id', ad.id);
+        if (error) {
+          console.error('❌ Supabase delete error:', error.message, error);
+          setIsSynced(false);
+          return;
+        }
+      }
+      console.log('✅ Synced ad to Supabase:', ad.name);
+      setIsSynced(true);
+    } catch (err) {
+      console.error('❌ Supabase sync error:', err);
+      setIsSynced(false);
+    } finally {
+      setIsSyncing(false);
+    }
+  }, [storagePrefix]);
+
+  // Load from Supabase on mount
+  useEffect(() => {
+    const loadFromSupabase = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('ads')
+          .select('*')
+          .eq('user_id', storagePrefix)
+          .order('order_num', { ascending: true });
+        
+        if (error) {
+          console.error('Failed to load ads from Supabase:', error);
+          return;
+        }
+        
+        if (data && data.length > 0) {
+          const supabaseAds: AdItem[] = data.map(row => ({
+            id: row.id,
+            name: row.name || '',
+            status: row.status as AdStatus,
+            driveLink: row.drive_link || '',
+            script: row.script || '',
+            description: row.description || '',
+            funnelId: row.funnel_id || '',
+            adType: row.ad_type as 'marketing' | 'remarketing',
+            createdAt: row.created_at,
+            order: row.order_num || 0,
+          }));
+          setAds(supabaseAds);
+          setIsSynced(true);
+        }
+      } catch (err) {
+        console.error('Supabase load error:', err);
+      }
+    };
+    loadFromSupabase();
+  }, [storagePrefix, setAds]);
 
   // Read funnels for the selector
   const getFunnels = (): SimpleFunnel[] => {
@@ -171,6 +254,7 @@ const AdsManager: React.FC<AdsManagerProps> = ({ storagePrefix }) => {
       adType: adTypeTab, createdAt: new Date().toISOString(), order: maxOrder + 1,
     };
     setAds(prev => [ad, ...prev]);
+    syncAdToSupabase(ad, 'upsert');
     setSelectedAdId(ad.id);
     setEditingId(ad.id);
     setEditField('name');
@@ -234,7 +318,14 @@ const AdsManager: React.FC<AdsManagerProps> = ({ storagePrefix }) => {
   };
 
   const handleUpdateAd = (id: string, updates: Partial<AdItem>) => {
-    setAds(prev => prev.map(a => a.id === id ? { ...a, ...updates } : a));
+    setAds(prev => {
+      const updated = prev.map(a => a.id === id ? { ...a, ...updates } : a);
+      const updatedAd = updated.find(a => a.id === id);
+      if (updatedAd) {
+        syncAdToSupabase(updatedAd, 'upsert');
+      }
+      return updated;
+    });
   };
 
   const toggleStatusDropdown = (id: string) => {
@@ -248,10 +339,31 @@ const AdsManager: React.FC<AdsManagerProps> = ({ storagePrefix }) => {
 
   const handleConfirmAction = () => {
     const { type, itemId } = confirmState;
-    if (type === 'delete_ad' && itemId) { const item = ads.find(a => a.id === itemId); if (item) { setTrash(prev => [item, ...prev]); setAds(prev => prev.filter(a => a.id !== itemId)); } }
-    else if (type === 'delete_forever' && itemId) setTrash(prev => prev.filter(a => a.id !== itemId));
-    else if (type === 'empty_trash') setTrash([]);
-    else if (type === 'restore_ad' && itemId) { const item = trash.find(a => a.id === itemId); if (item) { setAds(prev => [...prev, item]); setTrash(prev => prev.filter(a => a.id !== itemId)); } }
+    if (type === 'delete_ad' && itemId) {
+      const item = ads.find(a => a.id === itemId);
+      if (item) {
+        setTrash(prev => [item, ...prev]);
+        setAds(prev => prev.filter(a => a.id !== itemId));
+        syncAdToSupabase(item, 'delete');
+      }
+    }
+    else if (type === 'delete_forever' && itemId) {
+      const item = trash.find(a => a.id === itemId);
+      if (item) syncAdToSupabase(item, 'delete');
+      setTrash(prev => prev.filter(a => a.id !== itemId));
+    }
+    else if (type === 'empty_trash') {
+      trash.forEach(item => syncAdToSupabase(item, 'delete'));
+      setTrash([]);
+    }
+    else if (type === 'restore_ad' && itemId) {
+      const item = trash.find(a => a.id === itemId);
+      if (item) {
+        setAds(prev => [...prev, item]);
+        setTrash(prev => prev.filter(a => a.id !== itemId));
+        syncAdToSupabase(item, 'upsert');
+      }
+    }
     setConfirmState(prev => ({ ...prev, isOpen: false }));
   };
 
@@ -331,8 +443,18 @@ const AdsManager: React.FC<AdsManagerProps> = ({ storagePrefix }) => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-bold text-[#ECECEC]">Ads</h2>
+          <div className="flex items-center gap-2">
+            <h2 className="text-xl font-bold text-[#ECECEC]">Ads</h2>
+            {isSyncing ? (
+              <Cloud className="w-4 h-4 text-amber-400 animate-pulse" title="Syncing..." />
+            ) : isSynced ? (
+              <Cloud className="w-4 h-4 text-emerald-400" title="Synced to cloud" />
+            ) : (
+              <CloudOff className="w-4 h-4 text-[#9B9B9B]" title="Local only" />
+            )}
+          </div>
           <p className="text-sm text-[#9B9B9B]">Manage your ad creatives and production pipeline</p>
+          <p className="text-[#9B9B9B] text-sm">Manage ad creatives and their status.</p>
         </div>
         <div />
       </div>
