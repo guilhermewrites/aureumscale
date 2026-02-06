@@ -6,7 +6,17 @@ import { TEAM_MEMBERS } from '../constants';
 const getPersistedTeamMembers = (storagePrefix: string): TeamMember[] => {
   try {
     const stored = localStorage.getItem(`${storagePrefix}_team`);
-    if (stored) return JSON.parse(stored);
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      if (Array.isArray(parsed)) {
+        return parsed
+          .filter(Boolean)
+          .map((member: TeamMember) => ({
+            ...member,
+            id: String(member.id),
+          }));
+      }
+    }
   } catch {}
   return Object.values(TEAM_MEMBERS);
 };
@@ -83,15 +93,16 @@ const EditContentModal: React.FC<EditContentModalProps> = ({
   const handleTeamToggle = (member: TeamMember) => {
     setFormData(prev => {
       const persisted = getPersistedTeamMembers(storagePrefix);
-      const memberMap = new Map(persisted.map(m => [m.id, m]));
+      const memberMap = new Map(persisted.map(m => [String(m.id), m]));
       // Refresh all existing team members with latest data (photos, roles, etc.)
-      const refreshedTeam = prev.team.map(t => memberMap.get(t.id) || t);
+      const refreshedTeam = prev.team.map(t => memberMap.get(String(t.id)) || t);
 
-      const exists = refreshedTeam.find(t => t.id === member.id);
+      const memberId = String(member.id);
+      const exists = refreshedTeam.find(t => String(t.id) === memberId);
       if (exists) {
-        return { ...prev, team: refreshedTeam.filter(t => t.id !== member.id) };
+        return { ...prev, team: refreshedTeam.filter(t => String(t.id) !== memberId) };
       } else {
-        const freshMember = memberMap.get(member.id) || member;
+        const freshMember = memberMap.get(memberId) || { ...member, id: memberId };
         return { ...prev, team: [...refreshedTeam, freshMember] };
       }
     });
@@ -307,10 +318,11 @@ const EditContentModal: React.FC<EditContentModalProps> = ({
               </label>
               <div className="grid grid-cols-2 gap-2">
                 {getPersistedTeamMembers(storagePrefix).map((member) => {
-                    const isSelected = formData.team.some(t => t.id === member.id);
+                    const memberId = String(member.id);
+                    const isSelected = formData.team.some(t => String(t.id) === memberId);
                     return (
                         <button
-                            key={member.id}
+                            key={memberId}
                             type="button"
                             onClick={() => handleTeamToggle(member)}
                             className={`flex items-center gap-3 p-2 rounded-lg border transition-none ${

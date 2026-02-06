@@ -11,7 +11,17 @@ import { TEAM_MEMBERS } from '../constants';
 const getPersistedTeamMembers = (storagePrefix: string): TeamMember[] => {
   try {
     const stored = localStorage.getItem(`${storagePrefix}_team`);
-    if (stored) return JSON.parse(stored);
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      if (Array.isArray(parsed)) {
+        return parsed
+          .filter(Boolean)
+          .map((member: TeamMember) => ({
+            ...member,
+            id: String(member.id),
+          }));
+      }
+    }
   } catch {}
   return Object.values(TEAM_MEMBERS);
 };
@@ -36,8 +46,8 @@ const ContentRow: React.FC<ContentRowProps> = ({ item, onUpdate, onDelete, onDem
   // Resolve team members with latest data (photos, roles, etc.) from localStorage
   const resolvedTeam = React.useMemo(() => {
     const persisted = getPersistedTeamMembers(storagePrefix);
-    const memberMap = new Map(persisted.map(m => [m.id, m]));
-    return item.team.map(t => memberMap.get(t.id) || t);
+    const memberMap = new Map(persisted.map(m => [String(m.id), m]));
+    return item.team.map(t => memberMap.get(String(t.id)) || t);
   }, [item.team, storagePrefix]);
   // Edit states
   const [editingField, setEditingField] = useState<'title' | 'status' | 'style' | 'team' | 'date' | 'link' | 'script' | 'thumbnail' | 'youtube' | null>(null);
@@ -175,17 +185,18 @@ const ContentRow: React.FC<ContentRowProps> = ({ item, onUpdate, onDelete, onDem
 
   const toggleTeamMember = (member: TeamMember) => {
     const persisted = getPersistedTeamMembers(storagePrefix);
-    const memberMap = new Map(persisted.map(m => [m.id, m]));
+    const memberMap = new Map(persisted.map(m => [String(m.id), m]));
     // Refresh all existing team members with latest data
-    const refreshedTeam = item.team.map(t => memberMap.get(t.id) || t);
+    const refreshedTeam = item.team.map(t => memberMap.get(String(t.id)) || t);
 
-    const exists = refreshedTeam.find(t => t.id === member.id);
+    const memberId = String(member.id);
+    const exists = refreshedTeam.find(t => String(t.id) === memberId);
     let newTeam;
     if (exists) {
-      newTeam = refreshedTeam.filter(t => t.id !== member.id);
+      newTeam = refreshedTeam.filter(t => String(t.id) !== memberId);
     } else {
       // Use fresh member data from persisted source
-      const freshMember = memberMap.get(member.id) || member;
+      const freshMember = memberMap.get(memberId) || { ...member, id: memberId };
       newTeam = [...refreshedTeam, freshMember];
     }
     onUpdate({ ...item, team: newTeam });
@@ -635,10 +646,11 @@ const ContentRow: React.FC<ContentRowProps> = ({ item, onUpdate, onDelete, onDem
                     <p className="text-xs font-semibold text-[#9B9B9B] mb-2 px-2">Assign Team</p>
                     <div className="space-y-1 max-h-48 overflow-y-auto custom-scrollbar">
                         {getPersistedTeamMembers(storagePrefix).map((member) => {
-                            const isSelected = item.team.some(t => t.id === member.id);
+                            const memberId = String(member.id);
+                            const isSelected = item.team.some(t => String(t.id) === memberId);
                             return (
                                 <button
-                                    key={member.id}
+                                    key={memberId}
                                     onClick={() => toggleTeamMember(member)}
                                     className={`w-full flex items-center gap-3 p-2 rounded-lg text-left transition-none ${
                                         isSelected ? 'bg-[rgba(255,255,255,0.08)]' : 'hover:bg-[rgba(255,255,255,0.05)]'

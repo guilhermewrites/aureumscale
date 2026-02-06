@@ -110,14 +110,14 @@ const ContentManager: React.FC<ContentManagerProps> = ({ storagePrefix }) => {
             const stored = localStorage.getItem(`${storagePrefix}_team`);
             if (stored) {
               const members = JSON.parse(stored);
-              members.forEach((m: any) => { persistedMembers[m.id] = m; });
+              members.forEach((m: any) => { persistedMembers[String(m.id)] = { ...m, id: String(m.id) }; });
             }
           } catch {}
 
           const supabaseItems: ContentItem[] = data.map(row => {
             // Enrich team members with latest localStorage data (photos, etc.)
             const rawTeam = row.team || [];
-            const enrichedTeam = rawTeam.map((t: any) => persistedMembers[t.id] || t);
+            const enrichedTeam = rawTeam.map((t: any) => persistedMembers[String(t.id)] || { ...t, id: String(t.id) });
 
             return {
               id: row.id,
@@ -345,10 +345,10 @@ const ContentManager: React.FC<ContentManagerProps> = ({ storagePrefix }) => {
       const stored = localStorage.getItem(`${storagePrefix}_team`);
       if (stored) {
         const members = JSON.parse(stored);
-        const memberMap = new Map(members.map((m: any) => [m.id, m]));
+        const memberMap = new Map(members.map((m: any) => [String(m.id), { ...m, id: String(m.id) }]));
         enrichedItem = {
           ...updatedItem,
-          team: updatedItem.team.map(t => (memberMap.get(t.id) as any) || t),
+          team: updatedItem.team.map(t => (memberMap.get(String(t.id)) as any) || { ...t, id: String(t.id) }),
         };
       }
     } catch {}
