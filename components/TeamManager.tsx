@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import { Camera, Check, X, Plus, FileText, Trash2 } from 'lucide-react';
 import { TeamMember } from '../types';
 import { TEAM_MEMBERS } from '../constants';
@@ -18,8 +18,7 @@ const TeamManager: React.FC<TeamManagerProps> = ({ storagePrefix }) => {
   const [editField, setEditField] = useState<'name' | 'role' | 'description' | null>(null);
   const [editValue, setEditValue] = useState('');
 
-  // Photo upload - individual refs per member
-  const photoInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
+  // Photo upload
 
   // --- Inline editing ---
   const startEditing = (id: string, field: 'name' | 'role' | 'description', value: string) => {
@@ -58,25 +57,23 @@ const TeamManager: React.FC<TeamManagerProps> = ({ storagePrefix }) => {
 
   // --- Photo upload ---
   const triggerPhotoUpload = (memberId: string) => {
-    const input = photoInputRefs.current[memberId];
-    if (input) {
-      input.value = '';
-      input.click();
-    }
-  };
-
-  const handlePhotoUpload = (memberId: string, e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = () => {
-      const dataUrl = reader.result as string;
-      setMembers(prev => prev.map(m =>
-        m.id === memberId ? { ...m, photoUrl: dataUrl } : m
-      ));
+    // Create a temporary file input on the fly
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.onchange = () => {
+      const file = input.files?.[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        const dataUrl = reader.result as string;
+        setMembers(prev => prev.map(m =>
+          m.id === memberId ? { ...m, photoUrl: dataUrl } : m
+        ));
+      };
+      reader.readAsDataURL(file);
     };
-    reader.readAsDataURL(file);
+    input.click();
   };
 
   // --- Delete member ---
@@ -117,17 +114,7 @@ const TeamManager: React.FC<TeamManagerProps> = ({ storagePrefix }) => {
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      {/* Hidden file inputs per member */}
-      {members.map(m => (
-        <input
-          key={`photo-input-${m.id}`}
-          ref={el => { photoInputRefs.current[m.id] = el; }}
-          type="file"
-          accept="image/*"
-          onChange={e => handlePhotoUpload(m.id, e)}
-          className="hidden"
-        />
-      ))}
+      {/* Photo upload is handled via dynamic input creation */}
 
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex flex-col gap-1">
