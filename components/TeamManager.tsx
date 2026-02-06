@@ -18,9 +18,9 @@ const TeamManager: React.FC<TeamManagerProps> = ({ storagePrefix }) => {
   const [editField, setEditField] = useState<'name' | 'role' | 'description' | null>(null);
   const [editValue, setEditValue] = useState('');
 
-  // Photo upload ref
+  // Photo upload ref - use ref instead of state to avoid race conditions
   const photoInputRef = useRef<HTMLInputElement>(null);
-  const [uploadTargetId, setUploadTargetId] = useState<string | null>(null);
+  const uploadTargetIdRef = useRef<string | null>(null);
 
   // --- Inline editing ---
   const startEditing = (id: string, field: 'name' | 'role' | 'description', value: string) => {
@@ -59,24 +59,31 @@ const TeamManager: React.FC<TeamManagerProps> = ({ storagePrefix }) => {
 
   // --- Photo upload ---
   const triggerPhotoUpload = (memberId: string) => {
-    setUploadTargetId(memberId);
-    photoInputRef.current?.click();
+    uploadTargetIdRef.current = memberId;
+    // Reset file input value first to ensure onChange fires even for same file
+    if (photoInputRef.current) {
+      photoInputRef.current.value = '';
+    }
+    // Small delay to ensure ref is set before file dialog opens
+    setTimeout(() => {
+      photoInputRef.current?.click();
+    }, 0);
   };
 
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !uploadTargetId) return;
+    const targetId = uploadTargetIdRef.current;
+    if (!file || !targetId) return;
 
     const reader = new FileReader();
     reader.onload = () => {
       const dataUrl = reader.result as string;
       setMembers(prev => prev.map(m =>
-        m.id === uploadTargetId ? { ...m, photoUrl: dataUrl } : m
+        m.id === targetId ? { ...m, photoUrl: dataUrl } : m
       ));
-      setUploadTargetId(null);
+      uploadTargetIdRef.current = null;
     };
     reader.readAsDataURL(file);
-    e.target.value = '';
   };
 
   // --- Delete member ---

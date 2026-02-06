@@ -162,6 +162,69 @@ const ContentManager: React.FC<ContentManagerProps> = ({ storagePrefix }) => {
   const filteredContent = items.filter(item => item.platform === activePlatform);
   const filteredIdeas = ideas.filter(idea => idea.platform === activePlatform);
 
+  // Drag and drop for content reordering
+  const [draggedContentId, setDraggedContentId] = useState<string | null>(null);
+  const [dragOverContentId, setDragOverContentId] = useState<string | null>(null);
+
+  const handleContentDragStart = (e: React.DragEvent, id: string) => {
+    setDraggedContentId(id);
+    e.dataTransfer.effectAllowed = 'move';
+    const img = new Image();
+    img.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=';
+    e.dataTransfer.setDragImage(img, 0, 0);
+  };
+
+  const handleContentDragOver = (e: React.DragEvent, id: string) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (draggedContentId && draggedContentId !== id) {
+      setDragOverContentId(id);
+    }
+  };
+
+  const handleContentDragLeave = () => {
+    setDragOverContentId(null);
+  };
+
+  const handleContentDrop = (e: React.DragEvent, targetId: string) => {
+    e.preventDefault();
+    if (!draggedContentId || draggedContentId === targetId) {
+      setDraggedContentId(null);
+      setDragOverContentId(null);
+      return;
+    }
+
+    const draggedIndex = filteredContent.findIndex(c => c.id === draggedContentId);
+    const targetIndex = filteredContent.findIndex(c => c.id === targetId);
+
+    if (draggedIndex === -1 || targetIndex === -1) {
+      setDraggedContentId(null);
+      setDragOverContentId(null);
+      return;
+    }
+
+    // Reorder the filtered list
+    const newFiltered = [...filteredContent];
+    const [removed] = newFiltered.splice(draggedIndex, 1);
+    newFiltered.splice(targetIndex, 0, removed);
+
+    // Rebuild the full items array with the new order for this platform
+    const otherItems = items.filter(item => item.platform !== activePlatform);
+    const reordered = [...otherItems, ...newFiltered];
+    setItems(reordered);
+
+    // Sync reordered items to Supabase
+    newFiltered.forEach(item => syncToSupabase(item, 'upsert'));
+
+    setDraggedContentId(null);
+    setDragOverContentId(null);
+  };
+
+  const handleContentDragEnd = () => {
+    setDraggedContentId(null);
+    setDragOverContentId(null);
+  };
+
   const tabs = [
     { id: Platform.YOUTUBE, icon: Youtube, label: 'YouTube' },
     { id: Platform.INSTAGRAM, icon: Instagram, label: 'Instagram' },
@@ -526,6 +589,13 @@ const ContentManager: React.FC<ContentManagerProps> = ({ storagePrefix }) => {
                           onDemote={handleDemoteContent}
                           onEdit={handleEditContent}
                           storagePrefix={storagePrefix}
+                          isDragged={draggedContentId === item.id}
+                          isDragOver={dragOverContentId === item.id}
+                          onDragStart={e => handleContentDragStart(e, item.id)}
+                          onDragOver={e => handleContentDragOver(e, item.id)}
+                          onDragLeave={handleContentDragLeave}
+                          onDrop={e => handleContentDrop(e, item.id)}
+                          onDragEnd={handleContentDragEnd}
                       />
                   ))
                 ) : (

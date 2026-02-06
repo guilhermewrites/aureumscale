@@ -3,7 +3,7 @@ import {
   Folder, Clock, Loader2, CheckCircle2, Radio,
   Trash2, User, Check, Calendar, ExternalLink,
   ArrowLeftCircle, FilePenLine, FileText, Youtube,
-  Instagram, Image, Pencil, Send
+  Instagram, Image, Pencil, Send, GripVertical
 } from 'lucide-react';
 import { ContentItem, ContentStatus, TeamMember, Platform, VideoStyle } from '../types';
 import { TEAM_MEMBERS } from '../constants';
@@ -23,9 +23,16 @@ interface ContentRowProps {
   onDemote: (item: ContentItem) => void;
   onEdit: (item: ContentItem) => void;
   storagePrefix: string;
+  isDragged?: boolean;
+  isDragOver?: boolean;
+  onDragStart?: (e: React.DragEvent) => void;
+  onDragOver?: (e: React.DragEvent) => void;
+  onDragLeave?: () => void;
+  onDrop?: (e: React.DragEvent) => void;
+  onDragEnd?: () => void;
 }
 
-const ContentRow: React.FC<ContentRowProps> = ({ item, onUpdate, onDelete, onDemote, onEdit, storagePrefix }) => {
+const ContentRow: React.FC<ContentRowProps> = ({ item, onUpdate, onDelete, onDemote, onEdit, storagePrefix, isDragged, isDragOver, onDragStart, onDragOver: onDragOverProp, onDragLeave, onDrop, onDragEnd }) => {
   // Resolve team members with latest data (photos, roles, etc.) from localStorage
   const resolvedTeam = React.useMemo(() => {
     const persisted = getPersistedTeamMembers(storagePrefix);
@@ -236,11 +243,25 @@ const ContentRow: React.FC<ContentRowProps> = ({ item, onUpdate, onDelete, onDem
   const hasThumbnail = !!item.thumbnailUrl;
 
   return (
-    <tr className={`group hover:bg-[rgba(255,255,255,0.05)] transition-none ${hasThumbnail ? 'align-top' : ''}`}>
+    <tr
+      className={`group hover:bg-[rgba(255,255,255,0.05)] transition-none ${hasThumbnail ? 'align-top' : ''} ${isDragged ? 'opacity-30' : ''} ${isDragOver ? 'border-t-2 border-t-emerald-500' : ''}`}
+      draggable={!!onDragStart}
+      onDragStart={onDragStart}
+      onDragOver={onDragOverProp}
+      onDragLeave={onDragLeave}
+      onDrop={onDrop}
+      onDragEnd={onDragEnd}
+    >
 
       {/* TITLE CELL */}
       <td className={`px-6 ${hasThumbnail ? 'py-3' : 'py-4'} relative`}>
         <div className="flex items-start gap-3">
+          {/* Drag handle */}
+          {onDragStart && (
+            <div className="flex-shrink-0 cursor-grab active:cursor-grabbing text-[#666666] hover:text-[#9B9B9B] mt-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              <GripVertical size={14} />
+            </div>
+          )}
           {/* Thumbnail */}
           {hasThumbnail && (
             <div className="relative group/thumb flex-shrink-0">
