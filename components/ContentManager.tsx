@@ -14,6 +14,7 @@ import {
   X,
 } from 'lucide-react';
 import { ContentItem, ContentStatus, Platform, ContentIdea } from '../types';
+import { CONTENT_ITEMS } from '../constants';
 import EditContentModal from './EditContentModal';
 import ContentRow from './ContentRow';
 import IdeationBoard from './IdeationBoard';
@@ -40,9 +41,8 @@ const ContentManager: React.FC<ContentManagerProps> = ({ storagePrefix }) => {
   const [activePlatform, setActivePlatform] = useState<Platform>(Platform.YOUTUBE);
   const [viewMode, setViewMode] = useState<ViewMode>('pipeline');
 
-  // Storage for Content Pipeline - start empty, Supabase will load the real data
-  const [items, setItems] = useLocalStorage<ContentItem[]>(`${storagePrefix}_content`, []);
-  const [isLoading, setIsLoading] = useState(true);
+  // Storage for Content Pipeline - use real data as defaults, Supabase replaces when available
+  const [items, setItems] = useLocalStorage<ContentItem[]>(`${storagePrefix}_content`, CONTENT_ITEMS);
 
   // Storage for Ideas
   const [ideas, setIdeas] = useLocalStorage<ContentIdea[]>(`${storagePrefix}_ideas`, []);

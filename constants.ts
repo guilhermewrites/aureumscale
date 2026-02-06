@@ -49,51 +49,41 @@ export const TEAM_MEMBERS: Record<string, TeamMember> = {
 export const CONTENT_ITEMS: ContentItem[] = [
   // YouTube
   {
-    id: 'yt-1',
-    title: 'How to Scale SaaS in 2024 (Step-by-Step)',
-    driveLink: '#',
+    id: '1770415611897',
+    title: 'Give Me 11 Minutes And I\'ll Teach You How To Build a $1M Agency',
+    driveLink: 'https://drive.google.com/file/d/1FYBs3JyiaVoBMpkcbAms9AVKkmZmeLSS/view?usp=sharing',
+    scriptLink: '',
+    youtubeUrl: '',
     status: ContentStatus.LIVE,
+    style: 'Ed Lawrence' as any,
     platform: Platform.YOUTUBE,
-    postDate: 'Oct 12, 2024',
-    team: [TEAM_MEMBERS.NABEEL, TEAM_MEMBERS.FRANKO]
+    postDate: 'Jan 30, 2026',
+    team: [TEAM_MEMBERS.WRITES, TEAM_MEMBERS.NABEEL, TEAM_MEMBERS.FRANKO, TEAM_MEMBERS.LEWIS, TEAM_MEMBERS.ZAIN]
   },
   {
-    id: 'yt-2',
-    title: '5 AI Tools Every Founder Needs',
-    driveLink: '#',
-    status: ContentStatus.DONE,
-    platform: Platform.YOUTUBE,
-    postDate: 'Oct 19, 2024',
-    team: [TEAM_MEMBERS.NABEEL, TEAM_MEMBERS.WRITES, TEAM_MEMBERS.FRANKO]
-  },
-  {
-    id: 'yt-3',
-    title: 'Why Most Startups Fail at $1M ARR',
-    driveLink: '#',
-    status: ContentStatus.IN_PROGRESS,
-    platform: Platform.YOUTUBE,
-    postDate: 'Oct 26, 2024',
-    team: [TEAM_MEMBERS.NABEEL, TEAM_MEMBERS.LEWIS]
-  },
-  
-  // Instagram
-  {
-    id: 'ig-1',
-    title: 'Day in the Life of a CEO (Reel)',
-    driveLink: '#',
+    id: '1770417500742',
+    title: 'How To Scale From $0 To $150,000 Per Month (Updated For 2026)',
+    driveLink: '',
+    scriptLink: '',
+    youtubeUrl: '',
     status: ContentStatus.LIVE,
-    platform: Platform.INSTAGRAM,
-    postDate: 'Oct 14, 2024',
+    style: 'Ed Lawrence' as any,
+    platform: Platform.YOUTUBE,
+    postDate: 'Feb 4, 2026',
     team: [TEAM_MEMBERS.WRITES]
   },
+
+  // Instagram
   {
-    id: 'ig-2',
-    title: 'Carousel: 3 Metrics That Matter',
-    driveLink: '#',
-    status: ContentStatus.PENDING,
+    id: '1769982286657',
+    title: 'Everyone\'s Obsessed',
+    driveLink: 'https://drive.google.com/file/d/1gT9wFzjPIUt6YwgSSvYCV5MuYrQpGKxq/view?usp=sharing',
+    scriptLink: '',
+    youtubeUrl: '',
+    status: ContentStatus.DONE,
     platform: Platform.INSTAGRAM,
-    postDate: 'Oct 16, 2024',
-    team: [TEAM_MEMBERS.WRITES, TEAM_MEMBERS.ZAIN]
+    postDate: 'Feb 1, 2026',
+    team: [TEAM_MEMBERS.NABEEL, TEAM_MEMBERS.WRITES]
   },
 
   // LinkedIn
