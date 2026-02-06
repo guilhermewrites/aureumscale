@@ -37,6 +37,15 @@ const getPersistedTeamMembers = (storagePrefix: string): TeamMember[] => {
   return Object.values(TEAM_MEMBERS);
 };
 
+const getAssignableTeamMembers = (storagePrefix: string): TeamMember[] => {
+  const persisted = getPersistedTeamMembers(storagePrefix);
+  const byName = new Map(persisted.map(member => [normalizeMemberName(member.name), member]));
+  return Object.values(TEAM_MEMBERS).map(defaultMember => {
+    const merged = byName.get(normalizeMemberName(defaultMember.name));
+    return merged ? { ...defaultMember, ...merged, id: String(merged.id).trim() } : defaultMember;
+  });
+};
+
 interface ContentRowProps {
   item: ContentItem;
   onUpdate: (item: ContentItem) => void;
@@ -663,7 +672,7 @@ const ContentRow: React.FC<ContentRowProps> = ({ item, onUpdate, onDelete, onDem
                 <div ref={teamDropdownRef} className="absolute top-full left-0 mt-2 w-56 bg-[#2f2f2f] border border-[#3a3a3a] rounded-xl shadow-2xl z-50 p-2 animate-in fade-in zoom-in-95 duration-100">
                     <p className="text-xs font-semibold text-[#9B9B9B] mb-2 px-2">Assign Team</p>
                     <div className="space-y-1 max-h-48 overflow-y-auto custom-scrollbar">
-                        {getPersistedTeamMembers(storagePrefix).map((member) => {
+                        {getAssignableTeamMembers(storagePrefix).map((member) => {
                             const memberIdentity = getMemberIdentity(member);
                             const memberName = normalizeMemberName(member.name);
                             const isSelected = item.team.some(t => normalizeMemberName(t.name) === memberName || getMemberIdentity(t) === memberIdentity);

@@ -32,6 +32,15 @@ const getPersistedTeamMembers = (storagePrefix: string): TeamMember[] => {
   return Object.values(TEAM_MEMBERS);
 };
 
+const getAssignableTeamMembers = (storagePrefix: string): TeamMember[] => {
+  const persisted = getPersistedTeamMembers(storagePrefix);
+  const byName = new Map(persisted.map(member => [normalizeMemberName(member.name), member]));
+  return Object.values(TEAM_MEMBERS).map(defaultMember => {
+    const merged = byName.get(normalizeMemberName(defaultMember.name));
+    return merged ? { ...defaultMember, ...merged, id: String(merged.id).trim() } : defaultMember;
+  });
+};
+
 interface EditContentModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -340,7 +349,7 @@ const EditContentModal: React.FC<EditContentModalProps> = ({
                 <User size={14} /> Team Members
               </label>
               <div className="grid grid-cols-2 gap-2">
-                {getPersistedTeamMembers(storagePrefix).map((member) => {
+                {getAssignableTeamMembers(storagePrefix).map((member) => {
                     const memberIdentity = getMemberIdentity(member);
                     const memberName = normalizeMemberName(member.name);
                     const isSelected = formData.team.some(t => normalizeMemberName(t.name) === memberName || getMemberIdentity(t) === memberIdentity);
