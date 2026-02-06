@@ -26,6 +26,12 @@ interface ContentRowProps {
 }
 
 const ContentRow: React.FC<ContentRowProps> = ({ item, onUpdate, onDelete, onDemote, onEdit, storagePrefix }) => {
+  // Resolve team members with latest data (photos, roles, etc.) from localStorage
+  const resolvedTeam = React.useMemo(() => {
+    const persisted = getPersistedTeamMembers(storagePrefix);
+    const memberMap = new Map(persisted.map(m => [m.id, m]));
+    return item.team.map(t => memberMap.get(t.id) || t);
+  }, [item.team, storagePrefix]);
   // Edit states
   const [editingField, setEditingField] = useState<'title' | 'status' | 'style' | 'team' | 'date' | 'link' | 'script' | 'thumbnail' | 'youtube' | null>(null);
 
@@ -161,12 +167,19 @@ const ContentRow: React.FC<ContentRowProps> = ({ item, onUpdate, onDelete, onDem
   };
 
   const toggleTeamMember = (member: TeamMember) => {
-    const exists = item.team.find(t => t.id === member.id);
+    const persisted = getPersistedTeamMembers(storagePrefix);
+    const memberMap = new Map(persisted.map(m => [m.id, m]));
+    // Refresh all existing team members with latest data
+    const refreshedTeam = item.team.map(t => memberMap.get(t.id) || t);
+
+    const exists = refreshedTeam.find(t => t.id === member.id);
     let newTeam;
     if (exists) {
-      newTeam = item.team.filter(t => t.id !== member.id);
+      newTeam = refreshedTeam.filter(t => t.id !== member.id);
     } else {
-      newTeam = [...item.team, member];
+      // Use fresh member data from persisted source
+      const freshMember = memberMap.get(member.id) || member;
+      newTeam = [...refreshedTeam, freshMember];
     }
     onUpdate({ ...item, team: newTeam });
   };
@@ -573,7 +586,7 @@ const ContentRow: React.FC<ContentRowProps> = ({ item, onUpdate, onDelete, onDem
                 className="flex -space-x-2 overflow-hidden cursor-pointer hover:opacity-80 transition-opacity p-1 -m-1 rounded-lg hover:bg-[rgba(255,255,255,0.05)]"
                 title="Edit Team"
              >
-                {item.team.length > 0 ? item.team.map((member) => (
+                {resolvedTeam.length > 0 ? resolvedTeam.map((member) => (
                     member.photoUrl ? (
                         <img
                             key={member.id}

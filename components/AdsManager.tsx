@@ -5,7 +5,7 @@ import {
   Eye, Radio, Pause, AlertTriangle,
   RefreshCcw, Ban, X, Save, ChevronDown,
   Filter, Megaphone, Target, RotateCcw,
-  Plus, GripVertical, Check, Cloud, CloudOff
+  Plus, GripVertical, Check
 } from 'lucide-react';
 import useLocalStorage from '../hooks/useLocalStorage';
 import { supabase } from '../services/supabaseClient';
@@ -52,14 +52,12 @@ const AdsManager: React.FC<AdsManagerProps> = ({ storagePrefix }) => {
   const [ads, setAds] = useLocalStorage<AdItem[]>(`${storagePrefix}_ad_items`, []);
   const [trash, setTrash] = useLocalStorage<AdItem[]>(`${storagePrefix}_ad_items_trash`, []);
 
-  // Supabase sync state
-  const [isSynced, setIsSynced] = useState(false);
-  const [isSyncing, setIsSyncing] = useState(false);
+  // Supabase sync
+  const hasLoadedFromSupabase = useRef(false);
 
-  // Sync to Supabase helper
   const syncAdToSupabase = useCallback(async (ad: AdItem, action: 'upsert' | 'delete') => {
+    if (!supabase) return;
     try {
-      setIsSyncing(true);
       if (action === 'upsert') {
         const { error } = await supabase.from('ads').upsert({
           id: ad.id,
@@ -74,30 +72,24 @@ const AdsManager: React.FC<AdsManagerProps> = ({ storagePrefix }) => {
           order_num: ad.order,
         });
         if (error) {
-          console.error('❌ Supabase upsert error:', error.message, error);
-          setIsSynced(false);
-          return;
+          console.error('Supabase upsert error:', error.message);
         }
       } else {
         const { error } = await supabase.from('ads').delete().eq('id', ad.id);
         if (error) {
-          console.error('❌ Supabase delete error:', error.message, error);
-          setIsSynced(false);
-          return;
+          console.error('Supabase delete error:', error.message);
         }
       }
-      console.log('✅ Synced ad to Supabase:', ad.name);
-      setIsSynced(true);
     } catch (err) {
-      console.error('❌ Supabase sync error:', err);
-      setIsSynced(false);
-    } finally {
-      setIsSyncing(false);
+      console.error('Supabase sync error:', err);
     }
   }, [storagePrefix]);
 
-  // Load from Supabase on mount
+  // Load from Supabase on mount (once only)
   useEffect(() => {
+    if (hasLoadedFromSupabase.current || !supabase) return;
+    hasLoadedFromSupabase.current = true;
+
     const loadFromSupabase = async () => {
       try {
         const { data, error } = await supabase
@@ -105,12 +97,12 @@ const AdsManager: React.FC<AdsManagerProps> = ({ storagePrefix }) => {
           .select('*')
           .eq('user_id', storagePrefix)
           .order('order_num', { ascending: true });
-        
+
         if (error) {
           console.error('Failed to load ads from Supabase:', error);
           return;
         }
-        
+
         if (data && data.length > 0) {
           const supabaseAds: AdItem[] = data.map(row => ({
             id: row.id,
@@ -124,8 +116,12 @@ const AdsManager: React.FC<AdsManagerProps> = ({ storagePrefix }) => {
             createdAt: row.created_at,
             order: row.order_num || 0,
           }));
-          setAds(supabaseAds);
-          setIsSynced(true);
+          // Merge: Supabase items take priority, preserve local-only items
+          const supabaseIds = new Set(supabaseAds.map(a => a.id));
+          setAds(prev => {
+            const localOnly = prev.filter(a => !supabaseIds.has(a.id));
+            return [...supabaseAds, ...localOnly];
+          });
         }
       } catch (err) {
         console.error('Supabase load error:', err);
@@ -218,19 +214,29 @@ const AdsManager: React.FC<AdsManagerProps> = ({ storagePrefix }) => {
     });
   })();
 
+  // Clean up empty drafts only when editingId changes (user stops editing)
+  const prevEditingId = useRef(editingId);
   useEffect(() => {
-    const emptyDrafts = ads.filter(isEmptyDraft);
-    if (emptyDrafts.length === 0) return;
-    const keepId = editingId && emptyDrafts.some(d => d.id === editingId) ? editingId : null;
-    const cleaned = ads.filter(ad => !isEmptyDraft(ad) || (keepId && ad.id === keepId));
-    if (cleaned.length !== ads.length) {
-      setAds(cleaned);
+    // Only run cleanup when user finishes editing (editingId goes from something to null)
+    if (prevEditingId.current && !editingId) {
+      const emptyDrafts = ads.filter(isEmptyDraft);
+      if (emptyDrafts.length > 0) {
+        const cleaned = ads.filter(ad => !isEmptyDraft(ad));
+        if (cleaned.length !== ads.length) {
+          setAds(cleaned);
+        }
+      }
     }
-  }, [ads, editingId, setAds]);
+    prevEditingId.current = editingId;
+  }, [editingId]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Assign order to ads that don't have one (one-time migration)
+  const hasAssignedOrder = useRef(false);
   useEffect(() => {
+    if (hasAssignedOrder.current) return;
     const needsOrder = ads.some(ad => ad.order === undefined);
     if (!needsOrder) return;
+    hasAssignedOrder.current = true;
     const sorted = [...ads].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
     const withOrder = sorted.map((ad, index) => ({ ...ad, order: ad.order ?? index }));
     setAds(withOrder);
@@ -312,20 +318,20 @@ const AdsManager: React.FC<AdsManagerProps> = ({ storagePrefix }) => {
       });
       return updated;
     });
+    // Sync reordered ads to Supabase
+    updatedAds.forEach(ad => syncAdToSupabase(ad, 'upsert'));
 
     setDraggedAdId(null);
     setDragOverId(null);
   };
 
   const handleUpdateAd = (id: string, updates: Partial<AdItem>) => {
-    setAds(prev => {
-      const updated = prev.map(a => a.id === id ? { ...a, ...updates } : a);
-      const updatedAd = updated.find(a => a.id === id);
-      if (updatedAd) {
-        syncAdToSupabase(updatedAd, 'upsert');
-      }
-      return updated;
-    });
+    setAds(prev => prev.map(a => a.id === id ? { ...a, ...updates } : a));
+    // Build the updated ad from current data for Supabase sync
+    const currentAd = ads.find(a => a.id === id);
+    if (currentAd) {
+      syncAdToSupabase({ ...currentAd, ...updates }, 'upsert');
+    }
   };
 
   const toggleStatusDropdown = (id: string) => {
@@ -443,16 +449,7 @@ const AdsManager: React.FC<AdsManagerProps> = ({ storagePrefix }) => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <div className="flex items-center gap-2">
-            <h2 className="text-xl font-bold text-[#ECECEC]">Ads</h2>
-            {isSyncing ? (
-              <Cloud className="w-4 h-4 text-amber-400 animate-pulse" title="Syncing..." />
-            ) : isSynced ? (
-              <Cloud className="w-4 h-4 text-emerald-400" title="Synced to cloud" />
-            ) : (
-              <CloudOff className="w-4 h-4 text-[#9B9B9B]" title="Local only" />
-            )}
-          </div>
+          <h2 className="text-xl font-bold text-[#ECECEC]">Ads</h2>
           <p className="text-sm text-[#9B9B9B]">Manage your ad creatives and production pipeline</p>
           <p className="text-[#9B9B9B] text-sm">Manage ad creatives and their status.</p>
         </div>

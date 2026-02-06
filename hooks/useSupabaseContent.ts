@@ -14,6 +14,7 @@ export const useSupabaseContent = ({ userId, platform }: UseSupabaseContentProps
 
   // Fetch content from Supabase
   const fetchContent = useCallback(async () => {
+    if (!supabase) { setLoading(false); return; }
     try {
       setLoading(true);
       const { data, error } = await supabase
@@ -52,6 +53,7 @@ export const useSupabaseContent = ({ userId, platform }: UseSupabaseContentProps
 
   // Add new content
   const addContent = async (item: ContentItem) => {
+    if (!supabase) return false;
     try {
       const { error } = await supabase.from('content_items').insert({
         id: item.id,
@@ -70,7 +72,7 @@ export const useSupabaseContent = ({ userId, platform }: UseSupabaseContentProps
       });
 
       if (error) throw error;
-      
+
       setContent(prev => [item, ...prev]);
       return true;
     } catch (err) {
@@ -82,6 +84,7 @@ export const useSupabaseContent = ({ userId, platform }: UseSupabaseContentProps
 
   // Update content
   const updateContent = async (item: ContentItem) => {
+    if (!supabase) return false;
     try {
       const { error } = await supabase
         .from('content_items')
@@ -101,7 +104,7 @@ export const useSupabaseContent = ({ userId, platform }: UseSupabaseContentProps
         .eq('id', item.id);
 
       if (error) throw error;
-      
+
       setContent(prev => prev.map(c => c.id === item.id ? item : c));
       return true;
     } catch (err) {
@@ -113,6 +116,7 @@ export const useSupabaseContent = ({ userId, platform }: UseSupabaseContentProps
 
   // Delete content
   const deleteContent = async (id: string) => {
+    if (!supabase) return false;
     try {
       const { error } = await supabase
         .from('content_items')
@@ -120,7 +124,7 @@ export const useSupabaseContent = ({ userId, platform }: UseSupabaseContentProps
         .eq('id', id);
 
       if (error) throw error;
-      
+
       setContent(prev => prev.filter(c => c.id !== id));
       return true;
     } catch (err) {

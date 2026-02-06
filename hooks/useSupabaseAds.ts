@@ -28,6 +28,7 @@ export const useSupabaseAds = ({ userId }: UseSupabaseAdsProps) => {
 
   // Fetch ads from Supabase
   const fetchAds = useCallback(async () => {
+    if (!supabase) { setLoading(false); return; }
     try {
       setLoading(true);
       const { data, error } = await supabase
@@ -64,6 +65,7 @@ export const useSupabaseAds = ({ userId }: UseSupabaseAdsProps) => {
 
   // Add new ad
   const addAd = async (item: AdItem) => {
+    if (!supabase) return false;
     try {
       const { error } = await supabase.from('ads').insert({
         id: item.id,
@@ -79,7 +81,7 @@ export const useSupabaseAds = ({ userId }: UseSupabaseAdsProps) => {
       });
 
       if (error) throw error;
-      
+
       setAds(prev => [...prev, item]);
       return true;
     } catch (err) {
@@ -91,6 +93,7 @@ export const useSupabaseAds = ({ userId }: UseSupabaseAdsProps) => {
 
   // Update ad
   const updateAd = async (id: string, updates: Partial<AdItem>) => {
+    if (!supabase) return false;
     try {
       const dbUpdates: Record<string, unknown> = {};
       if (updates.name !== undefined) dbUpdates.name = updates.name;
@@ -108,7 +111,7 @@ export const useSupabaseAds = ({ userId }: UseSupabaseAdsProps) => {
         .eq('id', id);
 
       if (error) throw error;
-      
+
       setAds(prev => prev.map(a => a.id === id ? { ...a, ...updates } : a));
       return true;
     } catch (err) {
@@ -120,6 +123,7 @@ export const useSupabaseAds = ({ userId }: UseSupabaseAdsProps) => {
 
   // Delete ad
   const deleteAd = async (id: string) => {
+    if (!supabase) return false;
     try {
       const { error } = await supabase
         .from('ads')
@@ -127,7 +131,7 @@ export const useSupabaseAds = ({ userId }: UseSupabaseAdsProps) => {
         .eq('id', id);
 
       if (error) throw error;
-      
+
       setAds(prev => prev.filter(a => a.id !== id));
       return true;
     } catch (err) {

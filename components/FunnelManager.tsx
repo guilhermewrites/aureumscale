@@ -4,7 +4,6 @@ import {
   Globe, Play, Mail, ShoppingCart, Gift, FileText,
   Check, X, Megaphone, ZoomIn, ZoomOut, Maximize2,
   ArrowLeft, Package, BookOpen, MonitorPlay, Download, Box,
-  Cloud, CloudOff
 } from 'lucide-react';
 import { Funnel, FunnelStep, FunnelStepType } from '../types';
 import useLocalStorage from '../hooks/useLocalStorage';
@@ -65,14 +64,12 @@ const FunnelManager: React.FC<FunnelManagerProps> = ({ storagePrefix }) => {
   const [editingFunnelId, setEditingFunnelId] = useState<string | null>(null);
   const [editingFunnelName, setEditingFunnelName] = useState('');
 
-  // Supabase sync state
-  const [isSynced, setIsSynced] = useState(false);
-  const [isSyncing, setIsSyncing] = useState(false);
+  // Supabase sync
+  const hasLoadedFromSupabase = useRef(false);
 
-  // Sync funnel to Supabase helper
   const syncFunnelToSupabase = useCallback(async (funnel: CanvasFunnel, action: 'upsert' | 'delete') => {
+    if (!supabase) return;
     try {
-      setIsSyncing(true);
       if (action === 'upsert') {
         const { error } = await supabase.from('funnels').upsert({
           id: funnel.id,
@@ -82,42 +79,36 @@ const FunnelManager: React.FC<FunnelManagerProps> = ({ storagePrefix }) => {
           steps: funnel.steps,
         });
         if (error) {
-          console.error('❌ Supabase upsert error:', error.message, error);
-          setIsSynced(false);
-          return;
+          console.error('Supabase upsert error:', error.message);
         }
       } else {
         const { error } = await supabase.from('funnels').delete().eq('id', funnel.id);
         if (error) {
-          console.error('❌ Supabase delete error:', error.message, error);
-          setIsSynced(false);
-          return;
+          console.error('Supabase delete error:', error.message);
         }
       }
-      console.log('✅ Synced funnel to Supabase:', funnel.name);
-      setIsSynced(true);
     } catch (err) {
-      console.error('❌ Supabase sync error:', err);
-      setIsSynced(false);
-    } finally {
-      setIsSyncing(false);
+      console.error('Supabase sync error:', err);
     }
   }, [storagePrefix]);
 
-  // Load from Supabase on mount
+  // Load from Supabase on mount (once only)
   useEffect(() => {
+    if (hasLoadedFromSupabase.current || !supabase) return;
+    hasLoadedFromSupabase.current = true;
+
     const loadFromSupabase = async () => {
       try {
         const { data, error } = await supabase
           .from('funnels')
           .select('*')
           .eq('user_id', storagePrefix);
-        
+
         if (error) {
           console.error('Failed to load funnels from Supabase:', error);
           return;
         }
-        
+
         if (data && data.length > 0) {
           const supabaseFunnels: CanvasFunnel[] = data.map(row => ({
             id: row.id,
@@ -127,8 +118,12 @@ const FunnelManager: React.FC<FunnelManagerProps> = ({ storagePrefix }) => {
             connections: (row.steps || []).length > 0 ? [] : [],
             createdAt: row.created_at,
           }));
-          setFunnels(supabaseFunnels);
-          setIsSynced(true);
+          // Merge: Supabase items take priority, preserve local-only items
+          const supabaseIds = new Set(supabaseFunnels.map(f => f.id));
+          setFunnels(prev => {
+            const localOnly = prev.filter(f => !supabaseIds.has(f.id));
+            return [...supabaseFunnels, ...localOnly];
+          });
         }
       } catch (err) {
         console.error('Supabase load error:', err);
@@ -448,16 +443,7 @@ const FunnelManager: React.FC<FunnelManagerProps> = ({ storagePrefix }) => {
       <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
         <div className="flex items-center justify-between">
           <div>
-            <div className="flex items-center gap-2">
-              <h2 className="text-xl font-bold text-[#ECECEC]">Funnels</h2>
-              {isSyncing ? (
-                <Cloud className="w-4 h-4 text-amber-400 animate-pulse" title="Syncing..." />
-              ) : isSynced ? (
-                <Cloud className="w-4 h-4 text-emerald-400" title="Synced to cloud" />
-              ) : (
-                <CloudOff className="w-4 h-4 text-[#9B9B9B]" title="Local only" />
-              )}
-            </div>
+            <h2 className="text-xl font-bold text-[#ECECEC]">Funnels</h2>
             <p className="text-sm text-[#9B9B9B]">Build and visualize your marketing funnels</p>
           </div>
           <button onClick={() => setIsCreating(true)} className="flex items-center gap-2 px-4 py-2 bg-white hover:bg-[#e5e5e5] text-[#212121] rounded-lg text-sm font-medium transition-none">

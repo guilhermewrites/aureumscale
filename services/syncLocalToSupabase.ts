@@ -17,6 +17,12 @@ export const syncLocalDataToSupabase = async (storagePrefix: string): Promise<Sy
     errors: [],
   };
 
+  if (!supabase) {
+    result.errors.push('Supabase not configured');
+    result.success = false;
+    return result;
+  }
+
   // 1. Sync Content Items
   try {
     const contentKey = `${storagePrefix}_content`;

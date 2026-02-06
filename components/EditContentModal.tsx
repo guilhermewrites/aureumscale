@@ -82,11 +82,17 @@ const EditContentModal: React.FC<EditContentModalProps> = ({
 
   const handleTeamToggle = (member: TeamMember) => {
     setFormData(prev => {
-      const exists = prev.team.find(t => t.id === member.id);
+      const persisted = getPersistedTeamMembers(storagePrefix);
+      const memberMap = new Map(persisted.map(m => [m.id, m]));
+      // Refresh all existing team members with latest data (photos, roles, etc.)
+      const refreshedTeam = prev.team.map(t => memberMap.get(t.id) || t);
+
+      const exists = refreshedTeam.find(t => t.id === member.id);
       if (exists) {
-        return { ...prev, team: prev.team.filter(t => t.id !== member.id) };
+        return { ...prev, team: refreshedTeam.filter(t => t.id !== member.id) };
       } else {
-        return { ...prev, team: [...prev.team, member] };
+        const freshMember = memberMap.get(member.id) || member;
+        return { ...prev, team: [...refreshedTeam, freshMember] };
       }
     });
   };

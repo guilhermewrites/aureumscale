@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Youtube,
   Instagram,
@@ -12,8 +12,6 @@ import {
   Ban,
   AlertTriangle,
   X,
-  Cloud,
-  CloudOff
 } from 'lucide-react';
 import { ContentItem, ContentStatus, Platform, ContentIdea } from '../types';
 import { CONTENT_ITEMS } from '../constants';
@@ -52,14 +50,12 @@ const ContentManager: React.FC<ContentManagerProps> = ({ storagePrefix }) => {
   // Storage for Trash
   const [trash, setTrash] = useLocalStorage<ContentItem[]>(`${storagePrefix}_trash`, []);
 
-  // Supabase sync state
-  const [isSynced, setIsSynced] = useState(false);
-  const [isSyncing, setIsSyncing] = useState(false);
+  // Supabase sync
+  const hasLoadedFromSupabase = useRef(false);
 
-  // Sync to Supabase helper
   const syncToSupabase = useCallback(async (item: ContentItem, action: 'upsert' | 'delete') => {
+    if (!supabase) return;
     try {
-      setIsSyncing(true);
       if (action === 'upsert') {
         const { error } = await supabase.from('content_items').upsert({
           id: item.id,
@@ -77,59 +73,74 @@ const ContentManager: React.FC<ContentManagerProps> = ({ storagePrefix }) => {
           platform: item.platform,
         });
         if (error) {
-          console.error('❌ Supabase upsert error:', error.message, error);
-          setIsSynced(false);
-          return;
+          console.error('Supabase upsert error:', error.message);
         }
       } else {
         const { error } = await supabase.from('content_items').delete().eq('id', item.id);
         if (error) {
-          console.error('❌ Supabase delete error:', error.message, error);
-          setIsSynced(false);
-          return;
+          console.error('Supabase delete error:', error.message);
         }
       }
-      console.log('✅ Synced to Supabase:', item.title);
-      setIsSynced(true);
     } catch (err) {
-      console.error('❌ Supabase sync error:', err);
-      setIsSynced(false);
-    } finally {
-      setIsSyncing(false);
+      console.error('Supabase sync error:', err);
     }
   }, [storagePrefix]);
 
-  // Load from Supabase on mount
+  // Load from Supabase on mount (once only)
   useEffect(() => {
+    if (hasLoadedFromSupabase.current || !supabase) return;
+    hasLoadedFromSupabase.current = true;
+
     const loadFromSupabase = async () => {
       try {
         const { data, error } = await supabase
           .from('content_items')
           .select('*')
           .eq('user_id', storagePrefix);
-        
+
         if (error) {
           console.error('Failed to load from Supabase:', error);
           return;
         }
-        
+
         if (data && data.length > 0) {
-          const supabaseItems: ContentItem[] = data.map(row => ({
-            id: row.id,
-            title: row.title,
-            description: row.description || undefined,
-            driveLink: row.drive_link || '',
-            scriptLink: row.script_link || undefined,
-            thumbnailUrl: row.thumbnail_url || undefined,
-            youtubeUrl: row.youtube_url || undefined,
-            status: row.status as ContentStatus,
-            style: row.style || undefined,
-            team: row.team || [],
-            postDate: row.post_date || '',
-            platform: row.platform as Platform,
-          }));
-          setItems(supabaseItems);
-          setIsSynced(true);
+          // Build a map of latest team member data from localStorage
+          let persistedMembers: Record<string, any> = {};
+          try {
+            const stored = localStorage.getItem(`${storagePrefix}_team`);
+            if (stored) {
+              const members = JSON.parse(stored);
+              members.forEach((m: any) => { persistedMembers[m.id] = m; });
+            }
+          } catch {}
+
+          const supabaseItems: ContentItem[] = data.map(row => {
+            // Enrich team members with latest localStorage data (photos, etc.)
+            const rawTeam = row.team || [];
+            const enrichedTeam = rawTeam.map((t: any) => persistedMembers[t.id] || t);
+
+            return {
+              id: row.id,
+              title: row.title,
+              description: row.description || undefined,
+              driveLink: row.drive_link || '',
+              scriptLink: row.script_link || undefined,
+              thumbnailUrl: row.thumbnail_url || undefined,
+              youtubeUrl: row.youtube_url || undefined,
+              status: row.status as ContentStatus,
+              style: row.style || undefined,
+              team: enrichedTeam,
+              postDate: row.post_date || '',
+              platform: row.platform as Platform,
+            };
+          });
+
+          // Merge: Supabase items take priority, but preserve local-only items
+          const supabaseIds = new Set(supabaseItems.map(i => i.id));
+          setItems(prev => {
+            const localOnlyItems = prev.filter(item => !supabaseIds.has(item.id));
+            return [...supabaseItems, ...localOnlyItems];
+          });
         }
       } catch (err) {
         console.error('Supabase load error:', err);
@@ -250,6 +261,7 @@ const ContentManager: React.FC<ContentManagerProps> = ({ storagePrefix }) => {
       if (itemToRestore) {
         setItems(prev => [...prev, itemToRestore]);
         setTrash(prev => prev.filter(i => i.id !== id));
+        syncToSupabase(itemToRestore, 'upsert');
       }
   };
 
@@ -266,8 +278,21 @@ const ContentManager: React.FC<ContentManagerProps> = ({ storagePrefix }) => {
   };
 
   const handleUpdateItem = (updatedItem: ContentItem) => {
-    setItems(prev => prev.map(item => item.id === updatedItem.id ? updatedItem : item));
-    syncToSupabase(updatedItem, 'upsert');
+    // Enrich team with latest member data before persisting
+    let enrichedItem = updatedItem;
+    try {
+      const stored = localStorage.getItem(`${storagePrefix}_team`);
+      if (stored) {
+        const members = JSON.parse(stored);
+        const memberMap = new Map(members.map((m: any) => [m.id, m]));
+        enrichedItem = {
+          ...updatedItem,
+          team: updatedItem.team.map(t => (memberMap.get(t.id) as any) || t),
+        };
+      }
+    } catch {}
+    setItems(prev => prev.map(item => item.id === enrichedItem.id ? enrichedItem : item));
+    syncToSupabase(enrichedItem, 'upsert');
   };
 
   const handleSaveContent = (newItem: ContentItem) => {
@@ -291,6 +316,7 @@ const ContentManager: React.FC<ContentManagerProps> = ({ storagePrefix }) => {
     };
     setIdeas(prev => [newIdea, ...prev]);
     setItems(prev => prev.filter(i => i.id !== item.id));
+    syncToSupabase(item, 'delete');
     setViewMode('ideation');
   };
 
@@ -323,6 +349,7 @@ const ContentManager: React.FC<ContentManagerProps> = ({ storagePrefix }) => {
       platform: activePlatform
     };
     setItems(prev => [...prev, newItem]);
+    syncToSupabase(newItem, 'upsert');
     setIdeas(prev => prev.filter(i => i.id !== idea.id));
     setViewMode('pipeline');
   };
@@ -383,16 +410,7 @@ const ContentManager: React.FC<ContentManagerProps> = ({ storagePrefix }) => {
       {/* Header Actions */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-           <div className="flex items-center gap-2">
-             <h2 className="text-xl font-bold text-[#ECECEC]">Content Hub</h2>
-             {isSyncing ? (
-               <Cloud className="w-4 h-4 text-amber-400 animate-pulse" title="Syncing..." />
-             ) : isSynced ? (
-               <Cloud className="w-4 h-4 text-emerald-400" title="Synced to cloud" />
-             ) : (
-               <CloudOff className="w-4 h-4 text-[#9B9B9B]" title="Local only" />
-             )}
-           </div>
+           <h2 className="text-xl font-bold text-[#ECECEC]">Content Hub</h2>
            <p className="text-[#9B9B9B] text-sm">Manage creation, review, and publishing schedules.</p>
         </div>
         {viewMode === 'pipeline' && (

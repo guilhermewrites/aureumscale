@@ -10,7 +10,7 @@ import FunnelManager from './components/FunnelManager';
 import AdsManager from './components/AdsManager';
 import { ChartViewType, NavigationItem, FinanceItem, InvoiceStatus, RevenueDataPoint } from './types';
 import { AD_METRICS } from './constants';
-import { Bell, Search, Calendar, CloudUpload, Check, Loader2 } from 'lucide-react';
+import { Bell, Search, Calendar, Save, Check, Loader2 } from 'lucide-react';
 import useLocalStorage from './hooks/useLocalStorage';
 import { syncLocalDataToSupabase } from './services/syncLocalToSupabase';
 
@@ -132,7 +132,7 @@ const App: React.FC = () => {
             </p>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="relative flex items-center gap-4">
             <div className="relative hidden md:block">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[#666666]" size={16} />
               <input
@@ -141,23 +141,33 @@ const App: React.FC = () => {
                 className="bg-[#2f2f2f] border border-[#3a3a3a] rounded-full pl-10 pr-4 py-2 text-sm text-[#ECECEC] focus:outline-none focus:ring-1 focus:ring-[#555555] w-64 placeholder-[#666666]"
               />
             </div>
-            <button 
+            <button
               onClick={handleSyncToCloud}
               disabled={isSyncing}
-              className="relative flex items-center gap-2 px-3 py-2 text-sm font-medium text-[#9B9B9B] hover:text-[#ECECEC] transition-none rounded-lg hover:bg-[rgba(255,255,255,0.05)] disabled:opacity-50"
-              title="Sync local data to cloud"
+              className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-[#9B9B9B] hover:text-[#ECECEC] transition-none rounded-lg hover:bg-[rgba(255,255,255,0.05)] disabled:opacity-50"
+              title="Save data to cloud"
             >
               {isSyncing ? (
                 <Loader2 size={16} className="animate-spin" />
               ) : syncResult?.success ? (
                 <Check size={16} className="text-emerald-400" />
               ) : (
-                <CloudUpload size={16} />
+                <Save size={16} />
               )}
               <span className="hidden lg:inline">
-                {isSyncing ? 'Syncing...' : syncResult ? syncResult.message : 'Sync to Cloud'}
+                {isSyncing ? 'Saving...' : syncResult?.success ? 'Saved!' : 'Save'}
               </span>
             </button>
+            {/* Save notification toast */}
+            {syncResult && (
+              <div className={`absolute top-full right-0 mt-2 px-4 py-2 rounded-lg text-sm font-medium shadow-lg border whitespace-nowrap z-50 ${
+                syncResult.success
+                  ? 'bg-[#2f2f2f] border-emerald-500/30 text-emerald-400'
+                  : 'bg-[#2f2f2f] border-rose-500/30 text-rose-400'
+              }`}>
+                {syncResult.success ? 'Saved successfully!' : syncResult.message}
+              </div>
+            )}
             <button className="relative p-2 text-[#9B9B9B] hover:text-[#ECECEC] transition-none rounded-full hover:bg-[rgba(255,255,255,0.05)]">
               <Bell size={20} />
             </button>

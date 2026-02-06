@@ -13,6 +13,7 @@ export const useSupabaseFunnels = ({ userId }: UseSupabaseFunnelsProps) => {
 
   // Fetch funnels from Supabase
   const fetchFunnels = useCallback(async () => {
+    if (!supabase) { setLoading(false); return; }
     try {
       setLoading(true);
       const { data, error } = await supabase
@@ -43,6 +44,7 @@ export const useSupabaseFunnels = ({ userId }: UseSupabaseFunnelsProps) => {
 
   // Add new funnel
   const addFunnel = async (funnel: Funnel) => {
+    if (!supabase) return false;
     try {
       const { error } = await supabase.from('funnels').insert({
         id: funnel.id,
@@ -53,7 +55,7 @@ export const useSupabaseFunnels = ({ userId }: UseSupabaseFunnelsProps) => {
       });
 
       if (error) throw error;
-      
+
       setFunnels(prev => [funnel, ...prev]);
       return true;
     } catch (err) {
@@ -65,6 +67,7 @@ export const useSupabaseFunnels = ({ userId }: UseSupabaseFunnelsProps) => {
 
   // Update funnel
   const updateFunnel = async (funnel: Funnel) => {
+    if (!supabase) return false;
     try {
       const { error } = await supabase
         .from('funnels')
@@ -76,7 +79,7 @@ export const useSupabaseFunnels = ({ userId }: UseSupabaseFunnelsProps) => {
         .eq('id', funnel.id);
 
       if (error) throw error;
-      
+
       setFunnels(prev => prev.map(f => f.id === funnel.id ? funnel : f));
       return true;
     } catch (err) {
@@ -88,6 +91,7 @@ export const useSupabaseFunnels = ({ userId }: UseSupabaseFunnelsProps) => {
 
   // Delete funnel
   const deleteFunnel = async (id: string) => {
+    if (!supabase) return false;
     try {
       const { error } = await supabase
         .from('funnels')
@@ -95,7 +99,7 @@ export const useSupabaseFunnels = ({ userId }: UseSupabaseFunnelsProps) => {
         .eq('id', id);
 
       if (error) throw error;
-      
+
       setFunnels(prev => prev.filter(f => f.id !== id));
       return true;
     } catch (err) {
