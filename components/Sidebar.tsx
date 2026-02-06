@@ -90,12 +90,23 @@ const Sidebar: React.FC<SidebarProps> = ({ activeItem, onNavigate, activeUserId,
     setIsProfileOpen(false);
   };
 
-  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => setProfilePhotoUrl(reader.result as string);
-    reader.readAsDataURL(file);
+    // Compress to save localStorage space
+    const img = new window.Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const canvas = document.createElement('canvas');
+      const scale = Math.min(150 / img.width, 150 / img.height, 1);
+      canvas.width = img.width * scale;
+      canvas.height = img.height * scale;
+      const ctx = canvas.getContext('2d');
+      if (ctx) ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      setProfilePhotoUrl(canvas.toDataURL('image/jpeg', 0.7));
+    };
+    img.src = url;
   };
 
   const menuItems = [

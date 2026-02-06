@@ -55,23 +55,45 @@ const TeamManager: React.FC<TeamManagerProps> = ({ storagePrefix }) => {
     setEditValue('');
   };
 
-  // --- Photo upload ---
+  // --- Photo upload (with compression to avoid localStorage limit) ---
+  const compressImage = (file: File, maxSize: number = 150): Promise<string> => {
+    return new Promise((resolve) => {
+      const img = new window.Image();
+      const url = URL.createObjectURL(file);
+      img.onload = () => {
+        URL.revokeObjectURL(url);
+        const canvas = document.createElement('canvas');
+        // Scale down to maxSize x maxSize
+        const scale = Math.min(maxSize / img.width, maxSize / img.height, 1);
+        canvas.width = img.width * scale;
+        canvas.height = img.height * scale;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        }
+        // Convert to JPEG at 70% quality for small file size
+        resolve(canvas.toDataURL('image/jpeg', 0.7));
+      };
+      img.src = url;
+    });
+  };
+
   const triggerPhotoUpload = (memberId: string) => {
-    // Create a temporary file input on the fly
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = 'image/*';
-    input.onchange = () => {
+    input.onchange = async () => {
       const file = input.files?.[0];
       if (!file) return;
-      const reader = new FileReader();
-      reader.onload = () => {
-        const dataUrl = reader.result as string;
+      try {
+        // Compress to 150x150 JPEG to save localStorage space
+        const compressedDataUrl = await compressImage(file, 150);
         setMembers(prev => prev.map(m =>
-          m.id === memberId ? { ...m, photoUrl: dataUrl } : m
+          m.id === memberId ? { ...m, photoUrl: compressedDataUrl } : m
         ));
-      };
-      reader.readAsDataURL(file);
+      } catch (err) {
+        console.error('Photo upload error:', err);
+      }
     };
     input.click();
   };
