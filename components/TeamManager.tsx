@@ -18,9 +18,8 @@ const TeamManager: React.FC<TeamManagerProps> = ({ storagePrefix }) => {
   const [editField, setEditField] = useState<'name' | 'role' | 'description' | null>(null);
   const [editValue, setEditValue] = useState('');
 
-  // Photo upload ref - use ref instead of state to avoid race conditions
-  const photoInputRef = useRef<HTMLInputElement>(null);
-  const uploadTargetIdRef = useRef<string | null>(null);
+  // Photo upload - individual refs per member
+  const photoInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
   // --- Inline editing ---
   const startEditing = (id: string, field: 'name' | 'role' | 'description', value: string) => {
@@ -59,29 +58,23 @@ const TeamManager: React.FC<TeamManagerProps> = ({ storagePrefix }) => {
 
   // --- Photo upload ---
   const triggerPhotoUpload = (memberId: string) => {
-    uploadTargetIdRef.current = memberId;
-    // Reset file input value first to ensure onChange fires even for same file
-    if (photoInputRef.current) {
-      photoInputRef.current.value = '';
+    const input = photoInputRefs.current[memberId];
+    if (input) {
+      input.value = '';
+      input.click();
     }
-    // Small delay to ensure ref is set before file dialog opens
-    setTimeout(() => {
-      photoInputRef.current?.click();
-    }, 0);
   };
 
-  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePhotoUpload = (memberId: string, e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    const targetId = uploadTargetIdRef.current;
-    if (!file || !targetId) return;
+    if (!file) return;
 
     const reader = new FileReader();
     reader.onload = () => {
       const dataUrl = reader.result as string;
       setMembers(prev => prev.map(m =>
-        m.id === targetId ? { ...m, photoUrl: dataUrl } : m
+        m.id === memberId ? { ...m, photoUrl: dataUrl } : m
       ));
-      uploadTargetIdRef.current = null;
     };
     reader.readAsDataURL(file);
   };
@@ -124,14 +117,17 @@ const TeamManager: React.FC<TeamManagerProps> = ({ storagePrefix }) => {
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      {/* Hidden file input for photo */}
-      <input
-        ref={photoInputRef}
-        type="file"
-        accept="image/*"
-        onChange={handlePhotoUpload}
-        className="hidden"
-      />
+      {/* Hidden file inputs per member */}
+      {members.map(m => (
+        <input
+          key={`photo-input-${m.id}`}
+          ref={el => { photoInputRefs.current[m.id] = el; }}
+          type="file"
+          accept="image/*"
+          onChange={e => handlePhotoUpload(m.id, e)}
+          className="hidden"
+        />
+      ))}
 
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex flex-col gap-1">
@@ -219,24 +215,26 @@ const TeamManager: React.FC<TeamManagerProps> = ({ storagePrefix }) => {
               {/* Avatar / Photo */}
               <div className="relative shrink-0">
                 {member.photoUrl ? (
-                  <div
+                  <button
+                    type="button"
                     className="w-16 h-16 rounded-xl overflow-hidden cursor-pointer ring-4 ring-[#2f2f2f]"
-                    onClick={() => triggerPhotoUpload(member.id)}
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); triggerPhotoUpload(member.id); }}
                     title="Click to change photo"
                   >
                     <img src={member.photoUrl} alt={member.name} className="w-full h-full object-cover" />
-                  </div>
+                  </button>
                 ) : (
-                  <div
+                  <button
+                    type="button"
                     className={`w-16 h-16 rounded-xl ${member.color} flex items-center justify-center text-xl font-bold text-white ring-4 ring-[#2f2f2f] cursor-pointer relative`}
-                    onClick={() => triggerPhotoUpload(member.id)}
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); triggerPhotoUpload(member.id); }}
                     title="Click to add photo"
                   >
                     {member.initials}
-                    <div className="absolute inset-0 bg-black/0 hover:bg-black/30 rounded-xl flex items-center justify-center">
+                    <div className="absolute inset-0 bg-black/0 hover:bg-black/30 rounded-xl flex items-center justify-center pointer-events-none">
                       <Camera size={16} className="text-white opacity-0 group-hover:opacity-70" />
                     </div>
-                  </div>
+                  </button>
                 )}
               </div>
 
