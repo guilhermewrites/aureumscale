@@ -8,7 +8,12 @@
       "Bash(node:*)",
       "Bash(npm run dev:*)",
       "Bash(npx tsc:*)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(npm run build:*)",
+      "WebFetch(domain:aureum-ochre.vercel.app)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)"
     ]
   }
 }

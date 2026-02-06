@@ -118,12 +118,8 @@ const FunnelManager: React.FC<FunnelManagerProps> = ({ storagePrefix }) => {
             connections: (row.steps || []).length > 0 ? [] : [],
             createdAt: row.created_at,
           }));
-          // Merge: Supabase items take priority, preserve local-only items
-          const supabaseIds = new Set(supabaseFunnels.map(f => f.id));
-          setFunnels(prev => {
-            const localOnly = prev.filter(f => !supabaseIds.has(f.id));
-            return [...supabaseFunnels, ...localOnly];
-          });
+          // Replace with Supabase data - Supabase is the source of truth
+          setFunnels(supabaseFunnels);
         }
       } catch (err) {
         console.error('Supabase load error:', err);

@@ -116,12 +116,8 @@ const AdsManager: React.FC<AdsManagerProps> = ({ storagePrefix }) => {
             createdAt: row.created_at,
             order: row.order_num || 0,
           }));
-          // Merge: Supabase items take priority, preserve local-only items
-          const supabaseIds = new Set(supabaseAds.map(a => a.id));
-          setAds(prev => {
-            const localOnly = prev.filter(a => !supabaseIds.has(a.id));
-            return [...supabaseAds, ...localOnly];
-          });
+          // Replace with Supabase data - Supabase is the source of truth
+          setAds(supabaseAds);
         }
       } catch (err) {
         console.error('Supabase load error:', err);

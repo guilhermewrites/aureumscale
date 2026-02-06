@@ -14,7 +14,6 @@ import {
   X,
 } from 'lucide-react';
 import { ContentItem, ContentStatus, Platform, ContentIdea } from '../types';
-import { CONTENT_ITEMS } from '../constants';
 import EditContentModal from './EditContentModal';
 import ContentRow from './ContentRow';
 import IdeationBoard from './IdeationBoard';
@@ -41,8 +40,9 @@ const ContentManager: React.FC<ContentManagerProps> = ({ storagePrefix }) => {
   const [activePlatform, setActivePlatform] = useState<Platform>(Platform.YOUTUBE);
   const [viewMode, setViewMode] = useState<ViewMode>('pipeline');
 
-  // Storage for Content Pipeline
-  const [items, setItems] = useLocalStorage<ContentItem[]>(`${storagePrefix}_content`, CONTENT_ITEMS);
+  // Storage for Content Pipeline - start empty, Supabase will load the real data
+  const [items, setItems] = useLocalStorage<ContentItem[]>(`${storagePrefix}_content`, []);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Storage for Ideas
   const [ideas, setIdeas] = useLocalStorage<ContentIdea[]>(`${storagePrefix}_ideas`, []);
@@ -135,15 +135,13 @@ const ContentManager: React.FC<ContentManagerProps> = ({ storagePrefix }) => {
             };
           });
 
-          // Merge: Supabase items take priority, but preserve local-only items
-          const supabaseIds = new Set(supabaseItems.map(i => i.id));
-          setItems(prev => {
-            const localOnlyItems = prev.filter(item => !supabaseIds.has(item.id));
-            return [...supabaseItems, ...localOnlyItems];
-          });
+          // Replace with Supabase data - Supabase is the source of truth
+          setItems(supabaseItems);
         }
+        setIsLoading(false);
       } catch (err) {
         console.error('Supabase load error:', err);
+        setIsLoading(false);
       }
     };
     loadFromSupabase();
