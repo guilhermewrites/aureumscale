@@ -3,8 +3,9 @@ import { X, Save, Calendar, Folder, User, Check, Trash2, FileText, Image, Extern
 import { ContentItem, ContentStatus, Platform, TeamMember, VideoStyle } from '../types';
 import { TEAM_MEMBERS } from '../constants';
 
+const normalizeMemberName = (name?: string): string => String(name || '').trim().toLowerCase();
 const getMemberIdentity = (member: Pick<TeamMember, 'id' | 'name'>): string =>
-  `${String(member.id).trim()}::${member.name.trim().toLowerCase()}`;
+  `${String(member.id).trim()}::${normalizeMemberName(member.name)}`;
 
 const getPersistedTeamMembers = (storagePrefix: string): TeamMember[] => {
   try {
@@ -105,17 +106,26 @@ const EditContentModal: React.FC<EditContentModalProps> = ({
       const persisted = getPersistedTeamMembers(storagePrefix);
       const memberByIdentity = new Map(persisted.map(m => [getMemberIdentity(m), m]));
       const memberById = new Map(persisted.map(m => [String(m.id).trim(), m]));
+      const memberByName = new Map(persisted.map(m => [normalizeMemberName(m.name), m]));
       // Refresh all existing team members with latest data (photos, roles, etc.)
       const refreshedTeam = prev.team.map(t =>
-        memberByIdentity.get(getMemberIdentity(t)) || memberById.get(String(t.id).trim()) || t
+        memberByName.get(normalizeMemberName(t.name)) || memberByIdentity.get(getMemberIdentity(t)) || memberById.get(String(t.id).trim()) || t
       );
 
+      const memberName = normalizeMemberName(member.name);
       const memberIdentity = getMemberIdentity(member);
-      const exists = refreshedTeam.find(t => getMemberIdentity(t) === memberIdentity);
+      const exists = refreshedTeam.find(t => normalizeMemberName(t.name) === memberName || getMemberIdentity(t) === memberIdentity);
       if (exists) {
-        return { ...prev, team: refreshedTeam.filter(t => getMemberIdentity(t) !== memberIdentity) };
+        return {
+          ...prev,
+          team: refreshedTeam.filter(t => normalizeMemberName(t.name) !== memberName && getMemberIdentity(t) !== memberIdentity),
+        };
       } else {
-        const freshMember = memberByIdentity.get(memberIdentity) || memberById.get(String(member.id).trim()) || { ...member, id: String(member.id).trim() };
+        const freshMember =
+          memberByName.get(memberName) ||
+          memberByIdentity.get(memberIdentity) ||
+          memberById.get(String(member.id).trim()) ||
+          { ...member, id: String(member.id).trim() };
         return { ...prev, team: [...refreshedTeam, freshMember] };
       }
     });
@@ -332,7 +342,8 @@ const EditContentModal: React.FC<EditContentModalProps> = ({
               <div className="grid grid-cols-2 gap-2">
                 {getPersistedTeamMembers(storagePrefix).map((member) => {
                     const memberIdentity = getMemberIdentity(member);
-                    const isSelected = formData.team.some(t => getMemberIdentity(t) === memberIdentity);
+                    const memberName = normalizeMemberName(member.name);
+                    const isSelected = formData.team.some(t => normalizeMemberName(t.name) === memberName || getMemberIdentity(t) === memberIdentity);
                     return (
                         <button
                             key={memberIdentity}

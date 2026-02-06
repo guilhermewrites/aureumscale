@@ -8,8 +8,9 @@ import {
 import { ContentItem, ContentStatus, TeamMember, Platform, VideoStyle } from '../types';
 import { TEAM_MEMBERS } from '../constants';
 
+const normalizeMemberName = (name?: string): string => String(name || '').trim().toLowerCase();
 const getMemberIdentity = (member: Pick<TeamMember, 'id' | 'name'>): string =>
-  `${String(member.id).trim()}::${member.name.trim().toLowerCase()}`;
+  `${String(member.id).trim()}::${normalizeMemberName(member.name)}`;
 
 const getPersistedTeamMembers = (storagePrefix: string): TeamMember[] => {
   try {
@@ -58,7 +59,8 @@ const ContentRow: React.FC<ContentRowProps> = ({ item, onUpdate, onDelete, onDem
     const persisted = getPersistedTeamMembers(storagePrefix);
     const memberByIdentity = new Map(persisted.map(m => [getMemberIdentity(m), m]));
     const memberById = new Map(persisted.map(m => [String(m.id).trim(), m]));
-    return item.team.map(t => memberByIdentity.get(getMemberIdentity(t)) || memberById.get(String(t.id).trim()) || t);
+    const memberByName = new Map(persisted.map(m => [normalizeMemberName(m.name), m]));
+    return item.team.map(t => memberByName.get(normalizeMemberName(t.name)) || memberByIdentity.get(getMemberIdentity(t)) || memberById.get(String(t.id).trim()) || t);
   }, [item.team, storagePrefix]);
   // Edit states
   const [editingField, setEditingField] = useState<'title' | 'status' | 'style' | 'team' | 'date' | 'link' | 'script' | 'thumbnail' | 'youtube' | null>(null);
@@ -198,19 +200,21 @@ const ContentRow: React.FC<ContentRowProps> = ({ item, onUpdate, onDelete, onDem
     const persisted = getPersistedTeamMembers(storagePrefix);
     const memberByIdentity = new Map(persisted.map(m => [getMemberIdentity(m), m]));
     const memberById = new Map(persisted.map(m => [String(m.id).trim(), m]));
+    const memberByName = new Map(persisted.map(m => [normalizeMemberName(m.name), m]));
     // Refresh all existing team members with latest data
     const refreshedTeam = item.team.map(t =>
-      memberByIdentity.get(getMemberIdentity(t)) || memberById.get(String(t.id).trim()) || t
+      memberByName.get(normalizeMemberName(t.name)) || memberByIdentity.get(getMemberIdentity(t)) || memberById.get(String(t.id).trim()) || t
     );
 
+    const memberName = normalizeMemberName(member.name);
     const memberIdentity = getMemberIdentity(member);
-    const exists = refreshedTeam.find(t => getMemberIdentity(t) === memberIdentity);
+    const exists = refreshedTeam.find(t => normalizeMemberName(t.name) === memberName || getMemberIdentity(t) === memberIdentity);
     let newTeam;
     if (exists) {
-      newTeam = refreshedTeam.filter(t => getMemberIdentity(t) !== memberIdentity);
+      newTeam = refreshedTeam.filter(t => normalizeMemberName(t.name) !== memberName && getMemberIdentity(t) !== memberIdentity);
     } else {
       // Use fresh member data from persisted source
-      const freshMember = memberByIdentity.get(memberIdentity) || memberById.get(String(member.id).trim()) || { ...member, id: String(member.id).trim() };
+      const freshMember = memberByName.get(memberName) || memberByIdentity.get(memberIdentity) || memberById.get(String(member.id).trim()) || { ...member, id: String(member.id).trim() };
       newTeam = [...refreshedTeam, freshMember];
     }
     onUpdate({ ...item, team: newTeam });
@@ -661,7 +665,8 @@ const ContentRow: React.FC<ContentRowProps> = ({ item, onUpdate, onDelete, onDem
                     <div className="space-y-1 max-h-48 overflow-y-auto custom-scrollbar">
                         {getPersistedTeamMembers(storagePrefix).map((member) => {
                             const memberIdentity = getMemberIdentity(member);
-                            const isSelected = item.team.some(t => getMemberIdentity(t) === memberIdentity);
+                            const memberName = normalizeMemberName(member.name);
+                            const isSelected = item.team.some(t => normalizeMemberName(t.name) === memberName || getMemberIdentity(t) === memberIdentity);
                             return (
                                 <button
                                     key={memberIdentity}

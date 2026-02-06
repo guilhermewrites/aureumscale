@@ -22,8 +22,9 @@ import useLocalStorage from '../hooks/useLocalStorage';
 import { supabase } from '../services/supabaseClient';
 
 type ViewMode = 'pipeline' | 'ideation' | 'trash';
+const normalizeMemberName = (name?: string): string => String(name || '').trim().toLowerCase();
 const getMemberIdentity = (member: { id: string; name?: string }): string =>
-  `${String(member.id).trim()}::${String(member.name || '').trim().toLowerCase()}`;
+  `${String(member.id).trim()}::${normalizeMemberName(member.name)}`;
 
 type ConfirmType = 'delete_content' | 'delete_idea' | 'restore_content' | 'delete_forever' | 'empty_trash';
 
@@ -109,6 +110,7 @@ const ContentManager: React.FC<ContentManagerProps> = ({ storagePrefix }) => {
           // Build a map of latest team member data from localStorage
           let persistedMembersById: Record<string, any> = {};
           let persistedMembersByIdentity: Record<string, any> = {};
+          let persistedMembersByName: Record<string, any> = {};
           try {
             const stored = localStorage.getItem(`${storagePrefix}_team`);
             if (stored) {
@@ -117,6 +119,7 @@ const ContentManager: React.FC<ContentManagerProps> = ({ storagePrefix }) => {
                 const normalized = { ...m, id: String(m.id) };
                 persistedMembersById[String(normalized.id).trim()] = normalized;
                 persistedMembersByIdentity[getMemberIdentity(normalized)] = normalized;
+                persistedMembersByName[normalizeMemberName(normalized.name)] = normalized;
               });
             }
           } catch {}
@@ -127,6 +130,7 @@ const ContentManager: React.FC<ContentManagerProps> = ({ storagePrefix }) => {
             const enrichedTeam = rawTeam.map((t: any) => {
               const normalized = { ...t, id: String(t.id) };
               return (
+                persistedMembersByName[normalizeMemberName(normalized.name)] ||
                 persistedMembersByIdentity[getMemberIdentity(normalized)] ||
                 persistedMembersById[String(normalized.id).trim()] ||
                 normalized
@@ -371,11 +375,18 @@ const ContentManager: React.FC<ContentManagerProps> = ({ storagePrefix }) => {
             return [String(normalized.id).trim(), normalized];
           })
         );
+        const memberByName = new Map(
+          members.map((m: any) => {
+            const normalized = { ...m, id: String(m.id) };
+            return [normalizeMemberName(normalized.name), normalized];
+          })
+        );
         enrichedItem = {
           ...updatedItem,
           team: updatedItem.team.map(t => {
             const normalized = { ...t, id: String(t.id) };
             return (
+              (memberByName.get(normalizeMemberName(normalized.name)) as any) ||
               (memberByIdentity.get(getMemberIdentity(normalized)) as any) ||
               (memberById.get(String(normalized.id).trim()) as any) ||
               normalized
