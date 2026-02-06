@@ -22,6 +22,8 @@ import useLocalStorage from '../hooks/useLocalStorage';
 import { supabase } from '../services/supabaseClient';
 
 type ViewMode = 'pipeline' | 'ideation' | 'trash';
+const getMemberIdentity = (member: { id: string; name?: string }): string =>
+  `${String(member.id).trim()}::${String(member.name || '').trim().toLowerCase()}`;
 
 type ConfirmType = 'delete_content' | 'delete_idea' | 'restore_content' | 'delete_forever' | 'empty_trash';
 
@@ -105,19 +107,31 @@ const ContentManager: React.FC<ContentManagerProps> = ({ storagePrefix }) => {
 
         if (data && data.length > 0) {
           // Build a map of latest team member data from localStorage
-          let persistedMembers: Record<string, any> = {};
+          let persistedMembersById: Record<string, any> = {};
+          let persistedMembersByIdentity: Record<string, any> = {};
           try {
             const stored = localStorage.getItem(`${storagePrefix}_team`);
             if (stored) {
               const members = JSON.parse(stored);
-              members.forEach((m: any) => { persistedMembers[String(m.id)] = { ...m, id: String(m.id) }; });
+              members.forEach((m: any) => {
+                const normalized = { ...m, id: String(m.id) };
+                persistedMembersById[String(normalized.id).trim()] = normalized;
+                persistedMembersByIdentity[getMemberIdentity(normalized)] = normalized;
+              });
             }
           } catch {}
 
           const supabaseItems: ContentItem[] = data.map(row => {
             // Enrich team members with latest localStorage data (photos, etc.)
             const rawTeam = row.team || [];
-            const enrichedTeam = rawTeam.map((t: any) => persistedMembers[String(t.id)] || { ...t, id: String(t.id) });
+            const enrichedTeam = rawTeam.map((t: any) => {
+              const normalized = { ...t, id: String(t.id) };
+              return (
+                persistedMembersByIdentity[getMemberIdentity(normalized)] ||
+                persistedMembersById[String(normalized.id).trim()] ||
+                normalized
+              );
+            });
 
             return {
               id: row.id,
@@ -345,10 +359,28 @@ const ContentManager: React.FC<ContentManagerProps> = ({ storagePrefix }) => {
       const stored = localStorage.getItem(`${storagePrefix}_team`);
       if (stored) {
         const members = JSON.parse(stored);
-        const memberMap = new Map(members.map((m: any) => [String(m.id), { ...m, id: String(m.id) }]));
+        const memberByIdentity = new Map(
+          members.map((m: any) => {
+            const normalized = { ...m, id: String(m.id) };
+            return [getMemberIdentity(normalized), normalized];
+          })
+        );
+        const memberById = new Map(
+          members.map((m: any) => {
+            const normalized = { ...m, id: String(m.id) };
+            return [String(normalized.id).trim(), normalized];
+          })
+        );
         enrichedItem = {
           ...updatedItem,
-          team: updatedItem.team.map(t => (memberMap.get(String(t.id)) as any) || { ...t, id: String(t.id) }),
+          team: updatedItem.team.map(t => {
+            const normalized = { ...t, id: String(t.id) };
+            return (
+              (memberByIdentity.get(getMemberIdentity(normalized)) as any) ||
+              (memberById.get(String(normalized.id).trim()) as any) ||
+              normalized
+            );
+          }),
         };
       }
     } catch {}

@@ -3,18 +3,28 @@ import { X, Save, Calendar, Folder, User, Check, Trash2, FileText, Image, Extern
 import { ContentItem, ContentStatus, Platform, TeamMember, VideoStyle } from '../types';
 import { TEAM_MEMBERS } from '../constants';
 
+const getMemberIdentity = (member: Pick<TeamMember, 'id' | 'name'>): string =>
+  `${String(member.id).trim()}::${member.name.trim().toLowerCase()}`;
+
 const getPersistedTeamMembers = (storagePrefix: string): TeamMember[] => {
   try {
     const stored = localStorage.getItem(`${storagePrefix}_team`);
     if (stored) {
       const parsed = JSON.parse(stored);
       if (Array.isArray(parsed)) {
-        return parsed
+        const normalized = parsed
           .filter(Boolean)
           .map((member: TeamMember) => ({
             ...member,
             id: String(member.id),
           }));
+        const seen = new Set<string>();
+        return normalized.filter(member => {
+          const identity = getMemberIdentity(member);
+          if (seen.has(identity)) return false;
+          seen.add(identity);
+          return true;
+        });
       }
     }
   } catch {}
@@ -93,16 +103,19 @@ const EditContentModal: React.FC<EditContentModalProps> = ({
   const handleTeamToggle = (member: TeamMember) => {
     setFormData(prev => {
       const persisted = getPersistedTeamMembers(storagePrefix);
-      const memberMap = new Map(persisted.map(m => [String(m.id), m]));
+      const memberByIdentity = new Map(persisted.map(m => [getMemberIdentity(m), m]));
+      const memberById = new Map(persisted.map(m => [String(m.id).trim(), m]));
       // Refresh all existing team members with latest data (photos, roles, etc.)
-      const refreshedTeam = prev.team.map(t => memberMap.get(String(t.id)) || t);
+      const refreshedTeam = prev.team.map(t =>
+        memberByIdentity.get(getMemberIdentity(t)) || memberById.get(String(t.id).trim()) || t
+      );
 
-      const memberId = String(member.id);
-      const exists = refreshedTeam.find(t => String(t.id) === memberId);
+      const memberIdentity = getMemberIdentity(member);
+      const exists = refreshedTeam.find(t => getMemberIdentity(t) === memberIdentity);
       if (exists) {
-        return { ...prev, team: refreshedTeam.filter(t => String(t.id) !== memberId) };
+        return { ...prev, team: refreshedTeam.filter(t => getMemberIdentity(t) !== memberIdentity) };
       } else {
-        const freshMember = memberMap.get(memberId) || { ...member, id: memberId };
+        const freshMember = memberByIdentity.get(memberIdentity) || memberById.get(String(member.id).trim()) || { ...member, id: String(member.id).trim() };
         return { ...prev, team: [...refreshedTeam, freshMember] };
       }
     });
@@ -318,11 +331,11 @@ const EditContentModal: React.FC<EditContentModalProps> = ({
               </label>
               <div className="grid grid-cols-2 gap-2">
                 {getPersistedTeamMembers(storagePrefix).map((member) => {
-                    const memberId = String(member.id);
-                    const isSelected = formData.team.some(t => String(t.id) === memberId);
+                    const memberIdentity = getMemberIdentity(member);
+                    const isSelected = formData.team.some(t => getMemberIdentity(t) === memberIdentity);
                     return (
                         <button
-                            key={memberId}
+                            key={memberIdentity}
                             type="button"
                             onClick={() => handleTeamToggle(member)}
                             className={`flex items-center gap-3 p-2 rounded-lg border transition-none ${

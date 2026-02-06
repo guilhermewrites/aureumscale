@@ -8,18 +8,28 @@ import {
 import { ContentItem, ContentStatus, TeamMember, Platform, VideoStyle } from '../types';
 import { TEAM_MEMBERS } from '../constants';
 
+const getMemberIdentity = (member: Pick<TeamMember, 'id' | 'name'>): string =>
+  `${String(member.id).trim()}::${member.name.trim().toLowerCase()}`;
+
 const getPersistedTeamMembers = (storagePrefix: string): TeamMember[] => {
   try {
     const stored = localStorage.getItem(`${storagePrefix}_team`);
     if (stored) {
       const parsed = JSON.parse(stored);
       if (Array.isArray(parsed)) {
-        return parsed
+        const normalized = parsed
           .filter(Boolean)
           .map((member: TeamMember) => ({
             ...member,
             id: String(member.id),
           }));
+        const seen = new Set<string>();
+        return normalized.filter(member => {
+          const identity = getMemberIdentity(member);
+          if (seen.has(identity)) return false;
+          seen.add(identity);
+          return true;
+        });
       }
     }
   } catch {}
@@ -46,8 +56,9 @@ const ContentRow: React.FC<ContentRowProps> = ({ item, onUpdate, onDelete, onDem
   // Resolve team members with latest data (photos, roles, etc.) from localStorage
   const resolvedTeam = React.useMemo(() => {
     const persisted = getPersistedTeamMembers(storagePrefix);
-    const memberMap = new Map(persisted.map(m => [String(m.id), m]));
-    return item.team.map(t => memberMap.get(String(t.id)) || t);
+    const memberByIdentity = new Map(persisted.map(m => [getMemberIdentity(m), m]));
+    const memberById = new Map(persisted.map(m => [String(m.id).trim(), m]));
+    return item.team.map(t => memberByIdentity.get(getMemberIdentity(t)) || memberById.get(String(t.id).trim()) || t);
   }, [item.team, storagePrefix]);
   // Edit states
   const [editingField, setEditingField] = useState<'title' | 'status' | 'style' | 'team' | 'date' | 'link' | 'script' | 'thumbnail' | 'youtube' | null>(null);
@@ -185,18 +196,21 @@ const ContentRow: React.FC<ContentRowProps> = ({ item, onUpdate, onDelete, onDem
 
   const toggleTeamMember = (member: TeamMember) => {
     const persisted = getPersistedTeamMembers(storagePrefix);
-    const memberMap = new Map(persisted.map(m => [String(m.id), m]));
+    const memberByIdentity = new Map(persisted.map(m => [getMemberIdentity(m), m]));
+    const memberById = new Map(persisted.map(m => [String(m.id).trim(), m]));
     // Refresh all existing team members with latest data
-    const refreshedTeam = item.team.map(t => memberMap.get(String(t.id)) || t);
+    const refreshedTeam = item.team.map(t =>
+      memberByIdentity.get(getMemberIdentity(t)) || memberById.get(String(t.id).trim()) || t
+    );
 
-    const memberId = String(member.id);
-    const exists = refreshedTeam.find(t => String(t.id) === memberId);
+    const memberIdentity = getMemberIdentity(member);
+    const exists = refreshedTeam.find(t => getMemberIdentity(t) === memberIdentity);
     let newTeam;
     if (exists) {
-      newTeam = refreshedTeam.filter(t => String(t.id) !== memberId);
+      newTeam = refreshedTeam.filter(t => getMemberIdentity(t) !== memberIdentity);
     } else {
       // Use fresh member data from persisted source
-      const freshMember = memberMap.get(memberId) || { ...member, id: memberId };
+      const freshMember = memberByIdentity.get(memberIdentity) || memberById.get(String(member.id).trim()) || { ...member, id: String(member.id).trim() };
       newTeam = [...refreshedTeam, freshMember];
     }
     onUpdate({ ...item, team: newTeam });
@@ -646,11 +660,11 @@ const ContentRow: React.FC<ContentRowProps> = ({ item, onUpdate, onDelete, onDem
                     <p className="text-xs font-semibold text-[#9B9B9B] mb-2 px-2">Assign Team</p>
                     <div className="space-y-1 max-h-48 overflow-y-auto custom-scrollbar">
                         {getPersistedTeamMembers(storagePrefix).map((member) => {
-                            const memberId = String(member.id);
-                            const isSelected = item.team.some(t => String(t.id) === memberId);
+                            const memberIdentity = getMemberIdentity(member);
+                            const isSelected = item.team.some(t => getMemberIdentity(t) === memberIdentity);
                             return (
                                 <button
-                                    key={memberId}
+                                    key={memberIdentity}
                                     onClick={() => toggleTeamMember(member)}
                                     className={`w-full flex items-center gap-3 p-2 rounded-lg text-left transition-none ${
                                         isSelected ? 'bg-[rgba(255,255,255,0.08)]' : 'hover:bg-[rgba(255,255,255,0.05)]'
