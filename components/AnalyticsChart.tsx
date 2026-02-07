@@ -11,13 +11,14 @@ import {
   Bar,
   ReferenceLine
 } from 'recharts';
-import { ChartViewType, RevenueDataPoint } from '../types';
+import { ChartViewType, RevenueDataPoint, ContentDataPoint } from '../types';
 import { CONTENT_DATA, TEAM_SPEND_DATA } from '../constants';
 
 interface AnalyticsChartProps {
   view: ChartViewType;
   onChangeView: (view: ChartViewType) => void;
   revenueData?: RevenueDataPoint[];
+  contentData?: ContentDataPoint[];
 }
 
 const CustomTooltip = ({ active, payload, label }: any) => {
@@ -36,7 +37,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
   return null;
 };
 
-const AnalyticsChart: React.FC<AnalyticsChartProps> = ({ view, onChangeView, revenueData }) => {
+const AnalyticsChart: React.FC<AnalyticsChartProps> = ({ view, onChangeView, revenueData, contentData }) => {
   const [hovered, setHovered] = useState<string | null>(null);
 
   const renderChart = () => {
@@ -95,10 +96,12 @@ const AnalyticsChart: React.FC<AnalyticsChartProps> = ({ view, onChangeView, rev
           </ResponsiveContainer>
         );
 
-      case ChartViewType.CONTENT_SCHEDULE:
+      case ChartViewType.CONTENT_SCHEDULE: {
+        const chartData = (contentData && contentData.length > 0) ? contentData : CONTENT_DATA;
+        const barLabel = (contentData && contentData.length > 0) ? 'Pieces' : 'Days Ahead';
         return (
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={CONTENT_DATA} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+            <BarChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#3a3a3a" vertical={false} />
               <XAxis
                 dataKey="date"
@@ -118,7 +121,7 @@ const AnalyticsChart: React.FC<AnalyticsChartProps> = ({ view, onChangeView, rev
               <ReferenceLine y={7} stroke="#eab308" strokeDasharray="3 3" label={{ value: 'Target Buffer', position: 'right', fill: '#eab308', fontSize: 10 }} />
               <Bar
                 dataKey="daysAhead"
-                name="Days Ahead"
+                name={barLabel}
                 fill="#3b82f6"
                 radius={[4, 4, 0, 0]}
                 barSize={40}
@@ -126,6 +129,7 @@ const AnalyticsChart: React.FC<AnalyticsChartProps> = ({ view, onChangeView, rev
             </BarChart>
           </ResponsiveContainer>
         );
+      }
 
       case ChartViewType.TEAM_SPEND:
         return (

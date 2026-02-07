@@ -62,7 +62,7 @@ export interface AppUser {
 }
 
 // --- Funnel Types ---
-export type FunnelStepType = 'registration' | 'thank_you' | 'video' | 'email' | 'sales_page' | 'checkout' | 'upsell' | 'ad' | 'product' | 'blog' | 'webinar' | 'download' | 'custom';
+export type FunnelStepType = 'registration' | 'thank_you' | 'video' | 'email' | 'sales_page' | 'checkout' | 'upsell' | 'ad' | 'product' | 'blog' | 'webinar' | 'download' | 'custom' | 'sms' | 'whatsapp' | 'call' | 'pipeline' | 'crm' | 'group_chat';
 
 export interface FunnelStepAd {
   id: string;
@@ -86,11 +86,18 @@ export interface FunnelStep {
   order: number;
 }
 
+export interface FunnelExpectedMetrics {
+  views?: number;
+  clicks?: number;
+  conversions?: number;
+}
+
 export interface Funnel {
   id: string;
   name: string;
   description?: string;
   steps: FunnelStep[];
+  expectedMetrics?: FunnelExpectedMetrics;
   createdAt: string;
 }
 

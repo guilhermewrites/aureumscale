@@ -99,6 +99,7 @@ export const syncLocalDataToSupabase = async (storagePrefix: string): Promise<Sy
           name: funnel.name,
           description: funnel.description,
           steps: funnel.steps,
+          expected_metrics: funnel.expectedMetrics ?? null,
         });
         if (error) {
           result.errors.push(`Funnel "${funnel.name}": ${error.message}`);

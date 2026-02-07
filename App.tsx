@@ -8,7 +8,7 @@ import SwipefileManager from './components/SwipefileManager';
 import TeamManager from './components/TeamManager';
 import FunnelManager from './components/FunnelManager';
 import AdsManager from './components/AdsManager';
-import { ChartViewType, NavigationItem, FinanceItem, InvoiceStatus, RevenueDataPoint } from './types';
+import { ChartViewType, NavigationItem, FinanceItem, InvoiceStatus, RevenueDataPoint, ContentDataPoint, ContentItem, AdMetric, ContentStatus } from './types';
 import { AD_METRICS } from './constants';
 import { Bell, Search, Calendar, Save, Check, Loader2 } from 'lucide-react';
 import useLocalStorage from './hooks/useLocalStorage';
@@ -56,6 +56,56 @@ const App: React.FC = () => {
 
   // --- Finance State Management ---
   const [financeItems, setFinanceItems] = useLocalStorage<FinanceItem[]>(`${storagePrefix}_finance`, []);
+
+  // Content from localStorage for dashboard chart (same key as ContentManager)
+  const contentChartData: ContentDataPoint[] = useMemo(() => {
+    try {
+      const raw = localStorage.getItem(`${storagePrefix}_content`);
+      if (!raw) return [];
+      const items: ContentItem[] = JSON.parse(raw);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const dayKey = (d: Date) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+      const countsByDay: Record<string, { total: number; published: number }> = {};
+      for (let i = 0; i < 14; i++) {
+        const d = new Date(today);
+        d.setDate(d.getDate() + i);
+        countsByDay[dayKey(d)] = { total: 0, published: 0 };
+      }
+      items.forEach(item => {
+        const date = new Date(item.postDate);
+        if (isNaN(date.getTime())) return;
+        const key = dayKey(date);
+        if (countsByDay[key] == null) return;
+        countsByDay[key].total += 1;
+        if (item.status === ContentStatus.DONE || item.status === ContentStatus.LIVE) {
+          countsByDay[key].published += 1;
+        }
+      });
+      return Object.keys(countsByDay)
+        .sort()
+        .map(key => ({
+          date: new Date(key).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+          daysAhead: countsByDay[key].total,
+          published: countsByDay[key].published,
+        }));
+    } catch {
+      return [];
+    }
+  }, [storagePrefix, activeNav]);
+
+  // Campaign metrics (editable, persisted)
+  const [campaignMetrics, setCampaignMetrics] = useLocalStorage<AdMetric[]>(`${storagePrefix}_campaign_metrics`, AD_METRICS);
+
+  const handleUpdateMetric = (metric: AdMetric) => {
+    setCampaignMetrics(prev => prev.map(m => m.id === metric.id ? metric : m));
+  };
+  const handleDeleteMetric = (id: string) => {
+    setCampaignMetrics(prev => prev.filter(m => m.id !== id));
+  };
+  const handleAddMetric = (metric: Omit<AdMetric, 'id'>) => {
+    setCampaignMetrics(prev => [...prev, { ...metric, id: Date.now().toString() }]);
+  };
 
   // Calculate Chart Data for Revenue
   const revenueChartData: RevenueDataPoint[] = useMemo(() => {
@@ -189,10 +239,17 @@ const App: React.FC = () => {
 
                <div className="bg-[#2f2f2f] border border-[#3a3a3a] p-6 rounded-xl">
                   <p className="text-[#9B9B9B] text-sm font-medium mb-2">Content Buffer</p>
-                  <h3 className="text-3xl font-bold text-[#ECECEC] mb-1">12 Days</h3>
+                  <h3 className="text-3xl font-bold text-[#ECECEC] mb-1">
+                    {contentChartData.length > 0
+                      ? (() => {
+                          const totalPieces = contentChartData.reduce((s, d) => s + d.daysAhead, 0);
+                          const daysWithContent = contentChartData.filter(d => d.daysAhead > 0).length;
+                          return `${totalPieces} pieces · ${daysWithContent} days`;
+                        })()
+                      : '—'}
+                  </h3>
                   <div className="flex items-center gap-2 text-xs">
-                     <span className="text-[#ECECEC] font-medium">+3 days</span>
-                     <span className="text-[#666666]">vs target</span>
+                     <span className="text-[#666666]">Next 14 days from your content</span>
                   </div>
                </div>
 
@@ -212,12 +269,18 @@ const App: React.FC = () => {
                 view={activeChart}
                 onChangeView={setActiveChart}
                 revenueData={revenueChartData}
+                contentData={contentChartData}
               />
             </section>
 
             {/* Table */}
             <section>
-              <MetricsTable data={AD_METRICS} />
+              <MetricsTable
+                data={campaignMetrics}
+                onUpdate={handleUpdateMetric}
+                onDelete={handleDeleteMetric}
+                onAdd={handleAddMetric}
+              />
             </section>
           </div>
         )}
