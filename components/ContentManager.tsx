@@ -22,9 +22,6 @@ import useLocalStorage from '../hooks/useLocalStorage';
 import { supabase } from '../services/supabaseClient';
 
 type ViewMode = 'pipeline' | 'ideation' | 'trash';
-const normalizeMemberName = (name?: string): string => String(name || '').trim().toLowerCase();
-const getMemberIdentity = (member: { id: string; name?: string }): string =>
-  `${String(member.id).trim()}::${normalizeMemberName(member.name)}`;
 
 type ConfirmType = 'delete_content' | 'delete_idea' | 'restore_content' | 'delete_forever' | 'empty_trash';
 
@@ -109,8 +106,7 @@ const ContentManager: React.FC<ContentManagerProps> = ({ storagePrefix }) => {
         if (data && data.length > 0) {
           // Build a map of latest team member data from localStorage
           let persistedMembersById: Record<string, any> = {};
-          let persistedMembersByIdentity: Record<string, any> = {};
-          let persistedMembersByName: Record<string, any> = {};
+          let activeIds = new Set<string>();
           try {
             const stored = localStorage.getItem(`${storagePrefix}_team`);
             if (stored) {
@@ -118,8 +114,7 @@ const ContentManager: React.FC<ContentManagerProps> = ({ storagePrefix }) => {
               members.forEach((m: any) => {
                 const normalized = { ...m, id: String(m.id) };
                 persistedMembersById[String(normalized.id).trim()] = normalized;
-                persistedMembersByIdentity[getMemberIdentity(normalized)] = normalized;
-                persistedMembersByName[normalizeMemberName(normalized.name)] = normalized;
+                activeIds.add(String(normalized.id).trim());
               });
             }
           } catch {}
@@ -130,12 +125,9 @@ const ContentManager: React.FC<ContentManagerProps> = ({ storagePrefix }) => {
             const enrichedTeam = rawTeam.map((t: any) => {
               const normalized = { ...t, id: String(t.id) };
               return (
-                persistedMembersByName[normalizeMemberName(normalized.name)] ||
-                persistedMembersByIdentity[getMemberIdentity(normalized)] ||
-                persistedMembersById[String(normalized.id).trim()] ||
-                normalized
+                persistedMembersById[String(normalized.id).trim()] || normalized
               );
-            });
+            }).filter((t: any) => activeIds.has(String(t.id).trim()));
 
             return {
               id: row.id,
@@ -363,35 +355,19 @@ const ContentManager: React.FC<ContentManagerProps> = ({ storagePrefix }) => {
       const stored = localStorage.getItem(`${storagePrefix}_team`);
       if (stored) {
         const members = JSON.parse(stored);
-        const memberByIdentity = new Map(
-          members.map((m: any) => {
-            const normalized = { ...m, id: String(m.id) };
-            return [getMemberIdentity(normalized), normalized];
-          })
-        );
         const memberById = new Map(
           members.map((m: any) => {
             const normalized = { ...m, id: String(m.id) };
             return [String(normalized.id).trim(), normalized];
           })
         );
-        const memberByName = new Map(
-          members.map((m: any) => {
-            const normalized = { ...m, id: String(m.id) };
-            return [normalizeMemberName(normalized.name), normalized];
-          })
-        );
+        const activeIds = new Set(members.map((m: any) => String(m.id).trim()));
         enrichedItem = {
           ...updatedItem,
           team: updatedItem.team.map(t => {
             const normalized = { ...t, id: String(t.id) };
-            return (
-              (memberByName.get(normalizeMemberName(normalized.name)) as any) ||
-              (memberByIdentity.get(getMemberIdentity(normalized)) as any) ||
-              (memberById.get(String(normalized.id).trim()) as any) ||
-              normalized
-            );
-          }),
+            return (memberById.get(String(normalized.id).trim()) as any) || normalized;
+          }).filter(t => activeIds.has(String(t.id).trim())),
         };
       }
     } catch {}

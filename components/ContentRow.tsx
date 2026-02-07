@@ -8,14 +8,10 @@ import {
 import { ContentItem, ContentStatus, TeamMember, Platform, VideoStyle } from '../types';
 import { TEAM_MEMBERS } from '../constants';
 
-const normalizeMemberName = (name?: string): string => String(name || '').trim().toLowerCase();
-const getMemberIdentity = (member: Pick<TeamMember, 'id' | 'name'>): string =>
-  `${String(member.id).trim()}::${normalizeMemberName(member.name)}`;
-
 const getPersistedTeamMembers = (storagePrefix: string): TeamMember[] => {
   try {
     const stored = localStorage.getItem(`${storagePrefix}_team`);
-    if (stored) {
+    if (stored !== null) {
       const parsed = JSON.parse(stored);
       if (Array.isArray(parsed)) {
         const normalized = parsed
@@ -26,24 +22,16 @@ const getPersistedTeamMembers = (storagePrefix: string): TeamMember[] => {
           }));
         const seen = new Set<string>();
         return normalized.filter(member => {
-          const identity = getMemberIdentity(member);
-          if (seen.has(identity)) return false;
-          seen.add(identity);
+          const id = String(member.id).trim();
+          if (seen.has(id)) return false;
+          seen.add(id);
           return true;
         });
       }
+      return [];
     }
   } catch {}
   return Object.values(TEAM_MEMBERS);
-};
-
-const getAssignableTeamMembers = (storagePrefix: string): TeamMember[] => {
-  const persisted = getPersistedTeamMembers(storagePrefix);
-  const byName = new Map(persisted.map(member => [normalizeMemberName(member.name), member]));
-  return Object.values(TEAM_MEMBERS).map(defaultMember => {
-    const merged = byName.get(normalizeMemberName(defaultMember.name));
-    return merged ? { ...defaultMember, ...merged, id: String(merged.id).trim() } : defaultMember;
-  });
 };
 
 interface ContentRowProps {
@@ -66,10 +54,10 @@ const ContentRow: React.FC<ContentRowProps> = ({ item, onUpdate, onDelete, onDem
   // Resolve team members with latest data (photos, roles, etc.) from localStorage
   const resolvedTeam = React.useMemo(() => {
     const persisted = getPersistedTeamMembers(storagePrefix);
-    const memberByIdentity = new Map(persisted.map(m => [getMemberIdentity(m), m]));
     const memberById = new Map(persisted.map(m => [String(m.id).trim(), m]));
-    const memberByName = new Map(persisted.map(m => [normalizeMemberName(m.name), m]));
-    return item.team.map(t => memberByName.get(normalizeMemberName(t.name)) || memberByIdentity.get(getMemberIdentity(t)) || memberById.get(String(t.id).trim()) || t);
+    return item.team
+      .map(t => memberById.get(String(t.id).trim()) || t)
+      .filter(t => memberById.has(String(t.id).trim()));
   }, [item.team, storagePrefix]);
   // Edit states
   const [editingField, setEditingField] = useState<'title' | 'status' | 'style' | 'team' | 'date' | 'link' | 'script' | 'thumbnail' | 'youtube' | null>(null);
@@ -207,23 +195,21 @@ const ContentRow: React.FC<ContentRowProps> = ({ item, onUpdate, onDelete, onDem
 
   const toggleTeamMember = (member: TeamMember) => {
     const persisted = getPersistedTeamMembers(storagePrefix);
-    const memberByIdentity = new Map(persisted.map(m => [getMemberIdentity(m), m]));
     const memberById = new Map(persisted.map(m => [String(m.id).trim(), m]));
-    const memberByName = new Map(persisted.map(m => [normalizeMemberName(m.name), m]));
+    const activeIds = new Set(persisted.map(m => String(m.id).trim()));
     // Refresh all existing team members with latest data
     const refreshedTeam = item.team.map(t =>
-      memberByName.get(normalizeMemberName(t.name)) || memberByIdentity.get(getMemberIdentity(t)) || memberById.get(String(t.id).trim()) || t
-    );
+      memberById.get(String(t.id).trim()) || t
+    ).filter(t => activeIds.has(String(t.id).trim()));
 
-    const memberName = normalizeMemberName(member.name);
-    const memberIdentity = getMemberIdentity(member);
-    const exists = refreshedTeam.find(t => normalizeMemberName(t.name) === memberName || getMemberIdentity(t) === memberIdentity);
+    const memberId = String(member.id).trim();
+    const exists = refreshedTeam.find(t => String(t.id).trim() === memberId);
     let newTeam;
     if (exists) {
-      newTeam = refreshedTeam.filter(t => normalizeMemberName(t.name) !== memberName && getMemberIdentity(t) !== memberIdentity);
+      newTeam = refreshedTeam.filter(t => String(t.id).trim() !== memberId);
     } else {
       // Use fresh member data from persisted source
-      const freshMember = memberByName.get(memberName) || memberByIdentity.get(memberIdentity) || memberById.get(String(member.id).trim()) || { ...member, id: String(member.id).trim() };
+      const freshMember = memberById.get(memberId) || { ...member, id: memberId };
       newTeam = [...refreshedTeam, freshMember];
     }
     onUpdate({ ...item, team: newTeam });
@@ -672,13 +658,12 @@ const ContentRow: React.FC<ContentRowProps> = ({ item, onUpdate, onDelete, onDem
                 <div ref={teamDropdownRef} className="absolute top-full left-0 mt-2 w-56 bg-[#2f2f2f] border border-[#3a3a3a] rounded-xl shadow-2xl z-50 p-2 animate-in fade-in zoom-in-95 duration-100">
                     <p className="text-xs font-semibold text-[#9B9B9B] mb-2 px-2">Assign Team</p>
                     <div className="space-y-1 max-h-48 overflow-y-auto custom-scrollbar">
-                        {getAssignableTeamMembers(storagePrefix).map((member) => {
-                            const memberIdentity = getMemberIdentity(member);
-                            const memberName = normalizeMemberName(member.name);
-                            const isSelected = item.team.some(t => normalizeMemberName(t.name) === memberName || getMemberIdentity(t) === memberIdentity);
+                        {getPersistedTeamMembers(storagePrefix).map((member) => {
+                            const memberId = String(member.id).trim();
+                            const isSelected = item.team.some(t => String(t.id).trim() === memberId);
                             return (
                                 <button
-                                    key={memberIdentity}
+                                    key={memberId}
                                     onClick={() => toggleTeamMember(member)}
                                     className={`w-full flex items-center gap-3 p-2 rounded-lg text-left transition-none ${
                                         isSelected ? 'bg-[rgba(255,255,255,0.08)]' : 'hover:bg-[rgba(255,255,255,0.05)]'
