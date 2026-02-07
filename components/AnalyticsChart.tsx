@@ -179,14 +179,14 @@ const AnalyticsChart: React.FC<AnalyticsChartProps> = ({ view, onChangeView, rev
                 axisLine={false}
                 tickFormatter={(value) => `$${value/1000}k`}
               />
-              <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#374151', strokeWidth: 1, strokeDasharray: '4 4' }} />
+              <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#374151', strokeWidth: 1 }} />
               <Area
                 type="monotone"
                 dataKey="goal"
                 name="Monthly Goal"
                 stroke={CHART_SECONDARY}
                 strokeWidth={2}
-                strokeDasharray="5 5"
+                strokeOpacity={0.7}
                 fill="url(#colorGoal)"
               />
               <Area
@@ -236,19 +236,19 @@ const AnalyticsChart: React.FC<AnalyticsChartProps> = ({ view, onChangeView, rev
                 allowDecimals={false}
                 tickCount={8}
               />
-              <Tooltip content={<CustomTooltip contentItemsByDate={contentItemsByDate} />} cursor={{ stroke: '#374151', strokeWidth: 1, strokeDasharray: '4 4' }} />
+              <Tooltip content={<CustomTooltip contentItemsByDate={contentItemsByDate} />} cursor={{ stroke: '#374151', strokeWidth: 1 }} />
               {/* Per-platform expected lines */}
               {activePlatformLines.map(({ platform, dataKey, name }) => {
                 const color = PLATFORM_COLORS[platform];
                 return (
                   <Line
                     key={dataKey}
-                    type="stepAfter"
+                    type="monotone"
                     dataKey={dataKey}
                     name={name}
                     stroke={color}
                     strokeWidth={2}
-                    strokeDasharray="6 3"
+                    strokeOpacity={0.7}
                     dot={(props: any) => (
                       <PlatformDot
                         {...props}
@@ -312,7 +312,7 @@ const AnalyticsChart: React.FC<AnalyticsChartProps> = ({ view, onChangeView, rev
                 name="Budget"
                 stroke={CHART_SECONDARY}
                 strokeWidth={2}
-                strokeDasharray="5 5"
+                strokeOpacity={0.7}
                 fill="url(#colorBudget)"
               />
               <Area
