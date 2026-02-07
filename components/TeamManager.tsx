@@ -1,17 +1,117 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Camera, Check, X, Plus, FileText, Trash2 } from 'lucide-react';
 import { TeamMember } from '../types';
 import { TEAM_MEMBERS } from '../constants';
-import useLocalStorage from '../hooks/useLocalStorage';
+import { supabase } from '../services/supabaseClient';
 
 const DEFAULT_MEMBERS = Object.values(TEAM_MEMBERS);
+
+const TEAM_STORAGE_KEY = (prefix: string) => `${prefix}_team`;
 
 interface TeamManagerProps {
   storagePrefix: string;
 }
 
 const TeamManager: React.FC<TeamManagerProps> = ({ storagePrefix }) => {
-  const [members, setMembers] = useLocalStorage<TeamMember[]>(`${storagePrefix}_team`, DEFAULT_MEMBERS);
+  const [members, setMembers] = useState<TeamMember[]>(DEFAULT_MEMBERS);
+  const [loading, setLoading] = useState(true);
+  const hasLoadedFromSupabase = useRef(false);
+
+  const syncToLocalStorage = useCallback((list: TeamMember[]) => {
+    try {
+      localStorage.setItem(TEAM_STORAGE_KEY(storagePrefix), JSON.stringify(list));
+    } catch (e) {
+      console.warn('Could not sync team to localStorage', e);
+    }
+  }, [storagePrefix]);
+
+  const persistToSupabase = useCallback(async (list: TeamMember[]) => {
+    if (!supabase) return;
+    try {
+      await supabase.from('team_members').delete().eq('user_id', storagePrefix);
+      if (list.length > 0) {
+        const rows = list.map((m, i) => ({
+          id: m.id,
+          user_id: storagePrefix,
+          name: m.name,
+          role: m.role,
+          description: m.description ?? null,
+          initials: m.initials,
+          color: m.color,
+          photo_url: m.photoUrl ?? null,
+          order_num: i,
+        }));
+        await supabase.from('team_members').insert(rows);
+      }
+    } catch (err) {
+      console.error('Supabase team save error:', err);
+    }
+  }, [storagePrefix]);
+
+  useEffect(() => {
+    if (hasLoadedFromSupabase.current) {
+      setLoading(false);
+      return;
+    }
+    if (!supabase) {
+      syncToLocalStorage(DEFAULT_MEMBERS);
+      setLoading(false);
+      hasLoadedFromSupabase.current = true;
+      return;
+    }
+    hasLoadedFromSupabase.current = true;
+
+    const load = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('team_members')
+          .select('*')
+          .eq('user_id', storagePrefix)
+          .order('order_num', { ascending: true });
+
+        if (error) {
+          console.error('Failed to load team from Supabase:', error);
+          syncToLocalStorage(DEFAULT_MEMBERS);
+          setMembers(DEFAULT_MEMBERS);
+          setLoading(false);
+          return;
+        }
+
+        if (data && data.length > 0) {
+          const list: TeamMember[] = data.map((row: any) => ({
+            id: row.id,
+            name: row.name,
+            role: row.role,
+            description: row.description ?? undefined,
+            initials: row.initials,
+            color: row.color,
+            photoUrl: row.photo_url ?? undefined,
+          }));
+          setMembers(list);
+          syncToLocalStorage(list);
+        } else {
+          setMembers(DEFAULT_MEMBERS);
+          syncToLocalStorage(DEFAULT_MEMBERS);
+          await persistToSupabase(DEFAULT_MEMBERS);
+        }
+      } catch (err) {
+        console.error('Team load error:', err);
+        setMembers(DEFAULT_MEMBERS);
+        syncToLocalStorage(DEFAULT_MEMBERS);
+      }
+      setLoading(false);
+    };
+    load();
+  }, [storagePrefix, syncToLocalStorage, persistToSupabase]);
+
+  const setMembersAndPersist = useCallback((next: TeamMember[] | ((prev: TeamMember[]) => TeamMember[])) => {
+    setMembers(prev => {
+      const list = typeof next === 'function' ? next(prev) : next;
+      syncToLocalStorage(list);
+      persistToSupabase(list);
+      return list;
+    });
+  }, [syncToLocalStorage, persistToSupabase]);
 
   // Editing state
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -29,7 +129,7 @@ const TeamManager: React.FC<TeamManagerProps> = ({ storagePrefix }) => {
 
   const saveEdit = () => {
     if (editingId && editField) {
-      setMembers(prev => prev.map(m => {
+      setMembersAndPersist(prev => prev.map(m => {
         if (m.id === editingId) {
           const updated = { ...m, [editField]: editValue };
           // Update initials if name changes
@@ -88,7 +188,7 @@ const TeamManager: React.FC<TeamManagerProps> = ({ storagePrefix }) => {
       try {
         // Compress to 150x150 JPEG to save localStorage space
         const compressedDataUrl = await compressImage(file, 150);
-        setMembers(prev => prev.map(m =>
+        setMembersAndPersist(prev => prev.map(m =>
           m.id === memberId ? { ...m, photoUrl: compressedDataUrl } : m
         ));
       } catch (err) {
@@ -102,7 +202,7 @@ const TeamManager: React.FC<TeamManagerProps> = ({ storagePrefix }) => {
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   const handleDeleteMember = (id: string) => {
-    setMembers(prev => prev.filter(m => m.id !== id));
+    setMembersAndPersist(prev => prev.filter(m => m.id !== id));
     setConfirmDeleteId(null);
   };
 
@@ -128,11 +228,19 @@ const TeamManager: React.FC<TeamManagerProps> = ({ storagePrefix }) => {
       initials,
       color: COLORS[members.length % COLORS.length],
     };
-    setMembers(prev => [...prev, newMember]);
+    setMembersAndPersist(prev => [...prev, newMember]);
     setNewMemberName('');
     setNewMemberRole('');
     setIsAddingMember(false);
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12 text-[#9B9B9B] text-sm">
+        Loading team…
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
