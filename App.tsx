@@ -10,7 +10,7 @@ import FunnelManager from './components/FunnelManager';
 import AdsManager from './components/AdsManager';
 import { ChartViewType, NavigationItem, FinanceItem, InvoiceStatus, RevenueDataPoint, ContentDataPoint, ContentItem, AdMetric, ContentStatus, Platform } from './types';
 import { AD_METRICS } from './constants';
-import { Bell, Search, Calendar, Save, Check, Loader2, Settings } from 'lucide-react';
+import { Bell, Search, Calendar, Save, Check, Loader2, Settings, Filter } from 'lucide-react';
 import useLocalStorage from './hooks/useLocalStorage';
 import { syncLocalDataToSupabase } from './services/syncLocalToSupabase';
 
@@ -65,29 +65,27 @@ const App: React.FC = () => {
   const allPlatformsList: Platform[] = [Platform.YOUTUBE, Platform.INSTAGRAM, Platform.TIKTOK, Platform.LINKEDIN];
   const contentChartPlatforms = contentChartSelectedPlatforms.length === 0 ? allPlatformsList : contentChartSelectedPlatforms;
 
-  // Per-platform expected: which days of week to post (0=Sun, 1=Mon, ... 6=Sat)
-  const DAYS_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-  const defaultDaysByPlatform: Record<Platform, number[]> = {
-    [Platform.YOUTUBE]: [1, 3, 5],
-    [Platform.INSTAGRAM]: [],
-    [Platform.TIKTOK]: [],
-    [Platform.LINKEDIN]: [],
+  // Per-platform expected posts per day (number, supports > 1 per day)
+  const defaultPostsPerDay: Record<Platform, number> = {
+    [Platform.YOUTUBE]: 1,
+    [Platform.INSTAGRAM]: 0,
+    [Platform.TIKTOK]: 0,
+    [Platform.LINKEDIN]: 0,
   };
-  const [contentExpectedByPlatform, setContentExpectedByPlatform] = useLocalStorage<Record<Platform, number[]>>(
-    `${storagePrefix}_content_expected_days`,
-    defaultDaysByPlatform
+  const [contentExpectedByPlatform, setContentExpectedByPlatform] = useLocalStorage<Record<Platform, number>>(
+    `${storagePrefix}_content_expected_per_day`,
+    defaultPostsPerDay
   );
-  const [contentExpectedPopover, setContentExpectedPopover] = useState<Platform | null>(null);
+  const [filterPopoverOpen, setFilterPopoverOpen] = useState(false);
+  const [settingsPopoverOpen, setSettingsPopoverOpen] = useState(false);
 
-  const setExpectedDaysForPlatform = (platform: Platform, days: number[]) => {
-    setContentExpectedByPlatform(prev => ({ ...prev, [platform]: days }));
+  const setExpectedForPlatform = (platform: Platform, count: number) => {
+    setContentExpectedByPlatform(prev => ({ ...prev, [platform]: Math.max(0, count) }));
   };
 
-  const expectedForDate = (date: Date, platforms: Platform[]): number => {
-    const dayOfWeek = date.getDay();
+  const expectedForDate = (_date: Date, platforms: Platform[]): number => {
     return platforms.reduce((sum, p) => {
-      const days = contentExpectedByPlatform[p] ?? [];
-      return sum + (days.includes(dayOfWeek) ? 1 : 0);
+      return sum + (contentExpectedByPlatform[p] ?? 0);
     }, 0);
   };
 
@@ -320,80 +318,101 @@ const App: React.FC = () => {
             {/* Main Charts */}
             <section>
               {activeChart === ChartViewType.CONTENT_SCHEDULE && (
-                <div className="flex items-center justify-between mb-3">
-                  {/* Platform filter pills */}
-                  <div className="flex items-center gap-1.5">
-                    <button
-                      type="button"
-                      onClick={() => setContentChartSelectedPlatforms([])}
-                      className={`px-3 py-1 rounded-full text-xs font-medium transition-none ${contentChartSelectedPlatforms.length === 0 ? 'bg-[#ECECEC] text-[#212121]' : 'bg-[#2f2f2f] text-[#666666] hover:text-[#9B9B9B]'}`}
-                    >
-                      All
-                    </button>
-                    {allPlatformsList.map(p => {
-                      const on = contentChartSelectedPlatforms.includes(p);
-                      return (
-                        <button
-                          key={p}
-                          type="button"
-                          onClick={() => toggleContentPlatform(p)}
-                          className={`px-3 py-1 rounded-full text-xs font-medium transition-none ${on ? 'bg-[#ECECEC] text-[#212121]' : 'bg-[#2f2f2f] text-[#666666] hover:text-[#9B9B9B]'}`}
-                        >
-                          {p}
-                        </button>
-                      );
-                    })}
-                  </div>
-
-                  {/* Single settings gear for expected posting days */}
+                <div className="flex items-center gap-2 mb-3">
+                  {/* Button 1: Filter */}
                   <div className="relative">
                     <button
                       type="button"
-                      onClick={() => setContentExpectedPopover(contentExpectedPopover ? null : allPlatformsList[0])}
-                      className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[#9B9B9B] hover:text-[#ECECEC] hover:bg-[rgba(255,255,255,0.05)] transition-none"
-                      title="Expected posting schedule"
+                      onClick={() => { setFilterPopoverOpen(!filterPopoverOpen); setSettingsPopoverOpen(false); }}
+                      className="flex items-center gap-2 px-4 py-2 bg-[#2f2f2f] border border-[#3a3a3a] rounded-lg text-sm font-medium text-[#ECECEC] hover:border-[#4a4a4a] transition-none"
                     >
-                      <Settings size={14} />
-                      <span className="text-xs">Schedule</span>
+                      <Filter size={16} />
+                      <span>Filter</span>
+                      {contentChartSelectedPlatforms.length > 0 && (
+                        <span className="ml-1 px-1.5 py-0.5 rounded-full bg-[#ECECEC] text-[#212121] text-[10px] font-bold leading-none">{contentChartSelectedPlatforms.length}</span>
+                      )}
                     </button>
-                    {contentExpectedPopover && (
+                    {filterPopoverOpen && (
                       <>
-                        <div className="fixed inset-0 z-40" onClick={() => setContentExpectedPopover(null)} />
-                        <div className="absolute right-0 top-full mt-1 z-50 bg-[#2f2f2f] border border-[#3a3a3a] rounded-xl p-5 shadow-xl min-w-[280px]">
-                          <p className="text-xs font-semibold text-[#ECECEC] mb-4">Expected Posting Days</p>
-                          <div className="space-y-4">
+                        <div className="fixed inset-0 z-40" onClick={() => setFilterPopoverOpen(false)} />
+                        <div className="absolute left-0 top-full mt-1 z-50 bg-[#2f2f2f] border border-[#3a3a3a] rounded-xl p-4 shadow-xl min-w-[200px]">
+                          <p className="text-xs font-semibold text-[#ECECEC] mb-3">Show Platforms</p>
+                          <div className="space-y-1">
+                            <button
+                              type="button"
+                              onClick={() => setContentChartSelectedPlatforms([])}
+                              className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-none ${contentChartSelectedPlatforms.length === 0 ? 'bg-[rgba(255,255,255,0.08)] text-[#ECECEC]' : 'text-[#9B9B9B] hover:bg-[rgba(255,255,255,0.05)]'}`}
+                            >
+                              <div className={`w-4 h-4 rounded border flex items-center justify-center ${contentChartSelectedPlatforms.length === 0 ? 'bg-[#ECECEC] border-[#ECECEC]' : 'border-[#666666]'}`}>
+                                {contentChartSelectedPlatforms.length === 0 && <Check size={10} className="text-[#212121]" />}
+                              </div>
+                              All Platforms
+                            </button>
                             {allPlatformsList.map(p => {
-                              const days = contentExpectedByPlatform[p] ?? [];
+                              const on = contentChartSelectedPlatforms.includes(p);
                               return (
-                                <div key={p}>
-                                  <div className="flex items-center justify-between mb-2">
-                                    <span className="text-xs font-medium text-[#ECECEC]">{p}</span>
-                                    <span className="text-[10px] text-[#666666]">{days.length} {days.length === 1 ? 'day' : 'days'}/week</span>
+                                <button
+                                  key={p}
+                                  type="button"
+                                  onClick={() => toggleContentPlatform(p)}
+                                  className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-none ${on ? 'bg-[rgba(255,255,255,0.08)] text-[#ECECEC]' : 'text-[#9B9B9B] hover:bg-[rgba(255,255,255,0.05)]'}`}
+                                >
+                                  <div className={`w-4 h-4 rounded border flex items-center justify-center ${on ? 'bg-[#ECECEC] border-[#ECECEC]' : 'border-[#666666]'}`}>
+                                    {on && <Check size={10} className="text-[#212121]" />}
                                   </div>
-                                  <div className="flex gap-1">
-                                    {DAYS_LABELS.map((label, i) => {
-                                      const checked = days.includes(i);
-                                      return (
-                                        <button
-                                          key={i}
-                                          type="button"
-                                          onClick={() => {
-                                            const current = contentExpectedByPlatform[p] ?? [];
-                                            const next = checked ? current.filter(d => d !== i) : [...current, i].sort((a, b) => a - b);
-                                            setExpectedDaysForPlatform(p, next);
-                                          }}
-                                          className={`w-8 h-7 rounded text-[10px] font-medium transition-none ${checked ? 'bg-[#ECECEC] text-[#212121]' : 'bg-[#212121] text-[#666666] hover:text-[#9B9B9B]'}`}
-                                        >
-                                          {label}
-                                        </button>
-                                      );
-                                    })}
+                                  {p}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      </>
+                    )}
+                  </div>
+
+                  {/* Button 2: Settings */}
+                  <div className="relative">
+                    <button
+                      type="button"
+                      onClick={() => { setSettingsPopoverOpen(!settingsPopoverOpen); setFilterPopoverOpen(false); }}
+                      className="flex items-center gap-2 px-4 py-2 bg-[#2f2f2f] border border-[#3a3a3a] rounded-lg text-sm font-medium text-[#ECECEC] hover:border-[#4a4a4a] transition-none"
+                    >
+                      <Settings size={16} />
+                      <span>Settings</span>
+                    </button>
+                    {settingsPopoverOpen && (
+                      <>
+                        <div className="fixed inset-0 z-40" onClick={() => setSettingsPopoverOpen(false)} />
+                        <div className="absolute left-0 top-full mt-1 z-50 bg-[#2f2f2f] border border-[#3a3a3a] rounded-xl p-5 shadow-xl min-w-[280px]">
+                          <p className="text-xs font-semibold text-[#ECECEC] mb-4">Expected Posts Per Day</p>
+                          <div className="space-y-3">
+                            {allPlatformsList.map(p => {
+                              const count = contentExpectedByPlatform[p] ?? 0;
+                              return (
+                                <div key={p} className="flex items-center justify-between">
+                                  <span className="text-sm text-[#ECECEC]">{p}</span>
+                                  <div className="flex items-center gap-2">
+                                    <button
+                                      type="button"
+                                      onClick={() => setExpectedForPlatform(p, count - 1)}
+                                      className="w-7 h-7 rounded-lg bg-[#212121] border border-[#3a3a3a] text-[#9B9B9B] hover:text-[#ECECEC] hover:border-[#4a4a4a] flex items-center justify-center text-sm font-medium transition-none"
+                                    >
+                                      −
+                                    </button>
+                                    <span className="w-6 text-center text-sm font-medium text-[#ECECEC]">{count}</span>
+                                    <button
+                                      type="button"
+                                      onClick={() => setExpectedForPlatform(p, count + 1)}
+                                      className="w-7 h-7 rounded-lg bg-[#212121] border border-[#3a3a3a] text-[#9B9B9B] hover:text-[#ECECEC] hover:border-[#4a4a4a] flex items-center justify-center text-sm font-medium transition-none"
+                                    >
+                                      +
+                                    </button>
                                   </div>
                                 </div>
                               );
                             })}
                           </div>
-                          <p className="text-[10px] text-[#666666] mt-4">Select which days you plan to post on each platform.</p>
+                          <p className="text-[10px] text-[#666666] mt-4">How many posts per day you expect on each platform.</p>
                         </div>
                       </>
                     )}
