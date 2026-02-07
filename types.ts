@@ -250,9 +250,17 @@ export interface SwipefileItem {
   createdAt: string;
 }
 
+export interface PlannerSubtask {
+  id: string;
+  title: string;
+  completed: boolean;
+}
+
 export interface PlannerTask {
   id: string;
   title: string;
   completed: boolean;
+  notes?: string;
+  subtasks?: PlannerSubtask[];
   createdAt: string;
 }

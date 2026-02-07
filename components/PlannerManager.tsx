@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { Plus, Trash2, Clock } from 'lucide-react';
-import { PlannerTask } from '../types';
+import { Plus, Trash2, Clock, X, Save, FileText } from 'lucide-react';
+import { PlannerTask, PlannerSubtask } from '../types';
 import useLocalStorage from '../hooks/useLocalStorage';
 
 interface PlannerManagerProps {
@@ -55,7 +55,7 @@ function spawnFirework(
     for (const p of particles) {
       p.x += p.vx;
       p.y += p.vy;
-      p.vy += 0.08; // gravity
+      p.vy += 0.08;
       p.life -= 0.02 / p.maxLife;
       if (p.life <= 0) continue;
       alive = true;
@@ -73,8 +73,6 @@ function spawnFirework(
     }
   };
   animId = requestAnimationFrame(animate);
-
-  // Safety cleanup
   setTimeout(() => cancelAnimationFrame(animId), 2000);
 }
 
@@ -83,7 +81,6 @@ function spawnFirework(
 function useSaoPauloCountdown() {
   const getTimeLeft = useCallback(() => {
     const now = new Date();
-    // Get current time in Sao Paulo (America/Sao_Paulo)
     const spNowStr = now.toLocaleString('en-US', { timeZone: 'America/Sao_Paulo', hour12: false });
     const spNow = new Date(spNowStr);
     const hours = spNow.getHours();
@@ -94,14 +91,10 @@ function useSaoPauloCountdown() {
     const elapsed = hours * 3600 + minutes * 60 + seconds;
     const remaining = totalSecondsInDay - elapsed;
 
-    const hoursLeft = Math.floor(remaining / 3600);
-    const minutesLeft = Math.floor((remaining % 3600) / 60);
-    const fraction = remaining / totalSecondsInDay; // 1.0 at midnight -> 0.0 at end of day
-
     return {
-      hoursLeft,
-      minutesLeft,
-      fraction,
+      hoursLeft: Math.floor(remaining / 3600),
+      minutesLeft: Math.floor((remaining % 3600) / 60),
+      fraction: remaining / totalSecondsInDay,
       displayTime: `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`,
     };
   }, []);
@@ -109,14 +102,14 @@ function useSaoPauloCountdown() {
   const [time, setTime] = useState(getTimeLeft);
 
   useEffect(() => {
-    const interval = setInterval(() => setTime(getTimeLeft()), 15000); // update every 15s
+    const interval = setInterval(() => setTime(getTimeLeft()), 15000);
     return () => clearInterval(interval);
   }, [getTimeLeft]);
 
   return time;
 }
 
-// --- Motivational GIFs keyed by progress tier ---
+// --- Motivational GIFs ---
 
 const MOTIVATION_GIFS: { threshold: number; url: string; caption: string }[] = [
   { threshold: 0,   url: 'https://media.giphy.com/media/3oEjHB1EKuujDjYFWw/giphy.gif', caption: "Time to grind." },
@@ -134,19 +127,189 @@ function getMotivationForProgress(ratio: number) {
   return best;
 }
 
-// ===================== COMPONENT =====================
+// ===================== TASK DETAIL MODAL =====================
+
+interface TaskDetailModalProps {
+  task: PlannerTask;
+  onClose: () => void;
+  onSave: (updated: PlannerTask) => void;
+  onDelete: (id: string) => void;
+}
+
+const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ task, onClose, onSave, onDelete }) => {
+  const [title, setTitle] = useState(task.title);
+  const [notes, setNotes] = useState(task.notes || '');
+  const [subtasks, setSubtasks] = useState<PlannerSubtask[]>(task.subtasks || []);
+  const [newSubtask, setNewSubtask] = useState('');
+  const subtaskInputRef = useRef<HTMLInputElement>(null);
+
+  const handleSave = () => {
+    onSave({
+      ...task,
+      title: title.trim() || task.title,
+      notes: notes.trim() || undefined,
+      subtasks: subtasks.length > 0 ? subtasks : undefined,
+    });
+  };
+
+  const addSubtask = () => {
+    const trimmed = newSubtask.trim();
+    if (!trimmed) return;
+    setSubtasks(prev => [...prev, { id: Date.now().toString(), title: trimmed, completed: false }]);
+    setNewSubtask('');
+    subtaskInputRef.current?.focus();
+  };
+
+  const toggleSubtask = (id: string) => {
+    setSubtasks(prev => prev.map(s => s.id === id ? { ...s, completed: !s.completed } : s));
+  };
+
+  const deleteSubtask = (id: string) => {
+    setSubtasks(prev => prev.filter(s => s.id !== id));
+  };
+
+  const completedSubs = subtasks.filter(s => s.completed).length;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="bg-[#2f2f2f] border border-[#3a3a3a] rounded-xl w-full max-w-lg shadow-2xl flex flex-col max-h-[90vh]">
+        {/* Header */}
+        <div className="flex items-center justify-between p-6 border-b border-[#3a3a3a]">
+          <h2 className="text-xl font-bold text-[#ECECEC]">Edit Task</h2>
+          <button onClick={onClose} className="text-[#9B9B9B] hover:text-[#ECECEC] transition-none">
+            <X size={24} />
+          </button>
+        </div>
+
+        {/* Body */}
+        <div className="p-6 overflow-y-auto custom-scrollbar flex-1 space-y-5">
+          {/* Title */}
+          <div>
+            <label className="text-[10px] uppercase tracking-wider text-[#9B9B9B] font-medium">Title</label>
+            <input
+              type="text"
+              value={title}
+              onChange={e => setTitle(e.target.value)}
+              className="w-full mt-1 bg-[#212121] border border-[#3a3a3a] rounded-lg px-4 py-3 text-[#ECECEC] focus:outline-none focus:ring-2 focus:ring-[#555555] transition-none placeholder-[#666666]"
+              placeholder="Task title..."
+            />
+          </div>
+
+          {/* Notes */}
+          <div>
+            <label className="text-[10px] uppercase tracking-wider text-[#9B9B9B] font-medium">Notes</label>
+            <textarea
+              value={notes}
+              onChange={e => setNotes(e.target.value)}
+              rows={5}
+              className="w-full mt-1 bg-[#212121] border border-[#3a3a3a] rounded-lg px-4 py-3 text-[#ECECEC] focus:outline-none focus:ring-2 focus:ring-[#555555] transition-none placeholder-[#666666] resize-none"
+              placeholder="Add notes, context, links..."
+            />
+          </div>
+
+          {/* Subtasks */}
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-[10px] uppercase tracking-wider text-[#9B9B9B] font-medium">Subtasks</label>
+              {subtasks.length > 0 && (
+                <span className="text-[10px] text-[#666666]">{completedSubs}/{subtasks.length}</span>
+              )}
+            </div>
+
+            <div className="bg-[#212121] border border-[#3a3a3a] rounded-lg overflow-hidden">
+              {/* Add subtask input */}
+              <div className="flex items-center gap-2 px-3 py-2.5 border-b border-[#3a3a3a]">
+                <Plus size={12} className="text-[#666666] flex-shrink-0" />
+                <input
+                  ref={subtaskInputRef}
+                  type="text"
+                  value={newSubtask}
+                  onChange={e => setNewSubtask(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter') addSubtask(); }}
+                  placeholder="Add subtask..."
+                  className="flex-1 bg-transparent text-sm text-[#ECECEC] placeholder-[#666666] focus:outline-none"
+                />
+              </div>
+
+              {/* Subtask items */}
+              {subtasks.map(sub => (
+                <div key={sub.id} className="flex items-center gap-2 px-3 py-2 border-b border-[#3a3a3a] last:border-b-0 group">
+                  <button
+                    onClick={() => toggleSubtask(sub.id)}
+                    className={`w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 transition-none ${
+                      sub.completed ? 'bg-emerald-500 border-emerald-500' : 'border-[#4a4a4a] hover:border-[#9B9B9B]'
+                    }`}
+                  >
+                    {sub.completed && (
+                      <svg width="8" height="8" viewBox="0 0 10 10" fill="none">
+                        <path d="M2 5L4.5 7.5L8 2.5" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    )}
+                  </button>
+                  <span className={`flex-1 text-sm ${sub.completed ? 'line-through text-emerald-500/60' : 'text-[#ECECEC]'}`}>
+                    {sub.title}
+                  </span>
+                  <button
+                    onClick={() => deleteSubtask(sub.id)}
+                    className="opacity-0 group-hover:opacity-100 p-1 text-[#666666] hover:text-rose-400 transition-none"
+                  >
+                    <Trash2 size={12} />
+                  </button>
+                </div>
+              ))}
+
+              {subtasks.length === 0 && (
+                <div className="px-3 py-3 text-center">
+                  <p className="text-[#666666] text-xs">No subtasks yet</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="p-6 border-t border-[#3a3a3a] flex items-center justify-between bg-[rgba(255,255,255,0.03)]">
+          <button
+            onClick={() => onDelete(task.id)}
+            className="flex items-center gap-2 text-sm text-rose-500 hover:text-rose-400 transition-none"
+          >
+            <Trash2 size={16} />
+            Delete
+          </button>
+          <div className="flex gap-3">
+            <button
+              onClick={onClose}
+              className="px-4 py-2 text-[#9B9B9B] hover:text-[#ECECEC] text-sm font-medium transition-none"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleSave}
+              className="px-6 py-2 bg-white hover:bg-[#e5e5e5] text-[#212121] rounded-lg text-sm font-semibold transition-none flex items-center gap-2"
+            >
+              <Save size={16} />
+              Save
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ===================== MAIN COMPONENT =====================
 
 const PlannerManager: React.FC<PlannerManagerProps> = ({ storagePrefix }) => {
   const [tasks, setTasks] = useLocalStorage<PlannerTask[]>(`${storagePrefix}_planner`, []);
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState('');
+  const [detailTask, setDetailTask] = useState<PlannerTask | null>(null);
   const editInputRef = useRef<HTMLInputElement>(null);
   const newTaskInputRef = useRef<HTMLInputElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
-  // Track which task IDs just got completed (for firework)
   const [justCompleted, setJustCompleted] = useState<Set<string>>(new Set());
 
   const spTime = useSaoPauloCountdown();
@@ -158,7 +321,6 @@ const PlannerManager: React.FC<PlannerManagerProps> = ({ storagePrefix }) => {
     }
   }, [editingId]);
 
-  // Resize canvas to overlay the task list
   useEffect(() => {
     const resize = () => {
       const canvas = canvasRef.current;
@@ -191,7 +353,6 @@ const PlannerManager: React.FC<PlannerManagerProps> = ({ storagePrefix }) => {
     const task = tasks.find(t => t.id === id);
     if (!task) return;
 
-    // If task is being completed (not unchecked), fire the firework
     if (!task.completed) {
       const canvas = canvasRef.current;
       const list = listRef.current;
@@ -211,6 +372,7 @@ const PlannerManager: React.FC<PlannerManagerProps> = ({ storagePrefix }) => {
 
   const deleteTask = (id: string) => {
     setTasks(prev => prev.filter(t => t.id !== id));
+    setDetailTask(null);
   };
 
   const startEditing = (task: PlannerTask) => {
@@ -234,13 +396,22 @@ const PlannerManager: React.FC<PlannerManagerProps> = ({ storagePrefix }) => {
     setEditingTitle('');
   };
 
+  const handleSaveDetail = (updated: PlannerTask) => {
+    setTasks(prev => prev.map(t => t.id === updated.id ? updated : t));
+    setDetailTask(null);
+  };
+
+  const openDetail = (task: PlannerTask) => {
+    setDetailTask(task);
+  };
+
   const completedCount = tasks.filter(t => t.completed).length;
   const progress = tasks.length > 0 ? completedCount / tasks.length : 0;
   const motivation = getMotivationForProgress(progress);
   const allDone = tasks.length > 0 && completedCount === tasks.length;
 
-  // Color for the countdown bar: green when lots of time, amber mid, red when low
-  const barColor = spTime.fraction > 0.5 ? '#4ade80' : spTime.fraction > 0.2 ? '#facc15' : '#ef4444';
+  // Purple mid-range instead of yellow
+  const barColor = spTime.fraction > 0.5 ? '#4ade80' : spTime.fraction > 0.2 ? '#a78bfa' : '#ef4444';
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -273,7 +444,6 @@ const PlannerManager: React.FC<PlannerManagerProps> = ({ storagePrefix }) => {
           <h3 className="text-3xl font-bold text-[#ECECEC] mb-2">
             {spTime.hoursLeft}h {spTime.minutesLeft}m
           </h3>
-          {/* Progress bar (draining) */}
           <div className="w-full h-2 rounded-full bg-[#212121] overflow-hidden">
             <div
               className="h-full rounded-full"
@@ -291,10 +461,9 @@ const PlannerManager: React.FC<PlannerManagerProps> = ({ storagePrefix }) => {
         </div>
       </div>
 
-      {/* Task list with firework canvas overlay */}
+      {/* Task list */}
       <section>
         <div ref={listRef} className="relative bg-[#2f2f2f] border border-[#3a3a3a] rounded-xl overflow-hidden">
-          {/* Canvas for fireworks — absolutely positioned over the list, pointer-events none */}
           <canvas
             ref={canvasRef}
             className="absolute inset-0 z-10 pointer-events-none"
@@ -334,65 +503,89 @@ const PlannerManager: React.FC<PlannerManagerProps> = ({ storagePrefix }) => {
             </div>
           ) : (
             <div>
-              {tasks.map(task => (
-                <div
-                  key={task.id}
-                  className={`flex items-center gap-3 px-5 py-3.5 border-b border-[#3a3a3a] last:border-b-0 group hover:bg-[rgba(255,255,255,0.02)] transition-none ${
-                    justCompleted.has(task.id) ? 'bg-[rgba(74,222,128,0.06)]' : ''
-                  }`}
-                >
-                  {/* Checkbox */}
-                  <button
-                    onClick={(e) => toggleTask(task.id, e)}
-                    className={`w-5 h-5 rounded border flex items-center justify-center flex-shrink-0 transition-none ${
-                      task.completed
-                        ? 'bg-emerald-500 border-emerald-500'
-                        : 'border-[#4a4a4a] hover:border-[#9B9B9B]'
+              {tasks.map(task => {
+                const subCount = task.subtasks?.length || 0;
+                const subDone = task.subtasks?.filter(s => s.completed).length || 0;
+                const hasDetails = !!(task.notes || subCount > 0);
+
+                return (
+                  <div
+                    key={task.id}
+                    className={`flex items-center gap-3 px-5 py-3.5 border-b border-[#3a3a3a] last:border-b-0 group hover:bg-[rgba(255,255,255,0.02)] transition-none ${
+                      justCompleted.has(task.id) ? 'bg-[rgba(74,222,128,0.06)]' : ''
                     }`}
                   >
-                    {task.completed && (
-                      <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-                        <path d="M2 5L4.5 7.5L8 2.5" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                      </svg>
-                    )}
-                  </button>
-
-                  {/* Title (click to edit) */}
-                  {editingId === task.id ? (
-                    <input
-                      ref={editInputRef}
-                      type="text"
-                      value={editingTitle}
-                      onChange={e => setEditingTitle(e.target.value)}
-                      onKeyDown={e => {
-                        if (e.key === 'Enter') commitEdit();
-                        if (e.key === 'Escape') cancelEdit();
-                      }}
-                      onBlur={commitEdit}
-                      className="flex-1 bg-[#3a3a3a] border border-[#4a4a4a] rounded-lg px-3 py-1.5 text-sm text-[#ECECEC] focus:outline-none focus:ring-1 focus:ring-[#555555]"
-                    />
-                  ) : (
-                    <span
-                      onClick={() => startEditing(task)}
-                      className={`flex-1 text-sm cursor-pointer ${
+                    {/* Checkbox */}
+                    <button
+                      onClick={(e) => toggleTask(task.id, e)}
+                      className={`w-5 h-5 rounded border flex items-center justify-center flex-shrink-0 transition-none ${
                         task.completed
-                          ? 'line-through text-emerald-500/60'
-                          : 'text-[#ECECEC] hover:text-white'
+                          ? 'bg-emerald-500 border-emerald-500'
+                          : 'border-[#4a4a4a] hover:border-[#9B9B9B]'
                       }`}
                     >
-                      {task.title}
-                    </span>
-                  )}
+                      {task.completed && (
+                        <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                          <path d="M2 5L4.5 7.5L8 2.5" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      )}
+                    </button>
 
-                  {/* Delete */}
-                  <button
-                    onClick={() => deleteTask(task.id)}
-                    className="opacity-0 group-hover:opacity-100 p-1.5 text-[#666666] hover:text-rose-400 rounded-lg hover:bg-[rgba(255,255,255,0.05)] transition-none flex-shrink-0"
-                  >
-                    <Trash2 size={14} />
-                  </button>
-                </div>
-              ))}
+                    {/* Title (click to edit inline) */}
+                    {editingId === task.id ? (
+                      <input
+                        ref={editInputRef}
+                        type="text"
+                        value={editingTitle}
+                        onChange={e => setEditingTitle(e.target.value)}
+                        onKeyDown={e => {
+                          if (e.key === 'Enter') commitEdit();
+                          if (e.key === 'Escape') cancelEdit();
+                        }}
+                        onBlur={commitEdit}
+                        className="flex-1 bg-[#3a3a3a] border border-[#4a4a4a] rounded-lg px-3 py-1.5 text-sm text-[#ECECEC] focus:outline-none focus:ring-1 focus:ring-[#555555]"
+                      />
+                    ) : (
+                      <span
+                        onClick={() => startEditing(task)}
+                        className={`flex-1 text-sm cursor-pointer ${
+                          task.completed
+                            ? 'line-through text-emerald-500/60'
+                            : 'text-[#ECECEC] hover:text-white'
+                        }`}
+                      >
+                        {task.title}
+                      </span>
+                    )}
+
+                    {/* Subtask count indicator */}
+                    {subCount > 0 && (
+                      <span className="text-[10px] text-[#666666] flex-shrink-0">{subDone}/{subCount}</span>
+                    )}
+
+                    {/* Notes/detail indicator + open modal */}
+                    <button
+                      onClick={() => openDetail(task)}
+                      className={`p-1.5 rounded-lg transition-none flex-shrink-0 ${
+                        hasDetails
+                          ? 'text-[#9B9B9B] hover:text-[#ECECEC] hover:bg-[rgba(255,255,255,0.05)]'
+                          : 'opacity-0 group-hover:opacity-100 text-[#666666] hover:text-[#ECECEC] hover:bg-[rgba(255,255,255,0.05)]'
+                      }`}
+                      title="Edit details"
+                    >
+                      <FileText size={14} />
+                    </button>
+
+                    {/* Delete */}
+                    <button
+                      onClick={() => deleteTask(task.id)}
+                      className="opacity-0 group-hover:opacity-100 p-1.5 text-[#666666] hover:text-rose-400 rounded-lg hover:bg-[rgba(255,255,255,0.05)] transition-none flex-shrink-0"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
@@ -429,6 +622,16 @@ const PlannerManager: React.FC<PlannerManagerProps> = ({ storagePrefix }) => {
           </div>
         </div>
       </section>
+
+      {/* Task Detail Modal */}
+      {detailTask && (
+        <TaskDetailModal
+          task={detailTask}
+          onClose={() => setDetailTask(null)}
+          onSave={handleSaveDetail}
+          onDelete={deleteTask}
+        />
+      )}
     </div>
   );
 };
