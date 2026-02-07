@@ -10,7 +10,7 @@ import FunnelManager from './components/FunnelManager';
 import AdsManager from './components/AdsManager';
 import { ChartViewType, NavigationItem, FinanceItem, InvoiceStatus, RevenueDataPoint, ContentDataPoint, ContentItem, AdMetric, ContentStatus, Platform } from './types';
 import { AD_METRICS } from './constants';
-import { Bell, Search, Calendar, Save, Check, Loader2 } from 'lucide-react';
+import { Bell, Search, Calendar, Save, Check, Loader2, Settings } from 'lucide-react';
 import useLocalStorage from './hooks/useLocalStorage';
 import { syncLocalDataToSupabase } from './services/syncLocalToSupabase';
 
@@ -57,34 +57,50 @@ const App: React.FC = () => {
   // --- Finance State Management ---
   const [financeItems, setFinanceItems] = useLocalStorage<FinanceItem[]>(`${storagePrefix}_finance`, []);
 
-  // Content chart: platform filter and per-platform expected (value + per day/week)
-  type ExpectedPeriod = 'day' | 'week';
-  const defaultExpectedByPlatform: Record<Platform, { value: number; period: ExpectedPeriod }> = {
-    [Platform.YOUTUBE]: { value: 1, period: 'day' },
-    [Platform.INSTAGRAM]: { value: 0, period: 'day' },
-    [Platform.TIKTOK]: { value: 0, period: 'day' },
-    [Platform.LINKEDIN]: { value: 0, period: 'day' },
+  // Content chart: multi-select platforms (empty = all)
+  const [contentChartSelectedPlatforms, setContentChartSelectedPlatforms] = useState<Platform[]>([]);
+  const toggleContentPlatform = (p: Platform) => {
+    setContentChartSelectedPlatforms(prev => prev.includes(p) ? prev.filter(x => x !== p) : [...prev, p]);
   };
-  const [contentChartPlatformFilter, setContentChartPlatformFilter] = useState<'All' | Platform>('All');
-  const [contentExpectedEditPlatform, setContentExpectedEditPlatform] = useState<Platform>(Platform.YOUTUBE);
-  const [contentExpectedByPlatform, setContentExpectedByPlatform] = useLocalStorage<Record<Platform, { value: number; period: ExpectedPeriod }>>(
-    `${storagePrefix}_content_expected_by_platform`,
-    defaultExpectedByPlatform
+  const allPlatformsList: Platform[] = [Platform.YOUTUBE, Platform.INSTAGRAM, Platform.TIKTOK, Platform.LINKEDIN];
+  const contentChartPlatforms = contentChartSelectedPlatforms.length === 0 ? allPlatformsList : contentChartSelectedPlatforms;
+
+  // Per-platform expected: which days of week to post (0=Sun, 1=Mon, ... 6=Sat)
+  const DAYS_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const defaultDaysByPlatform: Record<Platform, number[]> = {
+    [Platform.YOUTUBE]: [1, 3, 5],
+    [Platform.INSTAGRAM]: [],
+    [Platform.TIKTOK]: [],
+    [Platform.LINKEDIN]: [],
+  };
+  const [contentExpectedByPlatform, setContentExpectedByPlatform] = useLocalStorage<Record<Platform, number[]>>(
+    `${storagePrefix}_content_expected_days`,
+    defaultDaysByPlatform
   );
+  const [contentExpectedPopover, setContentExpectedPopover] = useState<Platform | null>(null);
 
-  const expectedPerDayForPlatform = (p: Platform): number => {
-    const { value, period } = contentExpectedByPlatform[p] ?? { value: 0, period: 'day' as ExpectedPeriod };
-    return period === 'week' ? value / 7 : value;
+  const setExpectedDaysForPlatform = (platform: Platform, days: number[]) => {
+    setContentExpectedByPlatform(prev => ({ ...prev, [platform]: days }));
   };
 
-  // Content from localStorage for dashboard chart (filtered by platform, with expected) + items by date for tooltip
+  const expectedForDate = (date: Date, platforms: Platform[]): number => {
+    const dayOfWeek = date.getDay();
+    return platforms.reduce((sum, p) => {
+      const days = contentExpectedByPlatform[p] ?? [];
+      return sum + (days.includes(dayOfWeek) ? 1 : 0);
+    }, 0);
+  };
+
+  // Content from localStorage for dashboard chart (filtered by selected platforms, expected by day of week) + items by date for tooltip
   const { contentChartData, contentItemsByDate } = useMemo(() => {
     const empty = { contentChartData: [] as ContentDataPoint[], contentItemsByDate: {} as Record<string, { title: string; platform: string }[]> };
     try {
       const raw = localStorage.getItem(`${storagePrefix}_content`);
       if (!raw) return empty;
       let items: ContentItem[] = JSON.parse(raw);
-      const filteredItems = contentChartPlatformFilter === 'All' ? items : items.filter(item => item.platform === contentChartPlatformFilter);
+      const filteredItems = contentChartPlatforms.length === 0
+        ? items
+        : items.filter(item => contentChartPlatforms.includes(item.platform));
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       const dayKey = (d: Date) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
@@ -109,20 +125,17 @@ const App: React.FC = () => {
         }
         itemsByDay[key].push({ title: item.title || 'Untitled', platform: item.platform });
       });
-      let expectedPerDay: number;
-      if (contentChartPlatformFilter === 'All') {
-        expectedPerDay = (Object.keys(contentExpectedByPlatform) as Platform[]).reduce((sum, p) => sum + expectedPerDayForPlatform(p), 0);
-      } else {
-        expectedPerDay = expectedPerDayForPlatform(contentChartPlatformFilter);
-      }
       const contentChartData: ContentDataPoint[] = Object.keys(countsByDay)
         .sort()
-        .map(key => ({
-          date: dateLabel(key),
-          daysAhead: countsByDay[key].total,
-          published: countsByDay[key].published,
-          expected: expectedPerDay,
-        }));
+        .map(key => {
+          const d = new Date(key);
+          return {
+            date: dateLabel(key),
+            daysAhead: countsByDay[key].total,
+            published: countsByDay[key].published,
+            expected: expectedForDate(d, contentChartPlatforms),
+          };
+        });
       const contentItemsByDate: Record<string, { title: string; platform: string }[]> = {};
       Object.keys(itemsByDay).sort().forEach(key => {
         contentItemsByDate[dateLabel(key)] = itemsByDay[key];
@@ -131,11 +144,7 @@ const App: React.FC = () => {
     } catch {
       return empty;
     }
-  }, [storagePrefix, activeNav, contentChartPlatformFilter, contentExpectedByPlatform]);
-
-  const setExpectedForPlatform = (platform: Platform, value: number, period: ExpectedPeriod) => {
-    setContentExpectedByPlatform(prev => ({ ...prev, [platform]: { value: Math.max(0, value), period } }));
-  };
+  }, [storagePrefix, activeNav, contentChartPlatforms, contentExpectedByPlatform]);
 
   // Campaign metrics (editable, persisted)
   const [campaignMetrics, setCampaignMetrics] = useLocalStorage<AdMetric[]>(`${storagePrefix}_campaign_metrics`, AD_METRICS);
@@ -288,7 +297,7 @@ const App: React.FC = () => {
                           const totalPieces = contentChartData.reduce((s, d) => s + d.daysAhead, 0);
                           const daysWithContent = contentChartData.filter(d => d.daysAhead > 0).length;
                           const videoWord = totalPieces === 1 ? 'video' : 'videos';
-                          const platformLabel = contentChartPlatformFilter === 'All' ? '' : `${contentChartPlatformFilter} `;
+                          const platformLabel = contentChartSelectedPlatforms.length === 0 ? '' : contentChartSelectedPlatforms.length === 1 ? `${contentChartSelectedPlatforms[0]} ` : `${contentChartSelectedPlatforms.length} platforms `;
                           return `${totalPieces} ${platformLabel}${videoWord} · ${daysWithContent} days`;
                         })()
                       : '—'}
@@ -311,49 +320,84 @@ const App: React.FC = () => {
             {/* Main Charts */}
             <section>
               {activeChart === ChartViewType.CONTENT_SCHEDULE && (
-                <div className="flex flex-wrap items-center gap-3 mb-3">
+                <div className="flex flex-wrap items-center gap-4 mb-3">
                   <div className="flex items-center gap-2">
                     <span className="text-sm text-[#9B9B9B]">View:</span>
-                    <select
-                      value={contentChartPlatformFilter}
-                      onChange={e => setContentChartPlatformFilter(e.target.value as 'All' | Platform)}
-                      className="bg-[#2f2f2f] border border-[#3a3a3a] rounded-lg px-3 py-1.5 text-sm text-[#ECECEC] focus:outline-none focus:ring-1 focus:ring-[#555555]"
-                    >
-                      <option value="All">All platforms</option>
-                      <option value={Platform.YOUTUBE}>YouTube</option>
-                      <option value={Platform.INSTAGRAM}>Instagram</option>
-                      <option value={Platform.TIKTOK}>TikTok</option>
-                      <option value={Platform.LINKEDIN}>LinkedIn</option>
-                    </select>
+                    <div className="flex flex-wrap gap-1.5">
+                      {allPlatformsList.map(p => {
+                        const on = contentChartSelectedPlatforms.length === 0 || contentChartSelectedPlatforms.includes(p);
+                        return (
+                          <button
+                            key={p}
+                            type="button"
+                            onClick={() => toggleContentPlatform(p)}
+                            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-none ${on ? 'bg-[#3a3a3a] text-[#ECECEC] border border-[#4a4a4a]' : 'bg-[#2f2f2f] text-[#666666] border border-[#3a3a3a] hover:text-[#9B9B9B]'}`}
+                          >
+                            {p}
+                          </button>
+                        );
+                      })}
+                      {contentChartSelectedPlatforms.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => setContentChartSelectedPlatforms([])}
+                          className="px-3 py-1.5 rounded-lg text-sm text-[#9B9B9B] border border-[#3a3a3a] hover:text-[#ECECEC] hover:border-[#4a4a4a] transition-none"
+                        >
+                          All
+                        </button>
+                      )}
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-[#9B9B9B]">Set expected for:</span>
-                    <select
-                      value={contentExpectedEditPlatform}
-                      onChange={e => setContentExpectedEditPlatform(e.target.value as Platform)}
-                      className="bg-[#2f2f2f] border border-[#3a3a3a] rounded-lg px-3 py-1.5 text-sm text-[#ECECEC] focus:outline-none focus:ring-1 focus:ring-[#555555]"
-                    >
-                      <option value={Platform.YOUTUBE}>YouTube</option>
-                      <option value={Platform.INSTAGRAM}>Instagram</option>
-                      <option value={Platform.TIKTOK}>TikTok</option>
-                      <option value={Platform.LINKEDIN}>LinkedIn</option>
-                    </select>
-                    <input
-                      type="number"
-                      min={0}
-                      step={0.1}
-                      value={contentExpectedByPlatform[contentExpectedEditPlatform]?.value ?? 0}
-                      onChange={e => setExpectedForPlatform(contentExpectedEditPlatform, parseFloat(e.target.value) || 0, contentExpectedByPlatform[contentExpectedEditPlatform]?.period ?? 'day')}
-                      className="w-14 bg-[#2f2f2f] border border-[#3a3a3a] rounded-lg px-2 py-1.5 text-sm text-[#ECECEC] focus:outline-none focus:ring-1 focus:ring-[#555555]"
-                    />
-                    <select
-                      value={contentExpectedByPlatform[contentExpectedEditPlatform]?.period ?? 'day'}
-                      onChange={e => setExpectedForPlatform(contentExpectedEditPlatform, contentExpectedByPlatform[contentExpectedEditPlatform]?.value ?? 0, e.target.value as ExpectedPeriod)}
-                      className="bg-[#2f2f2f] border border-[#3a3a3a] rounded-lg px-2 py-1.5 text-sm text-[#ECECEC] focus:outline-none"
-                    >
-                      <option value="day">per day</option>
-                      <option value="week">per week</option>
-                    </select>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-sm text-[#9B9B9B]">Expected:</span>
+                    {allPlatformsList.map(p => {
+                      const days = contentExpectedByPlatform[p] ?? [];
+                      const count = days.length;
+                      const isOpen = contentExpectedPopover === p;
+                      return (
+                        <div key={p} className="relative">
+                          <button
+                            type="button"
+                            onClick={() => setContentExpectedPopover(isOpen ? null : p)}
+                            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[#2f2f2f] border border-[#3a3a3a] text-sm text-[#ECECEC] hover:border-[#4a4a4a] transition-none"
+                          >
+                            <span>{p}</span>
+                            <Settings size={12} className="text-[#9B9B9B]" />
+                            {count > 0 && <span className="text-[10px] text-[#9B9B9B]">({count})</span>}
+                          </button>
+                          {isOpen && (
+                            <>
+                              <div className="fixed inset-0 z-40" onClick={() => setContentExpectedPopover(null)} />
+                              <div className="absolute left-0 top-full mt-1 z-50 bg-[#2f2f2f] border border-[#3a3a3a] rounded-xl p-4 shadow-xl min-w-[200px]">
+                                <p className="text-[10px] uppercase tracking-wider text-[#9B9B9B] font-medium mb-2">Post on which days — {p}</p>
+                                <div className="flex flex-wrap gap-2">
+                                  {DAYS_LABELS.map((label, i) => {
+                                    const dayNum = i;
+                                    const checked = (contentExpectedByPlatform[p] ?? []).includes(dayNum);
+                                    return (
+                                      <label key={dayNum} className="flex items-center gap-1.5 cursor-pointer">
+                                        <input
+                                          type="checkbox"
+                                          checked={checked}
+                                          onChange={() => {
+                                            const current = contentExpectedByPlatform[p] ?? [];
+                                            const next = checked ? current.filter(d => d !== dayNum) : [...current, dayNum].sort((a, b) => a - b);
+                                            setExpectedDaysForPlatform(p, next);
+                                          }}
+                                          className="rounded border-[#4a4a4a] bg-[#212121] text-[#10b981] focus:ring-[#555555]"
+                                        />
+                                        <span className="text-xs text-[#ECECEC]">{label}</span>
+                                      </label>
+                                    );
+                                  })}
+                                </div>
+                                <p className="text-[10px] text-[#666666] mt-2">Uncheck all = no expected posts for this platform.</p>
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               )}
