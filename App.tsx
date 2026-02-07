@@ -8,6 +8,7 @@ import SwipefileManager from './components/SwipefileManager';
 import TeamManager from './components/TeamManager';
 import FunnelManager from './components/FunnelManager';
 import AdsManager from './components/AdsManager';
+import PlannerManager from './components/PlannerManager';
 import { ChartViewType, NavigationItem, FinanceItem, InvoiceStatus, RevenueDataPoint, ContentDataPoint, ContentItem, AdMetric, ContentStatus, Platform } from './types';
 import { AD_METRICS } from './constants';
 import { Bell, Search, Calendar, Save, Check, Loader2, Settings, Filter } from 'lucide-react';
@@ -516,6 +517,10 @@ const App: React.FC = () => {
           </div>
         )}
 
+        {activeNav === NavigationItem.PLANNER && (
+           <PlannerManager storagePrefix={storagePrefix} />
+        )}
+
         {activeNav === NavigationItem.CONTENT && (
            <ContentManager storagePrefix={storagePrefix} />
         )}
@@ -546,7 +551,7 @@ const App: React.FC = () => {
             <TeamManager storagePrefix={storagePrefix} />
         )}
 
-        {activeNav !== NavigationItem.DASHBOARD && activeNav !== NavigationItem.CONTENT && activeNav !== NavigationItem.FINANCE && activeNav !== NavigationItem.SWIPEFILE && activeNav !== NavigationItem.TEAM && activeNav !== NavigationItem.ADS && activeNav !== NavigationItem.FUNNELS && (
+        {activeNav !== NavigationItem.DASHBOARD && activeNav !== NavigationItem.PLANNER && activeNav !== NavigationItem.CONTENT && activeNav !== NavigationItem.FINANCE && activeNav !== NavigationItem.SWIPEFILE && activeNav !== NavigationItem.TEAM && activeNav !== NavigationItem.ADS && activeNav !== NavigationItem.FUNNELS && (
           <div className="h-96 flex flex-col items-center justify-center text-[#666666] border-2 border-dashed border-[#3a3a3a] rounded-xl">
             <p className="text-lg font-medium mb-2">Work in Progress</p>
             <p className="text-sm max-w-md text-center">

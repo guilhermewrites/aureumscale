@@ -14,7 +14,8 @@ import {
   ChevronDown,
   Check,
   Camera,
-  Settings
+  Settings,
+  ClipboardList
 } from 'lucide-react';
 import { NavigationItem, AppUser } from '../types';
 import useLocalStorage from '../hooks/useLocalStorage';
@@ -111,6 +112,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeItem, onNavigate, activeUserId,
 
   const menuItems = [
     { id: NavigationItem.DASHBOARD, icon: LayoutDashboard, label: 'Dashboard' },
+    { id: NavigationItem.PLANNER, icon: ClipboardList, label: 'Planner' },
     { id: NavigationItem.CONTENT, icon: FileText, label: 'Content' },
     { id: NavigationItem.ADS, icon: Megaphone, label: 'Ads' },
     { id: NavigationItem.FUNNELS, icon: GitBranch, label: 'Funnels' },

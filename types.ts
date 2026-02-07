@@ -42,6 +42,7 @@ export interface AdMetric {
 
 export enum NavigationItem {
   DASHBOARD = 'Dashboard',
+  PLANNER = 'Planner',
   CONTENT = 'Content',
   ADS = 'Ads',
   FUNNELS = 'Funnels',
@@ -246,5 +247,12 @@ export interface SwipefileItem {
   mediaUrl?: string; // URL for image or video preview
   category: SwipefileCategory;
   tags: string[];
+  createdAt: string;
+}
+
+export interface PlannerTask {
+  id: string;
+  title: string;
+  completed: boolean;
   createdAt: string;
 }
