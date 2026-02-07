@@ -22,6 +22,7 @@ import useLocalStorage from '../hooks/useLocalStorage';
 import { supabase } from '../services/supabaseClient';
 
 type ViewMode = 'pipeline' | 'ideation' | 'trash';
+const normalizeMemberName = (name?: string): string => String(name || '').trim().toLowerCase();
 
 type ConfirmType = 'delete_content' | 'delete_idea' | 'restore_content' | 'delete_forever' | 'empty_trash';
 
@@ -107,6 +108,8 @@ const ContentManager: React.FC<ContentManagerProps> = ({ storagePrefix }) => {
           // Build a map of latest team member data from localStorage
           let persistedMembersById: Record<string, any> = {};
           let activeIds = new Set<string>();
+          let persistedMembersByName: Record<string, any> = {};
+          let activeNames = new Set<string>();
           try {
             const stored = localStorage.getItem(`${storagePrefix}_team`);
             if (stored) {
@@ -115,6 +118,8 @@ const ContentManager: React.FC<ContentManagerProps> = ({ storagePrefix }) => {
                 const normalized = { ...m, id: String(m.id) };
                 persistedMembersById[String(normalized.id).trim()] = normalized;
                 activeIds.add(String(normalized.id).trim());
+                persistedMembersByName[normalizeMemberName(normalized.name)] = normalized;
+                activeNames.add(normalizeMemberName(normalized.name));
               });
             }
           } catch {}
@@ -125,9 +130,13 @@ const ContentManager: React.FC<ContentManagerProps> = ({ storagePrefix }) => {
             const enrichedTeam = rawTeam.map((t: any) => {
               const normalized = { ...t, id: String(t.id) };
               return (
-                persistedMembersById[String(normalized.id).trim()] || normalized
+                persistedMembersByName[normalizeMemberName(normalized.name)] ||
+                persistedMembersById[String(normalized.id).trim()] ||
+                normalized
               );
-            }).filter((t: any) => activeIds.has(String(t.id).trim()));
+            }).filter((t: any) =>
+              activeIds.has(String(t.id).trim()) || activeNames.has(normalizeMemberName(t.name))
+            );
 
             return {
               id: row.id,
@@ -361,13 +370,24 @@ const ContentManager: React.FC<ContentManagerProps> = ({ storagePrefix }) => {
             return [String(normalized.id).trim(), normalized];
           })
         );
+        const memberByName = new Map(
+          members.map((m: any) => {
+            const normalized = { ...m, id: String(m.id) };
+            return [normalizeMemberName(normalized.name), normalized];
+          })
+        );
         const activeIds = new Set(members.map((m: any) => String(m.id).trim()));
+        const activeNames = new Set(members.map((m: any) => normalizeMemberName(m.name)));
         enrichedItem = {
           ...updatedItem,
           team: updatedItem.team.map(t => {
             const normalized = { ...t, id: String(t.id) };
-            return (memberById.get(String(normalized.id).trim()) as any) || normalized;
-          }).filter(t => activeIds.has(String(t.id).trim())),
+            return (
+              (memberByName.get(normalizeMemberName(normalized.name)) as any) ||
+              (memberById.get(String(normalized.id).trim()) as any) ||
+              normalized
+            );
+          }).filter(t => activeIds.has(String(t.id).trim()) || activeNames.has(normalizeMemberName(t.name))),
         };
       }
     } catch {}

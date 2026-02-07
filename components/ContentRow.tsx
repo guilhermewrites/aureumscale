@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { ContentItem, ContentStatus, TeamMember, Platform, VideoStyle } from '../types';
 import { TEAM_MEMBERS } from '../constants';
+const normalizeMemberName = (name?: string): string => String(name || '').trim().toLowerCase();
 
 const getPersistedTeamMembers = (storagePrefix: string): TeamMember[] => {
   try {
@@ -55,9 +56,10 @@ const ContentRow: React.FC<ContentRowProps> = ({ item, onUpdate, onDelete, onDem
   const resolvedTeam = React.useMemo(() => {
     const persisted = getPersistedTeamMembers(storagePrefix);
     const memberById = new Map(persisted.map(m => [String(m.id).trim(), m]));
+    const memberByName = new Map(persisted.map(m => [normalizeMemberName(m.name), m]));
     return item.team
-      .map(t => memberById.get(String(t.id).trim()) || t)
-      .filter(t => memberById.has(String(t.id).trim()));
+      .map(t => memberByName.get(normalizeMemberName(t.name)) || memberById.get(String(t.id).trim()) || t)
+      .filter(t => memberById.has(String(t.id).trim()) || memberByName.has(normalizeMemberName(t.name)));
   }, [item.team, storagePrefix]);
   // Edit states
   const [editingField, setEditingField] = useState<'title' | 'status' | 'style' | 'team' | 'date' | 'link' | 'script' | 'thumbnail' | 'youtube' | null>(null);
@@ -196,20 +198,23 @@ const ContentRow: React.FC<ContentRowProps> = ({ item, onUpdate, onDelete, onDem
   const toggleTeamMember = (member: TeamMember) => {
     const persisted = getPersistedTeamMembers(storagePrefix);
     const memberById = new Map(persisted.map(m => [String(m.id).trim(), m]));
+    const memberByName = new Map(persisted.map(m => [normalizeMemberName(m.name), m]));
     const activeIds = new Set(persisted.map(m => String(m.id).trim()));
+    const activeNames = new Set(persisted.map(m => normalizeMemberName(m.name)));
     // Refresh all existing team members with latest data
     const refreshedTeam = item.team.map(t =>
-      memberById.get(String(t.id).trim()) || t
-    ).filter(t => activeIds.has(String(t.id).trim()));
+      memberByName.get(normalizeMemberName(t.name)) || memberById.get(String(t.id).trim()) || t
+    ).filter(t => activeIds.has(String(t.id).trim()) || activeNames.has(normalizeMemberName(t.name)));
 
     const memberId = String(member.id).trim();
-    const exists = refreshedTeam.find(t => String(t.id).trim() === memberId);
+    const memberName = normalizeMemberName(member.name);
+    const exists = refreshedTeam.find(t => String(t.id).trim() === memberId || normalizeMemberName(t.name) === memberName);
     let newTeam;
     if (exists) {
-      newTeam = refreshedTeam.filter(t => String(t.id).trim() !== memberId);
+      newTeam = refreshedTeam.filter(t => String(t.id).trim() !== memberId && normalizeMemberName(t.name) !== memberName);
     } else {
       // Use fresh member data from persisted source
-      const freshMember = memberById.get(memberId) || { ...member, id: memberId };
+      const freshMember = memberByName.get(memberName) || memberById.get(memberId) || { ...member, id: memberId };
       newTeam = [...refreshedTeam, freshMember];
     }
     onUpdate({ ...item, team: newTeam });
@@ -660,7 +665,8 @@ const ContentRow: React.FC<ContentRowProps> = ({ item, onUpdate, onDelete, onDem
                     <div className="space-y-1 max-h-48 overflow-y-auto custom-scrollbar">
                         {getPersistedTeamMembers(storagePrefix).map((member) => {
                             const memberId = String(member.id).trim();
-                            const isSelected = item.team.some(t => String(t.id).trim() === memberId);
+                            const memberName = normalizeMemberName(member.name);
+                            const isSelected = item.team.some(t => String(t.id).trim() === memberId || normalizeMemberName(t.name) === memberName);
                             return (
                                 <button
                                     key={memberId}
