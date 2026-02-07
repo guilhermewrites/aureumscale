@@ -14,32 +14,51 @@ import {
 import { ChartViewType, RevenueDataPoint, ContentDataPoint } from '../types';
 import { CONTENT_DATA, TEAM_SPEND_DATA } from '../constants';
 
+export interface ContentItemForTooltip {
+  title: string;
+  platform: string;
+}
+
 interface AnalyticsChartProps {
   view: ChartViewType;
   onChangeView: (view: ChartViewType) => void;
   revenueData?: RevenueDataPoint[];
   contentData?: ContentDataPoint[];
+  contentItemsByDate?: Record<string, ContentItemForTooltip[]>;
 }
 
 const isCurrencySeries = (name: string) => ['Monthly Goal', 'Cumulative Revenue', 'Spend', 'Budget'].includes(name);
 
-const CustomTooltip = ({ active, payload, label }: any) => {
+const CustomTooltip = ({ active, payload, label, contentItemsByDate }: any) => {
   if (active && payload && payload.length) {
+    const items = contentItemsByDate && label ? (contentItemsByDate[label] || []) : [];
     return (
-      <div className="bg-[#2f2f2f] border border-[#3a3a3a] p-3 rounded-lg shadow-xl backdrop-blur-md bg-opacity-90">
+      <div className="bg-[#2f2f2f] border border-[#3a3a3a] p-3 rounded-lg shadow-xl backdrop-blur-md bg-opacity-90 max-w-xs">
         <p className="text-[#9B9B9B] text-xs mb-1">{label}</p>
         {payload.map((entry: any, index: number) => (
           <p key={index} className="text-sm font-medium" style={{ color: entry.color }}>
             {entry.name}: {typeof entry.value === 'number' && isCurrencySeries(entry.name) ? `$${entry.value.toLocaleString()}` : entry.value}
           </p>
         ))}
+        {items.length > 0 && (
+          <div className="mt-2 pt-2 border-t border-[#3a3a3a]">
+            <p className="text-[#9B9B9B] text-[10px] uppercase tracking-wider mb-1">Scheduled</p>
+            <ul className="text-xs text-[#ECECEC] space-y-0.5 max-h-32 overflow-y-auto">
+              {items.map((item: ContentItemForTooltip, i: number) => (
+                <li key={i} className="truncate" title={item.title}>
+                  <span className="text-[#9B9B9B]">{item.platform}</span> — {item.title}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </div>
     );
   }
   return null;
 };
 
-const AnalyticsChart: React.FC<AnalyticsChartProps> = ({ view, onChangeView, revenueData, contentData }) => {
+const AnalyticsChart: React.FC<AnalyticsChartProps> = ({ view, onChangeView, revenueData, contentData, contentItemsByDate }) => {
   const [hovered, setHovered] = useState<string | null>(null);
 
   const renderChart = () => {
@@ -129,7 +148,7 @@ const AnalyticsChart: React.FC<AnalyticsChartProps> = ({ view, onChangeView, rev
                 tickLine={false}
                 axisLine={false}
               />
-              <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#374151', strokeWidth: 1, strokeDasharray: '4 4' }} />
+              <Tooltip content={<CustomTooltip contentItemsByDate={contentItemsByDate} />} cursor={{ stroke: '#374151', strokeWidth: 1, strokeDasharray: '4 4' }} />
               {hasExpected && (
                 <Area
                   type="monotone"
