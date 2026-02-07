@@ -135,7 +135,7 @@ const ContentManager: React.FC<ContentManagerProps> = ({ storagePrefix }) => {
                 normalized
               );
             }).filter((t: any) =>
-              activeIds.has(String(t.id).trim()) || activeNames.has(normalizeMemberName(t.name))
+              activeNames.has(normalizeMemberName(t.name))
             );
 
             return {
@@ -376,7 +376,6 @@ const ContentManager: React.FC<ContentManagerProps> = ({ storagePrefix }) => {
             return [normalizeMemberName(normalized.name), normalized];
           })
         );
-        const activeIds = new Set(members.map((m: any) => String(m.id).trim()));
         const activeNames = new Set(members.map((m: any) => normalizeMemberName(m.name)));
         enrichedItem = {
           ...updatedItem,
@@ -387,7 +386,7 @@ const ContentManager: React.FC<ContentManagerProps> = ({ storagePrefix }) => {
               (memberById.get(String(normalized.id).trim()) as any) ||
               normalized
             );
-          }).filter(t => activeIds.has(String(t.id).trim()) || activeNames.has(normalizeMemberName(t.name))),
+          }).filter(t => activeNames.has(normalizeMemberName(t.name))),
         };
       }
     } catch {}

@@ -125,23 +125,21 @@ const EditContentModal: React.FC<EditContentModalProps> = ({
       const persisted = getPersistedTeamMembers(storagePrefix);
       const memberById = new Map(persisted.map(m => [String(m.id).trim(), m]));
       const memberByName = new Map(persisted.map(m => [normalizeMemberName(m.name), m]));
-      const activeIds = new Set(persisted.map(m => String(m.id).trim()));
       const activeNames = new Set(persisted.map(m => normalizeMemberName(m.name)));
       // Refresh all existing team members with latest data (photos, roles, etc.)
       const refreshedTeam = prev.team.map(t =>
         memberByName.get(normalizeMemberName(t.name)) || memberById.get(String(t.id).trim()) || t
-      ).filter(t => activeIds.has(String(t.id).trim()) || activeNames.has(normalizeMemberName(t.name)));
+      ).filter(t => activeNames.has(normalizeMemberName(t.name)));
 
-      const memberId = String(member.id).trim();
       const memberName = normalizeMemberName(member.name);
-      const exists = refreshedTeam.find(t => String(t.id).trim() === memberId || normalizeMemberName(t.name) === memberName);
+      const exists = refreshedTeam.find(t => normalizeMemberName(t.name) === memberName);
       if (exists) {
         return {
           ...prev,
-          team: refreshedTeam.filter(t => String(t.id).trim() !== memberId && normalizeMemberName(t.name) !== memberName),
+          team: refreshedTeam.filter(t => normalizeMemberName(t.name) !== memberName),
         };
       } else {
-        const freshMember = memberByName.get(memberName) || memberById.get(memberId) || { ...member, id: memberId };
+        const freshMember = memberByName.get(memberName) || memberById.get(String(member.id).trim()) || member;
         return { ...prev, team: [...refreshedTeam, freshMember] };
       }
     });
@@ -356,12 +354,11 @@ const EditContentModal: React.FC<EditContentModalProps> = ({
               </label>
               <div className="grid grid-cols-2 gap-2">
                 {getPersistedTeamMembers(storagePrefix).map((member) => {
-                    const memberId = String(member.id).trim();
                     const memberName = normalizeMemberName(member.name);
-                    const isSelected = formData.team.some(t => String(t.id).trim() === memberId || normalizeMemberName(t.name) === memberName);
+                    const isSelected = formData.team.some(t => normalizeMemberName(t.name) === memberName);
                     return (
                         <button
-                            key={memberId}
+                            key={memberName}
                             type="button"
                             onClick={() => handleTeamToggle(member)}
                             className={`flex items-center gap-3 p-2 rounded-lg border transition-none ${
