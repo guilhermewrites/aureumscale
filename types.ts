@@ -14,7 +14,11 @@ export interface ContentDataPoint {
   date: string;
   daysAhead: number; // actual pieces (e.g. videos) for that day
   published?: number;
-  expected?: number; // target pieces per day for yellow line
+  expected?: number; // total expected across all visible platforms
+  expectedYouTube?: number;
+  expectedInstagram?: number;
+  expectedTikTok?: number;
+  expectedLinkedIn?: number;
 }
 
 export interface TeamSpendDataPoint {

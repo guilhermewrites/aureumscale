@@ -65,28 +65,46 @@ const App: React.FC = () => {
   const allPlatformsList: Platform[] = [Platform.YOUTUBE, Platform.INSTAGRAM, Platform.TIKTOK, Platform.LINKEDIN];
   const contentChartPlatforms = contentChartSelectedPlatforms.length === 0 ? allPlatformsList : contentChartSelectedPlatforms;
 
-  // Per-platform expected posts per day (number, supports > 1 per day)
-  const defaultPostsPerDay: Record<Platform, number> = {
-    [Platform.YOUTUBE]: 1,
-    [Platform.INSTAGRAM]: 0,
-    [Platform.TIKTOK]: 0,
-    [Platform.LINKEDIN]: 0,
+  // Per-platform expected posting config
+  // mode: 'daily' = same count every day, 'weekly' = pick days + count per day
+  interface PlatformExpectedConfig {
+    mode: 'daily' | 'weekly';
+    postsPerDay: number;       // used in daily mode
+    weeklyDays: number[];      // days of week (0=Sun..6=Sat) in weekly mode
+    postsPerPostDay: number;   // how many posts on each selected day in weekly mode
+  }
+  const DAYS_LABELS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+  const defaultExpectedConfig: Record<Platform, PlatformExpectedConfig> = {
+    [Platform.YOUTUBE]: { mode: 'weekly', postsPerDay: 0, weeklyDays: [1, 3, 5], postsPerPostDay: 1 },
+    [Platform.INSTAGRAM]: { mode: 'daily', postsPerDay: 0, weeklyDays: [], postsPerPostDay: 1 },
+    [Platform.TIKTOK]: { mode: 'daily', postsPerDay: 0, weeklyDays: [], postsPerPostDay: 1 },
+    [Platform.LINKEDIN]: { mode: 'daily', postsPerDay: 0, weeklyDays: [], postsPerPostDay: 1 },
   };
-  const [contentExpectedByPlatform, setContentExpectedByPlatform] = useLocalStorage<Record<Platform, number>>(
-    `${storagePrefix}_content_expected_per_day`,
-    defaultPostsPerDay
+  const [contentExpectedByPlatform, setContentExpectedByPlatform] = useLocalStorage<Record<Platform, PlatformExpectedConfig>>(
+    `${storagePrefix}_content_expected_v2`,
+    defaultExpectedConfig
   );
   const [filterPopoverOpen, setFilterPopoverOpen] = useState(false);
   const [settingsPopoverOpen, setSettingsPopoverOpen] = useState(false);
 
-  const setExpectedForPlatform = (platform: Platform, count: number) => {
-    setContentExpectedByPlatform(prev => ({ ...prev, [platform]: Math.max(0, count) }));
+  const updatePlatformConfig = (platform: Platform, updates: Partial<PlatformExpectedConfig>) => {
+    setContentExpectedByPlatform(prev => ({
+      ...prev,
+      [platform]: { ...prev[platform], ...updates },
+    }));
   };
 
-  const expectedForDate = (_date: Date, platforms: Platform[]): number => {
-    return platforms.reduce((sum, p) => {
-      return sum + (contentExpectedByPlatform[p] ?? 0);
-    }, 0);
+  const expectedForPlatformOnDate = (date: Date, platform: Platform): number => {
+    const cfg = contentExpectedByPlatform[platform];
+    if (!cfg) return 0;
+    if (cfg.mode === 'daily') return cfg.postsPerDay;
+    // weekly mode
+    const dayOfWeek = date.getDay();
+    return cfg.weeklyDays.includes(dayOfWeek) ? cfg.postsPerPostDay : 0;
+  };
+
+  const expectedForDate = (date: Date, platforms: Platform[]): number => {
+    return platforms.reduce((sum, p) => sum + expectedForPlatformOnDate(date, p), 0);
   };
 
   // Content from localStorage for dashboard chart (filtered by selected platforms, expected by day of week) + items by date for tooltip
@@ -127,11 +145,19 @@ const App: React.FC = () => {
         .sort()
         .map(key => {
           const d = new Date(key);
+          const eYT = contentChartPlatforms.includes(Platform.YOUTUBE) ? expectedForPlatformOnDate(d, Platform.YOUTUBE) : 0;
+          const eIG = contentChartPlatforms.includes(Platform.INSTAGRAM) ? expectedForPlatformOnDate(d, Platform.INSTAGRAM) : 0;
+          const eTT = contentChartPlatforms.includes(Platform.TIKTOK) ? expectedForPlatformOnDate(d, Platform.TIKTOK) : 0;
+          const eLI = contentChartPlatforms.includes(Platform.LINKEDIN) ? expectedForPlatformOnDate(d, Platform.LINKEDIN) : 0;
           return {
             date: dateLabel(key),
             daysAhead: countsByDay[key].total,
             published: countsByDay[key].published,
-            expected: expectedForDate(d, contentChartPlatforms),
+            expected: eYT + eIG + eTT + eLI,
+            expectedYouTube: eYT,
+            expectedInstagram: eIG,
+            expectedTikTok: eTT,
+            expectedLinkedIn: eLI,
           };
         });
       const contentItemsByDate: Record<string, { title: string; platform: string }[]> = {};
@@ -383,36 +409,85 @@ const App: React.FC = () => {
                     {settingsPopoverOpen && (
                       <>
                         <div className="fixed inset-0 z-40" onClick={() => setSettingsPopoverOpen(false)} />
-                        <div className="absolute left-0 top-full mt-1 z-50 bg-[#2f2f2f] border border-[#3a3a3a] rounded-xl p-5 shadow-xl min-w-[280px]">
-                          <p className="text-xs font-semibold text-[#ECECEC] mb-4">Expected Posts Per Day</p>
-                          <div className="space-y-3">
+                        <div className="absolute left-0 top-full mt-1 z-50 bg-[#2f2f2f] border border-[#3a3a3a] rounded-xl p-5 shadow-xl min-w-[340px] max-h-[70vh] overflow-y-auto">
+                          <p className="text-xs font-semibold text-[#ECECEC] mb-4">Expected Posting Schedule</p>
+                          <div className="space-y-5">
                             {allPlatformsList.map(p => {
-                              const count = contentExpectedByPlatform[p] ?? 0;
+                              const cfg = contentExpectedByPlatform[p] || defaultExpectedConfig[p];
+                              const platformColor = p === Platform.YOUTUBE ? '#ef4444' : p === Platform.INSTAGRAM ? '#c026d3' : p === Platform.TIKTOK ? '#06b6d4' : '#3b82f6';
                               return (
-                                <div key={p} className="flex items-center justify-between">
-                                  <span className="text-sm text-[#ECECEC]">{p}</span>
-                                  <div className="flex items-center gap-2">
-                                    <button
-                                      type="button"
-                                      onClick={() => setExpectedForPlatform(p, count - 1)}
-                                      className="w-7 h-7 rounded-lg bg-[#212121] border border-[#3a3a3a] text-[#9B9B9B] hover:text-[#ECECEC] hover:border-[#4a4a4a] flex items-center justify-center text-sm font-medium transition-none"
-                                    >
-                                      −
-                                    </button>
-                                    <span className="w-6 text-center text-sm font-medium text-[#ECECEC]">{count}</span>
-                                    <button
-                                      type="button"
-                                      onClick={() => setExpectedForPlatform(p, count + 1)}
-                                      className="w-7 h-7 rounded-lg bg-[#212121] border border-[#3a3a3a] text-[#9B9B9B] hover:text-[#ECECEC] hover:border-[#4a4a4a] flex items-center justify-center text-sm font-medium transition-none"
-                                    >
-                                      +
-                                    </button>
+                                <div key={p} className="space-y-2">
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-sm font-medium" style={{ color: platformColor }}>{p}</span>
+                                    {/* Mode toggle */}
+                                    <div className="flex bg-[#212121] rounded-lg p-0.5 border border-[#3a3a3a]">
+                                      <button
+                                        type="button"
+                                        onClick={() => updatePlatformConfig(p, { mode: 'daily' })}
+                                        className={`px-2.5 py-1 rounded-md text-[10px] font-medium transition-none ${cfg.mode === 'daily' ? 'bg-[#3a3a3a] text-[#ECECEC]' : 'text-[#666666] hover:text-[#9B9B9B]'}`}
+                                      >
+                                        Daily
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => updatePlatformConfig(p, { mode: 'weekly' })}
+                                        className={`px-2.5 py-1 rounded-md text-[10px] font-medium transition-none ${cfg.mode === 'weekly' ? 'bg-[#3a3a3a] text-[#ECECEC]' : 'text-[#666666] hover:text-[#9B9B9B]'}`}
+                                      >
+                                        Weekly
+                                      </button>
+                                    </div>
                                   </div>
+
+                                  {cfg.mode === 'daily' ? (
+                                    <div className="flex items-center justify-between bg-[#212121] rounded-lg px-3 py-2 border border-[#3a3a3a]">
+                                      <span className="text-xs text-[#9B9B9B]">Posts per day</span>
+                                      <div className="flex items-center gap-2">
+                                        <button type="button" onClick={() => updatePlatformConfig(p, { postsPerDay: Math.max(0, cfg.postsPerDay - 1) })}
+                                          className="w-6 h-6 rounded bg-[#2f2f2f] border border-[#3a3a3a] text-[#9B9B9B] hover:text-[#ECECEC] flex items-center justify-center text-xs font-medium transition-none">−</button>
+                                        <span className="w-5 text-center text-sm font-medium text-[#ECECEC]">{cfg.postsPerDay}</span>
+                                        <button type="button" onClick={() => updatePlatformConfig(p, { postsPerDay: cfg.postsPerDay + 1 })}
+                                          className="w-6 h-6 rounded bg-[#2f2f2f] border border-[#3a3a3a] text-[#9B9B9B] hover:text-[#ECECEC] flex items-center justify-center text-xs font-medium transition-none">+</button>
+                                      </div>
+                                    </div>
+                                  ) : (
+                                    <div className="space-y-2">
+                                      {/* Day-of-week picker */}
+                                      <div className="flex gap-1">
+                                        {DAYS_LABELS.map((label, i) => {
+                                          const on = cfg.weeklyDays.includes(i);
+                                          return (
+                                            <button
+                                              key={i}
+                                              type="button"
+                                              onClick={() => {
+                                                const next = on ? cfg.weeklyDays.filter(d => d !== i) : [...cfg.weeklyDays, i].sort((a, b) => a - b);
+                                                updatePlatformConfig(p, { weeklyDays: next });
+                                              }}
+                                              className={`flex-1 h-7 rounded text-[10px] font-medium transition-none ${on ? 'text-[#212121]' : 'bg-[#212121] text-[#666666] hover:text-[#9B9B9B]'}`}
+                                              style={on ? { backgroundColor: platformColor } : undefined}
+                                            >
+                                              {label}
+                                            </button>
+                                          );
+                                        })}
+                                      </div>
+                                      {/* Posts per posting day */}
+                                      <div className="flex items-center justify-between bg-[#212121] rounded-lg px-3 py-2 border border-[#3a3a3a]">
+                                        <span className="text-xs text-[#9B9B9B]">Posts per posting day</span>
+                                        <div className="flex items-center gap-2">
+                                          <button type="button" onClick={() => updatePlatformConfig(p, { postsPerPostDay: Math.max(1, cfg.postsPerPostDay - 1) })}
+                                            className="w-6 h-6 rounded bg-[#2f2f2f] border border-[#3a3a3a] text-[#9B9B9B] hover:text-[#ECECEC] flex items-center justify-center text-xs font-medium transition-none">−</button>
+                                          <span className="w-5 text-center text-sm font-medium text-[#ECECEC]">{cfg.postsPerPostDay}</span>
+                                          <button type="button" onClick={() => updatePlatformConfig(p, { postsPerPostDay: cfg.postsPerPostDay + 1 })}
+                                            className="w-6 h-6 rounded bg-[#2f2f2f] border border-[#3a3a3a] text-[#9B9B9B] hover:text-[#ECECEC] flex items-center justify-center text-xs font-medium transition-none">+</button>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  )}
                                 </div>
                               );
                             })}
                           </div>
-                          <p className="text-[10px] text-[#666666] mt-4">How many posts per day you expect on each platform.</p>
                         </div>
                       </>
                     )}
@@ -425,6 +500,7 @@ const App: React.FC = () => {
                 revenueData={revenueChartData}
                 contentData={contentChartData}
                 contentItemsByDate={contentItemsByDate}
+                visiblePlatforms={contentChartPlatforms}
               />
             </section>
 
