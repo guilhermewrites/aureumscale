@@ -3,9 +3,9 @@ import {
   Folder, Clock, Loader2, CheckCircle2, Radio,
   Trash2, User, Check, Calendar, ExternalLink,
   ArrowLeftCircle, FilePenLine, FileText, Youtube,
-  Instagram, Image, Pencil, Send, GripVertical
+  Instagram, Image, Pencil, Send, GripVertical, XCircle
 } from 'lucide-react';
-import { ContentItem, ContentStatus, TeamMember, Platform, VideoStyle } from '../types';
+import { ContentItem, ContentStatus, TeamMember, Platform, VideoStyle, InstagramStyle, YOUTUBE_STATUSES, INSTAGRAM_STATUSES } from '../types';
 import { TEAM_MEMBERS } from '../constants';
 const normalizeMemberName = (name?: string): string => String(name || '').trim().toLowerCase();
 
@@ -175,13 +175,14 @@ const ContentRow: React.FC<ContentRowProps> = ({ item, onUpdate, onDelete, onDem
     setEditingField(null);
   };
 
-  const updateStyle = (newStyle: VideoStyle | undefined) => {
+  const updateStyle = (newStyle: VideoStyle | InstagramStyle | undefined) => {
     onUpdate({ ...item, style: newStyle });
     setEditingField(null);
   };
 
-  const getStyleConfig = (style: VideoStyle) => {
+  const getStyleConfig = (style: VideoStyle | InstagramStyle) => {
     switch (style) {
+      // YouTube styles
       case VideoStyle.MIRO:
         return { color: 'text-yellow-400', bg: 'bg-yellow-500/10', border: 'border-yellow-500/20', dot: 'bg-yellow-400' };
       case VideoStyle.IPAD:
@@ -192,6 +193,38 @@ const ContentRow: React.FC<ContentRowProps> = ({ item, onUpdate, onDelete, onDem
         return { color: 'text-teal-400', bg: 'bg-teal-500/10', border: 'border-teal-500/20', dot: 'bg-teal-400' };
       case VideoStyle.ED_LAWRENCE:
         return { color: 'text-pink-400', bg: 'bg-pink-500/10', border: 'border-pink-500/20', dot: 'bg-pink-400' };
+      // Instagram styles
+      case InstagramStyle.MOVING_CHAIR:
+        return { color: 'text-amber-400', bg: 'bg-amber-500/10', border: 'border-amber-500/20', dot: 'bg-amber-400' };
+      case InstagramStyle.TALKING_HEAD:
+        return { color: 'text-rose-400', bg: 'bg-rose-500/10', border: 'border-rose-500/20', dot: 'bg-rose-400' };
+      case InstagramStyle.FACE_BACKGROUND:
+        return { color: 'text-indigo-400', bg: 'bg-indigo-500/10', border: 'border-indigo-500/20', dot: 'bg-indigo-400' };
+      case InstagramStyle.VOICE_OVER:
+        return { color: 'text-cyan-400', bg: 'bg-cyan-500/10', border: 'border-cyan-500/20', dot: 'bg-cyan-400' };
+      default:
+        return { color: 'text-gray-400', bg: 'bg-gray-500/10', border: 'border-gray-500/20', dot: 'bg-gray-400' };
+    }
+  };
+
+  // Platform-aware: which styles to show
+  const getStylesForPlatform = (platform: Platform): (VideoStyle | InstagramStyle)[] => {
+    switch (platform) {
+      case Platform.INSTAGRAM:
+        return Object.values(InstagramStyle);
+      case Platform.YOUTUBE:
+      default:
+        return Object.values(VideoStyle);
+    }
+  };
+
+  // Platform-aware: which statuses to show
+  const getStatusesForPlatform = (platform: Platform): ContentStatus[] => {
+    switch (platform) {
+      case Platform.INSTAGRAM:
+        return INSTAGRAM_STATUSES;
+      default:
+        return YOUTUBE_STATUSES;
     }
   };
 
@@ -230,6 +263,8 @@ const ContentRow: React.FC<ContentRowProps> = ({ item, onUpdate, onDelete, onDem
         return { icon: Pencil, color: 'text-orange-400', bg: 'bg-orange-500/10', border: 'border-orange-500/20' };
       case ContentStatus.SENT:
         return { icon: Send, color: 'text-purple-400', bg: 'bg-purple-500/10', border: 'border-purple-500/20' };
+      case ContentStatus.REJECTED:
+        return { icon: XCircle, color: 'text-red-400', bg: 'bg-red-500/10', border: 'border-red-500/20' };
       case ContentStatus.DONE:
         return { icon: CheckCircle2, color: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20' };
       case ContentStatus.LIVE:
@@ -581,7 +616,7 @@ const ContentRow: React.FC<ContentRowProps> = ({ item, onUpdate, onDelete, onDem
 
             {editingField === 'status' && (
                 <div ref={statusDropdownRef} className="absolute top-full left-0 mt-2 w-40 bg-[#2f2f2f] border border-[#3a3a3a] rounded-xl shadow-2xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-100">
-                    {Object.values(ContentStatus).map((status) => {
+                    {getStatusesForPlatform(item.platform).map((status) => {
                         const conf = getStatusConfig(status);
                         const SIcon = conf.icon;
                         return (
@@ -633,7 +668,7 @@ const ContentRow: React.FC<ContentRowProps> = ({ item, onUpdate, onDelete, onDem
                           <span>Clear</span>
                       </button>
                     )}
-                    {Object.values(VideoStyle).map((style) => {
+                    {getStylesForPlatform(item.platform).map((style) => {
                         const conf = getStyleConfig(style);
                         return (
                             <button

@@ -137,6 +137,7 @@ export enum ContentStatus {
   IN_PROGRESS = 'In Progress',
   EDITING = 'Editing',
   SENT = 'Sent',
+  REJECTED = 'Rejected',
   DONE = 'Done',
   LIVE = 'Live'
 }
@@ -151,6 +152,7 @@ export interface TeamMember {
   photoUrl?: string;
 }
 
+// YouTube styles
 export enum VideoStyle {
   MIRO = 'Miro',
   IPAD = 'iPad',
@@ -158,6 +160,35 @@ export enum VideoStyle {
   BLENDED = 'Blended',
   ED_LAWRENCE = 'Ed Lawrence'
 }
+
+// Instagram styles
+export enum InstagramStyle {
+  MOVING_CHAIR = 'Moving Chair',
+  TALKING_HEAD = 'Talking Head',
+  FACE_BACKGROUND = 'Face & Background',
+  MIRO = 'Miro',
+  VOICE_OVER = 'Voice-over'
+}
+
+// Platform-specific status sets
+export const YOUTUBE_STATUSES: ContentStatus[] = [
+  ContentStatus.PENDING,
+  ContentStatus.IN_PROGRESS,
+  ContentStatus.EDITING,
+  ContentStatus.SENT,
+  ContentStatus.DONE,
+  ContentStatus.LIVE,
+];
+
+export const INSTAGRAM_STATUSES: ContentStatus[] = [
+  ContentStatus.PENDING,
+  ContentStatus.IN_PROGRESS,
+  ContentStatus.EDITING,
+  ContentStatus.SENT,
+  ContentStatus.REJECTED,
+  ContentStatus.DONE,
+  ContentStatus.LIVE,
+];
 
 export interface ContentItem {
   id: string;
@@ -168,7 +199,7 @@ export interface ContentItem {
   thumbnailUrl?: string;
   youtubeUrl?: string;
   status: ContentStatus;
-  style?: VideoStyle;
+  style?: VideoStyle | InstagramStyle;
   team: TeamMember[];
   postDate: string;
   platform: Platform;

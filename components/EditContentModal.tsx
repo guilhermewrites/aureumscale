@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, Save, Calendar, Folder, User, Check, Trash2, FileText, Image, ExternalLink } from 'lucide-react';
-import { ContentItem, ContentStatus, Platform, TeamMember, VideoStyle } from '../types';
+import { ContentItem, ContentStatus, Platform, TeamMember, VideoStyle, InstagramStyle, YOUTUBE_STATUSES, INSTAGRAM_STATUSES } from '../types';
 import { TEAM_MEMBERS } from '../constants';
 const normalizeMemberName = (name?: string): string => String(name || '').trim().toLowerCase();
 
@@ -223,7 +223,7 @@ const EditContentModal: React.FC<EditContentModalProps> = ({
                         onChange={e => setFormData({...formData, status: e.target.value as ContentStatus})}
                         className="w-full bg-[#212121] border border-[#3a3a3a] rounded-lg px-4 py-3 text-[#ECECEC] focus:outline-none focus:ring-2 focus:ring-[#555555] transition-none appearance-none"
                     >
-                        {Object.values(ContentStatus).map(s => (
+                        {(formData.platform === Platform.INSTAGRAM ? INSTAGRAM_STATUSES : YOUTUBE_STATUSES).map(s => (
                             <option key={s} value={s}>{s}</option>
                         ))}
                     </select>
@@ -233,11 +233,11 @@ const EditContentModal: React.FC<EditContentModalProps> = ({
                     <label className="text-sm font-medium text-[#9B9B9B]">Style</label>
                     <select
                         value={formData.style || ''}
-                        onChange={e => setFormData({...formData, style: e.target.value ? e.target.value as VideoStyle : undefined})}
+                        onChange={e => setFormData({...formData, style: e.target.value ? (e.target.value as VideoStyle | InstagramStyle) : undefined})}
                         className="w-full bg-[#212121] border border-[#3a3a3a] rounded-lg px-4 py-3 text-[#ECECEC] focus:outline-none focus:ring-2 focus:ring-[#555555] transition-none appearance-none"
                     >
                         <option value="">No style</option>
-                        {Object.values(VideoStyle).map(s => (
+                        {(formData.platform === Platform.INSTAGRAM ? Object.values(InstagramStyle) : Object.values(VideoStyle)).map(s => (
                             <option key={s} value={s}>{s}</option>
                         ))}
                     </select>
