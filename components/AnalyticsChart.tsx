@@ -14,6 +14,10 @@ import {
 import { ChartViewType, RevenueDataPoint, ContentDataPoint } from '../types';
 import { CONTENT_DATA, TEAM_SPEND_DATA } from '../constants';
 
+// Shared colors across all dashboard charts: primary = actual/main, secondary = goal/expected/target
+const CHART_PRIMARY = '#10b981';   // emerald – actual revenue, actual content, spend
+const CHART_SECONDARY = '#6366f1';  // indigo – goal, expected, budget reference
+
 export interface ContentItemForTooltip {
   title: string;
   platform: string;
@@ -69,12 +73,12 @@ const AnalyticsChart: React.FC<AnalyticsChartProps> = ({ view, onChangeView, rev
             <AreaChart data={revenueData || []} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
               <defs>
                 <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
-                  <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                  <stop offset="5%" stopColor={CHART_PRIMARY} stopOpacity={0.3}/>
+                  <stop offset="95%" stopColor={CHART_PRIMARY} stopOpacity={0}/>
                 </linearGradient>
                 <linearGradient id="colorGoal" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#6366f1" stopOpacity={0.1}/>
-                  <stop offset="95%" stopColor="#6366f1" stopOpacity={0}/>
+                  <stop offset="5%" stopColor={CHART_SECONDARY} stopOpacity={0.1}/>
+                  <stop offset="95%" stopColor={CHART_SECONDARY} stopOpacity={0}/>
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="#3a3a3a" vertical={false} />
@@ -99,7 +103,7 @@ const AnalyticsChart: React.FC<AnalyticsChartProps> = ({ view, onChangeView, rev
                 type="monotone"
                 dataKey="goal"
                 name="Monthly Goal"
-                stroke="#6366f1"
+                stroke={CHART_SECONDARY}
                 strokeWidth={2}
                 strokeDasharray="5 5"
                 fill="url(#colorGoal)"
@@ -108,7 +112,7 @@ const AnalyticsChart: React.FC<AnalyticsChartProps> = ({ view, onChangeView, rev
                 type="monotone"
                 dataKey="revenue"
                 name="Cumulative Revenue"
-                stroke="#10b981"
+                stroke={CHART_PRIMARY}
                 strokeWidth={3}
                 fill="url(#colorRevenue)"
                 animationDuration={1500}
@@ -125,12 +129,12 @@ const AnalyticsChart: React.FC<AnalyticsChartProps> = ({ view, onChangeView, rev
             <AreaChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
               <defs>
                 <linearGradient id="colorContentActual" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
-                  <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                  <stop offset="5%" stopColor={CHART_PRIMARY} stopOpacity={0.3}/>
+                  <stop offset="95%" stopColor={CHART_PRIMARY} stopOpacity={0}/>
                 </linearGradient>
                 <linearGradient id="colorContentExpected" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#eab308" stopOpacity={0.15}/>
-                  <stop offset="95%" stopColor="#eab308" stopOpacity={0}/>
+                  <stop offset="5%" stopColor={CHART_SECONDARY} stopOpacity={0.15}/>
+                  <stop offset="95%" stopColor={CHART_SECONDARY} stopOpacity={0}/>
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="#3a3a3a" vertical={false} />
@@ -147,6 +151,9 @@ const AnalyticsChart: React.FC<AnalyticsChartProps> = ({ view, onChangeView, rev
                 fontSize={12}
                 tickLine={false}
                 axisLine={false}
+                domain={[0, 'auto']}
+                allowDecimals={false}
+                tickCount={8}
               />
               <Tooltip content={<CustomTooltip contentItemsByDate={contentItemsByDate} />} cursor={{ stroke: '#374151', strokeWidth: 1, strokeDasharray: '4 4' }} />
               {hasExpected && (
@@ -154,7 +161,7 @@ const AnalyticsChart: React.FC<AnalyticsChartProps> = ({ view, onChangeView, rev
                   type="monotone"
                   dataKey="expected"
                   name="Expected"
-                  stroke="#eab308"
+                  stroke={CHART_SECONDARY}
                   strokeWidth={2}
                   strokeDasharray="5 5"
                   fill="url(#colorContentExpected)"
@@ -164,7 +171,7 @@ const AnalyticsChart: React.FC<AnalyticsChartProps> = ({ view, onChangeView, rev
                 type="monotone"
                 dataKey="daysAhead"
                 name="Actual"
-                stroke="#3b82f6"
+                stroke={CHART_PRIMARY}
                 strokeWidth={3}
                 fill="url(#colorContentActual)"
                 animationDuration={1500}
@@ -180,8 +187,12 @@ const AnalyticsChart: React.FC<AnalyticsChartProps> = ({ view, onChangeView, rev
             <AreaChart data={TEAM_SPEND_DATA} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
               <defs>
                 <linearGradient id="colorSpend" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#f43f5e" stopOpacity={0.3}/>
-                  <stop offset="95%" stopColor="#f43f5e" stopOpacity={0}/>
+                  <stop offset="5%" stopColor={CHART_PRIMARY} stopOpacity={0.3}/>
+                  <stop offset="95%" stopColor={CHART_PRIMARY} stopOpacity={0}/>
+                </linearGradient>
+                <linearGradient id="colorBudget" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor={CHART_SECONDARY} stopOpacity={0.1}/>
+                  <stop offset="95%" stopColor={CHART_SECONDARY} stopOpacity={0}/>
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="#3a3a3a" vertical={false} />
@@ -203,20 +214,21 @@ const AnalyticsChart: React.FC<AnalyticsChartProps> = ({ view, onChangeView, rev
               <Tooltip content={<CustomTooltip />} />
               <Area
                 type="monotone"
-                dataKey="spend"
-                name="Spend"
-                stroke="#f43f5e"
-                strokeWidth={3}
-                fill="url(#colorSpend)"
+                dataKey="budget"
+                name="Budget"
+                stroke={CHART_SECONDARY}
+                strokeWidth={2}
+                strokeDasharray="5 5"
+                fill="url(#colorBudget)"
               />
               <Area
                 type="monotone"
-                dataKey="budget"
-                name="Budget Limit"
-                stroke="#9ca3af"
-                strokeWidth={1}
-                strokeDasharray="4 4"
-                fill="transparent"
+                dataKey="spend"
+                name="Spend"
+                stroke={CHART_PRIMARY}
+                strokeWidth={3}
+                fill="url(#colorSpend)"
+                animationDuration={1500}
               />
             </AreaChart>
           </ResponsiveContainer>

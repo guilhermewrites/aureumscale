@@ -66,6 +66,7 @@ const App: React.FC = () => {
     [Platform.LINKEDIN]: { value: 0, period: 'day' },
   };
   const [contentChartPlatformFilter, setContentChartPlatformFilter] = useState<'All' | Platform>('All');
+  const [contentExpectedEditPlatform, setContentExpectedEditPlatform] = useState<Platform>(Platform.YOUTUBE);
   const [contentExpectedByPlatform, setContentExpectedByPlatform] = useLocalStorage<Record<Platform, { value: number; period: ExpectedPeriod }>>(
     `${storagePrefix}_content_expected_by_platform`,
     defaultExpectedByPlatform
@@ -310,7 +311,7 @@ const App: React.FC = () => {
             {/* Main Charts */}
             <section>
               {activeChart === ChartViewType.CONTENT_SCHEDULE && (
-                <div className="flex flex-wrap items-center gap-4 mb-3">
+                <div className="flex flex-wrap items-center gap-3 mb-3">
                   <div className="flex items-center gap-2">
                     <span className="text-sm text-[#9B9B9B]">View:</span>
                     <select
@@ -325,29 +326,34 @@ const App: React.FC = () => {
                       <option value={Platform.LINKEDIN}>LinkedIn</option>
                     </select>
                   </div>
-                  <div className="flex flex-wrap items-center gap-4">
-                    <span className="text-sm text-[#9B9B9B]">Expected by platform:</span>
-                    {(Object.keys(contentExpectedByPlatform) as Platform[]).map(platform => (
-                      <div key={platform} className="flex items-center gap-2">
-                        <span className="text-xs text-[#b4b4b4] w-20">{platform}</span>
-                        <input
-                          type="number"
-                          min={0}
-                          step={0.1}
-                          value={contentExpectedByPlatform[platform]?.value ?? 0}
-                          onChange={e => setExpectedForPlatform(platform, parseFloat(e.target.value) || 0, contentExpectedByPlatform[platform]?.period ?? 'day')}
-                          className="w-14 bg-[#2f2f2f] border border-[#3a3a3a] rounded px-2 py-1 text-sm text-[#ECECEC] focus:outline-none focus:ring-1 focus:ring-[#555555]"
-                        />
-                        <select
-                          value={contentExpectedByPlatform[platform]?.period ?? 'day'}
-                          onChange={e => setExpectedForPlatform(platform, contentExpectedByPlatform[platform]?.value ?? 0, e.target.value as ExpectedPeriod)}
-                          className="bg-[#2f2f2f] border border-[#3a3a3a] rounded px-2 py-1 text-xs text-[#ECECEC] focus:outline-none"
-                        >
-                          <option value="day">/ day</option>
-                          <option value="week">/ week</option>
-                        </select>
-                      </div>
-                    ))}
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-[#9B9B9B]">Set expected for:</span>
+                    <select
+                      value={contentExpectedEditPlatform}
+                      onChange={e => setContentExpectedEditPlatform(e.target.value as Platform)}
+                      className="bg-[#2f2f2f] border border-[#3a3a3a] rounded-lg px-3 py-1.5 text-sm text-[#ECECEC] focus:outline-none focus:ring-1 focus:ring-[#555555]"
+                    >
+                      <option value={Platform.YOUTUBE}>YouTube</option>
+                      <option value={Platform.INSTAGRAM}>Instagram</option>
+                      <option value={Platform.TIKTOK}>TikTok</option>
+                      <option value={Platform.LINKEDIN}>LinkedIn</option>
+                    </select>
+                    <input
+                      type="number"
+                      min={0}
+                      step={0.1}
+                      value={contentExpectedByPlatform[contentExpectedEditPlatform]?.value ?? 0}
+                      onChange={e => setExpectedForPlatform(contentExpectedEditPlatform, parseFloat(e.target.value) || 0, contentExpectedByPlatform[contentExpectedEditPlatform]?.period ?? 'day')}
+                      className="w-14 bg-[#2f2f2f] border border-[#3a3a3a] rounded-lg px-2 py-1.5 text-sm text-[#ECECEC] focus:outline-none focus:ring-1 focus:ring-[#555555]"
+                    />
+                    <select
+                      value={contentExpectedByPlatform[contentExpectedEditPlatform]?.period ?? 'day'}
+                      onChange={e => setExpectedForPlatform(contentExpectedEditPlatform, contentExpectedByPlatform[contentExpectedEditPlatform]?.value ?? 0, e.target.value as ExpectedPeriod)}
+                      className="bg-[#2f2f2f] border border-[#3a3a3a] rounded-lg px-2 py-1.5 text-sm text-[#ECECEC] focus:outline-none"
+                    >
+                      <option value="day">per day</option>
+                      <option value="week">per week</option>
+                    </select>
                   </div>
                 </div>
               )}
