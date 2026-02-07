@@ -12,8 +12,9 @@ export interface RevenueDataPoint {
 
 export interface ContentDataPoint {
   date: string;
-  daysAhead: number; // How many days of content are ready ahead of schedule
-  published: number;
+  daysAhead: number; // actual pieces (e.g. videos) for that day
+  published?: number;
+  expected?: number; // target pieces per day for yellow line
 }
 
 export interface TeamSpendDataPoint {

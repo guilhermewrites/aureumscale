@@ -21,6 +21,8 @@ interface AnalyticsChartProps {
   contentData?: ContentDataPoint[];
 }
 
+const isCurrencySeries = (name: string) => ['Monthly Goal', 'Cumulative Revenue', 'Spend', 'Budget'].includes(name);
+
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
     return (
@@ -28,7 +30,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
         <p className="text-[#9B9B9B] text-xs mb-1">{label}</p>
         {payload.map((entry: any, index: number) => (
           <p key={index} className="text-sm font-medium" style={{ color: entry.color }}>
-            {entry.name}: {typeof entry.value === 'number' && entry.name !== 'Days Ahead' ? `$${entry.value.toLocaleString()}` : entry.value}
+            {entry.name}: {typeof entry.value === 'number' && isCurrencySeries(entry.name) ? `$${entry.value.toLocaleString()}` : entry.value}
           </p>
         ))}
       </div>
@@ -98,10 +100,20 @@ const AnalyticsChart: React.FC<AnalyticsChartProps> = ({ view, onChangeView, rev
 
       case ChartViewType.CONTENT_SCHEDULE: {
         const chartData = (contentData && contentData.length > 0) ? contentData : CONTENT_DATA;
-        const barLabel = (contentData && contentData.length > 0) ? 'Pieces' : 'Days Ahead';
+        const hasExpected = chartData.some((d: ContentDataPoint) => d.expected != null && d.expected > 0);
         return (
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+            <AreaChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+              <defs>
+                <linearGradient id="colorContentActual" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
+                  <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                </linearGradient>
+                <linearGradient id="colorContentExpected" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#eab308" stopOpacity={0.15}/>
+                  <stop offset="95%" stopColor="#eab308" stopOpacity={0}/>
+                </linearGradient>
+              </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="#3a3a3a" vertical={false} />
               <XAxis
                 dataKey="date"
@@ -117,16 +129,28 @@ const AnalyticsChart: React.FC<AnalyticsChartProps> = ({ view, onChangeView, rev
                 tickLine={false}
                 axisLine={false}
               />
-              <Tooltip content={<CustomTooltip />} cursor={{ fill: '#1f2937', opacity: 0.4 }} />
-              <ReferenceLine y={7} stroke="#eab308" strokeDasharray="3 3" label={{ value: 'Target Buffer', position: 'right', fill: '#eab308', fontSize: 10 }} />
-              <Bar
+              <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#374151', strokeWidth: 1, strokeDasharray: '4 4' }} />
+              {hasExpected && (
+                <Area
+                  type="monotone"
+                  dataKey="expected"
+                  name="Expected"
+                  stroke="#eab308"
+                  strokeWidth={2}
+                  strokeDasharray="5 5"
+                  fill="url(#colorContentExpected)"
+                />
+              )}
+              <Area
+                type="monotone"
                 dataKey="daysAhead"
-                name={barLabel}
-                fill="#3b82f6"
-                radius={[4, 4, 0, 0]}
-                barSize={40}
+                name="Actual"
+                stroke="#3b82f6"
+                strokeWidth={3}
+                fill="url(#colorContentActual)"
+                animationDuration={1500}
               />
-            </BarChart>
+            </AreaChart>
           </ResponsiveContainer>
         );
       }

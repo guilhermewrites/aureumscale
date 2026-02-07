@@ -297,7 +297,7 @@ const ContentRow: React.FC<ContentRowProps> = ({ item, onUpdate, onDelete, onDem
 
   return (
     <tr
-      className={`group hover:bg-[rgba(255,255,255,0.05)] transition-none ${hasThumbnail ? 'align-top' : ''} ${isDragged ? 'opacity-40' : ''} ${isDragOver ? 'relative bg-emerald-500/10 border-t-4 border-t-emerald-400 shadow-[inset_0_2px_0_0_rgba(52,211,153,0.5)]' : ''}`}
+      className={`group hover:bg-[rgba(255,255,255,0.05)] transition-none ${hasThumbnail ? 'align-top' : ''} ${isDragged ? 'opacity-40' : ''} ${isDragOver ? 'relative bg-white/10 border-t-4 border-t-white shadow-[inset_0_2px_0_0_rgba(255,255,255,0.4)]' : ''}`}
       draggable={!!onDragStart}
       onDragStart={onDragStart}
       onDragOver={onDragOverProp}

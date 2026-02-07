@@ -25,6 +25,8 @@ const emptyForm = (): Omit<AdMetric, 'id'> => ({
   spend: 0,
 });
 
+type EditableField = keyof Pick<AdMetric, 'campaignName' | 'platform' | 'status' | 'cpc' | 'cpm' | 'ctr' | 'costPerBookedCall' | 'costPerShowedCall' | 'spend'>;
+
 const MetricsTable: React.FC<MetricsTableProps> = ({ data, onUpdate, onDelete, onAdd }) => {
   const [insight, setInsight] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -32,6 +34,8 @@ const MetricsTable: React.FC<MetricsTableProps> = ({ data, onUpdate, onDelete, o
   const [editModal, setEditModal] = useState<{ type: 'add' } | { type: 'edit'; row: AdMetric } | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [form, setForm] = useState<Omit<AdMetric, 'id'> | AdMetric>(emptyForm());
+  const [inlineEdit, setInlineEdit] = useState<{ rowId: string; field: EditableField } | null>(null);
+  const [inlineValue, setInlineValue] = useState('');
 
   const handleGenerateInsights = async () => {
     setLoading(true);
@@ -77,7 +81,30 @@ const MetricsTable: React.FC<MetricsTableProps> = ({ data, onUpdate, onDelete, o
     setMenuRowId(null);
   };
 
+  const startInlineEdit = (row: AdMetric, field: EditableField) => {
+    if (!onUpdate) return;
+    const v = row[field];
+    setInlineEdit({ rowId: row.id, field });
+    setInlineValue(typeof v === 'number' ? String(v) : (v || ''));
+  };
+
+  const applyInlineEdit = () => {
+    if (!inlineEdit || !onUpdate) return;
+    const row = data.find(r => r.id === inlineEdit.rowId);
+    if (!row) return;
+    const num = parseFloat(inlineValue);
+    const updates: Partial<AdMetric> = {};
+    if (inlineEdit.field === 'campaignName' || inlineEdit.field === 'platform' || inlineEdit.field === 'status') {
+      (updates as any)[inlineEdit.field] = inlineEdit.field === 'platform' ? (inlineValue as AdMetric['platform']) : inlineEdit.field === 'status' ? (inlineValue as AdMetric['status']) : inlineValue;
+    } else {
+      (updates as any)[inlineEdit.field] = isNaN(num) ? 0 : num;
+    }
+    onUpdate({ ...row, ...updates });
+    setInlineEdit(null);
+  };
+
   const canEdit = !!onUpdate || !!onDelete || !!onAdd;
+  const isEditing = (rowId: string, field: EditableField) => inlineEdit?.rowId === rowId && inlineEdit?.field === field;
 
   return (
     <div className="bg-[#2f2f2f] border border-[#3a3a3a] rounded-xl overflow-hidden shadow-sm flex flex-col">
@@ -143,48 +170,102 @@ const MetricsTable: React.FC<MetricsTableProps> = ({ data, onUpdate, onDelete, o
               <tr key={row.id} className="group hover:bg-[rgba(255,255,255,0.05)] transition-none">
                 <td className="px-6 py-4">
                   <div className="flex items-center gap-3">
-                    <div className={`w-2 h-2 rounded-full ${
+                    <div className={`w-2 h-2 rounded-full flex-shrink-0 ${
                       row.platform === 'Facebook' ? 'bg-blue-500' :
                       row.platform === 'Google' ? 'bg-red-500' :
                       row.platform === 'TikTok' ? 'bg-pink-500' : 'bg-blue-700'
                     }`} />
-                    <div>
-                      <p className="font-medium text-[#ECECEC] text-sm">{row.campaignName}</p>
-                      <p className="text-xs text-[#9B9B9B]">{row.platform}</p>
+                    <div className="min-w-0">
+                      {isEditing(row.id, 'campaignName') ? (
+                        <input value={inlineValue} onChange={e => setInlineValue(e.target.value)} onBlur={applyInlineEdit}
+                          onKeyDown={e => { if (e.key === 'Enter') applyInlineEdit(); if (e.key === 'Escape') setInlineEdit(null); }}
+                          className="w-full bg-[#212121] border border-[#555555] rounded px-2 py-0.5 text-sm text-[#ECECEC] focus:outline-none focus:ring-1 focus:ring-[#555555]" autoFocus />
+                      ) : (
+                        <p className="font-medium text-[#ECECEC] text-sm cursor-text hover:bg-[rgba(255,255,255,0.05)] rounded px-1 -mx-1" onClick={() => startInlineEdit(row, 'campaignName')} title="Click to edit">{row.campaignName}</p>
+                      )}
+                      {isEditing(row.id, 'platform') ? (
+                        <select value={inlineValue} onChange={e => { setInlineValue(e.target.value); onUpdate({ ...row, platform: e.target.value as AdMetric['platform'] }); setInlineEdit(null); }} onBlur={() => setInlineEdit(null)}
+                          className="mt-0.5 w-full bg-[#212121] border border-[#555555] rounded px-2 py-0.5 text-xs text-[#ECECEC] focus:outline-none" autoFocus>
+                          {PLATFORMS.map(p => <option key={p} value={p}>{p}</option>)}
+                        </select>
+                      ) : (
+                        <p className="text-xs text-[#9B9B9B] cursor-text hover:bg-[rgba(255,255,255,0.05)] rounded px-1 -mx-1 w-fit" onClick={() => startInlineEdit(row, 'platform')} title="Click to edit">{row.platform}</p>
+                      )}
                     </div>
                   </div>
                 </td>
                 <td className="px-6 py-4">
-                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${
-                    row.status === 'Active' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' :
-                    row.status === 'Paused' ? 'bg-gray-500/10 text-gray-400 border-gray-500/20' :
-                    'bg-amber-500/10 text-amber-400 border-amber-500/20'
-                  }`}>
-                    {row.status}
-                  </span>
+                  {isEditing(row.id, 'status') ? (
+                    <select value={inlineValue} onChange={e => { setInlineValue(e.target.value); onUpdate({ ...row, status: e.target.value as AdMetric['status'] }); setInlineEdit(null); }} onBlur={() => setInlineEdit(null)}
+                      className="bg-[#212121] border border-[#555555] rounded px-2 py-0.5 text-xs text-[#ECECEC] focus:outline-none" autoFocus>
+                      {STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
+                    </select>
+                  ) : (
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border cursor-text hover:opacity-90 ${
+                      row.status === 'Active' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' :
+                      row.status === 'Paused' ? 'bg-gray-500/10 text-gray-400 border-gray-500/20' :
+                      'bg-amber-500/10 text-amber-400 border-amber-500/20'
+                    }`} onClick={() => startInlineEdit(row, 'status')} title="Click to edit">
+                      {row.status}
+                    </span>
+                  )}
                 </td>
-                <td className="px-6 py-4 text-right text-sm text-[#b4b4b4] font-mono">
-                  ${row.cpc.toFixed(2)}
+                <td className="px-6 py-4 text-right text-sm font-mono">
+                  {isEditing(row.id, 'cpc') ? (
+                    <input type="number" step="0.01" value={inlineValue} onChange={e => setInlineValue(e.target.value)} onBlur={applyInlineEdit}
+                      onKeyDown={e => { if (e.key === 'Enter') applyInlineEdit(); if (e.key === 'Escape') setInlineEdit(null); }}
+                      className="w-16 bg-[#212121] border border-[#555555] rounded px-2 py-0.5 text-sm text-[#ECECEC] focus:outline-none text-right" autoFocus />
+                  ) : (
+                    <span className="text-[#b4b4b4] cursor-text hover:bg-[rgba(255,255,255,0.05)] rounded px-1" onClick={() => startInlineEdit(row, 'cpc')} title="Click to edit">${row.cpc.toFixed(2)}</span>
+                  )}
                 </td>
-                <td className="px-6 py-4 text-right text-sm text-[#b4b4b4] font-mono">
-                  ${row.cpm.toFixed(2)}
+                <td className="px-6 py-4 text-right text-sm font-mono">
+                  {isEditing(row.id, 'cpm') ? (
+                    <input type="number" step="0.01" value={inlineValue} onChange={e => setInlineValue(e.target.value)} onBlur={applyInlineEdit}
+                      onKeyDown={e => { if (e.key === 'Enter') applyInlineEdit(); if (e.key === 'Escape') setInlineEdit(null); }}
+                      className="w-16 bg-[#212121] border border-[#555555] rounded px-2 py-0.5 text-sm text-[#ECECEC] focus:outline-none text-right" autoFocus />
+                  ) : (
+                    <span className="text-[#b4b4b4] cursor-text hover:bg-[rgba(255,255,255,0.05)] rounded px-1" onClick={() => startInlineEdit(row, 'cpm')} title="Click to edit">${row.cpm.toFixed(2)}</span>
+                  )}
                 </td>
                 <td className="px-6 py-4 text-right">
-                  <div className="flex items-center justify-end gap-1 text-sm font-mono">
-                    <span className={row.ctr > 1.5 ? 'text-emerald-400' : 'text-[#b4b4b4]'}>
-                      {row.ctr}%
-                    </span>
-                    {row.ctr > 1.5 ? <ArrowUpRight size={14} className="text-emerald-500" /> : <ArrowDownRight size={14} className="text-[#9B9B9B]" />}
-                  </div>
+                  {isEditing(row.id, 'ctr') ? (
+                    <input type="number" step="0.1" value={inlineValue} onChange={e => setInlineValue(e.target.value)} onBlur={applyInlineEdit}
+                      onKeyDown={e => { if (e.key === 'Enter') applyInlineEdit(); if (e.key === 'Escape') setInlineEdit(null); }}
+                      className="w-14 bg-[#212121] border border-[#555555] rounded px-2 py-0.5 text-sm text-[#ECECEC] focus:outline-none text-right inline-block" autoFocus />
+                  ) : (
+                    <div className="flex items-center justify-end gap-1 text-sm font-mono cursor-text hover:bg-[rgba(255,255,255,0.05)] rounded px-1 w-fit ml-auto" onClick={() => startInlineEdit(row, 'ctr')} title="Click to edit">
+                      <span className={row.ctr > 1.5 ? 'text-emerald-400' : 'text-[#b4b4b4]'}>{row.ctr}%</span>
+                      {row.ctr > 1.5 ? <ArrowUpRight size={14} className="text-emerald-500" /> : <ArrowDownRight size={14} className="text-[#9B9B9B]" />}
+                    </div>
+                  )}
                 </td>
-                <td className="px-6 py-4 text-right text-sm text-[#b4b4b4] font-mono">
-                  ${row.costPerBookedCall}
+                <td className="px-6 py-4 text-right text-sm font-mono">
+                  {isEditing(row.id, 'costPerBookedCall') ? (
+                    <input type="number" value={inlineValue} onChange={e => setInlineValue(e.target.value)} onBlur={applyInlineEdit}
+                      onKeyDown={e => { if (e.key === 'Enter') applyInlineEdit(); if (e.key === 'Escape') setInlineEdit(null); }}
+                      className="w-20 bg-[#212121] border border-[#555555] rounded px-2 py-0.5 text-sm text-[#ECECEC] focus:outline-none text-right" autoFocus />
+                  ) : (
+                    <span className="text-[#b4b4b4] cursor-text hover:bg-[rgba(255,255,255,0.05)] rounded px-1" onClick={() => startInlineEdit(row, 'costPerBookedCall')} title="Click to edit">${row.costPerBookedCall}</span>
+                  )}
                 </td>
-                <td className="px-6 py-4 text-right text-sm text-[#b4b4b4] font-mono">
-                  ${row.costPerShowedCall}
+                <td className="px-6 py-4 text-right text-sm font-mono">
+                  {isEditing(row.id, 'costPerShowedCall') ? (
+                    <input type="number" value={inlineValue} onChange={e => setInlineValue(e.target.value)} onBlur={applyInlineEdit}
+                      onKeyDown={e => { if (e.key === 'Enter') applyInlineEdit(); if (e.key === 'Escape') setInlineEdit(null); }}
+                      className="w-20 bg-[#212121] border border-[#555555] rounded px-2 py-0.5 text-sm text-[#ECECEC] focus:outline-none text-right" autoFocus />
+                  ) : (
+                    <span className="text-[#b4b4b4] cursor-text hover:bg-[rgba(255,255,255,0.05)] rounded px-1" onClick={() => startInlineEdit(row, 'costPerShowedCall')} title="Click to edit">${row.costPerShowedCall}</span>
+                  )}
                 </td>
-                <td className="px-6 py-4 text-right text-sm font-semibold text-[#ECECEC] font-mono">
-                  ${row.spend.toLocaleString()}
+                <td className="px-6 py-4 text-right text-sm font-mono">
+                  {isEditing(row.id, 'spend') ? (
+                    <input type="number" value={inlineValue} onChange={e => setInlineValue(e.target.value)} onBlur={applyInlineEdit}
+                      onKeyDown={e => { if (e.key === 'Enter') applyInlineEdit(); if (e.key === 'Escape') setInlineEdit(null); }}
+                      className="w-24 bg-[#212121] border border-[#555555] rounded px-2 py-0.5 text-sm text-[#ECECEC] focus:outline-none text-right" autoFocus />
+                  ) : (
+                    <span className="font-semibold text-[#ECECEC] cursor-text hover:bg-[rgba(255,255,255,0.05)] rounded px-1" onClick={() => startInlineEdit(row, 'spend')} title="Click to edit">${row.spend.toLocaleString()}</span>
+                  )}
                 </td>
                 {canEdit && (
                   <td className="px-6 py-4 text-right">

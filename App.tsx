@@ -8,7 +8,7 @@ import SwipefileManager from './components/SwipefileManager';
 import TeamManager from './components/TeamManager';
 import FunnelManager from './components/FunnelManager';
 import AdsManager from './components/AdsManager';
-import { ChartViewType, NavigationItem, FinanceItem, InvoiceStatus, RevenueDataPoint, ContentDataPoint, ContentItem, AdMetric, ContentStatus } from './types';
+import { ChartViewType, NavigationItem, FinanceItem, InvoiceStatus, RevenueDataPoint, ContentDataPoint, ContentItem, AdMetric, ContentStatus, Platform } from './types';
 import { AD_METRICS } from './constants';
 import { Bell, Search, Calendar, Save, Check, Loader2 } from 'lucide-react';
 import useLocalStorage from './hooks/useLocalStorage';
@@ -57,12 +57,19 @@ const App: React.FC = () => {
   // --- Finance State Management ---
   const [financeItems, setFinanceItems] = useLocalStorage<FinanceItem[]>(`${storagePrefix}_finance`, []);
 
-  // Content from localStorage for dashboard chart (same key as ContentManager)
+  // Content chart: platform filter and expected per day
+  const [contentChartPlatformFilter, setContentChartPlatformFilter] = useState<'All' | Platform>('All');
+  const [contentExpectedPerDay, setContentExpectedPerDay] = useLocalStorage<number>(`${storagePrefix}_content_expected_per_day`, 1);
+
+  // Content from localStorage for dashboard chart (filtered by platform, with expected)
   const contentChartData: ContentDataPoint[] = useMemo(() => {
     try {
       const raw = localStorage.getItem(`${storagePrefix}_content`);
       if (!raw) return [];
-      const items: ContentItem[] = JSON.parse(raw);
+      let items: ContentItem[] = JSON.parse(raw);
+      if (contentChartPlatformFilter !== 'All') {
+        items = items.filter(item => item.platform === contentChartPlatformFilter);
+      }
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       const dayKey = (d: Date) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
@@ -88,11 +95,12 @@ const App: React.FC = () => {
           date: new Date(key).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
           daysAhead: countsByDay[key].total,
           published: countsByDay[key].published,
+          expected: contentExpectedPerDay,
         }));
     } catch {
       return [];
     }
-  }, [storagePrefix, activeNav]);
+  }, [storagePrefix, activeNav, contentChartPlatformFilter, contentExpectedPerDay]);
 
   // Campaign metrics (editable, persisted)
   const [campaignMetrics, setCampaignMetrics] = useLocalStorage<AdMetric[]>(`${storagePrefix}_campaign_metrics`, AD_METRICS);
@@ -244,7 +252,9 @@ const App: React.FC = () => {
                       ? (() => {
                           const totalPieces = contentChartData.reduce((s, d) => s + d.daysAhead, 0);
                           const daysWithContent = contentChartData.filter(d => d.daysAhead > 0).length;
-                          return `${totalPieces} pieces · ${daysWithContent} days`;
+                          const videoWord = totalPieces === 1 ? 'video' : 'videos';
+                          const platformLabel = contentChartPlatformFilter === 'All' ? '' : `${contentChartPlatformFilter} `;
+                          return `${totalPieces} ${platformLabel}${videoWord} · ${daysWithContent} days`;
                         })()
                       : '—'}
                   </h3>
@@ -265,6 +275,31 @@ const App: React.FC = () => {
 
             {/* Main Charts */}
             <section>
+              {activeChart === ChartViewType.CONTENT_SCHEDULE && (
+                <div className="flex flex-wrap items-center gap-3 mb-3">
+                  <span className="text-sm text-[#9B9B9B]">Platform:</span>
+                  <select
+                    value={contentChartPlatformFilter}
+                    onChange={e => setContentChartPlatformFilter(e.target.value as 'All' | Platform)}
+                    className="bg-[#2f2f2f] border border-[#3a3a3a] rounded-lg px-3 py-1.5 text-sm text-[#ECECEC] focus:outline-none focus:ring-1 focus:ring-[#555555]"
+                  >
+                    <option value="All">All</option>
+                    <option value={Platform.YOUTUBE}>YouTube</option>
+                    <option value={Platform.INSTAGRAM}>Instagram</option>
+                    <option value={Platform.TIKTOK}>TikTok</option>
+                    <option value={Platform.LINKEDIN}>LinkedIn</option>
+                  </select>
+                  <span className="text-sm text-[#9B9B9B]">Expected per day:</span>
+                  <input
+                    type="number"
+                    min={0}
+                    step={1}
+                    value={contentExpectedPerDay}
+                    onChange={e => setContentExpectedPerDay(Math.max(0, parseInt(e.target.value, 10) || 0))}
+                    className="w-16 bg-[#2f2f2f] border border-[#3a3a3a] rounded-lg px-2 py-1.5 text-sm text-[#ECECEC] focus:outline-none focus:ring-1 focus:ring-[#555555]"
+                  />
+                </div>
+              )}
               <AnalyticsChart
                 view={activeChart}
                 onChangeView={setActiveChart}
