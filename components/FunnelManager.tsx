@@ -5,6 +5,7 @@ import {
   Check, X, Megaphone, ZoomIn, ZoomOut, Maximize2,
   ArrowLeft, Package, BookOpen, MonitorPlay, Download, Box,
   MessageCircle, Phone, GitBranch, Database, Users,
+  ChevronsLeft, ChevronsRight,
 } from 'lucide-react';
 import { Funnel, FunnelStep, FunnelStepType } from '../types';
 import useLocalStorage from '../hooks/useLocalStorage';
@@ -236,6 +237,7 @@ const FunnelManager: React.FC<FunnelManagerProps> = ({ storagePrefix }) => {
   const [selectedStepId, setSelectedStepId] = useState<string | null>(null);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [confirmDeleteStepId, setConfirmDeleteStepId] = useState<string | null>(null);
+  const [panelExpanded, setPanelExpanded] = useState(false);
 
   const selectedFunnel = funnels.find(f => f.id === selectedFunnelId);
   const selectedStep = selectedFunnel?.steps.find(s => s.id === selectedStepId);
@@ -833,6 +835,14 @@ const FunnelManager: React.FC<FunnelManagerProps> = ({ storagePrefix }) => {
                             sandbox="allow-same-origin allow-scripts allow-forms allow-popups" />
                         )}
                       </div>
+                    ) : step.type === 'ad' && step.transcript ? (
+                      <div className="w-full h-full flex flex-col p-3 overflow-hidden">
+                        <div className="flex items-center gap-1.5 mb-2">
+                          <FileText size={12} className="text-cyan-400 flex-shrink-0" />
+                          <span className="text-[10px] font-semibold text-cyan-400 uppercase tracking-wider">Script</span>
+                        </div>
+                        <p className="text-[10px] text-[#9B9B9B] leading-relaxed whitespace-pre-wrap overflow-hidden" style={{ display: '-webkit-box', WebkitLineClamp: 12, WebkitBoxOrient: 'vertical' }}>{step.transcript}</p>
+                      </div>
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-xs text-[#666666]">
                         Paste a URL to see a preview
@@ -891,19 +901,24 @@ const FunnelManager: React.FC<FunnelManagerProps> = ({ storagePrefix }) => {
 
         {/* Side panel */}
         {selectedStep && (
-          <div className="w-72 flex-shrink-0 bg-[#2f2f2f] backdrop-blur border border-[#3a3a3a] rounded-xl p-4 overflow-y-auto animate-in slide-in-from-right-4 duration-200 space-y-4">
+          <div className={`${panelExpanded ? 'w-[480px]' : 'w-72'} flex-shrink-0 bg-[#2f2f2f] backdrop-blur border border-[#3a3a3a] rounded-xl p-4 overflow-y-auto animate-in slide-in-from-right-4 duration-200 space-y-4 transition-[width] duration-200`}>
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 min-w-0">
                 {(() => { const cfg = getStepConfig(selectedStep.type); return (
-                  <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ backgroundColor: cfg.color + '15', border: `1px solid ${cfg.color}25` }}>
+                  <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: cfg.color + '15', border: `1px solid ${cfg.color}25` }}>
                     <cfg.icon size={14} style={{ color: cfg.color }} />
                   </div>
                 ); })()}
-                <h3 className="text-sm font-semibold text-[#ECECEC]">{selectedStep.name}</h3>
+                <h3 className="text-sm font-semibold text-[#ECECEC] truncate">{selectedStep.name}</h3>
               </div>
-              <div className="flex gap-1">
+              <div className="flex gap-1 flex-shrink-0">
+                {selectedStep.type === 'ad' && (
+                  <button onClick={() => setPanelExpanded(!panelExpanded)} className="p-1 text-[#9B9B9B] hover:text-white" title={panelExpanded ? 'Collapse panel' : 'Expand panel'}>
+                    {panelExpanded ? <ChevronsRight size={14} /> : <ChevronsLeft size={14} />}
+                  </button>
+                )}
                 <button onClick={() => setConfirmDeleteStepId(selectedStep.id)} className="p-1 text-[#9B9B9B] hover:text-rose-400" title="Delete step"><Trash2 size={14} /></button>
-                <button onClick={() => setSelectedStepId(null)} className="p-1 text-[#9B9B9B] hover:text-white"><X size={14} /></button>
+                <button onClick={() => { setSelectedStepId(null); setPanelExpanded(false); }} className="p-1 text-[#9B9B9B] hover:text-white"><X size={14} /></button>
               </div>
             </div>
 
@@ -942,14 +957,18 @@ const FunnelManager: React.FC<FunnelManagerProps> = ({ storagePrefix }) => {
             </div>
 
             {selectedStep.type === 'ad' && (
-              <div><label className="text-[10px] uppercase tracking-wider text-[#9B9B9B] font-medium">Transcript</label>
+              <div className="flex flex-col flex-1 min-h-0">
+                <label className="text-[10px] uppercase tracking-wider text-[#9B9B9B] font-medium mb-1">Transcript</label>
                 <textarea
                   value={selectedStep.transcript || ''}
                   onChange={e => updateStep(selectedStep.id, { transcript: e.target.value })}
                   placeholder="Write your ad transcript here..."
-                  rows={8}
-                  className="w-full mt-1 bg-[#3a3a3a] border border-[#3a3a3a] rounded-lg px-3 py-2 text-sm text-[#ECECEC] placeholder-[#666666] focus:outline-none focus:ring-2 focus:ring-[#555555] font-mono leading-relaxed resize-y"
+                  rows={panelExpanded ? 16 : 8}
+                  className="w-full bg-[#3a3a3a] border border-[#3a3a3a] rounded-lg px-3 py-2 text-sm text-[#ECECEC] placeholder-[#666666] focus:outline-none focus:ring-2 focus:ring-[#555555] font-mono leading-relaxed resize-y"
                 />
+                {selectedStep.transcript && (
+                  <p className="text-[10px] text-[#666666] mt-1">{selectedStep.transcript.split(/\s+/).filter(Boolean).length} words</p>
+                )}
               </div>
             )}
 
