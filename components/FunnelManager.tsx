@@ -5,9 +5,10 @@ import {
   Check, X, Megaphone, ZoomIn, ZoomOut, Maximize2,
   ArrowLeft, Package, BookOpen, MonitorPlay, Download, Box,
   MessageCircle, Phone, GitBranch, Database, Users,
-  ChevronsLeft, ChevronsRight,
+  ChevronsLeft, ChevronsRight, ChevronDown,
+  Clock, Video, CheckCircle2, Eye, Radio, Pause, AlertTriangle,
 } from 'lucide-react';
-import { Funnel, FunnelStep, FunnelStepType } from '../types';
+import { Funnel, FunnelStep, FunnelStepType, FunnelAdStatus } from '../types';
 import useLocalStorage from '../hooks/useLocalStorage';
 import { supabase } from '../services/supabaseClient';
 
@@ -35,6 +36,19 @@ const STEP_TYPES: { value: FunnelStepType; label: string; icon: React.ElementTyp
 ];
 
 const getStepConfig = (type: FunnelStepType) => STEP_TYPES.find(s => s.value === type) || STEP_TYPES.find(s => s.value === 'custom')!;
+
+// ─── Ad status config (mirrors AdsManager) ──────────────────────
+const AD_STATUSES: { value: FunnelAdStatus; label: string; color: string; bgColor: string; icon: React.ElementType }[] = [
+  { value: 'Unassigned', label: 'Select status', color: 'text-gray-500', bgColor: 'bg-[rgba(255,255,255,0.03)] border-gray-600/30', icon: AlertTriangle },
+  { value: 'Pending', label: 'Pending', color: 'text-gray-400', bgColor: 'bg-gray-500/10 border-gray-500/20', icon: Clock },
+  { value: 'Scripted', label: 'Scripted', color: 'text-blue-400', bgColor: 'bg-blue-500/10 border-blue-500/20', icon: FileText },
+  { value: 'Recorded', label: 'Recorded', color: 'text-purple-400', bgColor: 'bg-purple-500/10 border-purple-500/20', icon: Video },
+  { value: 'Edited', label: 'Edited', color: 'text-amber-400', bgColor: 'bg-amber-500/10 border-amber-500/20', icon: CheckCircle2 },
+  { value: 'Needs Review', label: 'Needs Review', color: 'text-orange-400', bgColor: 'bg-orange-500/10 border-orange-500/20', icon: Eye },
+  { value: 'Live', label: 'Live', color: 'text-emerald-400', bgColor: 'bg-emerald-500/10 border-emerald-500/20', icon: Radio },
+  { value: 'Paused', label: 'Paused', color: 'text-rose-400', bgColor: 'bg-rose-500/10 border-rose-500/20', icon: Pause },
+];
+const getAdStatusConfig = (status?: FunnelAdStatus) => AD_STATUSES.find(s => s.value === status) || AD_STATUSES[0];
 
 function getMetricColor(actual: number, expected?: number): 'green' | 'yellow' | 'red' | null {
   if (expected == null || expected <= 0) return null;
@@ -238,9 +252,22 @@ const FunnelManager: React.FC<FunnelManagerProps> = ({ storagePrefix }) => {
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [confirmDeleteStepId, setConfirmDeleteStepId] = useState<string | null>(null);
   const [panelExpanded, setPanelExpanded] = useState(false);
+  const [adStatusDropdownOpen, setAdStatusDropdownOpen] = useState(false);
+  const adStatusDropdownRef = useRef<HTMLDivElement>(null);
 
   const selectedFunnel = funnels.find(f => f.id === selectedFunnelId);
   const selectedStep = selectedFunnel?.steps.find(s => s.id === selectedStepId);
+
+  // Close ad status dropdown on click outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (adStatusDropdownOpen && adStatusDropdownRef.current && !adStatusDropdownRef.current.contains(e.target as Node)) {
+        setAdStatusDropdownOpen(false);
+      }
+    };
+    if (adStatusDropdownOpen) document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [adStatusDropdownOpen]);
 
   // ─── Funnel CRUD ────────────────────────────────────────────
   const handleCreateFunnel = () => {
@@ -835,13 +862,32 @@ const FunnelManager: React.FC<FunnelManagerProps> = ({ storagePrefix }) => {
                             sandbox="allow-same-origin allow-scripts allow-forms allow-popups" />
                         )}
                       </div>
-                    ) : step.type === 'ad' && step.transcript ? (
+                    ) : step.type === 'ad' && (step.transcript || step.adTitle) ? (
                       <div className="w-full h-full flex flex-col p-3 overflow-hidden">
-                        <div className="flex items-center gap-1.5 mb-2">
-                          <FileText size={12} className="text-cyan-400 flex-shrink-0" />
-                          <span className="text-[10px] font-semibold text-cyan-400 uppercase tracking-wider">Script</span>
-                        </div>
-                        <p className="text-[10px] text-[#9B9B9B] leading-relaxed whitespace-pre-wrap overflow-hidden" style={{ display: '-webkit-box', WebkitLineClamp: 12, WebkitBoxOrient: 'vertical' }}>{step.transcript}</p>
+                        {/* Status badge */}
+                        {step.adStatus && step.adStatus !== 'Unassigned' && (() => {
+                          const sc = getAdStatusConfig(step.adStatus);
+                          const SIcon = sc.icon;
+                          return (
+                            <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-medium border self-start mb-1.5 ${sc.bgColor} ${sc.color}`}>
+                              <SIcon size={9} /> {step.adStatus}
+                            </div>
+                          );
+                        })()}
+                        {/* Ad title */}
+                        {step.adTitle && (
+                          <p className="text-[11px] font-semibold text-[#ECECEC] mb-1.5 leading-tight" style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{step.adTitle}</p>
+                        )}
+                        {/* Transcript preview */}
+                        {step.transcript && (
+                          <>
+                            <div className="flex items-center gap-1.5 mb-1">
+                              <FileText size={10} className="text-cyan-400 flex-shrink-0" />
+                              <span className="text-[9px] font-semibold text-cyan-400 uppercase tracking-wider">Script</span>
+                            </div>
+                            <p className="text-[9px] text-[#9B9B9B] leading-relaxed whitespace-pre-wrap overflow-hidden flex-1" style={{ display: '-webkit-box', WebkitLineClamp: step.adTitle ? 8 : 11, WebkitBoxOrient: 'vertical' }}>{step.transcript}</p>
+                          </>
+                        )}
                       </div>
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-xs text-[#666666]">
@@ -928,6 +974,48 @@ const FunnelManager: React.FC<FunnelManagerProps> = ({ storagePrefix }) => {
                 {STEP_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
               </select>
             </div>
+
+            {selectedStep.type === 'ad' && (
+              <>
+                <div><label className="text-[10px] uppercase tracking-wider text-[#9B9B9B] font-medium">Ad Title</label>
+                  <input value={selectedStep.adTitle || ''} onChange={e => updateStep(selectedStep.id, { adTitle: e.target.value })} placeholder="Give this ad a title..."
+                    className="w-full mt-1 bg-[#3a3a3a] border border-[#3a3a3a] rounded-lg px-3 py-2 text-sm text-[#ECECEC] placeholder-[#666666] focus:outline-none focus:ring-2 focus:ring-[#555555]" />
+                </div>
+
+                <div><label className="text-[10px] uppercase tracking-wider text-[#9B9B9B] font-medium">Status</label>
+                  <div className="relative mt-1" ref={adStatusDropdownRef}>
+                    {(() => { const sc = getAdStatusConfig(selectedStep.adStatus); const StatusIcon = sc.icon; return (
+                      <button onClick={() => setAdStatusDropdownOpen(!adStatusDropdownOpen)}
+                        className={`w-full flex items-center justify-between gap-2 px-3 py-2 rounded-lg text-sm font-medium border cursor-pointer transition-none ${sc.bgColor} ${sc.color}`}>
+                        <div className="flex items-center gap-1.5">
+                          <StatusIcon size={14} />
+                          <span>{selectedStep.adStatus && selectedStep.adStatus !== 'Unassigned' ? selectedStep.adStatus : 'Select status'}</span>
+                        </div>
+                        <ChevronDown size={12} />
+                      </button>
+                    ); })()}
+                    {adStatusDropdownOpen && (
+                      <div className="absolute top-full left-0 mt-1 w-full bg-[#2f2f2f] border border-[#3a3a3a] rounded-xl shadow-2xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-100">
+                        {AD_STATUSES.map(s => {
+                          const SIcon = s.icon;
+                          return (
+                            <button key={s.value}
+                              onClick={() => { updateStep(selectedStep.id, { adStatus: s.value }); setAdStatusDropdownOpen(false); }}
+                              className={`w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-[rgba(255,255,255,0.05)] transition-none ${
+                                selectedStep.adStatus === s.value ? 'bg-[rgba(255,255,255,0.05)]' : ''
+                              }`}>
+                              <div className={`w-1.5 h-1.5 rounded-full ${s.color.replace('text-', 'bg-')}`} />
+                              <span className={s.color}>{s.label}</span>
+                              {selectedStep.adStatus === s.value && <Check size={12} className="ml-auto text-[#ECECEC]" />}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </>
+            )}
 
             <div><label className="text-[10px] uppercase tracking-wider text-[#9B9B9B] font-medium">Page URL</label>
               <input value={selectedStep.url || ''} onChange={e => updateStep(selectedStep.id, { url: e.target.value || undefined })} placeholder="https://..."

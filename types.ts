@@ -80,12 +80,16 @@ export interface FunnelStepAd {
   impressions: number;
 }
 
+export type FunnelAdStatus = 'Unassigned' | 'Pending' | 'Scripted' | 'Recorded' | 'Edited' | 'Needs Review' | 'Live' | 'Paused';
+
 export interface FunnelStep {
   id: string;
   name: string;
   type: FunnelStepType;
   url?: string;
   transcript?: string;
+  adTitle?: string;
+  adStatus?: FunnelAdStatus;
   views: number;
   clicks: number;
   conversions: number;
