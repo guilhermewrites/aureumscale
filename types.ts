@@ -80,7 +80,7 @@ export interface FunnelStepAd {
   impressions: number;
 }
 
-export type FunnelAdStatus = 'Unassigned' | 'Pending' | 'Scripted' | 'Recorded' | 'Edited' | 'Needs Review' | 'Live' | 'Paused';
+export type FunnelAdStatus = 'Unassigned' | 'Pending' | 'Scripted' | 'Recorded' | 'Edited' | 'Needs Review' | 'Sent' | 'Live' | 'Paused';
 
 export interface FunnelStep {
   id: string;

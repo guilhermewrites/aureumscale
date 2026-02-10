@@ -6,7 +6,7 @@ import {
   ArrowLeft, Package, BookOpen, MonitorPlay, Download, Box,
   MessageCircle, Phone, GitBranch, Database, Users,
   ChevronsLeft, ChevronsRight, ChevronDown,
-  Clock, Video, CheckCircle2, Eye, Radio, Pause, AlertTriangle,
+  Clock, Video, CheckCircle2, Eye, Radio, Pause, AlertTriangle, Send,
 } from 'lucide-react';
 import { Funnel, FunnelStep, FunnelStepType, FunnelAdStatus } from '../types';
 import useLocalStorage from '../hooks/useLocalStorage';
@@ -45,6 +45,7 @@ const AD_STATUSES: { value: FunnelAdStatus; label: string; color: string; bgColo
   { value: 'Recorded', label: 'Recorded', color: 'text-purple-400', bgColor: 'bg-purple-500/10 border-purple-500/20', icon: Video },
   { value: 'Edited', label: 'Edited', color: 'text-amber-400', bgColor: 'bg-amber-500/10 border-amber-500/20', icon: CheckCircle2 },
   { value: 'Needs Review', label: 'Needs Review', color: 'text-orange-400', bgColor: 'bg-orange-500/10 border-orange-500/20', icon: Eye },
+  { value: 'Sent', label: 'Sent', color: 'text-sky-400', bgColor: 'bg-sky-500/10 border-sky-500/20', icon: Send },
   { value: 'Live', label: 'Live', color: 'text-emerald-400', bgColor: 'bg-emerald-500/10 border-emerald-500/20', icon: Radio },
   { value: 'Paused', label: 'Paused', color: 'text-rose-400', bgColor: 'bg-rose-500/10 border-rose-500/20', icon: Pause },
 ];
@@ -880,13 +881,7 @@ const FunnelManager: React.FC<FunnelManagerProps> = ({ storagePrefix }) => {
                         )}
                         {/* Transcript preview */}
                         {step.transcript && (
-                          <>
-                            <div className="flex items-center gap-1.5 mb-1">
-                              <FileText size={10} className="text-cyan-400 flex-shrink-0" />
-                              <span className="text-[9px] font-semibold text-cyan-400 uppercase tracking-wider">Script</span>
-                            </div>
-                            <p className="text-[9px] text-[#9B9B9B] leading-relaxed whitespace-pre-wrap overflow-hidden flex-1" style={{ display: '-webkit-box', WebkitLineClamp: step.adTitle ? 8 : 11, WebkitBoxOrient: 'vertical' }}>{step.transcript}</p>
-                          </>
+                          <p className="text-[9px] text-[#9B9B9B] leading-relaxed whitespace-pre-wrap overflow-hidden flex-1" style={{ display: '-webkit-box', WebkitLineClamp: step.adTitle ? 9 : 12, WebkitBoxOrient: 'vertical' }}>{step.transcript}</p>
                         )}
                       </div>
                     ) : (
