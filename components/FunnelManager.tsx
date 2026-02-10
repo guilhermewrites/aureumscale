@@ -941,6 +941,18 @@ const FunnelManager: React.FC<FunnelManagerProps> = ({ storagePrefix }) => {
                 className="w-full mt-1 bg-[#3a3a3a] border border-[#3a3a3a] rounded-lg px-3 py-2 text-sm text-[#ECECEC] focus:outline-none focus:ring-2 focus:ring-[#555555]" />
             </div>
 
+            {selectedStep.type === 'ad' && (
+              <div><label className="text-[10px] uppercase tracking-wider text-[#9B9B9B] font-medium">Transcript</label>
+                <textarea
+                  value={selectedStep.transcript || ''}
+                  onChange={e => updateStep(selectedStep.id, { transcript: e.target.value })}
+                  placeholder="Write your ad transcript here..."
+                  rows={8}
+                  className="w-full mt-1 bg-[#3a3a3a] border border-[#3a3a3a] rounded-lg px-3 py-2 text-sm text-[#ECECEC] placeholder-[#666666] focus:outline-none focus:ring-2 focus:ring-[#555555] font-mono leading-relaxed resize-y"
+                />
+              </div>
+            )}
+
           </div>
         )}
       </div>

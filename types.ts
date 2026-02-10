@@ -85,6 +85,7 @@ export interface FunnelStep {
   name: string;
   type: FunnelStepType;
   url?: string;
+  transcript?: string;
   views: number;
   clicks: number;
   conversions: number;
