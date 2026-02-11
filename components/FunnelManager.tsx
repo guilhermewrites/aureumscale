@@ -208,6 +208,11 @@ const FunnelManager: React.FC<FunnelManagerProps> = ({ storagePrefix }) => {
         }
 
         if (data && data.length > 0) {
+          // Read current localStorage funnels for migration fallback
+          const localKey = `${storagePrefix}_funnels`;
+          const localRaw = localStorage.getItem(localKey);
+          const localFunnels: CanvasFunnel[] = localRaw ? JSON.parse(localRaw) : [];
+
           const supabaseFunnels: CanvasFunnel[] = data.map(row => {
             // Handle both old format (plain array of steps) and new format ({ items, connections })
             const rawSteps = row.steps || [];
@@ -221,6 +226,23 @@ const FunnelManager: React.FC<FunnelManagerProps> = ({ storagePrefix }) => {
               steps = (rawSteps.items || []) as CanvasStep[];
               connections = (rawSteps.connections || []) as { from: string; to: string }[];
             }
+
+            // Migration fallback: if Supabase has no connections but localStorage does, use localStorage's
+            if (connections.length === 0) {
+              const localFunnel = localFunnels.find(f => f.id === row.id);
+              if (localFunnel && localFunnel.connections && localFunnel.connections.length > 0) {
+                connections = localFunnel.connections;
+              }
+            }
+
+            // Migration fallback: if any step has a blob: URL for previewMedia, clear it (blobs don't survive reloads)
+            steps = steps.map(s => {
+              if (s.previewMedia && s.previewMedia.startsWith('blob:')) {
+                return { ...s, previewMedia: undefined, previewMediaType: undefined };
+              }
+              return s;
+            });
+
             return {
               id: row.id,
               name: row.name,
@@ -233,13 +255,15 @@ const FunnelManager: React.FC<FunnelManagerProps> = ({ storagePrefix }) => {
           });
           // Replace with Supabase data - Supabase is the source of truth
           setFunnels(supabaseFunnels);
+          // Re-sync to Supabase so migrated connections & cleaned blob URLs persist
+          supabaseFunnels.forEach(f => syncFunnelToSupabase(f, 'upsert'));
         }
       } catch (err) {
         console.error('Supabase load error:', err);
       }
     };
     loadFromSupabase();
-  }, [storagePrefix, setFunnels]);
+  }, [storagePrefix, setFunnels, syncFunnelToSupabase]);
 
   // Canvas
   const canvasRef = useRef<HTMLDivElement>(null);
@@ -545,8 +569,40 @@ const FunnelManager: React.FC<FunnelManagerProps> = ({ storagePrefix }) => {
     const isVideo = file.type.startsWith('video/');
     const isImage = file.type.startsWith('image/');
     if (!isVideo && !isImage) return;
-    const objectUrl = URL.createObjectURL(file);
-    updateStep(stepId, { previewMedia: objectUrl, previewMediaType: isVideo ? 'video' : 'image' });
+
+    if (isImage) {
+      // Resize image to max 400px and compress to JPEG data URL for persistence
+      const img = new window.Image();
+      const blobUrl = URL.createObjectURL(file);
+      img.onload = () => {
+        URL.revokeObjectURL(blobUrl);
+        const MAX = 400;
+        let w = img.width, h = img.height;
+        if (w > MAX || h > MAX) {
+          if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
+          else { w = Math.round(w * MAX / h); h = MAX; }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+        ctx.drawImage(img, 0, 0, w, h);
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+        updateStep(stepId, { previewMedia: dataUrl, previewMediaType: 'image' });
+      };
+      img.src = blobUrl;
+    } else {
+      // Videos: read as data URL (warn if too large)
+      if (file.size > 5 * 1024 * 1024) {
+        alert('Video files larger than 5MB may not persist. Consider using a smaller file or a URL instead.');
+      }
+      const reader = new FileReader();
+      reader.onload = () => {
+        const dataUrl = reader.result as string;
+        updateStep(stepId, { previewMedia: dataUrl, previewMediaType: 'video' });
+      };
+      reader.readAsDataURL(file);
+    }
     e.target.value = '';
   };
 
@@ -885,7 +941,7 @@ const FunnelManager: React.FC<FunnelManagerProps> = ({ storagePrefix }) => {
                   <div className="rounded-xl overflow-hidden transition-all duration-200" style={{
                     height: CARD_H,
                     background: 'linear-gradient(135deg, rgba(47,47,47,0.97) 0%, rgba(33,33,33,0.98) 100%)',
-                    border: `1.5px solid ${isSelected ? 'rgba(236,236,236,0.9)' : step.type === 'email' ? 'rgba(245,158,11,0.25)' : step.type === 'sms' ? 'rgba(14,165,233,0.25)' : 'rgba(58,58,58,0.6)'}`,
+                    border: `1.5px solid ${isSelected ? 'rgba(236,236,236,0.9)' : 'rgba(58,58,58,0.6)'}`,
                     boxShadow: isSelected ? '0 0 24px rgba(255,255,255,0.1), 0 4px 20px rgba(0,0,0,0.4)' : '0 4px 16px rgba(0,0,0,0.3)',
                   }}>
                     {step.previewMedia && step.previewMediaType ? (
@@ -943,11 +999,11 @@ const FunnelManager: React.FC<FunnelManagerProps> = ({ storagePrefix }) => {
                         )}
                       </div>
                     ) : step.type === 'email' && (step.emailHeadline || step.emailSubheadline || step.emailBody) ? (
-                      <div className="w-full h-full flex flex-col overflow-hidden" style={{ borderColor: 'rgba(245,158,11,0.15)' }}>
-                        {/* Amber header bar */}
-                        <div className="flex items-center gap-1.5 px-3 py-1.5 border-b" style={{ background: 'rgba(245,158,11,0.08)', borderColor: 'rgba(245,158,11,0.15)' }}>
-                          <Mail size={10} style={{ color: '#f59e0b' }} />
-                          <span className="text-[9px] font-semibold" style={{ color: '#f59e0b' }}>Email</span>
+                      <div className="w-full h-full flex flex-col overflow-hidden">
+                        {/* Header bar */}
+                        <div className="flex items-center gap-1.5 px-3 py-1.5 border-b border-[rgba(58,58,58,0.6)]" style={{ background: 'rgba(255,255,255,0.02)' }}>
+                          <Mail size={10} className="text-[#9B9B9B]" />
+                          <span className="text-[9px] font-semibold text-[#9B9B9B]">Email</span>
                           {step.emailStatus && step.emailStatus !== 'Unassigned' && (() => {
                             const sc = getAdStatusConfig(step.emailStatus);
                             const SIcon = sc.icon;
