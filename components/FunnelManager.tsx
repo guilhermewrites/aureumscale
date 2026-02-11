@@ -151,8 +151,33 @@ if (typeof document !== 'undefined' && !document.getElementById(NEON_STYLE_ID)) 
   document.head.appendChild(style);
 }
 
+// Strip large media data before saving to localStorage (5MB limit)
+const stripMediaForLocalStorage = (funnels: CanvasFunnel[]): CanvasFunnel[] =>
+  funnels.map(f => ({
+    ...f,
+    steps: f.steps.map(s => {
+      if (s.previewMedia && s.previewMedia.startsWith('data:')) {
+        return { ...s, previewMedia: undefined, previewMediaType: undefined };
+      }
+      return s;
+    }),
+  }));
+
 const FunnelManager: React.FC<FunnelManagerProps> = ({ storagePrefix }) => {
-  const [funnels, setFunnels] = useLocalStorage<CanvasFunnel[]>(`${storagePrefix}_funnels`, []);
+  const [_lsFunnels, _setLsFunnels] = useLocalStorage<CanvasFunnel[]>(`${storagePrefix}_funnels`, []);
+  const [funnels, _setFunnelsState] = useState<CanvasFunnel[]>(_lsFunnels);
+  const funnelsRef = useRef(funnels);
+  funnelsRef.current = funnels;
+
+  // Wrapper: update React state with full data, but save stripped version to localStorage
+  const setFunnels = useCallback((value: CanvasFunnel[] | ((prev: CanvasFunnel[]) => CanvasFunnel[])) => {
+    const next = typeof value === 'function' ? value(funnelsRef.current) : value;
+    _setFunnelsState(next);
+    funnelsRef.current = next;
+    // Save to localStorage without base64 media (prevents quota errors)
+    _setLsFunnels(stripMediaForLocalStorage(next));
+  }, [_setLsFunnels]);
+
   const [selectedFunnelId, setSelectedFunnelId] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [newFunnelName, setNewFunnelName] = useState('');
