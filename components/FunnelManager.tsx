@@ -165,12 +165,14 @@ const FunnelManager: React.FC<FunnelManagerProps> = ({ storagePrefix }) => {
     if (!supabase) return;
     try {
       if (action === 'upsert') {
+        // Store steps + connections together in the steps JSON column
+        const stepsPayload = { items: funnel.steps, connections: funnel.connections };
         const { error } = await supabase.from('funnels').upsert({
           id: funnel.id,
           user_id: storagePrefix,
           name: funnel.name,
           description: funnel.description,
-          steps: funnel.steps,
+          steps: stepsPayload,
           expected_metrics: funnel.expectedMetrics ?? null,
         });
         if (error) {
@@ -205,15 +207,29 @@ const FunnelManager: React.FC<FunnelManagerProps> = ({ storagePrefix }) => {
         }
 
         if (data && data.length > 0) {
-          const supabaseFunnels: CanvasFunnel[] = data.map(row => ({
-            id: row.id,
-            name: row.name,
-            description: row.description || undefined,
-            steps: (row.steps || []) as CanvasStep[],
-            connections: (row.steps || []).length > 0 ? [] : [],
-            expectedMetrics: row.expected_metrics ?? undefined,
-            createdAt: row.created_at,
-          }));
+          const supabaseFunnels: CanvasFunnel[] = data.map(row => {
+            // Handle both old format (plain array of steps) and new format ({ items, connections })
+            const rawSteps = row.steps || [];
+            let steps: CanvasStep[] = [];
+            let connections: { from: string; to: string }[] = [];
+            if (Array.isArray(rawSteps)) {
+              // Old format: steps is a plain array
+              steps = rawSteps as CanvasStep[];
+            } else if (rawSteps && typeof rawSteps === 'object') {
+              // New format: { items: [...], connections: [...] }
+              steps = (rawSteps.items || []) as CanvasStep[];
+              connections = (rawSteps.connections || []) as { from: string; to: string }[];
+            }
+            return {
+              id: row.id,
+              name: row.name,
+              description: row.description || undefined,
+              steps,
+              connections,
+              expectedMetrics: row.expected_metrics ?? undefined,
+              createdAt: row.created_at,
+            };
+          });
           // Replace with Supabase data - Supabase is the source of truth
           setFunnels(supabaseFunnels);
         }
@@ -260,6 +276,22 @@ const FunnelManager: React.FC<FunnelManagerProps> = ({ storagePrefix }) => {
 
   const selectedFunnel = funnels.find(f => f.id === selectedFunnelId);
   const selectedStep = selectedFunnel?.steps.find(s => s.id === selectedStepId);
+
+  // Global mouseup to prevent sticky drag when mouse leaves canvas or releases outside
+  useEffect(() => {
+    const handleGlobalMouseUp = () => {
+      setDraggingStepId(null);
+      setIsPanning(false);
+      setConnecting(null);
+      setAlignmentGuides({ x: [], y: [] });
+    };
+    window.addEventListener('mouseup', handleGlobalMouseUp);
+    window.addEventListener('blur', handleGlobalMouseUp);
+    return () => {
+      window.removeEventListener('mouseup', handleGlobalMouseUp);
+      window.removeEventListener('blur', handleGlobalMouseUp);
+    };
+  }, []);
 
   // Close ad status dropdown on click outside
   useEffect(() => {
