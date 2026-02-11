@@ -12,6 +12,7 @@ import {
 import { Funnel, FunnelStep, FunnelStepType, FunnelAdStatus } from '../types';
 import useLocalStorage from '../hooks/useLocalStorage';
 import { supabase } from '../services/supabaseClient';
+import EmailBodyEditor from './EmailBodyEditor';
 
 // ─── Step type config ───────────────────────────────────────────
 const STEP_TYPES: { value: FunnelStepType; label: string; icon: React.ElementType; color: string; glow: string }[] = [
@@ -270,8 +271,8 @@ const FunnelManager: React.FC<FunnelManagerProps> = ({ storagePrefix }) => {
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [confirmDeleteStepId, setConfirmDeleteStepId] = useState<string | null>(null);
   const [panelExpanded, setPanelExpanded] = useState(false);
-  const [adStatusDropdownOpen, setAdStatusDropdownOpen] = useState(false);
-  const adStatusDropdownRef = useRef<HTMLDivElement>(null);
+  const [statusDropdownOpen, setStatusDropdownOpen] = useState<'ad' | 'email' | 'sms' | null>(null);
+  const statusDropdownRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const selectedFunnel = funnels.find(f => f.id === selectedFunnelId);
@@ -293,16 +294,16 @@ const FunnelManager: React.FC<FunnelManagerProps> = ({ storagePrefix }) => {
     };
   }, []);
 
-  // Close ad status dropdown on click outside
+  // Close status dropdown on click outside
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (adStatusDropdownOpen && adStatusDropdownRef.current && !adStatusDropdownRef.current.contains(e.target as Node)) {
-        setAdStatusDropdownOpen(false);
+      if (statusDropdownOpen && statusDropdownRef.current && !statusDropdownRef.current.contains(e.target as Node)) {
+        setStatusDropdownOpen(null);
       }
     };
-    if (adStatusDropdownOpen) document.addEventListener('mousedown', handleClickOutside);
+    if (statusDropdownOpen) document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [adStatusDropdownOpen]);
+  }, [statusDropdownOpen]);
 
   // ─── Funnel CRUD ────────────────────────────────────────────
   const handleCreateFunnel = () => {
@@ -884,7 +885,7 @@ const FunnelManager: React.FC<FunnelManagerProps> = ({ storagePrefix }) => {
                   <div className="rounded-xl overflow-hidden transition-all duration-200" style={{
                     height: CARD_H,
                     background: 'linear-gradient(135deg, rgba(47,47,47,0.97) 0%, rgba(33,33,33,0.98) 100%)',
-                    border: `1.5px solid ${isSelected ? 'rgba(236,236,236,0.9)' : 'rgba(58,58,58,0.6)'}`,
+                    border: `1.5px solid ${isSelected ? 'rgba(236,236,236,0.9)' : step.type === 'email' ? 'rgba(245,158,11,0.25)' : step.type === 'sms' ? 'rgba(14,165,233,0.25)' : 'rgba(58,58,58,0.6)'}`,
                     boxShadow: isSelected ? '0 0 24px rgba(255,255,255,0.1), 0 4px 20px rgba(0,0,0,0.4)' : '0 4px 16px rgba(0,0,0,0.3)',
                   }}>
                     {step.previewMedia && step.previewMediaType ? (
@@ -940,6 +941,65 @@ const FunnelManager: React.FC<FunnelManagerProps> = ({ storagePrefix }) => {
                         {step.transcript && (
                           <p className="text-[9px] text-[#9B9B9B] leading-relaxed whitespace-pre-wrap overflow-hidden flex-1" style={{ display: '-webkit-box', WebkitLineClamp: step.adTitle ? 9 : 12, WebkitBoxOrient: 'vertical' }}>{step.transcript}</p>
                         )}
+                      </div>
+                    ) : step.type === 'email' && (step.emailHeadline || step.emailSubheadline || step.emailBody) ? (
+                      <div className="w-full h-full flex flex-col overflow-hidden" style={{ borderColor: 'rgba(245,158,11,0.15)' }}>
+                        {/* Amber header bar */}
+                        <div className="flex items-center gap-1.5 px-3 py-1.5 border-b" style={{ background: 'rgba(245,158,11,0.08)', borderColor: 'rgba(245,158,11,0.15)' }}>
+                          <Mail size={10} style={{ color: '#f59e0b' }} />
+                          <span className="text-[9px] font-semibold" style={{ color: '#f59e0b' }}>Email</span>
+                          {step.emailStatus && step.emailStatus !== 'Unassigned' && (() => {
+                            const sc = getAdStatusConfig(step.emailStatus);
+                            const SIcon = sc.icon;
+                            return (
+                              <div className={`ml-auto inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[8px] font-medium border ${sc.bgColor} ${sc.color}`}>
+                                <SIcon size={8} /> {step.emailStatus}
+                              </div>
+                            );
+                          })()}
+                        </div>
+                        {/* Email content */}
+                        <div className="flex-1 flex flex-col p-3 overflow-hidden">
+                          {step.emailHeadline && (
+                            <p className="text-[11px] font-bold text-[#ECECEC] mb-1 leading-tight" style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{step.emailHeadline}</p>
+                          )}
+                          {step.emailSubheadline && (
+                            <p className="text-[10px] text-[#9B9B9B] mb-2 leading-tight" style={{ display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{step.emailSubheadline}</p>
+                          )}
+                          {step.emailBody && (
+                            <div
+                              className="email-editor-content text-[9px] text-[#b4b4b4] leading-relaxed overflow-hidden flex-1"
+                              style={{ display: '-webkit-box', WebkitLineClamp: 8, WebkitBoxOrient: 'vertical', pointerEvents: 'none' }}
+                              dangerouslySetInnerHTML={{ __html: step.emailBody }}
+                            />
+                          )}
+                        </div>
+                      </div>
+                    ) : step.type === 'sms' && step.smsBody ? (
+                      <div className="w-full h-full flex flex-col p-3 overflow-hidden">
+                        {/* Status badge */}
+                        {step.smsStatus && step.smsStatus !== 'Unassigned' && (() => {
+                          const sc = getAdStatusConfig(step.smsStatus);
+                          const SIcon = sc.icon;
+                          return (
+                            <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-medium border self-start mb-2 ${sc.bgColor} ${sc.color}`}>
+                              <SIcon size={9} /> {step.smsStatus}
+                            </div>
+                          );
+                        })()}
+                        {/* Chat bubble */}
+                        <div className="flex-1 flex flex-col justify-end overflow-hidden">
+                          <div className="self-end max-w-[90%] px-3 py-2 rounded-2xl rounded-br-md overflow-hidden"
+                            style={{ background: 'rgba(14,165,233,0.12)', border: '1px solid rgba(14,165,233,0.2)' }}>
+                            <p className="text-[10px] text-[#d4e8f7] leading-relaxed whitespace-pre-wrap" style={{ display: '-webkit-box', WebkitLineClamp: 10, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                              {step.smsBody}
+                            </p>
+                          </div>
+                          <div className="flex items-center justify-end gap-1 mt-1.5 pr-1">
+                            <MessageCircle size={8} className="text-[#555555]" />
+                            <span className="text-[8px] text-[#555555]">SMS</span>
+                          </div>
+                        </div>
                       </div>
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-xs text-[#666666]">
@@ -1010,7 +1070,7 @@ const FunnelManager: React.FC<FunnelManagerProps> = ({ storagePrefix }) => {
                 <h3 className="text-sm font-semibold text-[#ECECEC] truncate">{selectedStep.name}</h3>
               </div>
               <div className="flex gap-1 flex-shrink-0">
-                {selectedStep.type === 'ad' && (
+                {(selectedStep.type === 'ad' || selectedStep.type === 'email') && (
                   <button onClick={() => setPanelExpanded(!panelExpanded)} className="p-1 text-[#9B9B9B] hover:text-white" title={panelExpanded ? 'Collapse panel' : 'Expand panel'}>
                     {panelExpanded ? <ChevronsRight size={14} /> : <ChevronsLeft size={14} />}
                   </button>
@@ -1035,9 +1095,9 @@ const FunnelManager: React.FC<FunnelManagerProps> = ({ storagePrefix }) => {
                 </div>
 
                 <div><label className="text-[10px] uppercase tracking-wider text-[#9B9B9B] font-medium">Status</label>
-                  <div className="relative mt-1" ref={adStatusDropdownRef}>
+                  <div className="relative mt-1" ref={statusDropdownOpen === 'ad' ? statusDropdownRef : undefined}>
                     {(() => { const sc = getAdStatusConfig(selectedStep.adStatus); const StatusIcon = sc.icon; return (
-                      <button onClick={() => setAdStatusDropdownOpen(!adStatusDropdownOpen)}
+                      <button onClick={() => setStatusDropdownOpen(statusDropdownOpen === 'ad' ? null : 'ad')}
                         className={`w-full flex items-center justify-between gap-2 px-3 py-2 rounded-lg text-sm font-medium border cursor-pointer transition-none ${sc.bgColor} ${sc.color}`}>
                         <div className="flex items-center gap-1.5">
                           <StatusIcon size={14} />
@@ -1046,13 +1106,13 @@ const FunnelManager: React.FC<FunnelManagerProps> = ({ storagePrefix }) => {
                         <ChevronDown size={12} />
                       </button>
                     ); })()}
-                    {adStatusDropdownOpen && (
+                    {statusDropdownOpen === 'ad' && (
                       <div className="absolute top-full left-0 mt-1 w-full bg-[#2f2f2f] border border-[#3a3a3a] rounded-xl shadow-2xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-100">
                         {AD_STATUSES.map(s => {
                           const SIcon = s.icon;
                           return (
                             <button key={s.value}
-                              onClick={() => { updateStep(selectedStep.id, { adStatus: s.value }); setAdStatusDropdownOpen(false); }}
+                              onClick={() => { updateStep(selectedStep.id, { adStatus: s.value }); setStatusDropdownOpen(null); }}
                               className={`w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-[rgba(255,255,255,0.05)] transition-none ${
                                 selectedStep.adStatus === s.value ? 'bg-[rgba(255,255,255,0.05)]' : ''
                               }`}>
@@ -1065,6 +1125,115 @@ const FunnelManager: React.FC<FunnelManagerProps> = ({ storagePrefix }) => {
                       </div>
                     )}
                   </div>
+                </div>
+              </>
+            )}
+
+            {selectedStep.type === 'email' && (
+              <>
+                <div><label className="text-[10px] uppercase tracking-wider text-[#9B9B9B] font-medium">Headline</label>
+                  <input value={selectedStep.emailHeadline || ''} onChange={e => updateStep(selectedStep.id, { emailHeadline: e.target.value })} placeholder="Email headline..."
+                    className="w-full mt-1 bg-[#3a3a3a] border border-[#3a3a3a] rounded-lg px-3 py-2 text-sm text-[#ECECEC] placeholder-[#666666] focus:outline-none focus:ring-2 focus:ring-[#555555]" />
+                </div>
+
+                <div><label className="text-[10px] uppercase tracking-wider text-[#9B9B9B] font-medium">Subheadline</label>
+                  <input value={selectedStep.emailSubheadline || ''} onChange={e => updateStep(selectedStep.id, { emailSubheadline: e.target.value })} placeholder="Email subheadline..."
+                    className="w-full mt-1 bg-[#3a3a3a] border border-[#3a3a3a] rounded-lg px-3 py-2 text-sm text-[#ECECEC] placeholder-[#666666] focus:outline-none focus:ring-2 focus:ring-[#555555]" />
+                </div>
+
+                <div><label className="text-[10px] uppercase tracking-wider text-[#9B9B9B] font-medium">Status</label>
+                  <div className="relative mt-1" ref={statusDropdownOpen === 'email' ? statusDropdownRef : undefined}>
+                    {(() => { const sc = getAdStatusConfig(selectedStep.emailStatus); const StatusIcon = sc.icon; return (
+                      <button onClick={() => setStatusDropdownOpen(statusDropdownOpen === 'email' ? null : 'email')}
+                        className={`w-full flex items-center justify-between gap-2 px-3 py-2 rounded-lg text-sm font-medium border cursor-pointer transition-none ${sc.bgColor} ${sc.color}`}>
+                        <div className="flex items-center gap-1.5">
+                          <StatusIcon size={14} />
+                          <span>{selectedStep.emailStatus && selectedStep.emailStatus !== 'Unassigned' ? selectedStep.emailStatus : 'Select status'}</span>
+                        </div>
+                        <ChevronDown size={12} />
+                      </button>
+                    ); })()}
+                    {statusDropdownOpen === 'email' && (
+                      <div className="absolute top-full left-0 mt-1 w-full bg-[#2f2f2f] border border-[#3a3a3a] rounded-xl shadow-2xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-100">
+                        {AD_STATUSES.map(s => {
+                          const SIcon = s.icon;
+                          return (
+                            <button key={s.value}
+                              onClick={() => { updateStep(selectedStep.id, { emailStatus: s.value }); setStatusDropdownOpen(null); }}
+                              className={`w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-[rgba(255,255,255,0.05)] transition-none ${
+                                selectedStep.emailStatus === s.value ? 'bg-[rgba(255,255,255,0.05)]' : ''
+                              }`}>
+                              <div className={`w-1.5 h-1.5 rounded-full ${s.color.replace('text-', 'bg-')}`} />
+                              <span className={s.color}>{s.label}</span>
+                              {selectedStep.emailStatus === s.value && <Check size={12} className="ml-auto text-[#ECECEC]" />}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex flex-col flex-1 min-h-0">
+                  <label className="text-[10px] uppercase tracking-wider text-[#9B9B9B] font-medium mb-1">Body</label>
+                  <EmailBodyEditor
+                    key={selectedStep.id}
+                    value={selectedStep.emailBody || ''}
+                    onChange={html => updateStep(selectedStep.id, { emailBody: html })}
+                    placeholder="Compose your email body..."
+                    expanded={panelExpanded}
+                  />
+                </div>
+              </>
+            )}
+
+            {selectedStep.type === 'sms' && (
+              <>
+                <div><label className="text-[10px] uppercase tracking-wider text-[#9B9B9B] font-medium">Status</label>
+                  <div className="relative mt-1" ref={statusDropdownOpen === 'sms' ? statusDropdownRef : undefined}>
+                    {(() => { const sc = getAdStatusConfig(selectedStep.smsStatus); const StatusIcon = sc.icon; return (
+                      <button onClick={() => setStatusDropdownOpen(statusDropdownOpen === 'sms' ? null : 'sms')}
+                        className={`w-full flex items-center justify-between gap-2 px-3 py-2 rounded-lg text-sm font-medium border cursor-pointer transition-none ${sc.bgColor} ${sc.color}`}>
+                        <div className="flex items-center gap-1.5">
+                          <StatusIcon size={14} />
+                          <span>{selectedStep.smsStatus && selectedStep.smsStatus !== 'Unassigned' ? selectedStep.smsStatus : 'Select status'}</span>
+                        </div>
+                        <ChevronDown size={12} />
+                      </button>
+                    ); })()}
+                    {statusDropdownOpen === 'sms' && (
+                      <div className="absolute top-full left-0 mt-1 w-full bg-[#2f2f2f] border border-[#3a3a3a] rounded-xl shadow-2xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-100">
+                        {AD_STATUSES.map(s => {
+                          const SIcon = s.icon;
+                          return (
+                            <button key={s.value}
+                              onClick={() => { updateStep(selectedStep.id, { smsStatus: s.value }); setStatusDropdownOpen(null); }}
+                              className={`w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-[rgba(255,255,255,0.05)] transition-none ${
+                                selectedStep.smsStatus === s.value ? 'bg-[rgba(255,255,255,0.05)]' : ''
+                              }`}>
+                              <div className={`w-1.5 h-1.5 rounded-full ${s.color.replace('text-', 'bg-')}`} />
+                              <span className={s.color}>{s.label}</span>
+                              {selectedStep.smsStatus === s.value && <Check size={12} className="ml-auto text-[#ECECEC]" />}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex flex-col flex-1 min-h-0">
+                  <label className="text-[10px] uppercase tracking-wider text-[#9B9B9B] font-medium mb-1">Message</label>
+                  <textarea
+                    value={selectedStep.smsBody || ''}
+                    onChange={e => updateStep(selectedStep.id, { smsBody: e.target.value })}
+                    placeholder="Write your SMS message..."
+                    rows={6}
+                    className="w-full bg-[#3a3a3a] border border-[#3a3a3a] rounded-lg px-3 py-2 text-sm text-[#ECECEC] placeholder-[#666666] focus:outline-none focus:ring-2 focus:ring-[#555555] leading-relaxed resize-y"
+                  />
+                  <p className={`text-[10px] mt-1 ${(selectedStep.smsBody?.length || 0) > 160 ? 'text-amber-400' : 'text-[#666666]'}`}>
+                    {selectedStep.smsBody?.length || 0} / 160 characters{(selectedStep.smsBody?.length || 0) > 160 ? ' (multi-part SMS)' : ''}
+                  </p>
                 </div>
               </>
             )}

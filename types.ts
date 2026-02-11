@@ -92,6 +92,12 @@ export interface FunnelStep {
   transcript?: string;
   adTitle?: string;
   adStatus?: FunnelAdStatus;
+  emailHeadline?: string;
+  emailSubheadline?: string;
+  emailBody?: string;
+  emailStatus?: FunnelAdStatus;
+  smsBody?: string;
+  smsStatus?: FunnelAdStatus;
   views: number;
   clicks: number;
   conversions: number;
