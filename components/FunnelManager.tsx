@@ -7,6 +7,7 @@ import {
   MessageCircle, Phone, GitBranch, Database, Users,
   ChevronsLeft, ChevronsRight, ChevronDown,
   Clock, Video, CheckCircle2, Eye, Radio, Pause, AlertTriangle, Send,
+  Upload, Image,
 } from 'lucide-react';
 import { Funnel, FunnelStep, FunnelStepType, FunnelAdStatus } from '../types';
 import useLocalStorage from '../hooks/useLocalStorage';
@@ -255,6 +256,7 @@ const FunnelManager: React.FC<FunnelManagerProps> = ({ storagePrefix }) => {
   const [panelExpanded, setPanelExpanded] = useState(false);
   const [adStatusDropdownOpen, setAdStatusDropdownOpen] = useState(false);
   const adStatusDropdownRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const selectedFunnel = funnels.find(f => f.id === selectedFunnelId);
   const selectedStep = selectedFunnel?.steps.find(s => s.id === selectedStepId);
@@ -500,6 +502,22 @@ const FunnelManager: React.FC<FunnelManagerProps> = ({ storagePrefix }) => {
     else if (editField === 'url') updateStep(editingStepId, { url: editValue || undefined });
     else if (editField === 'name') updateStep(editingStepId, { name: editValue });
     setEditingStepId(null); setEditField(null);
+  };
+
+  // ─── Media upload handler ─────────────────────────────────
+  const handleMediaUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !selectedStepId) return;
+    const isVideo = file.type.startsWith('video/');
+    const isImage = file.type.startsWith('image/');
+    if (!isVideo && !isImage) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = reader.result as string;
+      updateStep(selectedStepId, { previewMedia: dataUrl, previewMediaType: isVideo ? 'video' : 'image' });
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
   };
 
   // ─── Arrow path ────────────────────────────────────────────
@@ -757,11 +775,13 @@ const FunnelManager: React.FC<FunnelManagerProps> = ({ storagePrefix }) => {
                     <circle cx={x2} cy={y2} r="2.5" fill="rgba(180,180,180,0.55)" />
                     {/* Invisible click target to select */}
                     <path d={path} fill="none" stroke="transparent" strokeWidth="16" style={{ cursor: 'pointer', pointerEvents: 'stroke' }}
-                      onMouseDown={e => { e.stopPropagation(); setSelectedConnection({ from: conn.from, to: conn.to }); }} />
+                      onMouseDown={e => { e.stopPropagation(); }}
+                      onClick={e => { e.stopPropagation(); setSelectedConnection({ from: conn.from, to: conn.to }); }} />
                     {isSelected && (
                       <g transform={`translate(${mid.x}, ${mid.y})`} style={{ pointerEvents: 'all', cursor: 'pointer' }}
-                        onMouseDown={e => { e.stopPropagation(); deleteConnection(conn.from, conn.to); }}>
-                        <circle r="10" fill="rgba(15,23,42,0.9)" stroke="rgba(244,63,94,0.7)" strokeWidth="1" />
+                        onMouseDown={e => { e.stopPropagation(); e.preventDefault(); }}
+                        onClick={e => { e.stopPropagation(); deleteConnection(conn.from, conn.to); }}>
+                        <circle r="12" fill="rgba(15,23,42,0.95)" stroke="rgba(244,63,94,0.8)" strokeWidth="1.5" />
                         <line x1="-4" y1="-4" x2="4" y2="4" stroke="rgba(244,63,94,0.9)" strokeWidth="1.5" strokeLinecap="round" />
                         <line x1="-4" y1="4" x2="4" y2="-4" stroke="rgba(244,63,94,0.9)" strokeWidth="1.5" strokeLinecap="round" />
                       </g>
@@ -838,7 +858,15 @@ const FunnelManager: React.FC<FunnelManagerProps> = ({ storagePrefix }) => {
                     border: `1.5px solid ${isSelected ? 'rgba(236,236,236,0.9)' : 'rgba(58,58,58,0.6)'}`,
                     boxShadow: isSelected ? '0 0 24px rgba(255,255,255,0.1), 0 4px 20px rgba(0,0,0,0.4)' : '0 4px 16px rgba(0,0,0,0.3)',
                   }}>
-                    {normalizedUrl ? (
+                    {step.previewMedia ? (
+                      <div className="w-full h-full relative">
+                        {step.previewMediaType === 'video' ? (
+                          <video src={step.previewMedia} className="absolute inset-0 w-full h-full object-cover" controls />
+                        ) : (
+                          <img src={step.previewMedia} alt={step.name} className="absolute inset-0 w-full h-full object-cover" />
+                        )}
+                      </div>
+                    ) : normalizedUrl ? (
                       <div className="w-full h-full relative">
                         {step.type === 'ad' ? (
                           <>
@@ -1022,6 +1050,37 @@ const FunnelManager: React.FC<FunnelManagerProps> = ({ storagePrefix }) => {
                   <span className="truncate flex-1">{getUrlDomain(selectedStep.url)}</span><ExternalLink size={12} />
                 </a>
               )}
+            </div>
+
+            <div><label className="text-[10px] uppercase tracking-wider text-[#9B9B9B] font-medium">Preview Media</label>
+              <input ref={fileInputRef} type="file" accept="image/*,video/mp4,video/webm" className="hidden" onChange={handleMediaUpload} />
+              {selectedStep.previewMedia ? (
+                <div className="mt-1 space-y-2">
+                  <div className="relative rounded-lg overflow-hidden border border-[#3a3a3a]" style={{ height: 100 }}>
+                    {selectedStep.previewMediaType === 'video' ? (
+                      <video src={selectedStep.previewMedia} className="w-full h-full object-cover" />
+                    ) : (
+                      <img src={selectedStep.previewMedia} alt="Preview" className="w-full h-full object-cover" />
+                    )}
+                  </div>
+                  <div className="flex gap-2">
+                    <button onClick={() => fileInputRef.current?.click()}
+                      className="flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 text-[10px] text-[#9B9B9B] hover:text-white bg-[#3a3a3a] rounded-lg transition-none">
+                      <Upload size={10} /> Replace
+                    </button>
+                    <button onClick={() => updateStep(selectedStep.id, { previewMedia: undefined, previewMediaType: undefined })}
+                      className="flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 text-[10px] text-[#9B9B9B] hover:text-rose-400 bg-[#3a3a3a] rounded-lg transition-none">
+                      <Trash2 size={10} /> Remove
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button onClick={() => fileInputRef.current?.click()}
+                  className="w-full mt-1 flex items-center justify-center gap-2 px-3 py-3 border border-dashed border-[#4a4a4a] rounded-lg text-xs text-[#666666] hover:text-[#9B9B9B] hover:border-[#666666] transition-none">
+                  <Image size={14} /> Upload image or MP4
+                </button>
+              )}
+              <p className="text-[9px] text-[#555555] mt-1">Overrides URL preview when set</p>
             </div>
 
             <div><label className="text-[10px] uppercase tracking-wider text-[#9B9B9B] font-medium">Page Views</label>

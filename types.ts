@@ -87,6 +87,8 @@ export interface FunnelStep {
   name: string;
   type: FunnelStepType;
   url?: string;
+  previewMedia?: string;
+  previewMediaType?: 'image' | 'video';
   transcript?: string;
   adTitle?: string;
   adStatus?: FunnelAdStatus;
