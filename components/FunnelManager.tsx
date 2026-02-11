@@ -507,16 +507,13 @@ const FunnelManager: React.FC<FunnelManagerProps> = ({ storagePrefix }) => {
   // ─── Media upload handler ─────────────────────────────────
   const handleMediaUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !selectedStepId) return;
+    const stepId = selectedStepId;
+    if (!file || !stepId) return;
     const isVideo = file.type.startsWith('video/');
     const isImage = file.type.startsWith('image/');
     if (!isVideo && !isImage) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      const dataUrl = reader.result as string;
-      updateStep(selectedStepId, { previewMedia: dataUrl, previewMediaType: isVideo ? 'video' : 'image' });
-    };
-    reader.readAsDataURL(file);
+    const objectUrl = URL.createObjectURL(file);
+    updateStep(stepId, { previewMedia: objectUrl, previewMediaType: isVideo ? 'video' : 'image' });
     e.target.value = '';
   };
 
@@ -858,7 +855,7 @@ const FunnelManager: React.FC<FunnelManagerProps> = ({ storagePrefix }) => {
                     border: `1.5px solid ${isSelected ? 'rgba(236,236,236,0.9)' : 'rgba(58,58,58,0.6)'}`,
                     boxShadow: isSelected ? '0 0 24px rgba(255,255,255,0.1), 0 4px 20px rgba(0,0,0,0.4)' : '0 4px 16px rgba(0,0,0,0.3)',
                   }}>
-                    {step.previewMedia && step.previewMediaType && step.previewMedia.startsWith('data:') ? (
+                    {step.previewMedia && step.previewMediaType ? (
                       <div className="w-full h-full relative">
                         {step.previewMediaType === 'video' ? (
                           <video src={step.previewMedia} className="absolute inset-0 w-full h-full object-cover" controls />
