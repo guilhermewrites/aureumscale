@@ -858,7 +858,7 @@ const FunnelManager: React.FC<FunnelManagerProps> = ({ storagePrefix }) => {
                     border: `1.5px solid ${isSelected ? 'rgba(236,236,236,0.9)' : 'rgba(58,58,58,0.6)'}`,
                     boxShadow: isSelected ? '0 0 24px rgba(255,255,255,0.1), 0 4px 20px rgba(0,0,0,0.4)' : '0 4px 16px rgba(0,0,0,0.3)',
                   }}>
-                    {step.previewMedia ? (
+                    {step.previewMedia && step.previewMediaType && step.previewMedia.startsWith('data:') ? (
                       <div className="w-full h-full relative">
                         {step.previewMediaType === 'video' ? (
                           <video src={step.previewMedia} className="absolute inset-0 w-full h-full object-cover" controls />
