@@ -94,6 +94,8 @@ function useSaoPauloCountdown() {
     return {
       hoursLeft: Math.floor(remaining / 3600),
       minutesLeft: Math.floor((remaining % 3600) / 60),
+      totalMinutesLeft: Math.floor(remaining / 60),
+      secondsLeft: remaining % 60,
       fraction: remaining / totalSecondsInDay,
       displayTime: `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`,
     };
@@ -102,7 +104,7 @@ function useSaoPauloCountdown() {
   const [time, setTime] = useState(getTimeLeft);
 
   useEffect(() => {
-    const interval = setInterval(() => setTime(getTimeLeft()), 15000);
+    const interval = setInterval(() => setTime(getTimeLeft()), 1000);
     return () => clearInterval(interval);
   }, [getTimeLeft]);
 
@@ -415,6 +417,44 @@ const PlannerManager: React.FC<PlannerManagerProps> = ({ storagePrefix }) => {
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
+      {/* Hero Countdown Timer */}
+      <div className="bg-[#2f2f2f] border border-[#3a3a3a] rounded-xl px-6 py-10 flex flex-col items-center">
+        <p className="text-[10px] uppercase tracking-[0.2em] text-[#666666] font-medium mb-8">
+          Time remaining today
+        </p>
+        <div className="flex items-end gap-4">
+          <div className="flex flex-col items-center">
+            <span className="text-7xl md:text-8xl font-black text-[#ECECEC] leading-none tabular-nums">
+              {String(spTime.totalMinutesLeft).padStart(3, '0')}
+            </span>
+            <span className="text-[10px] uppercase tracking-[0.15em] text-[#666666] font-medium mt-3">min</span>
+          </div>
+          <span className="text-5xl md:text-6xl font-black text-[#3a3a3a] leading-none mb-8">:</span>
+          <div className="flex flex-col items-center">
+            <span className="text-7xl md:text-8xl font-black text-[#ECECEC] leading-none tabular-nums">
+              {String(spTime.secondsLeft).padStart(2, '0')}
+            </span>
+            <span className="text-[10px] uppercase tracking-[0.15em] text-[#666666] font-medium mt-3">sec</span>
+          </div>
+        </div>
+        <div className="w-full max-w-sm mt-10">
+          <div className="w-full h-1.5 rounded-full bg-[#212121] overflow-hidden">
+            <div
+              className="h-full rounded-full"
+              style={{
+                width: `${Math.max(spTime.fraction * 100, 0.5)}%`,
+                backgroundColor: barColor,
+                transition: 'width 1s linear, background-color 1s ease',
+              }}
+            />
+          </div>
+          <div className="flex items-center justify-between mt-2 text-[10px] text-[#666666]">
+            <span>São Paulo · {spTime.displayTime}</span>
+            <span>{spTime.fraction <= 0.01 ? "Day's over!" : `${Math.round(spTime.fraction * 100)}% left`}</span>
+          </div>
+        </div>
+      </div>
+
       {/* Summary cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-[#2f2f2f] border border-[#3a3a3a] p-6 rounded-xl">
@@ -441,22 +481,11 @@ const PlannerManager: React.FC<PlannerManagerProps> = ({ storagePrefix }) => {
             <p className="text-[#9B9B9B] text-sm font-medium">Time Left Today</p>
             <Clock size={14} className="text-[#666666]" />
           </div>
-          <h3 className="text-3xl font-bold text-[#ECECEC] mb-2">
-            {spTime.hoursLeft}h {spTime.minutesLeft}m
+          <h3 className="text-3xl font-bold text-[#ECECEC] mb-2 tabular-nums">
+            {spTime.totalMinutesLeft}m {String(spTime.secondsLeft).padStart(2, '0')}s
           </h3>
-          <div className="w-full h-2 rounded-full bg-[#212121] overflow-hidden">
-            <div
-              className="h-full rounded-full"
-              style={{
-                width: `${Math.max(spTime.fraction * 100, 0.5)}%`,
-                backgroundColor: barColor,
-                transition: 'width 1s linear, background-color 1s ease',
-              }}
-            />
-          </div>
-          <div className="flex items-center justify-between mt-2 text-[10px] text-[#666666]">
-            <span>Sao Paulo {spTime.displayTime}</span>
-            <span>{spTime.fraction <= 0.01 ? "Day's over!" : ''}</span>
+          <div className="flex items-center gap-2 text-xs">
+            <span className="text-[#666666]">São Paulo · {spTime.displayTime}</span>
           </div>
         </div>
       </div>
