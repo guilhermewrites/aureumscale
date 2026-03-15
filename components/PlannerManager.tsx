@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { Plus, Trash2, Clock, X, Save, FileText } from 'lucide-react';
+import { Plus, Trash2, X, Save, FileText } from 'lucide-react';
 import { PlannerTask, PlannerSubtask } from '../types';
 import useLocalStorage from '../hooks/useLocalStorage';
 
@@ -413,7 +413,7 @@ const PlannerManager: React.FC<PlannerManagerProps> = ({ storagePrefix }) => {
   const allDone = tasks.length > 0 && completedCount === tasks.length;
 
   // Purple mid-range instead of yellow
-  const barColor = spTime.fraction > 0.5 ? '#4ade80' : spTime.fraction > 0.2 ? '#a78bfa' : '#ef4444';
+  const barColor = spTime.fraction > 0.5 ? '#4ade80' : spTime.fraction > 0.2 ? '#f59e0b' : '#ef4444';
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -449,7 +449,7 @@ const PlannerManager: React.FC<PlannerManagerProps> = ({ storagePrefix }) => {
             />
           </div>
           <div className="flex items-center justify-between mt-2 text-[10px] text-[#666666]">
-            <span>São Paulo · {spTime.displayTime}</span>
+            <span>Passo Fundo · {spTime.displayTime}</span>
             <span>{spTime.fraction <= 0.01 ? "Day's over!" : `${Math.round(spTime.fraction * 100)}% left`}</span>
           </div>
         </div>
@@ -475,19 +475,6 @@ const PlannerManager: React.FC<PlannerManagerProps> = ({ storagePrefix }) => {
           </div>
         </div>
 
-        {/* Time left in day (SP) */}
-        <div className="bg-[#2f2f2f] border border-[#3a3a3a] p-6 rounded-xl">
-          <div className="flex items-center justify-between mb-2">
-            <p className="text-[#9B9B9B] text-sm font-medium">Time Left Today</p>
-            <Clock size={14} className="text-[#666666]" />
-          </div>
-          <h3 className="text-3xl font-bold text-[#ECECEC] mb-2 tabular-nums">
-            {spTime.totalMinutesLeft}m {String(spTime.secondsLeft).padStart(2, '0')}s
-          </h3>
-          <div className="flex items-center gap-2 text-xs">
-            <span className="text-[#666666]">São Paulo · {spTime.displayTime}</span>
-          </div>
-        </div>
       </div>
 
       {/* Task list */}
