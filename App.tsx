@@ -16,7 +16,8 @@ import useLocalStorage from './hooks/useLocalStorage';
 import { syncLocalDataToSupabase } from './services/syncLocalToSupabase';
 
 const App: React.FC = () => {
-  const [activeNav, setActiveNav] = useState<NavigationItem>(NavigationItem.DASHBOARD);
+  const [activeNav, setActiveNav] = useLocalStorage<NavigationItem>('aureum_active_nav', NavigationItem.DASHBOARD);
+  const [sidebarCollapsed, setSidebarCollapsed] = useLocalStorage<boolean>('aureum_sidebar_collapsed', false);
   const [activeChart, setActiveChart] = useState<ChartViewType>(ChartViewType.REVENUE);
   const [activeUserId, setActiveUserId] = useLocalStorage<string>('writestakeover_active_user', 'guilherme');
 
@@ -247,9 +248,11 @@ const App: React.FC = () => {
         onNavigate={setActiveNav}
         activeUserId={activeUserId}
         onUserChange={setActiveUserId}
+        collapsed={sidebarCollapsed}
+        onToggleCollapse={() => setSidebarCollapsed(c => !c)}
       />
 
-      <main key={activeUserId} className="flex-1 ml-64 p-8 overflow-y-auto">
+      <main key={activeUserId} className={`flex-1 ${sidebarCollapsed ? 'ml-16' : 'ml-64'} p-8 overflow-y-auto`}>
         {/* Header */}
         <header className="flex justify-between items-center mb-10">
           <div>

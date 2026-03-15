@@ -456,7 +456,7 @@ const PlannerManager: React.FC<PlannerManagerProps> = ({ storagePrefix }) => {
       </div>
 
       {/* Summary cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="bg-[#2f2f2f] border border-[#3a3a3a] p-6 rounded-xl">
           <p className="text-[#9B9B9B] text-sm font-medium mb-2">Total Tasks</p>
           <h3 className="text-3xl font-bold text-[#ECECEC] mb-1">{tasks.length}</h3>

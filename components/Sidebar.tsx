@@ -12,6 +12,8 @@ import {
   Library,
   GitBranch,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   Check,
   Camera,
   Settings,
@@ -30,9 +32,11 @@ interface SidebarProps {
   onNavigate: (item: NavigationItem) => void;
   activeUserId: string;
   onUserChange: (userId: string) => void;
+  collapsed: boolean;
+  onToggleCollapse: () => void;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ activeItem, onNavigate, activeUserId, onUserChange }) => {
+const Sidebar: React.FC<SidebarProps> = ({ activeItem, onNavigate, activeUserId, onUserChange, collapsed, onToggleCollapse }) => {
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const [users, setUsers] = useLocalStorage<AppUser[]>('writestakeover_users', DEFAULT_USERS);
   const [customLogo, setCustomLogo] = useLocalStorage<string | null>('aureum_custom_logo', null);
@@ -126,20 +130,20 @@ const Sidebar: React.FC<SidebarProps> = ({ activeItem, onNavigate, activeUserId,
   ];
 
   return (
-    <aside className="fixed left-0 top-0 h-full w-64 bg-[#171717] border-r border-[#2f2f2f] flex flex-col z-20">
-      <div className="p-6 flex items-center gap-3">
-        <label className="cursor-pointer group relative">
-          <input 
+    <aside className={`fixed left-0 top-0 h-full ${collapsed ? 'w-16' : 'w-64'} bg-[#171717] border-r border-[#2f2f2f] flex flex-col z-20 transition-none`}>
+      <div className={`p-4 flex items-center ${collapsed ? 'justify-center' : 'gap-3'} relative`}>
+        <label className="cursor-pointer group relative flex-shrink-0">
+          <input
             ref={logoInputRef}
-            type="file" 
-            accept="image/*" 
-            className="hidden" 
+            type="file"
+            accept="image/*"
+            className="hidden"
             onChange={handleLogoUpload}
           />
           {customLogo ? (
-            <img 
-              src={customLogo} 
-              alt="Logo" 
+            <img
+              src={customLogo}
+              alt="Logo"
               className="w-8 h-8 object-contain rounded"
             />
           ) : (
@@ -151,17 +155,25 @@ const Sidebar: React.FC<SidebarProps> = ({ activeItem, onNavigate, activeUserId,
             <Camera size={12} className="text-white" />
           </div>
         </label>
-        <span className="text-lg font-bold tracking-tight text-[#ECECEC]">Aureum Scale</span>
+        {!collapsed && <span className="text-lg font-bold tracking-tight text-[#ECECEC] flex-1 min-w-0 truncate">Aureum</span>}
+        <button
+          onClick={onToggleCollapse}
+          className={`${collapsed ? 'absolute -right-3 top-5' : ''} w-6 h-6 rounded-full bg-[#2f2f2f] border border-[#3a3a3a] flex items-center justify-center text-[#9B9B9B] hover:text-[#ECECEC] hover:bg-[#3a3a3a] flex-shrink-0`}
+          title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+        >
+          {collapsed ? <ChevronRight size={12} /> : <ChevronLeft size={12} />}
+        </button>
       </div>
 
-      <nav className="flex-1 px-4 py-4 space-y-1 overflow-y-auto custom-scrollbar">
+      <nav className="flex-1 px-2 py-4 space-y-1 overflow-y-auto custom-scrollbar">
         {menuItems.map((item) => {
           const isActive = activeItem === item.id;
           return (
             <button
               key={item.id}
               onClick={() => onNavigate(item.id)}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-none group ${
+              title={collapsed ? item.label : undefined}
+              className={`w-full flex items-center ${collapsed ? 'justify-center px-2' : 'gap-3 px-4'} py-3 rounded-lg transition-none group ${
                 isActive
                   ? 'bg-[rgba(255,255,255,0.1)] text-[#ECECEC]'
                   : 'text-[#9B9B9B] hover:text-[#ECECEC] hover:bg-[rgba(255,255,255,0.05)]'
@@ -171,39 +183,44 @@ const Sidebar: React.FC<SidebarProps> = ({ activeItem, onNavigate, activeUserId,
                 size={20}
                 className={isActive ? 'text-[#ECECEC]' : 'text-[#9B9B9B] group-hover:text-[#ECECEC]'}
               />
-              <span className="font-medium text-sm">{item.label}</span>
+              {!collapsed && <span className="font-medium text-sm">{item.label}</span>}
             </button>
           );
         })}
       </nav>
 
       {/* User Switcher */}
-      <div className="p-4 border-t border-[#2f2f2f] relative">
+      <div className="p-2 border-t border-[#2f2f2f] relative">
         <button
           onClick={() => setUserDropdownOpen(!userDropdownOpen)}
-          className="w-full flex items-center gap-3 px-3 py-2 rounded-lg bg-[#2f2f2f] border border-[#3a3a3a] hover:bg-[#3a3a3a] transition-none"
+          title={collapsed ? activeUser.name : undefined}
+          className={`w-full flex items-center ${collapsed ? 'justify-center px-1 py-2' : 'gap-3 px-3 py-2'} rounded-lg bg-[#2f2f2f] border border-[#3a3a3a] hover:bg-[#3a3a3a] transition-none`}
         >
            {activeUser.photoUrl ? (
-             <img src={activeUser.photoUrl} alt={activeUser.name} className="w-8 h-8 rounded-full object-cover" />
+             <img src={activeUser.photoUrl} alt={activeUser.name} className="w-8 h-8 rounded-full object-cover flex-shrink-0" />
            ) : (
-             <div className={`w-8 h-8 rounded-full ${activeUser.color} flex items-center justify-center text-xs font-bold text-white`}>
+             <div className={`w-8 h-8 rounded-full ${activeUser.color} flex items-center justify-center text-xs font-bold text-white flex-shrink-0`}>
                {activeUser.initials}
              </div>
            )}
-           <div className="flex flex-col text-left flex-1 min-w-0">
-             <div className="flex items-center gap-2">
-               <span className="text-xs font-semibold text-[#ECECEC] truncate">{activeUser.name}</span>
-               <button
-                 onClick={(e) => { e.stopPropagation(); openProfileEditor(); }}
-                 className="p-0.5 text-[#9B9B9B] hover:text-[#ECECEC] transition-none"
-                 title="Edit profile"
-               >
-                 <Settings size={12} />
-               </button>
-             </div>
-             <span className="text-[10px] text-[#666666]">Switch workspace</span>
-           </div>
-           <ChevronDown size={14} className={`text-[#9B9B9B] transition-transform ${userDropdownOpen ? 'rotate-180' : ''}`} />
+           {!collapsed && (
+             <>
+               <div className="flex flex-col text-left flex-1 min-w-0">
+                 <div className="flex items-center gap-2">
+                   <span className="text-xs font-semibold text-[#ECECEC] truncate">{activeUser.name}</span>
+                   <button
+                     onClick={(e) => { e.stopPropagation(); openProfileEditor(); }}
+                     className="p-0.5 text-[#9B9B9B] hover:text-[#ECECEC] transition-none"
+                     title="Edit profile"
+                   >
+                     <Settings size={12} />
+                   </button>
+                 </div>
+                 <span className="text-[10px] text-[#666666]">Switch workspace</span>
+               </div>
+               <ChevronDown size={14} className={`text-[#9B9B9B] transition-transform ${userDropdownOpen ? 'rotate-180' : ''}`} />
+             </>
+           )}
         </button>
 
         {userDropdownOpen && (
