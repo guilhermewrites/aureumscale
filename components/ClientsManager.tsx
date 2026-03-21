@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { Plus, Trash2, ChevronDown, Camera, Loader2, Archive, RotateCcw } from 'lucide-react';
+import { Plus, Trash2, ChevronDown, Camera, Loader2, Archive, RotateCcw, GripVertical } from 'lucide-react';
 import { supabase } from '../services/supabaseClient';
 import ClientPanel from './ClientPanel';
 
@@ -217,6 +217,23 @@ function Avatar({ name, photoUrl, onPhotoChange, size = 36 }: AvatarProps) {
   );
 }
 
+type ColumnId = 'payment' | 'service' | 'leader' | 'status';
+const DEFAULT_COLUMNS: ColumnId[] = ['payment', 'service', 'leader', 'status'];
+
+const COLUMN_LABELS: Record<ColumnId, string> = {
+  payment: 'Payment',
+  service: 'Service',
+  leader: 'Leader',
+  status: 'Status',
+};
+
+const COLUMN_WIDTHS: Record<ColumnId, string> = {
+  payment: '17%',
+  service: '20%',
+  leader: '18%',
+  status: '14%',
+};
+
 interface ClientsManagerProps {
   storagePrefix: string;
 }
@@ -229,6 +246,51 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
   const [draft, setDraft] = useState<Client>(newClient(0));
   const [selectedClient, setSelectedClient] = useState<{ id: string; name: string; photoUrl?: string; status?: string } | null>(null);
   const [showActive, setShowActive] = useState(true);
+
+  // Column order (UI preference — stored in localStorage)
+  const [columnOrder, setColumnOrder] = useState<ColumnId[]>(() => {
+    try {
+      const saved = localStorage.getItem('aureum_column_order');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        // Validate it contains exactly the right columns
+        if (Array.isArray(parsed) && parsed.length === DEFAULT_COLUMNS.length && DEFAULT_COLUMNS.every(c => parsed.includes(c))) {
+          return parsed;
+        }
+      }
+    } catch {}
+    return DEFAULT_COLUMNS;
+  });
+
+  const dragColRef = useRef<ColumnId | null>(null);
+  const dragOverColRef = useRef<ColumnId | null>(null);
+
+  const handleColumnDragStart = useCallback((colId: ColumnId) => {
+    dragColRef.current = colId;
+  }, []);
+
+  const handleColumnDragOver = useCallback((e: React.DragEvent, colId: ColumnId) => {
+    e.preventDefault();
+    dragOverColRef.current = colId;
+  }, []);
+
+  const handleColumnDrop = useCallback(() => {
+    const from = dragColRef.current;
+    const to = dragOverColRef.current;
+    if (!from || !to || from === to) return;
+
+    setColumnOrder(prev => {
+      const next = [...prev];
+      const fromIdx = next.indexOf(from);
+      const toIdx = next.indexOf(to);
+      next.splice(fromIdx, 1);
+      next.splice(toIdx, 0, from);
+      localStorage.setItem('aureum_column_order', JSON.stringify(next));
+      return next;
+    });
+    dragColRef.current = null;
+    dragOverColRef.current = null;
+  }, []);
 
   // Debounce refs for name updates
   const nameDebounceRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
@@ -432,113 +494,128 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
         <table className="w-full text-sm" style={{ borderCollapse: 'separate', borderSpacing: 0, tableLayout: 'fixed' }}>
           <colgroup>
             <col style={{ width: '25%' }} />
-            <col style={{ width: '17%' }} />
-            <col style={{ width: '20%' }} />
-            <col style={{ width: '18%' }} />
-            <col style={{ width: '14%' }} />
+            {columnOrder.map(col => (
+              <col key={col} style={{ width: COLUMN_WIDTHS[col] }} />
+            ))}
             <col style={{ width: '6%' }} />
           </colgroup>
           <thead>
             <tr className="border-b border-[#2f2f2f]" style={{ background: '#1a1a1a' }}>
               <th className="text-left px-6 py-3.5 text-xs font-semibold text-[#555] uppercase tracking-wider rounded-tl-xl">Name</th>
-              <th className="text-left px-6 py-3.5 text-xs font-semibold text-[#555] uppercase tracking-wider">Payment</th>
-              <th className="text-left px-6 py-3.5 text-xs font-semibold text-[#555] uppercase tracking-wider">Service</th>
-              <th className="text-left px-6 py-3.5 text-xs font-semibold text-[#555] uppercase tracking-wider">Leader</th>
-              <th className="text-left px-6 py-3.5 text-xs font-semibold text-[#555] uppercase tracking-wider">Status</th>
+              {columnOrder.map((col, i) => (
+                <th
+                  key={col}
+                  draggable
+                  onDragStart={() => handleColumnDragStart(col)}
+                  onDragOver={e => handleColumnDragOver(e, col)}
+                  onDrop={handleColumnDrop}
+                  className="text-left px-6 py-3.5 text-xs font-semibold text-[#555] uppercase tracking-wider select-none cursor-grab active:cursor-grabbing"
+                >
+                  <div className="flex items-center gap-1.5">
+                    <GripVertical size={10} className="opacity-0 group-hover:opacity-30 flex-shrink-0" style={{ opacity: 0.2 }} />
+                    {COLUMN_LABELS[col]}
+                  </div>
+                </th>
+              ))}
               <th className="px-3 py-3.5 rounded-tr-xl"></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-[#2f2f2f]">
-            {filteredClients.map(client => (
-              <tr
-                key={client.id}
-                className="group bg-[#212121] hover:bg-[#1e1e1e] transition-colors cursor-pointer"
-                onClick={() => setSelectedClient({ id: client.id, name: client.name, photoUrl: client.photoUrl, status: client.status })}
-              >
-                {/* Name + Avatar */}
-                <td className="px-6 py-4">
-                  <div className="flex items-center gap-3">
-                    <div onClick={e => e.stopPropagation()}>
-                      <Avatar
-                        name={client.name}
-                        photoUrl={client.photoUrl}
-                        onPhotoChange={url => updateClient(client.id, { photoUrl: url })}
-                      />
-                    </div>
-                    <input
-                      value={client.name}
-                      onChange={e => updateClientName(client.id, e.target.value)}
-                      className="bg-transparent text-[#ECECEC] text-sm font-medium flex-1 min-w-0 focus:outline-none placeholder-[#555] cursor-text"
-                      placeholder="Client name"
-                      onClick={e => e.stopPropagation()}
-                    />
-                  </div>
-                </td>
-                {/* Payment Status */}
-                <td className="px-6 py-4">
+            {filteredClients.map(client => {
+              const cellMap: Record<ColumnId, React.ReactNode> = {
+                payment: (
                   <SelectCell
                     value={client.paymentStatus}
                     options={PAYMENT_STATUSES}
                     onChange={v => updateClient(client.id, { paymentStatus: v })}
                     colorMap={paymentColors}
                   />
-                </td>
-                {/* Service */}
-                <td className="px-6 py-4">
+                ),
+                service: (
                   <SelectCell
                     value={client.service}
                     options={SERVICES}
                     onChange={v => updateClient(client.id, { service: v })}
                   />
-                </td>
-                {/* Leader */}
-                <td className="px-6 py-4">
+                ),
+                leader: (
                   <SelectCell
                     value={client.leader}
                     options={LEADERS}
                     onChange={v => updateClient(client.id, { leader: v })}
                   />
-                </td>
-                {/* Status */}
-                <td className="px-6 py-4">
+                ),
+                status: (
                   <SelectCell
                     value={client.status}
                     options={CLIENT_STATUSES}
                     onChange={v => updateClient(client.id, { status: v })}
                     colorMap={statusColors}
                   />
-                </td>
-                {/* Actions */}
-                <td className="px-3 py-4 text-center">
-                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all justify-end">
-                    {showActive ? (
+                ),
+              };
+
+              return (
+                <tr
+                  key={client.id}
+                  className="group bg-[#212121] hover:bg-[#1e1e1e] transition-colors cursor-pointer"
+                  onClick={() => setSelectedClient({ id: client.id, name: client.name, photoUrl: client.photoUrl, status: client.status })}
+                >
+                  {/* Name + Avatar */}
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-3">
+                      <div onClick={e => e.stopPropagation()}>
+                        <Avatar
+                          name={client.name}
+                          photoUrl={client.photoUrl}
+                          onPhotoChange={url => updateClient(client.id, { photoUrl: url })}
+                        />
+                      </div>
+                      <input
+                        value={client.name}
+                        onChange={e => updateClientName(client.id, e.target.value)}
+                        className="bg-transparent text-[#ECECEC] text-sm font-medium flex-1 min-w-0 focus:outline-none placeholder-[#555] cursor-text"
+                        placeholder="Client name"
+                        onClick={e => e.stopPropagation()}
+                      />
+                    </div>
+                  </td>
+                  {/* Dynamic columns */}
+                  {columnOrder.map(col => (
+                    <td key={col} className="px-6 py-4">{cellMap[col]}</td>
+                  ))}
+                  {/* Actions */}
+                  <td className="px-3 py-4 text-center">
+                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all justify-end">
+                      {showActive ? (
+                        <button
+                          onClick={e => { e.stopPropagation(); toggleClientActive(client.id, false); }}
+                          className="text-[#555] hover:text-[#ECECEC] transition-colors p-1"
+                          title="Archive client"
+                        >
+                          <Archive size={13} />
+                        </button>
+                      ) : (
+                        <button
+                          onClick={e => { e.stopPropagation(); toggleClientActive(client.id, true); }}
+                          className="text-[#555] hover:text-emerald-400 transition-colors p-1"
+                          title="Reactivate client"
+                        >
+                          <RotateCcw size={13} />
+                        </button>
+                      )}
                       <button
-                        onClick={e => { e.stopPropagation(); toggleClientActive(client.id, false); }}
-                        className="text-[#555] hover:text-[#ECECEC] transition-colors p-1"
-                        title="Archive client"
+                        onClick={e => { e.stopPropagation(); deleteClient(client.id); }}
+                        className="text-[#555] hover:text-red-400 transition-colors p-1"
+                        title="Delete client"
                       >
-                        <Archive size={13} />
+                        <Trash2 size={13} />
                       </button>
-                    ) : (
-                      <button
-                        onClick={e => { e.stopPropagation(); toggleClientActive(client.id, true); }}
-                        className="text-[#555] hover:text-emerald-400 transition-colors p-1"
-                        title="Reactivate client"
-                      >
-                        <RotateCcw size={13} />
-                      </button>
-                    )}
-                    <button
-                      onClick={e => { e.stopPropagation(); deleteClient(client.id); }}
-                      className="text-[#555] hover:text-red-400 transition-colors p-1"
-                      title="Delete client"
-                    >
-                      <Trash2 size={13} />
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
 
             {/* Add new row */}
             {isAdding && (

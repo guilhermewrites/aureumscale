@@ -420,7 +420,7 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
             <span className="text-sm">Loading workspace…</span>
           </div>
         ) : (
-          <div className="space-y-5 max-w-2xl">
+          <div className="space-y-5">
 
             {/* ── OVERVIEW ────────────────────────────────────────────────── */}
             {activeTab === 'Overview' && (<>
