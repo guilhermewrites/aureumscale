@@ -1,40 +1,35 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { Plus, Trash2, ChevronDown, Camera, Loader2, Archive, RotateCcw, GripVertical } from 'lucide-react';
+import { Plus, Trash2, ChevronDown, Camera, Loader2, Archive, RotateCcw, GripVertical, Pencil, X, Check } from 'lucide-react';
 import { supabase } from '../services/supabaseClient';
 import ClientPanel from './ClientPanel';
-
-type PaymentStatus = 'Missing Invoice' | 'Pending' | 'Paid' | 'Late';
-type Service = 'Full-on-marketing' | 'Ghostwriting' | 'Social Media Management' | 'Webinar' | 'Design' | 'Video-Editing';
-type Leader = 'Guilherme Writes' | 'Jhacson Mossman';
-type ClientStatus = 'Happy' | 'Moderate' | 'Frustrated';
 
 interface Client {
   id: string;
   name: string;
   photoUrl?: string;
-  paymentStatus: PaymentStatus;
+  paymentStatus: string;
   amount: number;
-  service: Service;
-  leader: Leader;
-  status: ClientStatus;
+  service: string;
+  leader: string;
+  status: string;
   orderNum: number;
   active: boolean;
 }
 
-const PAYMENT_STATUSES: PaymentStatus[] = ['Missing Invoice', 'Pending', 'Paid', 'Late'];
-const SERVICES: Service[] = ['Full-on-marketing', 'Ghostwriting', 'Social Media Management', 'Webinar', 'Design', 'Video-Editing'];
-const LEADERS: Leader[] = ['Guilherme Writes', 'Jhacson Mossman'];
-const CLIENT_STATUSES: ClientStatus[] = ['Happy', 'Moderate', 'Frustrated'];
+const DEFAULT_PAYMENT_STATUSES = ['Missing Invoice', 'Pending', 'Paid', 'Late'];
+const DEFAULT_SERVICES = ['Full-on-marketing', 'Ghostwriting', 'Social Media Management', 'Webinar', 'Design', 'Video-Editing'];
+const DEFAULT_LEADERS = ['Guilherme Writes', 'Jhacson Mossman'];
+const DEFAULT_CLIENT_STATUSES = ['Happy', 'Moderate', 'Frustrated'];
 
-const paymentColors: Record<PaymentStatus, string> = {
+const paymentColors: Record<string, string> = {
   'Missing Invoice': 'text-red-400',
   'Pending': 'text-[#9B9B9B]',
   'Paid': 'text-emerald-400',
   'Late': 'text-orange-400',
 };
 
-const statusColors: Record<ClientStatus, string> = {
+const statusColors: Record<string, string> = {
   'Happy': 'text-emerald-400',
   'Moderate': 'text-[#9B9B9B]',
   'Frustrated': 'text-red-400',
@@ -80,11 +75,11 @@ function fromDbRow(row: any): Client {
     id: row.id,
     name: row.name,
     photoUrl: row.photo_url ?? undefined,
-    paymentStatus: row.payment_status as PaymentStatus,
+    paymentStatus: row.payment_status ?? 'Pending',
     amount: row.amount ?? 0,
-    service: row.service as Service,
-    leader: row.leader as Leader,
-    status: row.status as ClientStatus,
+    service: row.service ?? 'Ghostwriting',
+    leader: row.leader ?? 'Guilherme Writes',
+    status: row.status ?? 'Happy',
     orderNum: row.order_num ?? 0,
     active: row.active ?? true,
   };
@@ -111,25 +106,42 @@ function compressImage(file: File): Promise<string> {
   });
 }
 
-interface SelectCellProps<T extends string> {
-  value: T;
-  options: T[];
-  onChange: (v: T) => void;
+interface SelectCellProps {
+  value: string;
+  options: string[];
+  onChange: (v: string) => void;
   colorMap?: Record<string, string>;
+  onAddOption?: (v: string) => void;
+  onEditOption?: (oldVal: string, newVal: string) => void;
+  onDeleteOption?: (v: string) => void;
 }
 
-function SelectCell<T extends string>({ value, options, onChange, colorMap }: SelectCellProps<T>) {
+function SelectCell({ value, options, onChange, colorMap, onAddOption, onEditOption, onDeleteOption }: SelectCellProps) {
   const [open, setOpen] = useState(false);
   const [coords, setCoords] = useState({ top: 0, left: 0 });
+  const [editingMode, setEditingMode] = useState(false);
+  const [addingNew, setAddingNew] = useState(false);
+  const [newValue, setNewValue] = useState('');
+  const [editingItem, setEditingItem] = useState<string | null>(null);
+  const [editValue, setEditValue] = useState('');
   const btnRef = useRef<HTMLButtonElement>(null);
+  const newInputRef = useRef<HTMLInputElement>(null);
+  const editInputRef = useRef<HTMLInputElement>(null);
 
-  // Close on any outside mousedown — the dropdown stops propagation so it won't self-close
   useEffect(() => {
     if (!open) return;
-    const handler = () => setOpen(false);
+    const handler = () => { setOpen(false); setEditingMode(false); setAddingNew(false); setEditingItem(null); };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, [open]);
+
+  useEffect(() => {
+    if (addingNew && newInputRef.current) newInputRef.current.focus();
+  }, [addingNew]);
+
+  useEffect(() => {
+    if (editingItem && editInputRef.current) editInputRef.current.focus();
+  }, [editingItem]);
 
   const toggle = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -138,9 +150,31 @@ function SelectCell<T extends string>({ value, options, onChange, colorMap }: Se
       setCoords({ top: r.bottom + 4, left: r.left });
     }
     setOpen(o => !o);
+    setEditingMode(false);
+    setAddingNew(false);
+    setEditingItem(null);
+  };
+
+  const handleAdd = () => {
+    const trimmed = newValue.trim();
+    if (trimmed && !options.includes(trimmed) && onAddOption) {
+      onAddOption(trimmed);
+    }
+    setNewValue('');
+    setAddingNew(false);
+  };
+
+  const handleEditSave = (oldVal: string) => {
+    const trimmed = editValue.trim();
+    if (trimmed && trimmed !== oldVal && onEditOption) {
+      onEditOption(oldVal, trimmed);
+    }
+    setEditingItem(null);
+    setEditValue('');
   };
 
   const textColor = colorMap?.[value] ?? 'text-[#ECECEC]';
+  const editable = !!(onAddOption || onEditOption || onDeleteOption);
 
   return (
     <>
@@ -157,24 +191,91 @@ function SelectCell<T extends string>({ value, options, onChange, colorMap }: Se
 
       {open && createPortal(
         <div
-          onMouseDown={e => e.stopPropagation()} // prevent outside-click from firing
+          onMouseDown={e => e.stopPropagation()}
           style={{ position: 'fixed', top: coords.top, left: coords.left, zIndex: 9999 }}
-          className="min-w-[160px] bg-[#1e1e1e] border border-[#3a3a3a] rounded-xl shadow-2xl overflow-hidden py-1"
+          className="min-w-[180px] bg-[#1e1e1e] border border-[#3a3a3a] rounded-xl shadow-2xl overflow-hidden py-1"
         >
           {options.map(o => (
-            <button
-              key={o}
-              type="button"
-              onMouseDown={e => e.stopPropagation()}
-              onClick={() => { onChange(o as T); setOpen(false); }}
-              className={`flex items-center justify-between w-full text-left text-xs px-3 py-2.5 transition-colors hover:bg-[#2a2a2a] ${
-                o === value ? 'text-white font-semibold' : 'text-[#9B9B9B]'
-              }`}
-            >
-              {o}
-              {o === value && <span className="text-[#ECECEC] opacity-60">✓</span>}
-            </button>
+            <div key={o} className="flex items-center group/opt">
+              {editingItem === o ? (
+                <div className="flex items-center gap-1 w-full px-2 py-1.5" onMouseDown={e => e.stopPropagation()}>
+                  <input
+                    ref={editInputRef}
+                    value={editValue}
+                    onChange={e => setEditValue(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter') handleEditSave(o); if (e.key === 'Escape') setEditingItem(null); }}
+                    className="flex-1 text-xs bg-[#161616] text-[#ECECEC] rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#444]"
+                  />
+                  <button onClick={() => handleEditSave(o)} className="text-emerald-400 p-1 hover:bg-[#2a2a2a] rounded-lg"><Check size={12} /></button>
+                  <button onClick={() => setEditingItem(null)} className="text-[#555] p-1 hover:bg-[#2a2a2a] rounded-lg"><X size={12} /></button>
+                </div>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    onMouseDown={e => e.stopPropagation()}
+                    onClick={() => { if (!editingMode) { onChange(o); setOpen(false); setEditingMode(false); } }}
+                    className={`flex items-center justify-between flex-1 text-left text-xs px-3 py-2.5 transition-colors hover:bg-[#2a2a2a] ${
+                      o === value ? 'text-white font-semibold' : 'text-[#9B9B9B]'
+                    }`}
+                  >
+                    {o}
+                    {o === value && !editingMode && <span className="text-[#ECECEC] opacity-60">✓</span>}
+                  </button>
+                  {editingMode && (
+                    <div className="flex items-center gap-0.5 pr-2 flex-shrink-0">
+                      <button
+                        onMouseDown={e => e.stopPropagation()}
+                        onClick={() => { setEditingItem(o); setEditValue(o); }}
+                        className="text-[#555] hover:text-[#ECECEC] p-1 rounded-lg transition-colors"
+                        title="Edit"
+                      ><Pencil size={11} /></button>
+                      {onDeleteOption && (
+                        <button
+                          onMouseDown={e => e.stopPropagation()}
+                          onClick={() => { onDeleteOption(o); }}
+                          className="text-[#555] hover:text-red-400 p-1 rounded-lg transition-colors"
+                          title="Delete"
+                        ><Trash2 size={11} /></button>
+                      )}
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
           ))}
+
+          {/* Add new option */}
+          {addingNew && (
+            <div className="flex items-center gap-1 px-2 py-1.5 border-t border-[#2a2a2a]" onMouseDown={e => e.stopPropagation()}>
+              <input
+                ref={newInputRef}
+                value={newValue}
+                onChange={e => setNewValue(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') handleAdd(); if (e.key === 'Escape') setAddingNew(false); }}
+                className="flex-1 text-xs bg-[#161616] text-[#ECECEC] rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#444] placeholder-[#444]"
+                placeholder="New option…"
+              />
+              <button onClick={handleAdd} className="text-emerald-400 p-1 hover:bg-[#2a2a2a] rounded-lg"><Check size={12} /></button>
+              <button onClick={() => setAddingNew(false)} className="text-[#555] p-1 hover:bg-[#2a2a2a] rounded-lg"><X size={12} /></button>
+            </div>
+          )}
+
+          {/* Action buttons */}
+          {editable && !addingNew && (
+            <div className="flex items-center border-t border-[#2a2a2a] mt-0.5">
+              <button
+                onMouseDown={e => e.stopPropagation()}
+                onClick={() => setAddingNew(true)}
+                className="flex items-center gap-1.5 flex-1 text-left text-[10px] font-medium px-3 py-2 transition-colors hover:bg-[#2a2a2a] text-[#555] hover:text-[#ECECEC]"
+              ><Plus size={10} /> Add</button>
+              <button
+                onMouseDown={e => e.stopPropagation()}
+                onClick={() => setEditingMode(m => !m)}
+                className={`flex items-center gap-1.5 flex-1 text-left text-[10px] font-medium px-3 py-2 transition-colors hover:bg-[#2a2a2a] ${editingMode ? 'text-[#ECECEC]' : 'text-[#555] hover:text-[#ECECEC]'}`}
+              ><Pencil size={10} /> {editingMode ? 'Done' : 'Edit'}</button>
+            </div>
+          )}
         </div>,
         document.body,
       )}
@@ -244,6 +345,14 @@ interface ClientsManagerProps {
   storagePrefix: string;
 }
 
+// Column options type
+type ColumnOptionsMap = {
+  payment: string[];
+  service: string[];
+  leader: string[];
+  status: string[];
+};
+
 const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
@@ -252,6 +361,102 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
   const [draft, setDraft] = useState<Client>(newClient(0));
   const [selectedClient, setSelectedClient] = useState<{ id: string; name: string; photoUrl?: string; status?: string; paymentStatus?: string; amount?: number } | null>(null);
   const [showActive, setShowActive] = useState(true);
+
+  // Custom column options — merged with defaults
+  const [columnOptions, setColumnOptions] = useState<ColumnOptionsMap>({
+    payment: DEFAULT_PAYMENT_STATUSES,
+    service: DEFAULT_SERVICES,
+    leader: DEFAULT_LEADERS,
+    status: DEFAULT_CLIENT_STATUSES,
+  });
+
+  // Load custom options from Supabase
+  useEffect(() => {
+    if (!supabase) return;
+    (async () => {
+      const { data } = await supabase
+        .from('column_options')
+        .select('*')
+        .eq('user_id', storagePrefix);
+      if (data && data.length > 0) {
+        const map: Partial<ColumnOptionsMap> = {};
+        for (const row of data) {
+          const col = row.column_name as keyof ColumnOptionsMap;
+          if (!map[col]) map[col] = [];
+          map[col]!.push(row.option_value);
+        }
+        setColumnOptions({
+          payment: map.payment && map.payment.length > 0 ? map.payment : DEFAULT_PAYMENT_STATUSES,
+          service: map.service && map.service.length > 0 ? map.service : DEFAULT_SERVICES,
+          leader: map.leader && map.leader.length > 0 ? map.leader : DEFAULT_LEADERS,
+          status: map.status && map.status.length > 0 ? map.status : DEFAULT_CLIENT_STATUSES,
+        });
+      }
+    })();
+  }, [storagePrefix]);
+
+  // Save full options list to Supabase
+  const saveColumnOptions = useCallback(async (col: keyof ColumnOptionsMap, options: string[]) => {
+    if (!supabase) return;
+    // Delete old rows for this column, then insert new
+    await supabase.from('column_options').delete().eq('user_id', storagePrefix).eq('column_name', col);
+    if (options.length > 0) {
+      await supabase.from('column_options').insert(
+        options.map((val, i) => ({
+          id: crypto.randomUUID(),
+          user_id: storagePrefix,
+          column_name: col,
+          option_value: val,
+          order_num: i,
+        }))
+      );
+    }
+  }, [storagePrefix]);
+
+  const addColumnOption = useCallback((col: keyof ColumnOptionsMap, val: string) => {
+    setColumnOptions(prev => {
+      const next = { ...prev, [col]: [...prev[col], val] };
+      saveColumnOptions(col, next[col]);
+      return next;
+    });
+  }, [saveColumnOptions]);
+
+  const editColumnOption = useCallback((col: keyof ColumnOptionsMap, oldVal: string, newVal: string) => {
+    setColumnOptions(prev => {
+      const next = { ...prev, [col]: prev[col].map(v => v === oldVal ? newVal : v) };
+      saveColumnOptions(col, next[col]);
+      return next;
+    });
+    // Also update all clients that had the old value
+    setClients(prev => prev.map(c => {
+      const patch: Partial<Client> = {};
+      if (col === 'payment' && c.paymentStatus === oldVal) patch.paymentStatus = newVal;
+      if (col === 'service' && c.service === oldVal) patch.service = newVal;
+      if (col === 'leader' && c.leader === oldVal) patch.leader = newVal;
+      if (col === 'status' && c.status === oldVal) patch.status = newVal;
+      if (Object.keys(patch).length === 0) return c;
+      // Persist the rename to Supabase too
+      if (supabase) {
+        const dbPatch: Record<string, any> = {};
+        if (patch.paymentStatus) dbPatch.payment_status = patch.paymentStatus;
+        if (patch.service) dbPatch.service = patch.service;
+        if (patch.leader) dbPatch.leader = patch.leader;
+        if (patch.status) dbPatch.status = patch.status;
+        supabase.from('clients').update(dbPatch).eq('id', c.id).eq('user_id', storagePrefix);
+      }
+      return { ...c, ...patch };
+    }));
+  }, [saveColumnOptions, storagePrefix]);
+
+  const deleteColumnOption = useCallback((col: keyof ColumnOptionsMap, val: string) => {
+    setColumnOptions(prev => {
+      const next = { ...prev, [col]: prev[col].filter(v => v !== val) };
+      // Don't allow deleting the last option
+      if (next[col].length === 0) return prev;
+      saveColumnOptions(col, next[col]);
+      return next;
+    });
+  }, [saveColumnOptions]);
 
   // Column order (UI preference — stored in localStorage)
   const [columnOrder, setColumnOrder] = useState<ColumnId[]>(() => {
@@ -444,11 +649,22 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
   // ── Full-page client workspace ──────────────────────────────────────────────
   if (selectedClient) {
     return (
-      <ClientPanel
-        client={selectedClient}
-        storagePrefix={storagePrefix}
-        onClose={() => setSelectedClient(null)}
-      />
+      <div className="space-y-4">
+        <button
+          onClick={() => setSelectedClient(null)}
+          className="flex items-center gap-2 text-sm font-medium transition-colors px-1 py-1"
+          style={{ color: '#555' }}
+          onMouseEnter={e => (e.currentTarget.style.color = '#ECECEC')}
+          onMouseLeave={e => (e.currentTarget.style.color = '#555')}
+        >
+          ← Back to Clients
+        </button>
+        <ClientPanel
+          client={selectedClient}
+          storagePrefix={storagePrefix}
+          onClose={() => setSelectedClient(null)}
+        />
+      </div>
     );
   }
 
@@ -533,9 +749,12 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
                 payment: (
                   <SelectCell
                     value={client.paymentStatus}
-                    options={PAYMENT_STATUSES}
+                    options={columnOptions.payment}
                     onChange={v => updateClient(client.id, { paymentStatus: v })}
                     colorMap={paymentColors}
+                    onAddOption={v => addColumnOption('payment', v)}
+                    onEditOption={(o, n) => editColumnOption('payment', o, n)}
+                    onDeleteOption={v => deleteColumnOption('payment', v)}
                   />
                 ),
                 amount: (
@@ -557,23 +776,32 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
                 service: (
                   <SelectCell
                     value={client.service}
-                    options={SERVICES}
+                    options={columnOptions.service}
                     onChange={v => updateClient(client.id, { service: v })}
+                    onAddOption={v => addColumnOption('service', v)}
+                    onEditOption={(o, n) => editColumnOption('service', o, n)}
+                    onDeleteOption={v => deleteColumnOption('service', v)}
                   />
                 ),
                 leader: (
                   <SelectCell
                     value={client.leader}
-                    options={LEADERS}
+                    options={columnOptions.leader}
                     onChange={v => updateClient(client.id, { leader: v })}
+                    onAddOption={v => addColumnOption('leader', v)}
+                    onEditOption={(o, n) => editColumnOption('leader', o, n)}
+                    onDeleteOption={v => deleteColumnOption('leader', v)}
                   />
                 ),
                 status: (
                   <SelectCell
                     value={client.status}
-                    options={CLIENT_STATUSES}
+                    options={columnOptions.status}
                     onChange={v => updateClient(client.id, { status: v })}
                     colorMap={statusColors}
+                    onAddOption={v => addColumnOption('status', v)}
+                    onEditOption={(o, n) => editColumnOption('status', o, n)}
+                    onDeleteOption={v => deleteColumnOption('status', v)}
                   />
                 ),
               };
@@ -643,7 +871,7 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
             {/* Add new row */}
             {isAdding && (
               <tr className="bg-[#1e1e1e]">
-                <td className="px-6 py-4" colSpan={6}>
+                <td className="px-6 py-4" colSpan={7}>
                   <div className="flex items-center gap-4">
                     <Avatar
                       name={draft.name}
@@ -659,10 +887,10 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
                       placeholder="Client name..."
                     />
                     <div className="flex items-center gap-2 flex-shrink-0">
-                      <SelectCell value={draft.paymentStatus} options={PAYMENT_STATUSES} onChange={v => setDraft(d => ({ ...d, paymentStatus: v }))} colorMap={paymentColors} />
-                      <SelectCell value={draft.service} options={SERVICES} onChange={v => setDraft(d => ({ ...d, service: v }))} />
-                      <SelectCell value={draft.leader} options={LEADERS} onChange={v => setDraft(d => ({ ...d, leader: v }))} />
-                      <SelectCell value={draft.status} options={CLIENT_STATUSES} onChange={v => setDraft(d => ({ ...d, status: v }))} colorMap={statusColors} />
+                      <SelectCell value={draft.paymentStatus} options={columnOptions.payment} onChange={v => setDraft(d => ({ ...d, paymentStatus: v }))} colorMap={paymentColors} />
+                      <SelectCell value={draft.service} options={columnOptions.service} onChange={v => setDraft(d => ({ ...d, service: v }))} />
+                      <SelectCell value={draft.leader} options={columnOptions.leader} onChange={v => setDraft(d => ({ ...d, leader: v }))} />
+                      <SelectCell value={draft.status} options={columnOptions.status} onChange={v => setDraft(d => ({ ...d, status: v }))} colorMap={statusColors} />
                     </div>
                     <div className="flex items-center gap-2 flex-shrink-0">
                       <button onClick={handleAddSave} className="text-xs text-emerald-400 hover:text-emerald-300 font-semibold px-3 py-1.5 rounded-lg transition-colors" style={{ background: '#2a2a2a' }}>Save</button>
@@ -676,7 +904,7 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
             {/* Empty state */}
             {filteredClients.length === 0 && !isAdding && (
               <tr>
-                <td colSpan={6} className="px-4 py-16 text-center text-[#666666]">
+                <td colSpan={7} className="px-4 py-16 text-center text-[#666666]">
                   <p className="text-base font-medium mb-1">
                     {showActive ? 'No active clients' : 'No inactive clients'}
                   </p>

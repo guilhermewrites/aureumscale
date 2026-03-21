@@ -133,3 +133,22 @@ CREATE POLICY "allow_all" ON billing_history
   FOR ALL
   USING (true)
   WITH CHECK (true);
+
+-- ============================================================
+-- 6. COLUMN_OPTIONS TABLE (custom dropdown options)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS column_options (
+  id           TEXT PRIMARY KEY,
+  user_id      TEXT NOT NULL,
+  column_name  TEXT NOT NULL,
+  option_value TEXT NOT NULL,
+  order_num    INTEGER DEFAULT 0,
+  created_at   TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE column_options ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "allow_all" ON column_options
+  FOR ALL
+  USING (true)
+  WITH CHECK (true);

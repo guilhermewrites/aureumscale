@@ -397,19 +397,6 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
         className="flex flex-col flex-shrink-0 overflow-hidden"
         style={{ width: 260, ...card }}
       >
-        {/* Back button at top */}
-        <div className="p-3 border-b" style={{ borderColor: '#222' }}>
-          <button
-            onClick={onClose}
-            className="w-full text-xs font-medium py-2.5 transition-colors text-left px-2"
-            style={{ color: '#555', background: 'transparent', borderRadius: 12 }}
-            onMouseEnter={e => { e.currentTarget.style.color = '#ECECEC'; e.currentTarget.style.background = '#222'; }}
-            onMouseLeave={e => { e.currentTarget.style.color = '#555'; e.currentTarget.style.background = 'transparent'; }}
-          >
-            ← Back to Clients
-          </button>
-        </div>
-
         {/* Photo */}
         <div
           className="relative flex-shrink-0 cursor-pointer group"
