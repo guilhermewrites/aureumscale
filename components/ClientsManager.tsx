@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { Plus, Trash2, ChevronDown, Camera, Loader2 } from 'lucide-react';
 import { supabase } from '../services/supabaseClient';
 import ClientPanel from './ClientPanel';
@@ -105,50 +106,69 @@ interface SelectCellProps<T extends string> {
   value: T;
   options: T[];
   onChange: (v: T) => void;
-  colorMap?: Record<T, string>;
+  colorMap?: Record<string, string>;
 }
 
 function SelectCell<T extends string>({ value, options, onChange, colorMap }: SelectCellProps<T>) {
-  const [open, setOpen] = React.useState(false);
-  const ref = React.useRef<HTMLDivElement>(null);
+  const [open, setOpen] = useState(false);
+  const [coords, setCoords] = useState({ top: 0, left: 0 });
+  const btnRef = useRef<HTMLButtonElement>(null);
 
-  React.useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    };
+  // Close on any outside mousedown — the dropdown stops propagation so it won't self-close
+  useEffect(() => {
+    if (!open) return;
+    const handler = () => setOpen(false);
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
-  }, []);
+  }, [open]);
 
-  const pillClass = colorMap
-    ? colorMap[value]
-    : 'bg-[#2a2a2a] text-[#ECECEC] border border-[#3a3a3a]';
+  const toggle = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!open && btnRef.current) {
+      const r = btnRef.current.getBoundingClientRect();
+      setCoords({ top: r.bottom + 4, left: r.left });
+    }
+    setOpen(o => !o);
+  };
+
+  const pillClass = colorMap?.[value] ?? 'bg-[#2a2a2a] text-[#ECECEC] border border-[#3a3a3a]';
 
   return (
-    <div ref={ref} className="relative inline-block">
+    <>
       <button
+        ref={btnRef}
         type="button"
-        onClick={() => setOpen(o => !o)}
+        onClick={toggle}
         className={`flex items-center gap-1 text-xs font-medium px-2.5 py-1.5 rounded-full cursor-pointer whitespace-nowrap ${pillClass}`}
       >
-        <span className="truncate max-w-[110px]">{value}</span>
-        <ChevronDown size={10} className="flex-shrink-0 opacity-60" />
+        <span className="truncate max-w-[100px]">{value}</span>
+        <ChevronDown size={10} className="flex-shrink-0 opacity-50" />
       </button>
-      {open && (
-        <div className="absolute left-0 top-full mt-1 z-50 min-w-max bg-[#1e1e1e] border border-[#3a3a3a] rounded-lg shadow-xl overflow-hidden">
+
+      {open && createPortal(
+        <div
+          onMouseDown={e => e.stopPropagation()} // prevent outside-click from firing
+          style={{ position: 'fixed', top: coords.top, left: coords.left, zIndex: 9999 }}
+          className="min-w-[160px] bg-[#1e1e1e] border border-[#3a3a3a] rounded-xl shadow-2xl overflow-hidden py-1"
+        >
           {options.map(o => (
             <button
               key={o}
               type="button"
-              onClick={() => { onChange(o); setOpen(false); }}
-              className={`block w-full text-left text-xs px-3 py-2 hover:bg-[#2a2a2a] transition-colors ${o === value ? 'text-white font-semibold' : 'text-[#9B9B9B]'}`}
+              onMouseDown={e => e.stopPropagation()}
+              onClick={() => { onChange(o as T); setOpen(false); }}
+              className={`flex items-center justify-between w-full text-left text-xs px-3 py-2.5 transition-colors hover:bg-[#2a2a2a] ${
+                o === value ? 'text-white font-semibold' : 'text-[#9B9B9B]'
+              }`}
             >
               {o}
+              {o === value && <span className="text-[#ECECEC] opacity-60">✓</span>}
             </button>
           ))}
-        </div>
+        </div>,
+        document.body,
       )}
-    </div>
+    </>
   );
 }
 
@@ -369,24 +389,24 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
       </div>
 
       {/* Table */}
-      <div className="rounded-xl border border-[#2f2f2f] overflow-hidden">
-        <table className="w-full table-fixed text-sm">
+      <div className="rounded-xl border border-[#2f2f2f] overflow-visible">
+        <table className="w-full table-fixed text-sm" style={{ borderCollapse: 'separate', borderSpacing: 0 }}>
           <colgroup>
-            <col style={{ width: '28%' }} />
-            <col style={{ width: '18%' }} />
-            <col style={{ width: '22%' }} />
-            <col style={{ width: '18%' }} />
-            <col style={{ width: '12%' }} />
-            <col style={{ width: '2%' }} />
+            <col style={{ width: '30%' }} />
+            <col style={{ width: '15%' }} />
+            <col style={{ width: '21%' }} />
+            <col style={{ width: '17%' }} />
+            <col style={{ width: '13%' }} />
+            <col style={{ width: '4%' }} />
           </colgroup>
           <thead>
-            <tr className="border-b border-[#2f2f2f] bg-[#1a1a1a]">
-              <th className="text-left px-4 py-3 text-xs font-semibold text-[#666666] uppercase tracking-wider">Name</th>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-[#666666] uppercase tracking-wider">Payment</th>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-[#666666] uppercase tracking-wider">Service</th>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-[#666666] uppercase tracking-wider">Leader</th>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-[#666666] uppercase tracking-wider">Status</th>
-              <th className="px-2 py-3"></th>
+            <tr className="border-b border-[#2f2f2f]" style={{ background: '#1a1a1a' }}>
+              <th className="text-left px-5 py-3 text-xs font-semibold text-[#555] uppercase tracking-wider rounded-tl-xl">Name</th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-[#555] uppercase tracking-wider">Payment</th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-[#555] uppercase tracking-wider">Service</th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-[#555] uppercase tracking-wider">Leader</th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-[#555] uppercase tracking-wider">Status</th>
+              <th className="px-2 py-3 rounded-tr-xl"></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-[#2f2f2f]">
@@ -397,7 +417,7 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
                 onClick={() => setSelectedClient({ id: client.id, name: client.name, photoUrl: client.photoUrl })}
               >
                 {/* Name + Avatar */}
-                <td className="px-4 py-3">
+                <td className="px-5 py-3.5">
                   <div className="flex items-center gap-3">
                     <div onClick={e => e.stopPropagation()}>
                       <Avatar
@@ -409,61 +429,53 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
                     <input
                       value={client.name}
                       onChange={e => updateClientName(client.id, e.target.value)}
-                      className="bg-transparent text-[#ECECEC] font-medium flex-1 min-w-0 focus:outline-none focus:border-b focus:border-[#3a3a3a] placeholder-[#666666] cursor-text"
+                      className="bg-transparent text-[#ECECEC] text-sm font-medium flex-1 min-w-0 focus:outline-none placeholder-[#555] cursor-text"
                       placeholder="Client name"
                       onClick={e => e.stopPropagation()}
                     />
                   </div>
                 </td>
                 {/* Payment Status */}
-                <td className="px-4 py-3">
-                  <div onClick={e => e.stopPropagation()}>
-                    <SelectCell
-                      value={client.paymentStatus}
-                      options={PAYMENT_STATUSES}
-                      onChange={v => updateClient(client.id, { paymentStatus: v })}
-                      colorMap={paymentColors}
-                    />
-                  </div>
+                <td className="px-4 py-3.5" onClick={e => e.stopPropagation()}>
+                  <SelectCell
+                    value={client.paymentStatus}
+                    options={PAYMENT_STATUSES}
+                    onChange={v => updateClient(client.id, { paymentStatus: v })}
+                    colorMap={paymentColors}
+                  />
                 </td>
                 {/* Service */}
-                <td className="px-4 py-3">
-                  <div onClick={e => e.stopPropagation()}>
-                    <SelectCell
-                      value={client.service}
-                      options={SERVICES}
-                      onChange={v => updateClient(client.id, { service: v })}
-                    />
-                  </div>
+                <td className="px-4 py-3.5" onClick={e => e.stopPropagation()}>
+                  <SelectCell
+                    value={client.service}
+                    options={SERVICES}
+                    onChange={v => updateClient(client.id, { service: v })}
+                  />
                 </td>
                 {/* Leader */}
-                <td className="px-4 py-3">
-                  <div onClick={e => e.stopPropagation()}>
-                    <SelectCell
-                      value={client.leader}
-                      options={LEADERS}
-                      onChange={v => updateClient(client.id, { leader: v })}
-                    />
-                  </div>
+                <td className="px-4 py-3.5" onClick={e => e.stopPropagation()}>
+                  <SelectCell
+                    value={client.leader}
+                    options={LEADERS}
+                    onChange={v => updateClient(client.id, { leader: v })}
+                  />
                 </td>
                 {/* Status */}
-                <td className="px-4 py-3">
-                  <div onClick={e => e.stopPropagation()}>
-                    <SelectCell
-                      value={client.status}
-                      options={CLIENT_STATUSES}
-                      onChange={v => updateClient(client.id, { status: v })}
-                      colorMap={statusColors}
-                    />
-                  </div>
+                <td className="px-4 py-3.5" onClick={e => e.stopPropagation()}>
+                  <SelectCell
+                    value={client.status}
+                    options={CLIENT_STATUSES}
+                    onChange={v => updateClient(client.id, { status: v })}
+                    colorMap={statusColors}
+                  />
                 </td>
                 {/* Delete */}
-                <td className="px-4 py-3 text-right">
+                <td className="px-3 py-3.5 text-right">
                   <button
                     onClick={e => { e.stopPropagation(); deleteClient(client.id); }}
-                    className="opacity-0 group-hover:opacity-100 text-[#666666] hover:text-red-400 transition-all"
+                    className="opacity-0 group-hover:opacity-100 text-[#555] hover:text-red-400 transition-all"
                   >
-                    <Trash2 size={15} />
+                    <Trash2 size={14} />
                   </button>
                 </td>
               </tr>
