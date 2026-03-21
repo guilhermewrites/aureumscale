@@ -331,6 +331,17 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
     setIsAdding(false);
   };
 
+  // ── Full-page client workspace ──────────────────────────────────────────────
+  if (selectedClient) {
+    return (
+      <ClientPanel
+        client={selectedClient}
+        storagePrefix={storagePrefix}
+        onClose={() => setSelectedClient(null)}
+      />
+    );
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-16 gap-2 text-[#666666]">
@@ -519,20 +530,6 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
         </div>
       )}
 
-      {/* Client Panel */}
-      {selectedClient && (
-        <>
-          <div
-            className="fixed inset-0 bg-black/50 z-40"
-            onClick={() => setSelectedClient(null)}
-          />
-          <ClientPanel
-            client={selectedClient}
-            storagePrefix={storagePrefix}
-            onClose={() => setSelectedClient(null)}
-          />
-        </>
-      )}
     </div>
   );
 };

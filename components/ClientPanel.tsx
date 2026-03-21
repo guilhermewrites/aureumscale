@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { X, ExternalLink, Plus, Trash2, Loader2 } from 'lucide-react';
+import { ArrowLeft, ExternalLink, Plus, Trash2, Loader2, BarChart2, Share2, GitBranch, FileText, StickyNote, LayoutDashboard } from 'lucide-react';
 import { supabase } from '../services/supabaseClient';
 
-// ─── Types ───────────────────────────────────────────────────────────────────
+// ─── Types ────────────────────────────────────────────────────────────────────
 
 interface AdsPerformance {
   roas: string;
@@ -58,25 +58,24 @@ export interface ClientPanelProps {
   onClose: () => void;
 }
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function getInitials(name: string) {
-  return name
-    .trim()
-    .split(' ')
-    .filter(Boolean)
-    .map(w => w[0])
-    .slice(0, 2)
-    .join('')
-    .toUpperCase() || '?';
+  return name.trim().split(' ').filter(Boolean).map(w => w[0]).slice(0, 2).join('').toUpperCase() || '?';
 }
 
 type SaveStatus = 'idle' | 'saving' | 'saved';
 
-const TABS = ['Overview', 'Ads', 'Social', 'Funnel', 'Scripts'] as const;
-type Tab = typeof TABS[number];
+const TABS = [
+  { id: 'Overview',  label: 'Overview',  icon: LayoutDashboard },
+  { id: 'Ads',       label: 'Ads',       icon: BarChart2 },
+  { id: 'Social',    label: 'Social',    icon: Share2 },
+  { id: 'Funnel',    label: 'Funnel',    icon: GitBranch },
+  { id: 'Scripts',   label: 'Scripts',   icon: FileText },
+  { id: 'Notes',     label: 'Notes',     icon: StickyNote },
+] as const;
 
-// ─── Social platform config ───────────────────────────────────────────────────
+type Tab = typeof TABS[number]['id'];
 
 const SOCIAL_PLATFORMS: { key: keyof SocialPlatforms; label: string; emoji: string }[] = [
   { key: 'instagram', label: 'Instagram', emoji: '📸' },
@@ -96,7 +95,7 @@ const ADS_METRICS: { key: keyof AdsPerformance; label: string }[] = [
   { key: 'revenue',     label: 'Revenue' },
 ];
 
-// ─── Textarea that auto-resizes ───────────────────────────────────────────────
+// ─── Auto-resize textarea ─────────────────────────────────────────────────────
 
 interface AutoTextareaProps {
   value: string;
@@ -108,23 +107,13 @@ interface AutoTextareaProps {
 
 function AutoTextarea({ value, className, ...rest }: AutoTextareaProps) {
   const ref = useRef<HTMLTextAreaElement>(null);
-
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
     el.style.height = 'auto';
     el.style.height = `${el.scrollHeight}px`;
   }, [value]);
-
-  return (
-    <textarea
-      ref={ref}
-      value={value}
-      className={className}
-      rows={3}
-      {...rest}
-    />
-  );
+  return <textarea ref={ref} value={value} className={className} rows={4} {...rest} />;
 }
 
 // ─── Main Component ───────────────────────────────────────────────────────────
@@ -138,21 +127,17 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const savedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // ─── Load data when client changes ──────────────────────────────────────────
+  // ─── Load ─────────────────────────────────────────────────────────────────
 
   useEffect(() => {
     if (!client) return;
-
     let cancelled = false;
     setLoading(true);
     setDetails(DEFAULT_DETAILS);
     setActiveTab('Overview');
 
     const load = async () => {
-      if (!supabase) {
-        setLoading(false);
-        return;
-      }
+      if (!supabase) { setLoading(false); return; }
 
       try {
         const { data, error } = await supabase
@@ -164,40 +149,32 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
         if (cancelled) return;
 
         if (error && error.code !== 'PGRST116') {
-          // PGRST116 = row not found — that's expected for new clients
           console.error('ClientPanel load error:', error);
           setLoading(false);
           return;
         }
 
         if (!data) {
-          // No row — insert defaults
-          const { error: insertError } = await supabase.from('client_details').insert({
+          await supabase.from('client_details').insert({
             client_id: client.id,
             user_id: storagePrefix,
-            ads_performance: DEFAULT_DETAILS.ads_performance,
-            social_platforms: DEFAULT_DETAILS.social_platforms,
-            strategy_overview: '',
-            google_drive_url: '',
-            funnel_notes: '',
+            ...DEFAULT_DETAILS,
             scripted_ads: [],
-            notes: '',
           });
-          if (insertError) console.error('ClientPanel insert error:', insertError);
           if (!cancelled) setLoading(false);
           return;
         }
 
         if (!cancelled) {
           setDetails({
-            ads_performance: data.ads_performance ?? DEFAULT_DETAILS.ads_performance,
-            social_platforms: data.social_platforms ?? DEFAULT_DETAILS.social_platforms,
-            strategy_overview: data.strategy_overview ?? '',
-            google_drive_url: data.google_drive_url ?? '',
-            funnel_notes: data.funnel_notes ?? '',
-            funnel_url: data.funnel_url ?? '',
-            scripted_ads: data.scripted_ads ?? [],
-            notes: data.notes ?? '',
+            ads_performance:     data.ads_performance     ?? DEFAULT_DETAILS.ads_performance,
+            social_platforms:    data.social_platforms    ?? DEFAULT_DETAILS.social_platforms,
+            strategy_overview:   data.strategy_overview   ?? '',
+            google_drive_url:    data.google_drive_url    ?? '',
+            funnel_notes:        data.funnel_notes        ?? '',
+            funnel_url:          data.funnel_url          ?? '',
+            scripted_ads:        data.scripted_ads        ?? [],
+            notes:               data.notes               ?? '',
             ad_performance_notes: data.ad_performance_notes ?? '',
           });
           setLoading(false);
@@ -212,450 +189,367 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
     return () => { cancelled = true; };
   }, [client?.id, storagePrefix]);
 
-  // ─── Save ────────────────────────────────────────────────────────────────────
+  // ─── Save ──────────────────────────────────────────────────────────────────
 
-  const saveDetails = useCallback(
-    async (nextDetails: ClientDetails) => {
-      if (!supabase || !client) return;
-
-      setSaveStatus('saving');
-      try {
-        const { error } = await supabase.from('client_details').upsert({
-          client_id: client.id,
-          user_id: storagePrefix,
-          ads_performance: nextDetails.ads_performance,
-          social_platforms: nextDetails.social_platforms,
-          strategy_overview: nextDetails.strategy_overview,
-          google_drive_url: nextDetails.google_drive_url,
-          funnel_notes: nextDetails.funnel_notes,
-          funnel_url: nextDetails.funnel_url,
-          scripted_ads: nextDetails.scripted_ads,
-          notes: nextDetails.notes,
-          ad_performance_notes: nextDetails.ad_performance_notes,
-          updated_at: new Date().toISOString(),
-        });
-        if (error) throw error;
-
-        setSaveStatus('saved');
-        if (savedTimerRef.current) clearTimeout(savedTimerRef.current);
-        savedTimerRef.current = setTimeout(() => setSaveStatus('idle'), 2000);
-      } catch (err) {
-        console.error('ClientPanel save error:', err);
-        setSaveStatus('idle');
-      }
-    },
-    [client, storagePrefix],
-  );
-
-  const scheduleAutoSave = useCallback(
-    (nextDetails: ClientDetails) => {
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-      debounceRef.current = setTimeout(() => saveDetails(nextDetails), 700);
-    },
-    [saveDetails],
-  );
-
-  // ─── Field updaters ──────────────────────────────────────────────────────────
-
-  const updateField = useCallback(
-    <K extends keyof ClientDetails>(key: K, value: ClientDetails[K]) => {
-      setDetails(prev => {
-        const next = { ...prev, [key]: value };
-        scheduleAutoSave(next);
-        return next;
+  const saveDetails = useCallback(async (next: ClientDetails) => {
+    if (!supabase || !client) return;
+    setSaveStatus('saving');
+    try {
+      const { error } = await supabase.from('client_details').upsert({
+        client_id: client.id,
+        user_id: storagePrefix,
+        ...next,
+        updated_at: new Date().toISOString(),
       });
-    },
-    [scheduleAutoSave],
-  );
+      if (error) throw error;
+      setSaveStatus('saved');
+      if (savedTimerRef.current) clearTimeout(savedTimerRef.current);
+      savedTimerRef.current = setTimeout(() => setSaveStatus('idle'), 2000);
+    } catch (err) {
+      console.error('ClientPanel save error:', err);
+      setSaveStatus('idle');
+    }
+  }, [client, storagePrefix]);
 
-  const updateAdsPerformance = useCallback(
-    (key: keyof AdsPerformance, value: string) => {
-      setDetails(prev => {
-        const next = { ...prev, ads_performance: { ...prev.ads_performance, [key]: value } };
-        scheduleAutoSave(next);
-        return next;
-      });
-    },
-    [scheduleAutoSave],
-  );
+  const scheduleAutoSave = useCallback((next: ClientDetails) => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => saveDetails(next), 700);
+  }, [saveDetails]);
 
-  const updateSocialPlatform = useCallback(
-    (key: keyof SocialPlatforms, value: string) => {
-      setDetails(prev => {
-        const next = { ...prev, social_platforms: { ...prev.social_platforms, [key]: value } };
-        scheduleAutoSave(next);
-        return next;
-      });
-    },
-    [scheduleAutoSave],
-  );
-
-  // ─── Scripts ─────────────────────────────────────────────────────────────────
-
-  const addScript = useCallback(() => {
+  const updateField = useCallback(<K extends keyof ClientDetails>(key: K, value: ClientDetails[K]) => {
     setDetails(prev => {
-      const next: ClientDetails = {
-        ...prev,
-        scripted_ads: [
-          ...prev.scripted_ads,
-          { id: crypto.randomUUID(), title: 'New Script', content: '' },
-        ],
-      };
+      const next = { ...prev, [key]: value };
       scheduleAutoSave(next);
       return next;
     });
   }, [scheduleAutoSave]);
 
-  const updateScript = useCallback(
-    (id: string, patch: Partial<ScriptedAd>) => {
-      setDetails(prev => {
-        const next: ClientDetails = {
-          ...prev,
-          scripted_ads: prev.scripted_ads.map(s => (s.id === id ? { ...s, ...patch } : s)),
-        };
-        scheduleAutoSave(next);
-        return next;
-      });
-    },
-    [scheduleAutoSave],
-  );
+  const updateAdsPerformance = useCallback((key: keyof AdsPerformance, value: string) => {
+    setDetails(prev => {
+      const next = { ...prev, ads_performance: { ...prev.ads_performance, [key]: value } };
+      scheduleAutoSave(next);
+      return next;
+    });
+  }, [scheduleAutoSave]);
 
-  const deleteScript = useCallback(
-    (id: string) => {
-      setDetails(prev => {
-        const next: ClientDetails = {
-          ...prev,
-          scripted_ads: prev.scripted_ads.filter(s => s.id !== id),
-        };
-        scheduleAutoSave(next);
-        return next;
-      });
-    },
-    [scheduleAutoSave],
-  );
+  const updateSocialPlatform = useCallback((key: keyof SocialPlatforms, value: string) => {
+    setDetails(prev => {
+      const next = { ...prev, social_platforms: { ...prev.social_platforms, [key]: value } };
+      scheduleAutoSave(next);
+      return next;
+    });
+  }, [scheduleAutoSave]);
 
-  // ─── Cleanup timers on unmount ───────────────────────────────────────────────
+  const addScript = useCallback(() => {
+    setDetails(prev => {
+      const next: ClientDetails = { ...prev, scripted_ads: [...prev.scripted_ads, { id: crypto.randomUUID(), title: 'New Script', content: '' }] };
+      scheduleAutoSave(next);
+      return next;
+    });
+  }, [scheduleAutoSave]);
 
-  useEffect(() => {
-    return () => {
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-      if (savedTimerRef.current) clearTimeout(savedTimerRef.current);
-    };
+  const updateScript = useCallback((id: string, patch: Partial<ScriptedAd>) => {
+    setDetails(prev => {
+      const next: ClientDetails = { ...prev, scripted_ads: prev.scripted_ads.map(s => s.id === id ? { ...s, ...patch } : s) };
+      scheduleAutoSave(next);
+      return next;
+    });
+  }, [scheduleAutoSave]);
+
+  const deleteScript = useCallback((id: string) => {
+    setDetails(prev => {
+      const next: ClientDetails = { ...prev, scripted_ads: prev.scripted_ads.filter(s => s.id !== id) };
+      scheduleAutoSave(next);
+      return next;
+    });
+  }, [scheduleAutoSave]);
+
+  useEffect(() => () => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    if (savedTimerRef.current) clearTimeout(savedTimerRef.current);
   }, []);
-
-  // ─── Render ──────────────────────────────────────────────────────────────────
 
   if (!client) return null;
 
-  const sharedTextarea =
-    'bg-[#1e1e1e] border border-[#2a2a2a] rounded-lg text-[#ECECEC] text-sm p-3 w-full focus:outline-none focus:border-[#4a4a4a] resize-none';
-  const sharedInput =
-    'bg-[#1e1e1e] border border-[#2a2a2a] rounded-lg text-[#ECECEC] text-sm px-3 py-2 w-full focus:outline-none focus:border-[#4a4a4a]';
+  const ta = 'bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl text-[#ECECEC] text-sm p-4 w-full focus:outline-none focus:border-[#444] resize-none leading-relaxed';
+  const inp = 'bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl text-[#ECECEC] text-sm px-4 py-2.5 w-full focus:outline-none focus:border-[#444]';
 
   return (
-    <div
-      className="fixed inset-y-0 right-0 z-50 flex flex-col"
-      style={{
-        width: 'min(780px, 95vw)',
-        background: '#161616',
-        borderLeft: '1px solid #2a2a2a',
-        transform: 'translateX(0)',
-        transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-        boxShadow: '-8px 0 32px rgba(0,0,0,0.5)',
-      }}
-    >
-      {/* ── Header ─────────────────────────────────────────────────────────── */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-[#2a2a2a] flex-shrink-0">
-        <div className="flex items-center gap-3 min-w-0">
-          {/* Avatar */}
-          <div className="w-10 h-10 rounded-full bg-[#3a3a3a] flex items-center justify-center text-[#ECECEC] text-sm font-semibold flex-shrink-0 overflow-hidden">
-            {client.photoUrl ? (
-              <img src={client.photoUrl} alt={client.name} className="w-full h-full object-cover" />
-            ) : (
-              getInitials(client.name)
-            )}
-          </div>
-          <div className="min-w-0">
-            <h2 className="text-[#ECECEC] font-semibold text-base truncate">{client.name}</h2>
-            <p className="text-[#9B9B9B] text-xs">Client Workspace</p>
-          </div>
-        </div>
+    <div className="flex flex-col w-full h-full" style={{ background: '#111111' }}>
 
-        <div className="flex items-center gap-3 flex-shrink-0">
-          {/* Save status */}
-          <span
-            className={`text-xs transition-opacity duration-300 ${
-              saveStatus === 'idle'
-                ? 'opacity-0'
-                : saveStatus === 'saving'
-                ? 'text-[#9B9B9B] opacity-100'
-                : 'text-emerald-400 opacity-100'
-            }`}
-          >
-            {saveStatus === 'saving' ? 'Saving…' : 'Saved ✓'}
-          </span>
-
-          {/* Close */}
+      {/* ── Top Header ──────────────────────────────────────────────────────── */}
+      <div className="flex items-center justify-between px-8 py-4 border-b border-[#222] flex-shrink-0" style={{ background: '#161616' }}>
+        <div className="flex items-center gap-4">
+          {/* Back button */}
           <button
             onClick={onClose}
-            className="text-[#666666] hover:text-[#ECECEC] transition-colors p-1 rounded"
+            className="flex items-center gap-2 text-[#666] hover:text-[#ECECEC] transition-colors text-sm font-medium"
           >
-            <X size={18} />
+            <ArrowLeft size={16} />
+            <span>Clients</span>
           </button>
-        </div>
-      </div>
 
-      {/* ── Tabs ───────────────────────────────────────────────────────────── */}
-      <div className="flex border-b border-[#2a2a2a] px-6 flex-shrink-0 gap-1">
-        {TABS.map(tab => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            className={`px-3 py-3 text-sm font-medium transition-colors whitespace-nowrap ${
-              activeTab === tab
-                ? 'text-white border-b-2 border-white -mb-px'
-                : 'text-[#9B9B9B] hover:text-[#ECECEC]'
-            }`}
-          >
-            {tab}
-          </button>
-        ))}
-      </div>
+          <span className="text-[#333]">/</span>
 
-      {/* ── Body ───────────────────────────────────────────────────────────── */}
-      <div className="flex-1 overflow-y-auto">
-        {loading ? (
-          <div className="flex items-center justify-center py-20 gap-2 text-[#666666]">
-            <Loader2 size={20} className="animate-spin" />
-            <span className="text-sm">Loading…</span>
+          {/* Client avatar + name */}
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-full bg-[#2a2a2a] flex items-center justify-center text-[#ECECEC] text-xs font-bold flex-shrink-0 overflow-hidden border border-[#333]">
+              {client.photoUrl
+                ? <img src={client.photoUrl} alt={client.name} className="w-full h-full object-cover" />
+                : getInitials(client.name)
+              }
+            </div>
+            <div>
+              <h1 className="text-[#ECECEC] font-semibold text-base leading-none">{client.name}</h1>
+              <p className="text-[#555] text-xs mt-0.5">Client Workspace</p>
+            </div>
           </div>
-        ) : (
-          <div className="p-6 space-y-6">
-            {/* ── OVERVIEW ────────────────────────────────────────────────── */}
-            {activeTab === 'Overview' && (
-              <>
-                <div className="space-y-2">
-                  <label className="text-xs font-semibold text-[#9B9B9B] uppercase tracking-wider">
-                    Strategy Overview
-                  </label>
-                  <AutoTextarea
-                    value={details.strategy_overview}
-                    onChange={e => updateField('strategy_overview', e.target.value)}
-                    className={sharedTextarea}
-                    placeholder="Write your strategy for this client…"
-                  />
-                </div>
+        </div>
 
-                <div className="space-y-2">
-                  <label className="text-xs font-semibold text-[#9B9B9B] uppercase tracking-wider">
-                    Notes
-                  </label>
-                  <AutoTextarea
-                    value={details.notes}
-                    onChange={e => updateField('notes', e.target.value)}
-                    className={sharedTextarea}
-                    placeholder="Internal notes…"
-                  />
-                </div>
+        {/* Save status */}
+        <span className={`text-xs transition-opacity duration-300 ${
+          saveStatus === 'idle' ? 'opacity-0' :
+          saveStatus === 'saving' ? 'text-[#9B9B9B] opacity-100' :
+          'text-emerald-400 opacity-100'
+        }`}>
+          {saveStatus === 'saving' ? 'Saving…' : 'Saved ✓'}
+        </span>
+      </div>
 
-                <div className="space-y-2">
-                  <label className="text-xs font-semibold text-[#9B9B9B] uppercase tracking-wider">
-                    Google Drive
-                  </label>
-                  <div className="flex gap-2">
-                    <input
-                      type="url"
-                      value={details.google_drive_url}
-                      onChange={e => updateField('google_drive_url', e.target.value)}
-                      className={sharedInput + ' flex-1'}
-                      placeholder="https://drive.google.com/…"
+      {/* ── Body ────────────────────────────────────────────────────────────── */}
+      <div className="flex flex-1 overflow-hidden">
+
+        {/* Left Sidebar — vertical tabs */}
+        <div className="flex flex-col gap-1 p-4 border-r border-[#1e1e1e] flex-shrink-0" style={{ width: 200, background: '#161616' }}>
+          {TABS.map(({ id, label, icon: Icon }) => (
+            <button
+              key={id}
+              onClick={() => setActiveTab(id)}
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors text-left w-full ${
+                activeTab === id
+                  ? 'bg-[#222] text-white'
+                  : 'text-[#666] hover:text-[#ECECEC] hover:bg-[#1a1a1a]'
+              }`}
+            >
+              <Icon size={15} className="flex-shrink-0" />
+              {label}
+            </button>
+          ))}
+        </div>
+
+        {/* Main Content */}
+        <div className="flex-1 overflow-y-auto">
+          {loading ? (
+            <div className="flex items-center justify-center h-full gap-2 text-[#555]">
+              <Loader2 size={22} className="animate-spin" />
+              <span className="text-sm">Loading…</span>
+            </div>
+          ) : (
+            <div className="p-8 max-w-4xl space-y-8">
+
+              {/* ── OVERVIEW ──────────────────────────────────────────────── */}
+              {activeTab === 'Overview' && (
+                <>
+                  <Section title="Strategy Overview">
+                    <AutoTextarea
+                      value={details.strategy_overview}
+                      onChange={e => updateField('strategy_overview', e.target.value)}
+                      className={ta}
+                      placeholder="Write the full strategy for this client — goals, approach, key focus areas…"
+                      style={{ minHeight: 200 }}
                     />
-                    <button
-                      onClick={() => details.google_drive_url && window.open(details.google_drive_url, '_blank')}
-                      disabled={!details.google_drive_url}
-                      className="flex items-center gap-1.5 px-3 py-2 bg-[#1e1e1e] border border-[#2a2a2a] rounded-lg text-sm text-[#9B9B9B] hover:text-[#ECECEC] hover:border-[#4a4a4a] transition-colors disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap"
-                    >
-                      <ExternalLink size={14} />
-                      Open
-                    </button>
-                  </div>
-                </div>
-              </>
-            )}
+                  </Section>
 
-            {/* ── ADS ─────────────────────────────────────────────────────── */}
-            {activeTab === 'Ads' && (
-              <>
-                <div className="space-y-2">
-                  <label className="text-xs font-semibold text-[#9B9B9B] uppercase tracking-wider">
-                    Performance Metrics
-                  </label>
-                  <div className="grid grid-cols-3 gap-3">
-                    {ADS_METRICS.map(({ key, label }) => (
-                      <div
-                        key={key}
-                        className="bg-[#1e1e1e] border border-[#2a2a2a] rounded-xl p-4 flex flex-col gap-2"
+                  <Section title="Google Drive">
+                    <div className="flex gap-3">
+                      <input type="url" value={details.google_drive_url}
+                        onChange={e => updateField('google_drive_url', e.target.value)}
+                        className={inp + ' flex-1'} placeholder="https://drive.google.com/…" />
+                      <button
+                        onClick={() => details.google_drive_url && window.open(details.google_drive_url, '_blank')}
+                        disabled={!details.google_drive_url}
+                        className="flex items-center gap-2 px-4 py-2.5 bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl text-sm text-[#9B9B9B] hover:text-white hover:border-[#444] transition-colors disabled:opacity-30 disabled:cursor-not-allowed whitespace-nowrap"
                       >
-                        <span className="text-xs text-[#9B9B9B] font-medium uppercase tracking-wider">
-                          {label}
-                        </span>
+                        <ExternalLink size={14} /> Open Drive
+                      </button>
+                    </div>
+                  </Section>
+                </>
+              )}
+
+              {/* ── ADS ───────────────────────────────────────────────────── */}
+              {activeTab === 'Ads' && (
+                <>
+                  <Section title="Performance Metrics">
+                    <div className="grid grid-cols-3 gap-4">
+                      {ADS_METRICS.map(({ key, label }) => (
+                        <div key={key} className="bg-[#1a1a1a] border border-[#222] rounded-2xl p-5 flex flex-col gap-3 hover:border-[#333] transition-colors">
+                          <span className="text-xs text-[#555] font-semibold uppercase tracking-widest">{label}</span>
+                          <input
+                            type="text"
+                            value={details.ads_performance[key]}
+                            onChange={e => updateAdsPerformance(key, e.target.value)}
+                            className="bg-transparent text-white text-2xl font-bold focus:outline-none w-full placeholder-[#333]"
+                            placeholder="—"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </Section>
+
+                  <Section title="Performance Notes">
+                    <AutoTextarea
+                      value={details.ad_performance_notes}
+                      onChange={e => updateField('ad_performance_notes', e.target.value)}
+                      className={ta}
+                      placeholder="Notes on ad performance, trends, observations…"
+                      style={{ minHeight: 140 }}
+                    />
+                  </Section>
+                </>
+              )}
+
+              {/* ── SOCIAL ────────────────────────────────────────────────── */}
+              {activeTab === 'Social' && (
+                <Section title="Social Platforms">
+                  <div className="bg-[#1a1a1a] border border-[#222] rounded-2xl overflow-hidden divide-y divide-[#222]">
+                    {SOCIAL_PLATFORMS.map(({ key, label, emoji }) => (
+                      <div key={key} className="flex items-center gap-5 px-6 py-4 hover:bg-[#1e1e1e] transition-colors">
+                        <span className="text-xl w-7 flex-shrink-0 text-center">{emoji}</span>
+                        <span className="text-sm text-[#666] font-medium w-28 flex-shrink-0">{label}</span>
                         <input
                           type="text"
-                          value={details.ads_performance[key]}
-                          onChange={e => updateAdsPerformance(key, e.target.value)}
-                          className="bg-transparent text-[#ECECEC] text-xl font-semibold focus:outline-none w-full placeholder-[#3a3a3a]"
-                          placeholder="—"
+                          value={details.social_platforms[key]}
+                          onChange={e => updateSocialPlatform(key, e.target.value)}
+                          className="bg-transparent text-[#ECECEC] text-sm focus:outline-none flex-1 placeholder-[#333]"
+                          placeholder="Handle or profile URL…"
                         />
+                        {details.social_platforms[key] && (
+                          <button
+                            onClick={() => window.open(details.social_platforms[key], '_blank')}
+                            className="text-[#444] hover:text-[#ECECEC] transition-colors"
+                          >
+                            <ExternalLink size={14} />
+                          </button>
+                        )}
                       </div>
                     ))}
                   </div>
-                </div>
+                </Section>
+              )}
 
-                <div className="space-y-2">
-                  <label className="text-xs font-semibold text-[#9B9B9B] uppercase tracking-wider">
-                    Ad Performance Notes
-                  </label>
-                  <AutoTextarea
-                    value={details.ad_performance_notes}
-                    onChange={e => updateField('ad_performance_notes', e.target.value)}
-                    className={sharedTextarea}
-                    placeholder="Additional context about ad performance…"
-                  />
-                </div>
-              </>
-            )}
-
-            {/* ── SOCIAL ──────────────────────────────────────────────────── */}
-            {activeTab === 'Social' && (
-              <div className="space-y-1">
-                <label className="text-xs font-semibold text-[#9B9B9B] uppercase tracking-wider block mb-3">
-                  Social Platforms
-                </label>
-                <div className="bg-[#1e1e1e] border border-[#2a2a2a] rounded-xl overflow-hidden divide-y divide-[#2a2a2a]">
-                  {SOCIAL_PLATFORMS.map(({ key, label, emoji }) => (
-                    <div key={key} className="flex items-center gap-4 px-4 py-3">
-                      <span className="text-lg flex-shrink-0">{emoji}</span>
-                      <span className="text-sm text-[#9B9B9B] w-28 flex-shrink-0">{label}</span>
-                      <input
-                        type="text"
-                        value={details.social_platforms[key]}
-                        onChange={e => updateSocialPlatform(key, e.target.value)}
-                        className="bg-transparent text-[#ECECEC] text-sm focus:outline-none flex-1 placeholder-[#3a3a3a]"
-                        placeholder="Handle or URL…"
-                      />
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* ── FUNNEL ──────────────────────────────────────────────────── */}
-            {activeTab === 'Funnel' && (
-              <>
-                <div className="space-y-2">
-                  <label className="text-xs font-semibold text-[#9B9B9B] uppercase tracking-wider">
-                    Funnel Overview
-                  </label>
-                  <AutoTextarea
-                    value={details.funnel_notes}
-                    onChange={e => updateField('funnel_notes', e.target.value)}
-                    className={sharedTextarea}
-                    placeholder="Describe the full funnel structure…"
-                    style={{ minHeight: 180 }}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-xs font-semibold text-[#9B9B9B] uppercase tracking-wider">
-                    Funnel URL / Link
-                  </label>
-                  <div className="flex gap-2">
-                    <input
-                      type="url"
-                      value={details.funnel_url}
-                      onChange={e => updateField('funnel_url', e.target.value)}
-                      className={sharedInput + ' flex-1'}
-                      placeholder="https://…"
+              {/* ── FUNNEL ────────────────────────────────────────────────── */}
+              {activeTab === 'Funnel' && (
+                <>
+                  <Section title="Funnel Overview">
+                    <AutoTextarea
+                      value={details.funnel_notes}
+                      onChange={e => updateField('funnel_notes', e.target.value)}
+                      className={ta}
+                      placeholder="Describe the full funnel — landing pages, emails, ads, offers, upsells…"
+                      style={{ minHeight: 240 }}
                     />
-                    <button
-                      onClick={() => details.funnel_url && window.open(details.funnel_url, '_blank')}
-                      disabled={!details.funnel_url}
-                      className="flex items-center gap-1.5 px-3 py-2 bg-[#1e1e1e] border border-[#2a2a2a] rounded-lg text-sm text-[#9B9B9B] hover:text-[#ECECEC] hover:border-[#4a4a4a] transition-colors disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap"
-                    >
-                      <ExternalLink size={14} />
-                      Open
-                    </button>
-                  </div>
-                </div>
-              </>
-            )}
+                  </Section>
 
-            {/* ── SCRIPTS ─────────────────────────────────────────────────── */}
-            {activeTab === 'Scripts' && (
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <label className="text-xs font-semibold text-[#9B9B9B] uppercase tracking-wider">
-                    Scripted Ads ({details.scripted_ads.length})
-                  </label>
-                  <button
-                    onClick={addScript}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-[#1e1e1e] border border-[#2a2a2a] rounded-lg text-sm text-[#ECECEC] hover:border-[#4a4a4a] transition-colors"
-                  >
-                    <Plus size={14} />
-                    Add Script
-                  </button>
-                </div>
-
-                {details.scripted_ads.length === 0 && (
-                  <div className="text-center py-12 text-[#666666]">
-                    <p className="text-sm">No scripts yet. Click "Add Script" to create one.</p>
-                  </div>
-                )}
-
-                <div className="space-y-3">
-                  {details.scripted_ads.map((script, index) => (
-                    <div
-                      key={script.id}
-                      className="bg-[#1e1e1e] border border-[#2a2a2a] rounded-xl p-4 space-y-3"
-                    >
-                      {/* Script header: title + delete */}
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs text-[#666666] font-medium flex-shrink-0">
-                          #{index + 1}
-                        </span>
-                        <input
-                          type="text"
-                          value={script.title}
-                          onChange={e => updateScript(script.id, { title: e.target.value })}
-                          className="bg-transparent text-[#ECECEC] text-sm font-semibold focus:outline-none flex-1 placeholder-[#3a3a3a] border-b border-transparent focus:border-[#3a3a3a] pb-0.5"
-                          placeholder="Script title…"
-                        />
-                        <button
-                          onClick={() => deleteScript(script.id)}
-                          className="text-[#666666] hover:text-red-400 transition-colors flex-shrink-0 p-1"
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                      </div>
-
-                      {/* Script content */}
-                      <AutoTextarea
-                        value={script.content}
-                        onChange={e => updateScript(script.id, { content: e.target.value })}
-                        className={sharedTextarea}
-                        placeholder="Write the ad script here…"
-                        style={{ minHeight: 120 }}
-                      />
+                  <Section title="Funnel Link">
+                    <div className="flex gap-3">
+                      <input type="url" value={details.funnel_url}
+                        onChange={e => updateField('funnel_url', e.target.value)}
+                        className={inp + ' flex-1'} placeholder="https://…" />
+                      <button
+                        onClick={() => details.funnel_url && window.open(details.funnel_url, '_blank')}
+                        disabled={!details.funnel_url}
+                        className="flex items-center gap-2 px-4 py-2.5 bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl text-sm text-[#9B9B9B] hover:text-white hover:border-[#444] transition-colors disabled:opacity-30 disabled:cursor-not-allowed whitespace-nowrap"
+                      >
+                        <ExternalLink size={14} /> Open
+                      </button>
                     </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
+                  </Section>
+                </>
+              )}
+
+              {/* ── SCRIPTS ───────────────────────────────────────────────── */}
+              {activeTab === 'Scripts' && (
+                <Section
+                  title={`Scripted Ads ${details.scripted_ads.length > 0 ? `(${details.scripted_ads.length})` : ''}`}
+                  action={
+                    <button onClick={addScript}
+                      className="flex items-center gap-2 px-4 py-2 bg-white text-black rounded-lg text-sm font-semibold hover:bg-[#e0e0e0] transition-colors">
+                      <Plus size={14} /> New Script
+                    </button>
+                  }
+                >
+                  {details.scripted_ads.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-20 text-[#444]">
+                      <FileText size={36} className="mb-3 opacity-40" />
+                      <p className="text-sm font-medium">No scripts yet</p>
+                      <p className="text-xs mt-1">Click "New Script" to write your first ad.</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {details.scripted_ads.map((script, index) => (
+                        <div key={script.id} className="bg-[#1a1a1a] border border-[#222] rounded-2xl p-6 space-y-4 hover:border-[#333] transition-colors">
+                          <div className="flex items-center gap-3">
+                            <span className="text-xs text-[#444] font-bold w-6">#{index + 1}</span>
+                            <input
+                              type="text"
+                              value={script.title}
+                              onChange={e => updateScript(script.id, { title: e.target.value })}
+                              className="bg-transparent text-white text-base font-semibold focus:outline-none flex-1 placeholder-[#333] border-b border-transparent focus:border-[#333] pb-0.5"
+                              placeholder="Script title…"
+                            />
+                            <button onClick={() => deleteScript(script.id)}
+                              className="text-[#444] hover:text-red-400 transition-colors p-1 rounded">
+                              <Trash2 size={15} />
+                            </button>
+                          </div>
+                          <AutoTextarea
+                            value={script.content}
+                            onChange={e => updateScript(script.id, { content: e.target.value })}
+                            className={ta}
+                            placeholder="Write the full ad script here…"
+                            style={{ minHeight: 160 }}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </Section>
+              )}
+
+              {/* ── NOTES ─────────────────────────────────────────────────── */}
+              {activeTab === 'Notes' && (
+                <Section title="Internal Notes">
+                  <AutoTextarea
+                    value={details.notes}
+                    onChange={e => updateField('notes', e.target.value)}
+                    className={ta}
+                    placeholder="Internal notes about this client — meetings, feedback, reminders…"
+                    style={{ minHeight: 320 }}
+                  />
+                </Section>
+              )}
+
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
 };
+
+// ─── Section wrapper ──────────────────────────────────────────────────────────
+
+function Section({ title, children, action }: { title: string; children: React.ReactNode; action?: React.ReactNode }) {
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <h2 className="text-sm font-semibold text-[#ECECEC] uppercase tracking-wider">{title}</h2>
+        {action}
+      </div>
+      {children}
+    </div>
+  );
+}
 
 export default ClientPanel;
