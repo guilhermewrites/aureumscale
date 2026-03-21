@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { Plus, Trash2, ChevronDown, Camera, Loader2 } from 'lucide-react';
+import { Plus, Trash2, ChevronDown, Camera, Loader2, Archive, RotateCcw } from 'lucide-react';
 import { supabase } from '../services/supabaseClient';
 import ClientPanel from './ClientPanel';
 
@@ -18,6 +18,7 @@ interface Client {
   leader: Leader;
   status: ClientStatus;
   orderNum: number;
+  active: boolean;
 }
 
 const PAYMENT_STATUSES: PaymentStatus[] = ['Missing Invoice', 'Pending', 'Paid'];
@@ -51,6 +52,7 @@ function newClient(orderNum: number): Client {
     leader: 'Guilherme Writes',
     status: 'Happy',
     orderNum,
+    active: true,
   };
 }
 
@@ -65,6 +67,7 @@ function toDbRow(client: Client, userId: string) {
     leader: client.leader,
     status: client.status,
     order_num: client.orderNum,
+    active: client.active,
   };
 }
 
@@ -78,6 +81,7 @@ function fromDbRow(row: any): Client {
     leader: row.leader as Leader,
     status: row.status as ClientStatus,
     orderNum: row.order_num ?? 0,
+    active: row.active ?? true,
   };
 }
 
@@ -222,6 +226,7 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
   const [isAdding, setIsAdding] = useState(false);
   const [draft, setDraft] = useState<Client>(newClient(0));
   const [selectedClient, setSelectedClient] = useState<{ id: string; name: string; photoUrl?: string; status?: string } | null>(null);
+  const [showActive, setShowActive] = useState(true);
 
   // Debounce refs for name updates
   const nameDebounceRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
@@ -371,13 +376,29 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
     );
   }
 
+  const activeClients = clients.filter(c => c.active);
+  const inactiveClients = clients.filter(c => !c.active);
+  const filteredClients = showActive ? activeClients : inactiveClients;
+
+  const toggleClientActive = useCallback(async (id: string, active: boolean) => {
+    setClients(prev => prev.map(c => c.id === id ? { ...c, active } : c));
+    if (!supabase) return;
+    try {
+      await supabase.from('clients').update({ active }).eq('id', id).eq('user_id', storagePrefix);
+    } catch (err) {
+      console.error('Failed to update client active status:', err);
+    }
+  }, [storagePrefix]);
+
   return (
     <div className="p-6 space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-semibold text-[#ECECEC]">Clients</h1>
-          <p className="text-sm text-[#666666] mt-0.5">{clients.length} client{clients.length !== 1 ? 's' : ''}</p>
+          <p className="text-sm text-[#666666] mt-0.5">
+            {activeClients.length} active · {inactiveClients.length} inactive
+          </p>
         </div>
         <button
           onClick={() => setIsAdding(true)}
@@ -385,6 +406,30 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
         >
           <Plus size={16} />
           Add Client
+        </button>
+      </div>
+
+      {/* Active / Inactive tabs */}
+      <div className="flex items-center gap-1 p-1 rounded-xl" style={{ background: '#1a1a1a', width: 'fit-content' }}>
+        <button
+          onClick={() => setShowActive(true)}
+          className="px-4 py-1.5 text-xs font-semibold rounded-lg transition-all"
+          style={{
+            background: showActive ? '#2a2a2a' : 'transparent',
+            color: showActive ? '#ECECEC' : '#555',
+          }}
+        >
+          Active ({activeClients.length})
+        </button>
+        <button
+          onClick={() => setShowActive(false)}
+          className="px-4 py-1.5 text-xs font-semibold rounded-lg transition-all"
+          style={{
+            background: !showActive ? '#2a2a2a' : 'transparent',
+            color: !showActive ? '#ECECEC' : '#555',
+          }}
+        >
+          Inactive ({inactiveClients.length})
         </button>
       </div>
 
@@ -410,7 +455,7 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
             </tr>
           </thead>
           <tbody className="divide-y divide-[#2f2f2f]">
-            {clients.map(client => (
+            {filteredClients.map(client => (
               <tr
                 key={client.id}
                 className="group bg-[#212121] hover:bg-[#1e1e1e] transition-colors cursor-pointer"
@@ -469,14 +514,34 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
                     colorMap={statusColors}
                   />
                 </td>
-                {/* Delete */}
+                {/* Actions */}
                 <td className="px-3 py-4 text-center">
-                  <button
-                    onClick={e => { e.stopPropagation(); deleteClient(client.id); }}
-                    className="opacity-0 group-hover:opacity-100 text-[#555] hover:text-red-400 transition-all"
-                  >
-                    <Trash2 size={14} />
-                  </button>
+                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all justify-end">
+                    {showActive ? (
+                      <button
+                        onClick={e => { e.stopPropagation(); toggleClientActive(client.id, false); }}
+                        className="text-[#555] hover:text-[#ECECEC] transition-colors p-1"
+                        title="Archive client"
+                      >
+                        <Archive size={13} />
+                      </button>
+                    ) : (
+                      <button
+                        onClick={e => { e.stopPropagation(); toggleClientActive(client.id, true); }}
+                        className="text-[#555] hover:text-emerald-400 transition-colors p-1"
+                        title="Reactivate client"
+                      >
+                        <RotateCcw size={13} />
+                      </button>
+                    )}
+                    <button
+                      onClick={e => { e.stopPropagation(); deleteClient(client.id); }}
+                      className="text-[#555] hover:text-red-400 transition-colors p-1"
+                      title="Delete client"
+                    >
+                      <Trash2 size={13} />
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}
@@ -523,11 +588,15 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
             )}
 
             {/* Empty state */}
-            {clients.length === 0 && !isAdding && (
+            {filteredClients.length === 0 && !isAdding && (
               <tr>
                 <td colSpan={6} className="px-4 py-16 text-center text-[#666666]">
-                  <p className="text-base font-medium mb-1">No clients yet</p>
-                  <p className="text-sm">Click "Add Client" to get started.</p>
+                  <p className="text-base font-medium mb-1">
+                    {showActive ? 'No active clients' : 'No inactive clients'}
+                  </p>
+                  <p className="text-sm">
+                    {showActive ? 'Click "Add Client" to get started.' : 'Archived clients will appear here.'}
+                  </p>
                 </td>
               </tr>
             )}

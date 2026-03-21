@@ -14,8 +14,12 @@ CREATE TABLE IF NOT EXISTS clients (
   leader       TEXT NOT NULL DEFAULT 'Guilherme Writes',
   status       TEXT NOT NULL DEFAULT 'Happy',
   order_num    INTEGER DEFAULT 0,
+  active       BOOLEAN NOT NULL DEFAULT true,
   created_at   TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- If the table already exists, add the active column:
+ALTER TABLE clients ADD COLUMN IF NOT EXISTS active BOOLEAN NOT NULL DEFAULT true;
 
 ALTER TABLE clients ENABLE ROW LEVEL SECURITY;
 
