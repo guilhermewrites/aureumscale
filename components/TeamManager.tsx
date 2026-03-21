@@ -8,12 +8,23 @@ const DEFAULT_MEMBERS = Object.values(TEAM_MEMBERS);
 
 const TEAM_STORAGE_KEY = (prefix: string) => `${prefix}_team`;
 
+const getStoredMembers = (prefix: string): TeamMember[] | null => {
+  try {
+    const stored = localStorage.getItem(TEAM_STORAGE_KEY(prefix));
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    }
+  } catch (e) {}
+  return null;
+};
+
 interface TeamManagerProps {
   storagePrefix: string;
 }
 
 const TeamManager: React.FC<TeamManagerProps> = ({ storagePrefix }) => {
-  const [members, setMembers] = useState<TeamMember[]>(DEFAULT_MEMBERS);
+  const [members, setMembers] = useState<TeamMember[]>(() => getStoredMembers(storagePrefix) ?? DEFAULT_MEMBERS);
   const [loading, setLoading] = useState(true);
   const hasLoadedFromSupabase = useRef(false);
 
@@ -54,7 +65,6 @@ const TeamManager: React.FC<TeamManagerProps> = ({ storagePrefix }) => {
       return;
     }
     if (!supabase) {
-      syncToLocalStorage(DEFAULT_MEMBERS);
       setLoading(false);
       hasLoadedFromSupabase.current = true;
       return;
@@ -71,8 +81,7 @@ const TeamManager: React.FC<TeamManagerProps> = ({ storagePrefix }) => {
 
         if (error) {
           console.error('Failed to load team from Supabase:', error);
-          syncToLocalStorage(DEFAULT_MEMBERS);
-          setMembers(DEFAULT_MEMBERS);
+          // Keep whatever is already in state (loaded from localStorage on init)
           setLoading(false);
           return;
         }
@@ -90,14 +99,16 @@ const TeamManager: React.FC<TeamManagerProps> = ({ storagePrefix }) => {
           setMembers(list);
           syncToLocalStorage(list);
         } else {
-          setMembers(DEFAULT_MEMBERS);
-          syncToLocalStorage(DEFAULT_MEMBERS);
-          await persistToSupabase(DEFAULT_MEMBERS);
+          // Supabase is empty — use localStorage if available, otherwise seed defaults
+          const local = getStoredMembers(storagePrefix);
+          const seed = local ?? DEFAULT_MEMBERS;
+          setMembers(seed);
+          syncToLocalStorage(seed);
+          await persistToSupabase(seed);
         }
       } catch (err) {
         console.error('Team load error:', err);
-        setMembers(DEFAULT_MEMBERS);
-        syncToLocalStorage(DEFAULT_MEMBERS);
+        // Keep whatever is already in state (loaded from localStorage on init)
       }
       setLoading(false);
     };
