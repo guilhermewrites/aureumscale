@@ -394,71 +394,71 @@ const SwipefileManager: React.FC<SwipefileManagerProps> = ({ storagePrefix }) =>
       />
 
       {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h2 className="text-xl font-bold text-[#ECECEC]">Swipefile Library</h2>
-          <p className="text-[#9B9B9B] text-sm">Collect and organize your best assets.</p>
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex items-center gap-2">
+          <h2 className="text-xl font-semibold text-[#ECECEC]">Swipe File</h2>
+          <button
+            onClick={() => setViewMode(viewMode === 'trash' ? 'library' : 'trash')}
+            title={viewMode === 'trash' ? 'Back to library' : 'View trash'}
+            className={`p-1.5 rounded-md transition-none ${viewMode === 'trash' ? 'text-rose-400' : 'text-[#666666] hover:text-[#9B9B9B]'}`}
+          >
+            <Trash2 size={15} />
+          </button>
         </div>
 
-        <div className="flex items-center gap-3 w-full sm:w-auto">
-          <div className="relative flex-1 sm:flex-none">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9B9B9B]" size={14} />
+        <div className="flex items-center gap-2">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[#666666]" size={13} />
             <input
               type="text"
               placeholder="Search..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="bg-[#2f2f2f] border border-[#3a3a3a] rounded-lg pl-9 pr-3 py-2 text-sm text-[#ECECEC] focus:outline-none focus:ring-1 focus:ring-[#555555] w-full sm:w-48 placeholder-[#666666]"
+              className="bg-[#2a2a2a] border border-[#3a3a3a] rounded-lg pl-8 pr-3 py-1.5 text-sm text-[#ECECEC] focus:outline-none focus:border-[#555] w-40 placeholder-[#666666]"
             />
           </div>
           {viewMode === 'library' && (
             <>
               <button
                 onClick={() => fileInputRef.current?.click()}
-                className="flex items-center gap-2 px-3 py-2 bg-[#3a3a3a] hover:bg-[#3a3a3a] text-[#b4b4b4] rounded-lg text-sm font-medium transition-none border border-[#3a3a3a]"
+                className="p-1.5 text-[#666666] hover:text-[#9B9B9B] transition-none"
                 title="Import from computer"
               >
                 <Upload size={16} />
-                <span className="hidden sm:inline">Import</span>
               </button>
               <button
                 onClick={() => setIsAdding(!isAdding)}
-                className="flex items-center gap-2 px-4 py-2 bg-white hover:bg-[#e5e5e5] text-[#212121] rounded-lg text-sm font-semibold transition-none"
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-[#ECECEC] hover:bg-white text-[#121212] rounded-lg text-sm font-medium transition-none"
               >
-                <Plus size={16} className={isAdding ? 'rotate-45 transition-transform' : ''} />
-                <span>{isAdding ? 'Cancel' : 'Add New'}</span>
+                <Plus size={15} className={isAdding ? 'rotate-45 transition-transform' : ''} />
+                {isAdding ? 'Cancel' : 'Add'}
               </button>
             </>
           )}
           {viewMode === 'trash' && trash.length > 0 && (
-            <button
-              onClick={requestEmptyTrash}
-              className="flex items-center gap-2 px-4 py-2 bg-rose-500/10 text-rose-500 hover:bg-rose-500/20 rounded-lg text-sm font-semibold transition-none"
-            >
-              <Trash2 size={16} />
-              <span>Empty Trash</span>
+            <button onClick={requestEmptyTrash} className="text-xs text-rose-400 hover:text-rose-300 transition-none">
+              Empty trash
             </button>
           )}
         </div>
       </div>
 
-      {/* Tabs */}
+      {/* Category Tabs */}
       {viewMode === 'library' && (
-        <div className="border-b border-[#3a3a3a] overflow-x-auto">
-          <div className="flex gap-6 pb-px min-w-max">
+        <div className="border-b border-[#2f2f2f]">
+          <div className="flex gap-5">
             {categories.map((cat) => {
               const isActive = activeCategory === cat.id;
               return (
                 <button
                   key={cat.id}
                   onClick={() => setActiveCategory(cat.id)}
-                  className={`flex items-center gap-2 pb-3 text-sm font-medium transition-none border-b-2 ${
+                  className={`pb-2.5 text-sm font-medium transition-none border-b-2 ${
                     isActive
                       ? 'text-[#ECECEC] border-[#ECECEC]'
-                      : 'text-[#9B9B9B] border-transparent hover:text-[#ECECEC]'
+                      : 'text-[#666666] border-transparent hover:text-[#9B9B9B]'
                   }`}
                 >
-                  <cat.icon size={16} />
                   {cat.label}
                 </button>
               );
@@ -466,32 +466,6 @@ const SwipefileManager: React.FC<SwipefileManagerProps> = ({ storagePrefix }) =>
           </div>
         </div>
       )}
-
-      {/* View Switcher */}
-      <div className="flex justify-start">
-        <div className="bg-[#2f2f2f] p-1 rounded-lg border border-[#3a3a3a] flex items-center">
-          <button
-            onClick={() => setViewMode('library')}
-            className={`flex items-center gap-2 px-4 py-1.5 rounded-md text-sm font-medium transition-none ${
-              viewMode === 'library' ? 'bg-[#3a3a3a] text-[#ECECEC] shadow-sm' : 'text-[#9B9B9B] hover:text-[#ECECEC]'
-            }`}
-          >
-            <Archive size={16} />
-            Library
-          </button>
-          <button
-            onClick={() => setViewMode('trash')}
-            className={`flex items-center gap-2 px-4 py-1.5 rounded-md text-sm font-medium transition-none ${
-              viewMode === 'trash'
-                ? 'bg-rose-900/20 text-rose-400 shadow-sm'
-                : 'text-[#9B9B9B] hover:text-rose-400 hover:bg-rose-900/10'
-            }`}
-          >
-            <Trash2 size={16} />
-            Trash
-          </button>
-        </div>
-      </div>
 
       {/* Add Form */}
       {isAdding && viewMode === 'library' && (

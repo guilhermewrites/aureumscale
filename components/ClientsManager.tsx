@@ -23,15 +23,15 @@ const LEADERS: Leader[] = ['Guilherme Writes', 'Jhacson Mossman'];
 const CLIENT_STATUSES: ClientStatus[] = ['Happy', 'Moderate', 'Frustrated'];
 
 const paymentColors: Record<PaymentStatus, string> = {
-  'Missing Invoice': 'bg-red-500/15 text-red-400 border border-red-500/30',
-  'Pending': 'bg-yellow-500/15 text-yellow-400 border border-yellow-500/30',
-  'Paid': 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30',
+  'Missing Invoice': 'bg-[#2a2a2a] text-red-400 border border-[#3a3a3a]',
+  'Pending': 'bg-[#2a2a2a] text-[#9B9B9B] border border-[#3a3a3a]',
+  'Paid': 'bg-[#2a2a2a] text-emerald-400 border border-[#3a3a3a]',
 };
 
 const statusColors: Record<ClientStatus, string> = {
-  'Happy': 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30',
-  'Moderate': 'bg-yellow-500/15 text-yellow-400 border border-yellow-500/30',
-  'Frustrated': 'bg-red-500/15 text-red-400 border border-red-500/30',
+  'Happy': 'bg-[#2a2a2a] text-emerald-400 border border-[#3a3a3a]',
+  'Moderate': 'bg-[#2a2a2a] text-[#9B9B9B] border border-[#3a3a3a]',
+  'Frustrated': 'bg-[#2a2a2a] text-red-400 border border-[#3a3a3a]',
 };
 
 function getInitials(name: string) {
