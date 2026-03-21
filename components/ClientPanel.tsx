@@ -283,7 +283,7 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
   const ta = 'w-full resize-none focus:outline-none bg-[#161616] rounded-xl text-[#DEDEDE] text-sm leading-relaxed p-4 placeholder-[#3a3a3a] focus:ring-1 focus:ring-[#333] transition-all';
   const inp = 'flex-1 focus:outline-none bg-[#161616] rounded-xl text-[#DEDEDE] text-sm px-4 py-3 placeholder-[#3a3a3a] focus:ring-1 focus:ring-[#333] transition-all';
 
-  const card = { background: '#1c1c1c', borderRadius: 16 };
+  const card = { background: '#1c1c1c', borderRadius: 20 };
 
   return (
     <div className="flex w-full h-full overflow-hidden p-6 gap-6" style={{ background: '#131313' }}>
@@ -348,31 +348,31 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
                 }}
               />
             </CardRow>
-            <CardRow label="Instagram" icon={<InstagramIcon />} iconColor="#E1306C">
+            <CardRow label="Instagram" icon={<InstagramIcon />} iconColor="#E1306C" href={details.social_platforms.instagram}>
               <input type="text" value={details.social_platforms.instagram}
                 onChange={e => setSocial('instagram', e.target.value)}
                 className="text-xs text-right bg-transparent focus:outline-none w-full truncate"
                 style={{ color: '#ECECEC' }} placeholder="@handle or URL" />
             </CardRow>
-            <CardRow label="X" icon={<XIcon />} iconColor="#ECECEC">
+            <CardRow label="X" icon={<XIcon />} iconColor="#ECECEC" href={details.social_platforms.twitter}>
               <input type="text" value={details.social_platforms.twitter}
                 onChange={e => setSocial('twitter', e.target.value)}
                 className="text-xs text-right bg-transparent focus:outline-none w-full truncate"
                 style={{ color: '#ECECEC' }} placeholder="@handle or URL" />
             </CardRow>
-            <CardRow label="LinkedIn" icon={<LinkedInIcon />} iconColor="#0A66C2">
+            <CardRow label="LinkedIn" icon={<LinkedInIcon />} iconColor="#0A66C2" href={details.social_platforms.linkedin}>
               <input type="text" value={details.social_platforms.linkedin}
                 onChange={e => setSocial('linkedin', e.target.value)}
                 className="text-xs text-right bg-transparent focus:outline-none w-full truncate"
                 style={{ color: '#ECECEC' }} placeholder="URL" />
             </CardRow>
-            <CardRow label="YouTube" icon={<YouTubeIcon />} iconColor="#FF4444">
+            <CardRow label="YouTube" icon={<YouTubeIcon />} iconColor="#FF4444" href={details.social_platforms.youtube}>
               <input type="text" value={details.social_platforms.youtube}
                 onChange={e => setSocial('youtube', e.target.value)}
                 className="text-xs text-right bg-transparent focus:outline-none w-full truncate"
                 style={{ color: '#ECECEC' }} placeholder="URL" />
             </CardRow>
-            <CardRow label="Google Drive">
+            <CardRow label="Google Drive" href={details.google_drive_url}>
               <input type="url" value={details.google_drive_url}
                 onChange={e => setField('google_drive_url', e.target.value)}
                 className="text-xs text-right bg-transparent focus:outline-none w-full truncate"
@@ -597,7 +597,7 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
 
 function Block({ title, children, action }: { title: string; children: React.ReactNode; action?: React.ReactNode }) {
   return (
-    <section className="p-6 space-y-4" style={{ background: '#1c1c1c', borderRadius: 16 }}>
+    <section className="p-6 space-y-4" style={{ background: '#1c1c1c', borderRadius: 20 }}>
       <div className="flex items-center justify-between">
         <h2 className="text-xs font-semibold uppercase tracking-widest" style={{ color: '#555' }}>{title}</h2>
         {action}
@@ -622,13 +622,27 @@ function OpenBtn({ href, label }: { href: string; label: string }) {
   );
 }
 
-function CardRow({ label, children, icon, iconColor }: {
-  label: string; children: React.ReactNode; icon?: React.ReactNode; iconColor?: string;
+function CardRow({ label, children, icon, iconColor, href }: {
+  label: string; children: React.ReactNode; icon?: React.ReactNode; iconColor?: string; href?: string;
 }) {
+  const hasLink = !!href?.trim();
   return (
     <div className="flex items-center justify-between py-2.5" style={{ borderBottom: '1px solid #222' }}>
       <div className="flex items-center gap-2 flex-shrink-0">
-        {icon && <span style={{ color: iconColor ?? '#555' }} className="flex items-center">{icon}</span>}
+        {icon ? (
+          <button
+            onClick={() => {
+              if (!hasLink) return;
+              const url = href!.startsWith('http') ? href! : `https://${href}`;
+              window.open(url, '_blank');
+            }}
+            className="flex items-center transition-opacity"
+            style={{ color: hasLink ? iconColor ?? '#555' : '#333', cursor: hasLink ? 'pointer' : 'default', opacity: hasLink ? 1 : 0.5 }}
+            title={hasLink ? `Open ${label}` : `No ${label} link yet`}
+          >
+            {icon}
+          </button>
+        ) : null}
         <span className="text-xs font-medium" style={{ color: '#555' }}>{label}</span>
       </div>
       <div className="flex-1 min-w-0 ml-3">{children}</div>
