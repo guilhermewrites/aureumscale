@@ -297,13 +297,26 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
   const card = { background: '#1c1c1c', borderRadius: 20 };
 
   return (
-    <div className="flex w-full h-full overflow-hidden p-6 gap-6" style={{ background: '#131313', borderRadius: 20 }}>
+    <div className="flex w-full h-full overflow-hidden gap-6" style={{ background: '#131313', borderRadius: 20 }}>
 
       {/* ── LEFT CARD ─────────────────────────────────────────────────────────── */}
       <div
         className="flex flex-col flex-shrink-0 overflow-hidden"
         style={{ width: 260, ...card }}
       >
+        {/* Back button at top */}
+        <div className="p-3 border-b" style={{ borderColor: '#222' }}>
+          <button
+            onClick={onClose}
+            className="w-full text-xs font-medium py-2.5 transition-colors text-left px-2"
+            style={{ color: '#555', background: 'transparent', borderRadius: 12 }}
+            onMouseEnter={e => { e.currentTarget.style.color = '#ECECEC'; e.currentTarget.style.background = '#222'; }}
+            onMouseLeave={e => { e.currentTarget.style.color = '#555'; e.currentTarget.style.background = 'transparent'; }}
+          >
+            ← Back to Clients
+          </button>
+        </div>
+
         {/* Photo */}
         <div
           className="relative flex-shrink-0 cursor-pointer group"
@@ -397,22 +410,10 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
           ))}
         </nav>
 
-        {/* Back button at bottom */}
-        <div className="p-3 border-t" style={{ borderColor: '#222' }}>
-          <button
-            onClick={onClose}
-            className="w-full text-xs font-medium py-2.5 transition-colors text-center"
-            style={{ color: '#555', background: 'transparent', borderRadius: 12 }}
-            onMouseEnter={e => { e.currentTarget.style.color = '#ECECEC'; e.currentTarget.style.background = '#222'; }}
-            onMouseLeave={e => { e.currentTarget.style.color = '#555'; e.currentTarget.style.background = 'transparent'; }}
-          >
-            ← Back to Clients
-          </button>
-        </div>
       </div>
 
       {/* ── RIGHT CONTENT ─────────────────────────────────────────────────────── */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto py-6 pr-6">
         {loading ? (
           <div className="flex items-center justify-center h-full gap-2.5" style={{ color: '#444' }}>
             <Loader2 size={20} className="animate-spin" />
