@@ -26,6 +26,8 @@ interface ClientDetails {
   scripted_ads: ScriptedAd[];
   notes: string;
   ad_performance_notes: string;
+  contact_email: string;
+  client_since: string;
 }
 
 const EMPTY_ADS: AdsPerformance = { roas: '', spend: '', impressions: '', ctr: '', conversions: '', revenue: '' };
@@ -35,6 +37,7 @@ const DEFAULT_DETAILS: ClientDetails = {
   strategy_overview: '', google_drive_url: '',
   funnel_notes: '', funnel_url: '',
   scripted_ads: [], notes: '', ad_performance_notes: '',
+  contact_email: '', client_since: new Date().toISOString().slice(0, 10),
 };
 
 export interface ClientPanelProps {
@@ -189,6 +192,8 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
             scripted_ads:         data.scripted_ads         ?? [],
             notes:                data.notes                ?? '',
             ad_performance_notes: data.ad_performance_notes ?? '',
+            contact_email:        data.contact_email        ?? '',
+            client_since:         data.client_since         ?? new Date().toISOString().slice(0, 10),
           });
           setLoading(false);
         }
@@ -307,16 +312,62 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
           </div>
         </div>
 
-        {/* Name */}
-        <div className="px-5 pt-4 pb-3 border-b" style={{ borderColor: '#252525' }}>
+        {/* Name + Contact Info */}
+        <div className="px-5 pt-4 pb-4 border-b" style={{ borderColor: '#252525' }}>
           <p
             className="text-center text-xl font-bold leading-tight"
             style={{ color: '#ECECEC', fontFamily: "'Georgia', 'Times New Roman', serif", fontStyle: 'italic' }}
           >
             {client.name || 'Client Name'}
           </p>
+
+          {/* Contact */}
+          <div className="mt-4 space-y-2.5">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-medium" style={{ color: '#555' }}>Contact</span>
+              <input
+                type="email"
+                value={details.contact_email}
+                onChange={e => setField('contact_email', e.target.value)}
+                className="text-xs text-right bg-transparent focus:outline-none w-[140px] truncate"
+                style={{ color: '#ECECEC' }}
+                placeholder="email@example.com"
+              />
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-medium" style={{ color: '#555' }}>Client since</span>
+              <input
+                type="date"
+                value={details.client_since}
+                onChange={e => setField('client_since', e.target.value)}
+                className="text-xs text-right bg-transparent focus:outline-none"
+                style={{ color: '#ECECEC', colorScheme: 'dark' }}
+              />
+            </div>
+          </div>
+
+          {/* Social icons */}
+          <div className="flex items-center justify-center gap-3 mt-4">
+            <SocialIconBtn
+              href={details.social_platforms.instagram}
+              icon={<InstagramIcon />}
+              color="#E1306C"
+            />
+            <SocialIconBtn
+              href={details.social_platforms.twitter}
+              icon={<XIcon />}
+              color="#ECECEC"
+            />
+            <SocialIconBtn
+              href={details.social_platforms.linkedin}
+              icon={<LinkedInIcon />}
+              color="#0A66C2"
+            />
+          </div>
+
+          {/* Save status */}
           {saveStatus !== 'idle' && (
-            <p className={`text-center text-xs mt-1.5 ${saveStatus === 'saving' ? 'text-[#555]' : 'text-emerald-500'}`}>
+            <p className={`text-center text-xs mt-3 ${saveStatus === 'saving' ? 'text-[#555]' : 'text-emerald-500'}`}>
               {saveStatus === 'saving' ? 'Saving…' : '✓ Saved'}
             </p>
           )}
@@ -555,6 +606,30 @@ function OpenBtn({ href, label }: { href: string; label: string }) {
       onMouseLeave={e => { e.currentTarget.style.color = '#777'; }}
     >
       <ExternalLink size={13} /> {label}
+    </button>
+  );
+}
+
+function SocialIconBtn({ href, icon, color }: { href: string; icon: React.ReactNode; color: string }) {
+  const hasLink = !!href.trim();
+  return (
+    <button
+      onClick={() => {
+        if (hasLink) {
+          const url = href.startsWith('http') ? href : `https://${href}`;
+          window.open(url, '_blank');
+        }
+      }}
+      className="w-8 h-8 rounded-lg flex items-center justify-center transition-all"
+      style={{
+        color: hasLink ? color : '#333',
+        background: hasLink ? `${color}15` : 'transparent',
+        cursor: hasLink ? 'pointer' : 'default',
+        opacity: hasLink ? 1 : 0.4,
+      }}
+      title={hasLink ? href : 'No link added — go to Social tab'}
+    >
+      {icon}
     </button>
   );
 }

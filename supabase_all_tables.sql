@@ -83,6 +83,10 @@ CREATE TABLE IF NOT EXISTS client_details (
   funnel_notes      TEXT NOT NULL DEFAULT '',
   scripted_ads      JSONB NOT NULL DEFAULT '[]',
   notes             TEXT NOT NULL DEFAULT '',
+  ad_performance_notes TEXT NOT NULL DEFAULT '',
+  contact_email     TEXT NOT NULL DEFAULT '',
+  client_since      TEXT NOT NULL DEFAULT '',
+  funnel_url        TEXT NOT NULL DEFAULT '',
   updated_at        TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -92,3 +96,9 @@ CREATE POLICY "allow_all" ON client_details
   FOR ALL
   USING (true)
   WITH CHECK (true);
+
+-- If the table already exists, add the new columns:
+ALTER TABLE client_details ADD COLUMN IF NOT EXISTS ad_performance_notes TEXT NOT NULL DEFAULT '';
+ALTER TABLE client_details ADD COLUMN IF NOT EXISTS contact_email TEXT NOT NULL DEFAULT '';
+ALTER TABLE client_details ADD COLUMN IF NOT EXISTS client_since TEXT NOT NULL DEFAULT '';
+ALTER TABLE client_details ADD COLUMN IF NOT EXISTS funnel_url TEXT NOT NULL DEFAULT '';
