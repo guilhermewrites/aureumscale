@@ -92,6 +92,17 @@ const FacebookIcon = () => (
   </svg>
 );
 
+const GoogleDriveIcon = () => (
+  <svg width="16" height="14" viewBox="0 0 87.3 78" fill="currentColor">
+    <path d="M6.6 66.85l3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3L29 52.2H0c0 1.55.4 3.1 1.2 4.5z"/>
+    <path d="M43.65 25.15L28.4 0c-1.35.8-2.5 1.9-3.3 3.3L1.2 43.7C.4 45.1 0 46.65 0 48.2h29z"/>
+    <path d="M58.3 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75L86.1 43.7c.8-1.4 1.2-2.95 1.2-4.5H58.3L43.65 62.5z"/>
+    <path d="M43.65 25.15L58.9 0H28.4l15.25 25.15z" opacity=".5"/>
+    <path d="M58.3 48.2h29L72.05 23.45c-.8-1.4-1.95-2.5-3.3-3.3L43.65 25.15 58.3 48.2z"/>
+    <path d="M29 52.2L14.75 76.8h57.5L58.3 52.2z" opacity=".5"/>
+  </svg>
+);
+
 const SOCIAL_LIST: { key: keyof SocialPlatforms; label: string; color: string; icon: React.FC }[] = [
   { key: 'instagram', label: 'Instagram', color: '#E1306C', icon: InstagramIcon },
   { key: 'tiktok',    label: 'TikTok',    color: '#ECECEC', icon: TikTokIcon },
@@ -296,7 +307,7 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
         {/* Photo */}
         <div
           className="relative flex-shrink-0 cursor-pointer group"
-          style={{ height: 240 }}
+          style={{ height: 240, borderRadius: '20px 20px 0 0', overflow: 'hidden' }}
           onClick={() => photoInputRef.current?.click()}
         >
           <input ref={photoInputRef} type="file" accept="image/*" className="hidden" onChange={handlePhotoChange} />
@@ -348,36 +359,14 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
                 }}
               />
             </CardRow>
-            <CardRow label="Instagram" icon={<InstagramIcon />} iconColor="#E1306C" href={details.social_platforms.instagram}>
-              <input type="text" value={details.social_platforms.instagram}
-                onChange={e => setSocial('instagram', e.target.value)}
-                className="text-xs text-right bg-transparent focus:outline-none w-full truncate"
-                style={{ color: '#ECECEC' }} placeholder="@handle or URL" />
-            </CardRow>
-            <CardRow label="X" icon={<XIcon />} iconColor="#ECECEC" href={details.social_platforms.twitter}>
-              <input type="text" value={details.social_platforms.twitter}
-                onChange={e => setSocial('twitter', e.target.value)}
-                className="text-xs text-right bg-transparent focus:outline-none w-full truncate"
-                style={{ color: '#ECECEC' }} placeholder="@handle or URL" />
-            </CardRow>
-            <CardRow label="LinkedIn" icon={<LinkedInIcon />} iconColor="#0A66C2" href={details.social_platforms.linkedin}>
-              <input type="text" value={details.social_platforms.linkedin}
-                onChange={e => setSocial('linkedin', e.target.value)}
-                className="text-xs text-right bg-transparent focus:outline-none w-full truncate"
-                style={{ color: '#ECECEC' }} placeholder="URL" />
-            </CardRow>
-            <CardRow label="YouTube" icon={<YouTubeIcon />} iconColor="#FF4444" href={details.social_platforms.youtube}>
-              <input type="text" value={details.social_platforms.youtube}
-                onChange={e => setSocial('youtube', e.target.value)}
-                className="text-xs text-right bg-transparent focus:outline-none w-full truncate"
-                style={{ color: '#ECECEC' }} placeholder="URL" />
-            </CardRow>
-            <CardRow label="Google Drive" href={details.google_drive_url}>
-              <input type="url" value={details.google_drive_url}
-                onChange={e => setField('google_drive_url', e.target.value)}
-                className="text-xs text-right bg-transparent focus:outline-none w-full truncate"
-                style={{ color: '#ECECEC' }} placeholder="Drive folder URL" />
-            </CardRow>
+            {/* Social + Drive icons */}
+            <div className="flex items-center justify-center gap-2 pt-3 pb-1">
+              <SocialIconBtn href={details.social_platforms.instagram} icon={<InstagramIcon />} color="#E1306C" />
+              <SocialIconBtn href={details.social_platforms.twitter} icon={<XIcon />} color="#ECECEC" />
+              <SocialIconBtn href={details.social_platforms.linkedin} icon={<LinkedInIcon />} color="#0A66C2" />
+              <SocialIconBtn href={details.social_platforms.youtube} icon={<YouTubeIcon />} color="#FF4444" />
+              <SocialIconBtn href={details.google_drive_url} icon={<GoogleDriveIcon />} color="#4285F4" />
+            </div>
           </div>
 
           {/* Save status */}
