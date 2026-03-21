@@ -135,15 +135,17 @@ const Sidebar: React.FC<SidebarProps> = ({ activeItem, onNavigate, activeUserId,
               className="w-8 h-8 object-contain rounded"
             />
           ) : (
-            <div className="w-8 h-8 rounded-lg bg-[#2f2f2f] flex items-center justify-center group-hover:bg-[#3a3a3a] transition-colors">
-              <div className="w-3 h-3 rounded-full bg-[#ECECEC]"></div>
-            </div>
+            <img
+              src="/aureum-logo.svg"
+              alt="Aureum Logo"
+              className="w-8 h-8 object-contain"
+            />
           )}
           <div className="absolute inset-0 bg-black/50 rounded opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
             <Camera size={12} className="text-white" />
           </div>
         </label>
-        {!collapsed && <span className="text-lg font-bold tracking-tight text-[#ECECEC] flex-1 min-w-0 truncate">Aureum</span>}
+        {!collapsed && <span className="text-xl tracking-wide text-[#ECECEC] flex-1 min-w-0 truncate" style={{ fontFamily: "'Cormorant Garamond', serif", fontStyle: 'italic', fontWeight: 600 }}>Aureum</span>}
         <button
           onClick={onToggleCollapse}
           className={`${collapsed ? 'absolute -right-3 top-5' : ''} w-6 h-6 rounded-full bg-[#2f2f2f] border border-[#3a3a3a] flex items-center justify-center text-[#9B9B9B] hover:text-[#ECECEC] hover:bg-[#3a3a3a] flex-shrink-0`}
