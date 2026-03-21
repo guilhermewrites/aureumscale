@@ -1,6 +1,6 @@
-import React, { useState, useRef } from 'react';
-import { Plus, Trash2, ChevronDown, Camera } from 'lucide-react';
-import useLocalStorage from '../hooks/useLocalStorage';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { Plus, Trash2, ChevronDown, Camera, Loader2 } from 'lucide-react';
+import { supabase } from '../services/supabaseClient';
 
 type PaymentStatus = 'Missing Invoice' | 'Pending' | 'Paid';
 type Service = 'Full-on-marketing' | 'Ghostwriting' | 'Social Media Management' | 'Webinar' | 'Design' | 'Video-Editing';
@@ -15,6 +15,7 @@ interface Client {
   service: Service;
   leader: Leader;
   status: ClientStatus;
+  orderNum: number;
 }
 
 const PAYMENT_STATUSES: PaymentStatus[] = ['Missing Invoice', 'Pending', 'Paid'];
@@ -38,7 +39,7 @@ function getInitials(name: string) {
   return name.trim().split(' ').filter(Boolean).map(w => w[0]).slice(0, 2).join('').toUpperCase() || '?';
 }
 
-function newClient(): Client {
+function newClient(orderNum: number): Client {
   return {
     id: crypto.randomUUID(),
     name: '',
@@ -47,6 +48,34 @@ function newClient(): Client {
     service: 'Ghostwriting',
     leader: 'Guilherme Writes',
     status: 'Happy',
+    orderNum,
+  };
+}
+
+function toDbRow(client: Client, userId: string) {
+  return {
+    id: client.id,
+    user_id: userId,
+    name: client.name,
+    photo_url: client.photoUrl ?? null,
+    payment_status: client.paymentStatus,
+    service: client.service,
+    leader: client.leader,
+    status: client.status,
+    order_num: client.orderNum,
+  };
+}
+
+function fromDbRow(row: any): Client {
+  return {
+    id: row.id,
+    name: row.name,
+    photoUrl: row.photo_url ?? undefined,
+    paymentStatus: row.payment_status as PaymentStatus,
+    service: row.service as Service,
+    leader: row.leader as Leader,
+    status: row.status as ClientStatus,
+    orderNum: row.order_num ?? 0,
   };
 }
 
@@ -139,29 +168,148 @@ interface ClientsManagerProps {
 }
 
 const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
-  const [clients, setClients] = useLocalStorage<Client[]>(`${storagePrefix}_clients`, []);
+  const [clients, setClients] = useState<Client[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [isAdding, setIsAdding] = useState(false);
-  const [draft, setDraft] = useState<Client>(newClient());
+  const [draft, setDraft] = useState<Client>(newClient(0));
 
-  const updateClient = (id: string, patch: Partial<Client>) => {
+  // Debounce refs for name updates
+  const nameDebounceRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+
+  // Load clients from Supabase on mount
+  useEffect(() => {
+    const load = async () => {
+      if (!supabase) {
+        setLoading(false);
+        setError('Supabase is not configured.');
+        return;
+      }
+      try {
+        const { data, error: fetchError } = await supabase
+          .from('clients')
+          .select('*')
+          .eq('user_id', storagePrefix)
+          .order('order_num', { ascending: true });
+
+        if (fetchError) throw fetchError;
+        setClients((data ?? []).map(fromDbRow));
+      } catch (err: any) {
+        setError('Failed to load clients from Supabase.');
+        console.error('ClientsManager load error:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, [storagePrefix]);
+
+  const showError = useCallback((msg: string) => {
+    setError(msg);
+    setTimeout(() => setError(null), 4000);
+  }, []);
+
+  // Update a field immediately in state, then persist to Supabase
+  const updateClient = useCallback(async (id: string, patch: Partial<Client>, immediate = true) => {
     setClients(prev => prev.map(c => c.id === id ? { ...c, ...patch } : c));
-  };
 
-  const deleteClient = (id: string) => {
+    if (!immediate) return; // caller will handle debounce
+    if (!supabase) return;
+
+    const dbPatch: Record<string, any> = {};
+    if ('name' in patch) dbPatch.name = patch.name;
+    if ('photoUrl' in patch) dbPatch.photo_url = patch.photoUrl ?? null;
+    if ('paymentStatus' in patch) dbPatch.payment_status = patch.paymentStatus;
+    if ('service' in patch) dbPatch.service = patch.service;
+    if ('leader' in patch) dbPatch.leader = patch.leader;
+    if ('status' in patch) dbPatch.status = patch.status;
+
+    try {
+      const { error: updateError } = await supabase
+        .from('clients')
+        .update(dbPatch)
+        .eq('id', id)
+        .eq('user_id', storagePrefix);
+      if (updateError) throw updateError;
+    } catch (err: any) {
+      showError('Failed to save change to Supabase.');
+      console.error('ClientsManager update error:', err);
+    }
+  }, [storagePrefix, showError]);
+
+  // Debounced name update
+  const updateClientName = useCallback((id: string, name: string) => {
+    // Update state immediately for responsiveness
+    setClients(prev => prev.map(c => c.id === id ? { ...c, name } : c));
+
+    // Clear existing debounce for this client
+    if (nameDebounceRef.current[id]) clearTimeout(nameDebounceRef.current[id]);
+
+    nameDebounceRef.current[id] = setTimeout(async () => {
+      if (!supabase) return;
+      try {
+        const { error: updateError } = await supabase
+          .from('clients')
+          .update({ name })
+          .eq('id', id)
+          .eq('user_id', storagePrefix);
+        if (updateError) throw updateError;
+      } catch (err: any) {
+        showError('Failed to save name to Supabase.');
+        console.error('ClientsManager name update error:', err);
+      }
+    }, 600);
+  }, [storagePrefix, showError]);
+
+  const deleteClient = useCallback(async (id: string) => {
+    if (!supabase) return;
     setClients(prev => prev.filter(c => c.id !== id));
-  };
+    try {
+      const { error: deleteError } = await supabase
+        .from('clients')
+        .delete()
+        .eq('id', id)
+        .eq('user_id', storagePrefix);
+      if (deleteError) throw deleteError;
+    } catch (err: any) {
+      showError('Failed to delete client from Supabase.');
+      console.error('ClientsManager delete error:', err);
+    }
+  }, [storagePrefix, showError]);
 
-  const handleAddSave = () => {
+  const handleAddSave = useCallback(async () => {
     if (!draft.name.trim()) return;
-    setClients(prev => [...prev, { ...draft, name: draft.name.trim() }]);
-    setDraft(newClient());
+    if (!supabase) { showError('Supabase is not configured.'); return; }
+
+    const newC: Client = { ...draft, name: draft.name.trim(), orderNum: clients.length };
+    setClients(prev => [...prev, newC]);
+    setDraft(newClient(clients.length + 1));
     setIsAdding(false);
-  };
+
+    try {
+      const { error: insertError } = await supabase
+        .from('clients')
+        .insert(toDbRow(newC, storagePrefix));
+      if (insertError) throw insertError;
+    } catch (err: any) {
+      showError('Failed to save new client to Supabase.');
+      console.error('ClientsManager insert error:', err);
+    }
+  }, [draft, clients.length, storagePrefix, showError]);
 
   const handleAddCancel = () => {
-    setDraft(newClient());
+    setDraft(newClient(0));
     setIsAdding(false);
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-16 gap-2 text-[#666666]">
+        <Loader2 size={18} className="animate-spin" />
+        <span className="text-sm">Loading clients…</span>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 space-y-4">
@@ -214,7 +362,7 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
                     />
                     <input
                       value={client.name}
-                      onChange={e => updateClient(client.id, { name: e.target.value })}
+                      onChange={e => updateClientName(client.id, e.target.value)}
                       className="bg-transparent text-[#ECECEC] font-medium flex-1 min-w-0 focus:outline-none focus:border-b focus:border-[#3a3a3a] placeholder-[#666666]"
                       placeholder="Client name"
                     />
@@ -227,7 +375,6 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
                     options={PAYMENT_STATUSES}
                     onChange={v => updateClient(client.id, { paymentStatus: v })}
                     colorMap={paymentColors}
-                    minWidth="140px"
                   />
                 </td>
                 {/* Service */}
@@ -236,7 +383,6 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
                     value={client.service}
                     options={SERVICES}
                     onChange={v => updateClient(client.id, { service: v })}
-                    minWidth="180px"
                   />
                 </td>
                 {/* Leader */}
@@ -245,7 +391,6 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
                     value={client.leader}
                     options={LEADERS}
                     onChange={v => updateClient(client.id, { leader: v })}
-                    minWidth="150px"
                   />
                 </td>
                 {/* Status */}
@@ -255,7 +400,6 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
                     options={CLIENT_STATUSES}
                     onChange={v => updateClient(client.id, { status: v })}
                     colorMap={statusColors}
-                    minWidth="100px"
                   />
                 </td>
                 {/* Delete */}
@@ -323,6 +467,13 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
           </tbody>
         </table>
       </div>
+
+      {/* Error toast */}
+      {error && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-red-900/90 border border-red-700 text-red-200 text-sm px-4 py-2 rounded-lg shadow-lg">
+          {error}
+        </div>
+      )}
     </div>
   );
 };

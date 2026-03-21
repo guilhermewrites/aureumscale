@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import Sidebar from './components/Sidebar';
 import AnalyticsChart from './components/AnalyticsChart';
 import MetricsTable from './components/MetricsTable';
@@ -15,6 +15,7 @@ import { AD_METRICS } from './constants';
 import { Bell, Search, Calendar, Save, Check, Loader2, Settings, Filter } from 'lucide-react';
 import useLocalStorage from './hooks/useLocalStorage';
 import { syncLocalDataToSupabase } from './services/syncLocalToSupabase';
+import { supabase } from './services/supabaseClient';
 
 const App: React.FC = () => {
   const [activeNav, setActiveNav] = useLocalStorage<NavigationItem>('aureum_active_nav', NavigationItem.DASHBOARD);
@@ -57,8 +58,47 @@ const App: React.FC = () => {
   // Mock date
   const today = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'short', day: 'numeric' });
 
-  // --- Finance State Management ---
-  const [financeItems, setFinanceItems] = useLocalStorage<FinanceItem[]>(`${storagePrefix}_finance`, []);
+  // --- Finance State Management (Supabase) ---
+  const [financeItems, setFinanceItems] = useState<FinanceItem[]>([]);
+
+  // Map DB row -> FinanceItem
+  const financeFromRow = (row: any): FinanceItem => ({
+    id: row.id,
+    amount: Number(row.amount),
+    clientName: row.label,
+    invoiceDate: row.date,
+    status: row.status as InvoiceStatus,
+  });
+
+  // Map FinanceItem -> DB row
+  const financeToRow = (item: FinanceItem, userId: string) => ({
+    id: item.id,
+    user_id: userId,
+    label: item.clientName,
+    amount: item.amount,
+    type: 'income',
+    status: item.status,
+    date: item.invoiceDate,
+  });
+
+  // Load finance items from Supabase on mount / when storagePrefix changes
+  useEffect(() => {
+    const load = async () => {
+      if (!supabase) return;
+      try {
+        const { data, error } = await supabase
+          .from('finance_items')
+          .select('*')
+          .eq('user_id', storagePrefix)
+          .order('created_at', { ascending: false });
+        if (error) { console.error('Finance load error:', error); return; }
+        setFinanceItems((data ?? []).map(financeFromRow));
+      } catch (err) {
+        console.error('Finance load error:', err);
+      }
+    };
+    load();
+  }, [storagePrefix]);
 
   // Content chart: multi-select platforms (empty = all)
   const [contentChartSelectedPlatforms, setContentChartSelectedPlatforms] = useState<Platform[]>([]);
@@ -232,15 +272,37 @@ const App: React.FC = () => {
     .reduce((acc, curr) => acc + curr.amount, 0);
 
   // --- Finance Handlers ---
-  const handleAddFinanceItem = (item: FinanceItem) => {
+  const handleAddFinanceItem = useCallback(async (item: FinanceItem) => {
     setFinanceItems(prev => [...prev, item]);
-  };
-  const handleUpdateFinanceItem = (item: FinanceItem) => {
+    if (!supabase) return;
+    try {
+      const { error } = await supabase.from('finance_items').insert(financeToRow(item, storagePrefix));
+      if (error) console.error('Finance insert error:', error);
+    } catch (err) { console.error('Finance insert error:', err); }
+  }, [storagePrefix]);
+
+  const handleUpdateFinanceItem = useCallback(async (item: FinanceItem) => {
     setFinanceItems(prev => prev.map(i => i.id === item.id ? item : i));
-  };
-  const handleDeleteFinanceItem = (id: string) => {
+    if (!supabase) return;
+    try {
+      const row = financeToRow(item, storagePrefix);
+      const { error } = await supabase
+        .from('finance_items')
+        .update({ label: row.label, amount: row.amount, status: row.status, date: row.date })
+        .eq('id', item.id)
+        .eq('user_id', storagePrefix);
+      if (error) console.error('Finance update error:', error);
+    } catch (err) { console.error('Finance update error:', err); }
+  }, [storagePrefix]);
+
+  const handleDeleteFinanceItem = useCallback(async (id: string) => {
     setFinanceItems(prev => prev.filter(i => i.id !== id));
-  };
+    if (!supabase) return;
+    try {
+      const { error } = await supabase.from('finance_items').delete().eq('id', id).eq('user_id', storagePrefix);
+      if (error) console.error('Finance delete error:', error);
+    } catch (err) { console.error('Finance delete error:', err); }
+  }, [storagePrefix]);
 
   return (
     <div className="flex min-h-screen bg-[#212121] text-[#ECECEC] font-sans selection:bg-[#444444]">

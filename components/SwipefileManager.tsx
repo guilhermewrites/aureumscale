@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   Sparkles,
   PlaySquare,
@@ -20,10 +20,11 @@ import {
   RefreshCcw,
   Ban,
   AlertTriangle,
-  Check
+  Check,
+  Loader2
 } from 'lucide-react';
 import { SwipefileCategory, SwipefileItem, SwipefileMediaType } from '../types';
-import useLocalStorage from '../hooks/useLocalStorage';
+import { supabase } from '../services/supabaseClient';
 
 // Helper to detect if a string is a URL
 const isUrl = (str: string) => {
@@ -168,15 +169,29 @@ interface SwipefileManagerProps {
   storagePrefix: string;
 }
 
+// Map DB row -> SwipefileItem
+function fromDbRow(row: any): SwipefileItem {
+  return {
+    id: row.id,
+    title: row.title,
+    content: row.content,
+    mediaType: (row.media_type as SwipefileMediaType) || 'text',
+    mediaUrl: row.media_url ?? undefined,
+    category: row.category as SwipefileCategory,
+    tags: row.tags ?? [],
+    createdAt: row.created_at,
+  };
+}
+
 const SwipefileManager: React.FC<SwipefileManagerProps> = ({ storagePrefix }) => {
   const [activeCategory, setActiveCategory] = useState<SwipefileCategory>(SwipefileCategory.PROMPTS);
-  const [items, setItems] = useLocalStorage<SwipefileItem[]>(`${storagePrefix}_swipefile`, []);
-  const [trash, setTrash] = useLocalStorage<SwipefileItem[]>(`${storagePrefix}_swipefile_trash`, []);
+  const [items, setItems] = useState<SwipefileItem[]>([]);
+  const [trash, setTrash] = useState<SwipefileItem[]>([]);
+  const [loading, setLoading] = useState(true);
   const [isAdding, setIsAdding] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<SwipeViewMode>('library');
-
 
   // Inline editing state
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -193,6 +208,29 @@ const SwipefileManager: React.FC<SwipefileManagerProps> = ({ storagePrefix }) =>
   const [newItem, setNewItem] = useState<{title: string, content: string, tags: string, mediaType: SwipefileMediaType, mediaUrl: string}>({
     title: '', content: '', tags: '', mediaType: 'text', mediaUrl: ''
   });
+
+  // Load from Supabase on mount
+  useEffect(() => {
+    const load = async () => {
+      if (!supabase) { setLoading(false); return; }
+      try {
+        const { data, error } = await supabase
+          .from('swipefile_items')
+          .select('*')
+          .eq('user_id', storagePrefix)
+          .order('created_at', { ascending: false });
+        if (error) throw error;
+        const all = (data ?? []).map(fromDbRow);
+        // Items with deleted_at not used — all rows are live items
+        setItems(all);
+      } catch (err) {
+        console.error('SwipefileManager load error:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, [storagePrefix]);
 
   const categories = [
     { id: SwipefileCategory.PROMPTS, icon: Sparkles, label: 'Prompts' },
@@ -224,7 +262,6 @@ const SwipefileManager: React.FC<SwipefileManagerProps> = ({ storagePrefix }) =>
       setIsAdding(true);
     };
     reader.readAsDataURL(file);
-    // Reset input so same file can be selected again
     e.target.value = '';
   };
 
@@ -241,11 +278,12 @@ const SwipefileManager: React.FC<SwipefileManagerProps> = ({ storagePrefix }) =>
   };
 
   // --- CRUD ---
-  const handleAddItem = (e: React.FormEvent) => {
+  const handleAddItem = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newItem.title) return;
     if (newItem.mediaType === 'text' && !newItem.content) return;
     if (newItem.mediaType !== 'text' && !newItem.mediaUrl && !newItem.content) return;
+    if (!supabase) return;
 
     const entry: SwipefileItem = {
       id: Date.now().toString(),
@@ -255,15 +293,32 @@ const SwipefileManager: React.FC<SwipefileManagerProps> = ({ storagePrefix }) =>
       mediaUrl: newItem.mediaUrl || undefined,
       category: activeCategory,
       tags: newItem.tags.split(',').map(t => t.trim()).filter(Boolean),
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
     };
 
     setItems(prev => [entry, ...prev]);
     setNewItem({ title: '', content: '', tags: '', mediaType: 'text', mediaUrl: '' });
     setIsAdding(false);
-  };
 
-  // --- Trash system ---
+    try {
+      const { error } = await supabase.from('swipefile_items').insert({
+        id: entry.id,
+        user_id: storagePrefix,
+        title: entry.title,
+        content: entry.content,
+        category: entry.category,
+        media_type: entry.mediaType,
+        media_url: entry.mediaUrl ?? null,
+        tags: entry.tags,
+        created_at: entry.createdAt,
+      });
+      if (error) throw error;
+    } catch (err) {
+      console.error('SwipefileManager insert error:', err);
+    }
+  }, [newItem, activeCategory, storagePrefix]);
+
+  // --- Trash system (simple delete with confirmation) ---
   const requestDeleteItem = (id: string) => {
     setConfirmState({
       isOpen: true, type: 'delete_item', itemId: id,
@@ -289,30 +344,52 @@ const SwipefileManager: React.FC<SwipefileManagerProps> = ({ storagePrefix }) =>
     });
   };
 
-  const handleConfirmAction = () => {
+  const handleConfirmAction = useCallback(async () => {
     const { type, itemId } = confirmState;
     if (type === 'delete_item' && itemId) {
+      // Move to in-memory trash (no DB row for trash)
       const item = items.find(i => i.id === itemId);
       if (item) {
         setTrash(prev => [item, ...prev]);
         setItems(prev => prev.filter(i => i.id !== itemId));
-
+        // Delete from DB immediately
+        if (supabase) {
+          try {
+            await supabase.from('swipefile_items').delete().eq('id', itemId).eq('user_id', storagePrefix);
+          } catch (err) { console.error('SwipefileManager delete error:', err); }
+        }
       }
     } else if (type === 'delete_forever' && itemId) {
       setTrash(prev => prev.filter(i => i.id !== itemId));
+      // Already deleted from DB when moved to trash
     } else if (type === 'empty_trash') {
       setTrash([]);
     }
     setConfirmState(prev => ({ ...prev, isOpen: false }));
-  };
+  }, [confirmState, items, storagePrefix]);
 
-  const handleRestore = (id: string) => {
+  const handleRestore = useCallback(async (id: string) => {
     const item = trash.find(i => i.id === id);
-    if (item) {
-      setItems(prev => [item, ...prev]);
-      setTrash(prev => prev.filter(i => i.id !== id));
+    if (!item) return;
+    setItems(prev => [item, ...prev]);
+    setTrash(prev => prev.filter(i => i.id !== id));
+    // Re-insert into DB
+    if (supabase) {
+      try {
+        await supabase.from('swipefile_items').insert({
+          id: item.id,
+          user_id: storagePrefix,
+          title: item.title,
+          content: item.content,
+          category: item.category,
+          media_type: item.mediaType,
+          media_url: item.mediaUrl ?? null,
+          tags: item.tags,
+          created_at: item.createdAt,
+        });
+      } catch (err) { console.error('SwipefileManager restore error:', err); }
     }
-  };
+  }, [trash, storagePrefix]);
 
   // --- Inline editing ---
   const startEditing = (id: string, field: 'title' | 'content', value: string) => {
@@ -321,7 +398,7 @@ const SwipefileManager: React.FC<SwipefileManagerProps> = ({ storagePrefix }) =>
     setEditValue(value);
   };
 
-  const saveEdit = () => {
+  const saveEdit = useCallback(async () => {
     if (editingId && editField) {
       setItems(prev => prev.map(item => {
         if (item.id === editingId) {
@@ -329,11 +406,22 @@ const SwipefileManager: React.FC<SwipefileManagerProps> = ({ storagePrefix }) =>
         }
         return item;
       }));
+      // Persist to Supabase
+      if (supabase) {
+        const dbField = editField === 'title' ? 'title' : 'content';
+        try {
+          await supabase
+            .from('swipefile_items')
+            .update({ [dbField]: editValue })
+            .eq('id', editingId)
+            .eq('user_id', storagePrefix);
+        } catch (err) { console.error('SwipefileManager edit error:', err); }
+      }
     }
     setEditingId(null);
     setEditField(null);
     setEditValue('');
-  };
+  }, [editingId, editField, editValue, storagePrefix]);
 
   const cancelEdit = () => {
     setEditingId(null);
@@ -358,6 +446,15 @@ const SwipefileManager: React.FC<SwipefileManagerProps> = ({ storagePrefix }) =>
       default: return <FileText size={10} />;
     }
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-16 gap-2 text-[#666666]">
+        <Loader2 size={18} className="animate-spin" />
+        <span className="text-sm">Loading swipe file…</span>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">

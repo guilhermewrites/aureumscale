@@ -1,40 +1,20 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Camera, Check, X, Plus, FileText, Trash2 } from 'lucide-react';
+import { Camera, Check, X, Plus, FileText, Trash2, Loader2 } from 'lucide-react';
 import { TeamMember } from '../types';
 import { TEAM_MEMBERS } from '../constants';
 import { supabase } from '../services/supabaseClient';
 
 const DEFAULT_MEMBERS = Object.values(TEAM_MEMBERS);
 
-const TEAM_STORAGE_KEY = (prefix: string) => `${prefix}_team`;
-
-const getStoredMembers = (prefix: string): TeamMember[] | null => {
-  try {
-    const stored = localStorage.getItem(TEAM_STORAGE_KEY(prefix));
-    if (stored) {
-      const parsed = JSON.parse(stored);
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-    }
-  } catch (e) {}
-  return null;
-};
-
 interface TeamManagerProps {
   storagePrefix: string;
 }
 
 const TeamManager: React.FC<TeamManagerProps> = ({ storagePrefix }) => {
-  const [members, setMembers] = useState<TeamMember[]>(() => getStoredMembers(storagePrefix) ?? DEFAULT_MEMBERS);
+  const [members, setMembers] = useState<TeamMember[]>([]);
   const [loading, setLoading] = useState(true);
-  const hasLoadedFromSupabase = useRef(false);
-
-  const syncToLocalStorage = useCallback((list: TeamMember[]) => {
-    try {
-      localStorage.setItem(TEAM_STORAGE_KEY(storagePrefix), JSON.stringify(list));
-    } catch (e) {
-      console.warn('Could not sync team to localStorage', e);
-    }
-  }, [storagePrefix]);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const hasLoadedRef = useRef(false);
 
   const persistToSupabase = useCallback(async (list: TeamMember[]) => {
     if (!supabase) return;
@@ -60,28 +40,26 @@ const TeamManager: React.FC<TeamManagerProps> = ({ storagePrefix }) => {
   }, [storagePrefix]);
 
   useEffect(() => {
-    if (hasLoadedFromSupabase.current) {
-      setLoading(false);
-      return;
-    }
+    if (hasLoadedRef.current) return;
+    hasLoadedRef.current = true;
+
     if (!supabase) {
+      setLoadError('Supabase is not configured.');
       setLoading(false);
-      hasLoadedFromSupabase.current = true;
       return;
     }
-    hasLoadedFromSupabase.current = true;
 
     const load = async () => {
       try {
-        const { data, error } = await supabase
+        const { data, error } = await supabase!
           .from('team_members')
           .select('*')
           .eq('user_id', storagePrefix)
           .order('order_num', { ascending: true });
 
         if (error) {
-          console.error('Failed to load team from Supabase:', error);
-          // Keep whatever is already in state (loaded from localStorage on init)
+          setLoadError('Failed to load team from Supabase.');
+          console.error('TeamManager load error:', error);
           setLoading(false);
           return;
         }
@@ -97,41 +75,33 @@ const TeamManager: React.FC<TeamManagerProps> = ({ storagePrefix }) => {
             photoUrl: row.photo_url ?? undefined,
           }));
           setMembers(list);
-          syncToLocalStorage(list);
         } else {
-          // Supabase is empty — use localStorage if available, otherwise seed defaults
-          const local = getStoredMembers(storagePrefix);
-          const seed = local ?? DEFAULT_MEMBERS;
-          setMembers(seed);
-          syncToLocalStorage(seed);
-          await persistToSupabase(seed);
+          // Supabase is empty — seed with defaults
+          setMembers(DEFAULT_MEMBERS);
+          await persistToSupabase(DEFAULT_MEMBERS);
         }
       } catch (err) {
-        console.error('Team load error:', err);
-        // Keep whatever is already in state (loaded from localStorage on init)
+        setLoadError('Failed to load team from Supabase.');
+        console.error('TeamManager load error:', err);
       }
       setLoading(false);
     };
     load();
-  }, [storagePrefix, syncToLocalStorage, persistToSupabase]);
+  }, [storagePrefix, persistToSupabase]);
 
   const setMembersAndPersist = useCallback((next: TeamMember[] | ((prev: TeamMember[]) => TeamMember[])) => {
     setMembers(prev => {
       const list = typeof next === 'function' ? next(prev) : next;
-      syncToLocalStorage(list);
       persistToSupabase(list);
       return list;
     });
-  }, [syncToLocalStorage, persistToSupabase]);
+  }, [persistToSupabase]);
 
   // Editing state
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editField, setEditField] = useState<'name' | 'role' | 'description' | null>(null);
   const [editValue, setEditValue] = useState('');
 
-  // Photo upload
-
-  // --- Inline editing ---
   const startEditing = (id: string, field: 'name' | 'role' | 'description', value: string) => {
     setEditingId(id);
     setEditField(field);
@@ -143,7 +113,6 @@ const TeamManager: React.FC<TeamManagerProps> = ({ storagePrefix }) => {
       setMembersAndPersist(prev => prev.map(m => {
         if (m.id === editingId) {
           const updated = { ...m, [editField]: editValue };
-          // Update initials if name changes
           if (editField === 'name' && editValue.trim()) {
             const parts = editValue.trim().split(/\s+/);
             updated.initials = parts.length >= 2
@@ -166,7 +135,6 @@ const TeamManager: React.FC<TeamManagerProps> = ({ storagePrefix }) => {
     setEditValue('');
   };
 
-  // --- Photo upload (with compression to avoid localStorage limit) ---
   const compressImage = (file: File, maxSize: number = 150): Promise<string> => {
     return new Promise((resolve) => {
       const img = new window.Image();
@@ -174,7 +142,6 @@ const TeamManager: React.FC<TeamManagerProps> = ({ storagePrefix }) => {
       img.onload = () => {
         URL.revokeObjectURL(url);
         const canvas = document.createElement('canvas');
-        // Scale down to maxSize x maxSize
         const scale = Math.min(maxSize / img.width, maxSize / img.height, 1);
         canvas.width = img.width * scale;
         canvas.height = img.height * scale;
@@ -182,7 +149,6 @@ const TeamManager: React.FC<TeamManagerProps> = ({ storagePrefix }) => {
         if (ctx) {
           ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
         }
-        // Convert to JPEG at 70% quality for small file size
         resolve(canvas.toDataURL('image/jpeg', 0.7));
       };
       img.src = url;
@@ -197,7 +163,6 @@ const TeamManager: React.FC<TeamManagerProps> = ({ storagePrefix }) => {
       const file = input.files?.[0];
       if (!file) return;
       try {
-        // Compress to 150x150 JPEG to save localStorage space
         const compressedDataUrl = await compressImage(file, 150);
         setMembersAndPersist(prev => prev.map(m =>
           m.id === memberId ? { ...m, photoUrl: compressedDataUrl } : m
@@ -209,7 +174,6 @@ const TeamManager: React.FC<TeamManagerProps> = ({ storagePrefix }) => {
     input.click();
   };
 
-  // --- Delete member ---
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   const handleDeleteMember = (id: string) => {
@@ -217,7 +181,6 @@ const TeamManager: React.FC<TeamManagerProps> = ({ storagePrefix }) => {
     setConfirmDeleteId(null);
   };
 
-  // --- Add member ---
   const [isAddingMember, setIsAddingMember] = useState(false);
   const [newMemberName, setNewMemberName] = useState('');
   const [newMemberRole, setNewMemberRole] = useState('');
@@ -247,16 +210,23 @@ const TeamManager: React.FC<TeamManagerProps> = ({ storagePrefix }) => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-12 text-[#9B9B9B] text-sm">
+      <div className="flex items-center justify-center py-12 gap-2 text-[#9B9B9B] text-sm">
+        <Loader2 size={18} className="animate-spin" />
         Loading team…
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="flex items-center justify-center py-12 text-red-400 text-sm">
+        {loadError}
       </div>
     );
   }
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      {/* Photo upload is handled via dynamic input creation */}
-
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex flex-col gap-1">
           <h2 className="text-xl font-bold text-[#ECECEC]">Team Members</h2>
