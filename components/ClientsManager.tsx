@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Plus, Trash2, ChevronDown, Camera, Loader2 } from 'lucide-react';
 import { supabase } from '../services/supabaseClient';
+import ClientPanel from './ClientPanel';
 
 type PaymentStatus = 'Missing Invoice' | 'Pending' | 'Paid';
 type Service = 'Full-on-marketing' | 'Ghostwriting' | 'Social Media Management' | 'Webinar' | 'Design' | 'Video-Editing';
@@ -200,6 +201,7 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
   const [error, setError] = useState<string | null>(null);
   const [isAdding, setIsAdding] = useState(false);
   const [draft, setDraft] = useState<Client>(newClient(0));
+  const [selectedClient, setSelectedClient] = useState<{ id: string; name: string; photoUrl?: string } | null>(null);
 
   // Debounce refs for name updates
   const nameDebounceRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
@@ -378,9 +380,13 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
           </thead>
           <tbody className="divide-y divide-[#2f2f2f]">
             {clients.map(client => (
-              <tr key={client.id} className="group bg-[#212121] hover:bg-[#252525] transition-colors">
+              <tr
+                key={client.id}
+                className="group bg-[#212121] hover:bg-[#1e1e1e] transition-colors cursor-pointer"
+                onClick={() => setSelectedClient({ id: client.id, name: client.name, photoUrl: client.photoUrl })}
+              >
                 {/* Name + Avatar */}
-                <td className="px-4 py-3">
+                <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
                   <div className="flex items-center gap-3">
                     <Avatar
                       name={client.name}
@@ -390,13 +396,14 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
                     <input
                       value={client.name}
                       onChange={e => updateClientName(client.id, e.target.value)}
-                      className="bg-transparent text-[#ECECEC] font-medium flex-1 min-w-0 focus:outline-none focus:border-b focus:border-[#3a3a3a] placeholder-[#666666]"
+                      className="bg-transparent text-[#ECECEC] font-medium flex-1 min-w-0 focus:outline-none focus:border-b focus:border-[#3a3a3a] placeholder-[#666666] cursor-text"
                       placeholder="Client name"
+                      onClick={e => e.stopPropagation()}
                     />
                   </div>
                 </td>
                 {/* Payment Status */}
-                <td className="px-4 py-3">
+                <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
                   <SelectCell
                     value={client.paymentStatus}
                     options={PAYMENT_STATUSES}
@@ -405,7 +412,7 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
                   />
                 </td>
                 {/* Service */}
-                <td className="px-4 py-3">
+                <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
                   <SelectCell
                     value={client.service}
                     options={SERVICES}
@@ -413,7 +420,7 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
                   />
                 </td>
                 {/* Leader */}
-                <td className="px-4 py-3">
+                <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
                   <SelectCell
                     value={client.leader}
                     options={LEADERS}
@@ -421,7 +428,7 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
                   />
                 </td>
                 {/* Status */}
-                <td className="px-4 py-3">
+                <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
                   <SelectCell
                     value={client.status}
                     options={CLIENT_STATUSES}
@@ -430,7 +437,7 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
                   />
                 </td>
                 {/* Delete */}
-                <td className="px-4 py-3 text-right">
+                <td className="px-4 py-3 text-right" onClick={e => e.stopPropagation()}>
                   <button
                     onClick={() => deleteClient(client.id)}
                     className="opacity-0 group-hover:opacity-100 text-[#666666] hover:text-red-400 transition-all"
@@ -500,6 +507,21 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-red-900/90 border border-red-700 text-red-200 text-sm px-4 py-2 rounded-lg shadow-lg">
           {error}
         </div>
+      )}
+
+      {/* Client Panel */}
+      {selectedClient && (
+        <>
+          <div
+            className="fixed inset-0 bg-black/50 z-40"
+            onClick={() => setSelectedClient(null)}
+          />
+          <ClientPanel
+            client={selectedClient}
+            storagePrefix={storagePrefix}
+            onClose={() => setSelectedClient(null)}
+          />
+        </>
       )}
     </div>
   );

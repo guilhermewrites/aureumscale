@@ -69,3 +69,26 @@ CREATE POLICY "allow_all" ON finance_items
   FOR ALL
   USING (true)
   WITH CHECK (true);
+
+-- ============================================================
+-- 4. CLIENT_DETAILS TABLE
+-- ============================================================
+CREATE TABLE IF NOT EXISTS client_details (
+  client_id   TEXT PRIMARY KEY,
+  user_id     TEXT NOT NULL,
+  ads_performance   JSONB NOT NULL DEFAULT '{"roas":"","spend":"","impressions":"","ctr":"","conversions":"","revenue":""}',
+  social_platforms  JSONB NOT NULL DEFAULT '{"instagram":"","tiktok":"","youtube":"","twitter":"","linkedin":"","facebook":""}',
+  strategy_overview TEXT NOT NULL DEFAULT '',
+  google_drive_url  TEXT NOT NULL DEFAULT '',
+  funnel_notes      TEXT NOT NULL DEFAULT '',
+  scripted_ads      JSONB NOT NULL DEFAULT '[]',
+  notes             TEXT NOT NULL DEFAULT '',
+  updated_at        TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE client_details ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "allow_all" ON client_details
+  FOR ALL
+  USING (true)
+  WITH CHECK (true);
