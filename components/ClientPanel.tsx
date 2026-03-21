@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   ExternalLink, Plus, Trash2, Loader2,
   BarChart2, Share2, GitBranch, FileText, StickyNote, LayoutDashboard, Camera,
+  Receipt, DollarSign,
 } from 'lucide-react';
 import { supabase } from '../services/supabaseClient';
 
@@ -16,6 +17,16 @@ interface SocialPlatforms {
   twitter: string; linkedin: string; facebook: string;
 }
 interface ScriptedAd { id: string; title: string; content: string; }
+interface BillingInvoice {
+  id: string;
+  invoice_number: string;
+  amount: number;
+  service: string;
+  status: 'Draft' | 'Sent' | 'Paid' | 'Overdue' | 'Cancelled';
+  date_sent: string;
+  date_paid: string;
+  notes: string;
+}
 interface ClientDetails {
   ads_performance: AdsPerformance;
   social_platforms: SocialPlatforms;
@@ -41,7 +52,7 @@ const DEFAULT_DETAILS: ClientDetails = {
 };
 
 export interface ClientPanelProps {
-  client: { id: string; name: string; photoUrl?: string; service?: string; status?: string } | null;
+  client: { id: string; name: string; photoUrl?: string; service?: string; status?: string; paymentStatus?: string; amount?: number } | null;
   storagePrefix: string;
   onClose: () => void;
 }
@@ -50,6 +61,7 @@ type SaveStatus = 'idle' | 'saving' | 'saved';
 
 const TABS = [
   { id: 'Overview', label: 'Overview', Icon: LayoutDashboard },
+  { id: 'Billing',  label: 'Billing',  Icon: Receipt },
   { id: 'Ads',      label: 'Ads',      Icon: BarChart2 },
   { id: 'Social',   label: 'Social',   Icon: Share2 },
   { id: 'Funnel',   label: 'Funnel',   Icon: GitBranch },
@@ -57,6 +69,11 @@ const TABS = [
   { id: 'Notes',    label: 'Notes',    Icon: StickyNote },
 ] as const;
 type Tab = typeof TABS[number]['id'];
+
+const INVOICE_STATUSES: BillingInvoice['status'][] = ['Draft', 'Sent', 'Paid', 'Overdue', 'Cancelled'];
+const invoiceStatusColors: Record<string, string> = {
+  Draft: '#9B9B9B', Sent: '#60a5fa', Paid: '#4ade80', Overdue: '#f97316', Cancelled: '#ef4444',
+};
 
 // SVG icons for each platform
 const InstagramIcon = () => (
@@ -163,9 +180,12 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
   const [loading, setLoading] = useState(false);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');
   const [localPhoto, setLocalPhoto] = useState<string | undefined>(client?.photoUrl);
+  const [invoices, setInvoices] = useState<BillingInvoice[]>([]);
+  const [invoicesLoading, setInvoicesLoading] = useState(false);
   const photoInputRef = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const savedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const invoiceDebounceRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
 
   useEffect(() => { setLocalPhoto(client?.photoUrl); }, [client?.photoUrl]);
 
@@ -283,9 +303,82 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
     await supabase.from('clients').update({ photo_url: compressed }).eq('id', client.id).eq('user_id', storagePrefix);
   }, [client, storagePrefix]);
 
+  // ─── Billing History ─────────────────────────────────────────────────────────
+
+  useEffect(() => {
+    if (!client || !supabase) return;
+    let cancelled = false;
+    setInvoicesLoading(true);
+    (async () => {
+      const { data, error } = await supabase
+        .from('billing_history')
+        .select('*')
+        .eq('client_id', client.id)
+        .eq('user_id', storagePrefix)
+        .order('date_sent', { ascending: false });
+      if (cancelled) return;
+      if (!error && data) {
+        setInvoices(data.map((r: any) => ({
+          id: r.id,
+          invoice_number: r.invoice_number ?? '',
+          amount: r.amount ?? 0,
+          service: r.service ?? '',
+          status: r.status ?? 'Draft',
+          date_sent: r.date_sent ?? '',
+          date_paid: r.date_paid ?? '',
+          notes: r.notes ?? '',
+        })));
+      }
+      setInvoicesLoading(false);
+    })();
+    return () => { cancelled = true; };
+  }, [client?.id, storagePrefix]);
+
+  const addInvoice = useCallback(async () => {
+    if (!supabase || !client) return;
+    const inv: BillingInvoice = {
+      id: crypto.randomUUID(),
+      invoice_number: `INV-${String(invoices.length + 1).padStart(3, '0')}`,
+      amount: client.amount ?? 0,
+      service: client.service ?? '',
+      status: 'Draft',
+      date_sent: '',
+      date_paid: '',
+      notes: '',
+    };
+    setInvoices(prev => [inv, ...prev]);
+    await supabase.from('billing_history').insert({
+      ...inv, client_id: client.id, user_id: storagePrefix,
+    });
+  }, [client, storagePrefix, invoices.length]);
+
+  const updateInvoice = useCallback((id: string, patch: Partial<BillingInvoice>) => {
+    setInvoices(prev => prev.map(inv => inv.id === id ? { ...inv, ...patch } : inv));
+    // Debounce the save
+    if (invoiceDebounceRef.current[id]) clearTimeout(invoiceDebounceRef.current[id]);
+    invoiceDebounceRef.current[id] = setTimeout(async () => {
+      if (!supabase) return;
+      const dbPatch: Record<string, any> = {};
+      if ('invoice_number' in patch) dbPatch.invoice_number = patch.invoice_number;
+      if ('amount' in patch) dbPatch.amount = patch.amount;
+      if ('service' in patch) dbPatch.service = patch.service;
+      if ('status' in patch) dbPatch.status = patch.status;
+      if ('date_sent' in patch) dbPatch.date_sent = patch.date_sent;
+      if ('date_paid' in patch) dbPatch.date_paid = patch.date_paid;
+      if ('notes' in patch) dbPatch.notes = patch.notes;
+      await supabase.from('billing_history').update(dbPatch).eq('id', id);
+    }, 600);
+  }, []);
+
+  const deleteInvoice = useCallback(async (id: string) => {
+    setInvoices(prev => prev.filter(inv => inv.id !== id));
+    if (supabase) await supabase.from('billing_history').delete().eq('id', id);
+  }, []);
+
   useEffect(() => () => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
     if (savedTimerRef.current) clearTimeout(savedTimerRef.current);
+    Object.values(invoiceDebounceRef.current).forEach(t => clearTimeout(t));
   }, []);
 
   if (!client) return null;
@@ -365,12 +458,29 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
               <CardStatusSelect
                 value={(client as any).status ?? 'Happy'}
                 onChange={(v) => {
-                  // Update the client status in Supabase
                   if (supabase && client) {
                     supabase.from('clients').update({ status: v }).eq('id', client.id).eq('user_id', storagePrefix);
                   }
                 }}
               />
+            </CardRow>
+            <CardRow label="Payment">
+              <CardPaymentSelect
+                value={client.paymentStatus ?? 'Pending'}
+                onChange={(v) => {
+                  if (supabase && client) {
+                    supabase.from('clients').update({ payment_status: v }).eq('id', client.id).eq('user_id', storagePrefix);
+                  }
+                }}
+              />
+            </CardRow>
+            <CardRow label="Amount">
+              <div className="flex items-center justify-end gap-0.5">
+                <span className="text-xs" style={{ color: '#555' }}>$</span>
+                <span className="text-xs font-semibold" style={{ color: '#ECECEC' }}>
+                  {(client.amount ?? 0).toLocaleString()}
+                </span>
+              </div>
             </CardRow>
             {/* Social + Drive icons */}
             <div className="flex items-center justify-center gap-2 pt-3 pb-1">
@@ -441,6 +551,106 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
                 </div>
               </Block>
             </>)}
+
+            {/* ── BILLING ───────────────────────────────────────────────── */}
+            {activeTab === 'Billing' && (
+              <Block
+                title={`Billing History${invoices.length > 0 ? ` · ${invoices.length}` : ''}`}
+                action={
+                  <button onClick={addInvoice}
+                    className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-colors"
+                    style={{ background: '#ECECEC', color: '#111' }}
+                    onMouseEnter={e => (e.currentTarget.style.background = '#fff')}
+                    onMouseLeave={e => (e.currentTarget.style.background = '#ECECEC')}
+                  ><Plus size={14} /> New Invoice</button>
+                }
+              >
+                {invoicesLoading ? (
+                  <div className="flex items-center justify-center py-12 gap-2" style={{ color: '#444' }}>
+                    <Loader2 size={16} className="animate-spin" />
+                    <span className="text-sm">Loading invoices…</span>
+                  </div>
+                ) : invoices.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-16 gap-2" style={{ color: '#333' }}>
+                    <Receipt size={32} strokeWidth={1.5} />
+                    <p className="text-sm font-medium mt-1" style={{ color: '#444' }}>No invoices yet</p>
+                    <p className="text-xs">Click "New Invoice" to create your first invoice.</p>
+                  </div>
+                ) : (
+                  <div className="rounded-2xl overflow-hidden" style={{ background: '#161616' }}>
+                    {/* Header */}
+                    <div className="grid grid-cols-[1fr_100px_120px_100px_100px_100px_40px] gap-2 px-5 py-3 text-[10px] font-semibold uppercase tracking-widest" style={{ color: '#444', borderBottom: '1px solid #222' }}>
+                      <span>Invoice #</span>
+                      <span>Amount</span>
+                      <span>Service</span>
+                      <span>Status</span>
+                      <span>Date Sent</span>
+                      <span>Date Paid</span>
+                      <span></span>
+                    </div>
+                    {/* Rows */}
+                    {invoices.map(inv => (
+                      <div key={inv.id} className="grid grid-cols-[1fr_100px_120px_100px_100px_100px_40px] gap-2 px-5 py-3 items-center transition-colors"
+                        style={{ borderBottom: '1px solid #222' }}
+                        onMouseEnter={e => (e.currentTarget.style.background = '#1a1a1a')}
+                        onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                      >
+                        <input
+                          value={inv.invoice_number}
+                          onChange={e => updateInvoice(inv.id, { invoice_number: e.target.value })}
+                          className="bg-transparent text-xs font-medium text-[#ECECEC] focus:outline-none w-full placeholder-[#333]"
+                          placeholder="INV-001"
+                        />
+                        <div className="flex items-center gap-0.5">
+                          <span className="text-[10px]" style={{ color: '#555' }}>$</span>
+                          <input
+                            type="text"
+                            value={inv.amount ? inv.amount.toLocaleString() : ''}
+                            onChange={e => {
+                              const raw = e.target.value.replace(/[^0-9.]/g, '');
+                              updateInvoice(inv.id, { amount: parseFloat(raw) || 0 });
+                            }}
+                            className="bg-transparent text-xs font-medium text-[#ECECEC] focus:outline-none w-full placeholder-[#333]"
+                            placeholder="0"
+                          />
+                        </div>
+                        <input
+                          value={inv.service}
+                          onChange={e => updateInvoice(inv.id, { service: e.target.value })}
+                          className="bg-transparent text-xs text-[#ECECEC] focus:outline-none w-full placeholder-[#333]"
+                          placeholder="Service…"
+                        />
+                        <InvoiceStatusSelect
+                          value={inv.status}
+                          onChange={v => updateInvoice(inv.id, { status: v })}
+                        />
+                        <input
+                          type="date" value={inv.date_sent}
+                          onChange={e => updateInvoice(inv.id, { date_sent: e.target.value })}
+                          className="bg-transparent text-[10px] text-[#ECECEC] focus:outline-none w-full"
+                          style={{ colorScheme: 'dark' }}
+                        />
+                        <input
+                          type="date" value={inv.date_paid}
+                          onChange={e => updateInvoice(inv.id, { date_paid: e.target.value })}
+                          className="bg-transparent text-[10px] text-[#ECECEC] focus:outline-none w-full"
+                          style={{ colorScheme: 'dark' }}
+                        />
+                        <button
+                          onClick={() => deleteInvoice(inv.id)}
+                          className="p-1 rounded-lg transition-colors flex-shrink-0"
+                          style={{ color: '#333' }}
+                          onMouseEnter={e => (e.currentTarget.style.color = '#ef4444')}
+                          onMouseLeave={e => (e.currentTarget.style.color = '#333')}
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </Block>
+            )}
 
             {/* ── ADS ─────────────────────────────────────────────────────── */}
             {activeTab === 'Ads' && (<>
@@ -705,6 +915,90 @@ function SocialIconBtn({ href, icon, color }: { href: string; icon: React.ReactN
     >
       {icon}
     </button>
+  );
+}
+
+function CardPaymentSelect({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const statuses = ['Missing Invoice', 'Pending', 'Paid', 'Late'] as const;
+  const colors: Record<string, string> = {
+    'Missing Invoice': '#f87171', Pending: '#9B9B9B', Paid: '#4ade80', Late: '#f97316',
+  };
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [open]);
+
+  return (
+    <div ref={ref} className="relative flex justify-end">
+      <button onClick={() => setOpen(o => !o)}
+        className="text-xs font-medium flex items-center gap-1 cursor-pointer"
+        style={{ color: colors[value] ?? '#ECECEC' }}
+      >
+        <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: colors[value] ?? '#ECECEC' }} />
+        {value}
+      </button>
+      {open && (
+        <div className="absolute right-0 top-full mt-1 z-50 py-1 min-w-[140px] shadow-xl"
+          style={{ background: '#222', borderRadius: 10 }}>
+          {statuses.map(s => (
+            <button key={s} onClick={() => { onChange(s); setOpen(false); }}
+              className={`flex items-center gap-2 w-full text-left text-xs px-3 py-2 transition-colors hover:bg-[#2a2a2a] ${s === value ? 'font-semibold' : ''}`}
+              style={{ color: colors[s] }}
+            >
+              <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: colors[s] }} />
+              {s}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function InvoiceStatusSelect({ value, onChange }: { value: BillingInvoice['status']; onChange: (v: BillingInvoice['status']) => void }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [open]);
+
+  return (
+    <div ref={ref} className="relative">
+      <button onClick={() => setOpen(o => !o)}
+        className="text-xs font-medium flex items-center gap-1.5 cursor-pointer"
+        style={{ color: invoiceStatusColors[value] ?? '#ECECEC' }}
+      >
+        <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: invoiceStatusColors[value] ?? '#ECECEC' }} />
+        {value}
+      </button>
+      {open && (
+        <div className="absolute left-0 top-full mt-1 z-50 py-1 min-w-[120px] shadow-xl"
+          style={{ background: '#222', borderRadius: 10 }}>
+          {INVOICE_STATUSES.map(s => (
+            <button key={s} onClick={() => { onChange(s); setOpen(false); }}
+              className={`flex items-center gap-2 w-full text-left text-xs px-3 py-2 transition-colors hover:bg-[#2a2a2a] ${s === value ? 'font-semibold' : ''}`}
+              style={{ color: invoiceStatusColors[s] }}
+            >
+              <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: invoiceStatusColors[s] }} />
+              {s}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 

@@ -14,6 +14,7 @@ interface Client {
   name: string;
   photoUrl?: string;
   paymentStatus: PaymentStatus;
+  amount: number;
   service: Service;
   leader: Leader;
   status: ClientStatus;
@@ -49,6 +50,7 @@ function newClient(orderNum: number): Client {
     name: '',
     photoUrl: undefined,
     paymentStatus: 'Pending',
+    amount: 0,
     service: 'Ghostwriting',
     leader: 'Guilherme Writes',
     status: 'Happy',
@@ -64,6 +66,7 @@ function toDbRow(client: Client, userId: string) {
     name: client.name,
     photo_url: client.photoUrl ?? null,
     payment_status: client.paymentStatus,
+    amount: client.amount,
     service: client.service,
     leader: client.leader,
     status: client.status,
@@ -78,6 +81,7 @@ function fromDbRow(row: any): Client {
     name: row.name,
     photoUrl: row.photo_url ?? undefined,
     paymentStatus: row.payment_status as PaymentStatus,
+    amount: row.amount ?? 0,
     service: row.service as Service,
     leader: row.leader as Leader,
     status: row.status as ClientStatus,
@@ -217,21 +221,23 @@ function Avatar({ name, photoUrl, onPhotoChange, size = 36 }: AvatarProps) {
   );
 }
 
-type ColumnId = 'payment' | 'service' | 'leader' | 'status';
-const DEFAULT_COLUMNS: ColumnId[] = ['payment', 'service', 'leader', 'status'];
+type ColumnId = 'payment' | 'amount' | 'service' | 'leader' | 'status';
+const DEFAULT_COLUMNS: ColumnId[] = ['payment', 'amount', 'service', 'leader', 'status'];
 
 const COLUMN_LABELS: Record<ColumnId, string> = {
   payment: 'Payment',
+  amount: 'Amount',
   service: 'Service',
   leader: 'Leader',
   status: 'Status',
 };
 
 const COLUMN_WIDTHS: Record<ColumnId, string> = {
-  payment: '17%',
-  service: '20%',
-  leader: '18%',
-  status: '14%',
+  payment: '14%',
+  amount: '12%',
+  service: '18%',
+  leader: '16%',
+  status: '12%',
 };
 
 interface ClientsManagerProps {
@@ -244,7 +250,7 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
   const [error, setError] = useState<string | null>(null);
   const [isAdding, setIsAdding] = useState(false);
   const [draft, setDraft] = useState<Client>(newClient(0));
-  const [selectedClient, setSelectedClient] = useState<{ id: string; name: string; photoUrl?: string; status?: string } | null>(null);
+  const [selectedClient, setSelectedClient] = useState<{ id: string; name: string; photoUrl?: string; status?: string; paymentStatus?: string; amount?: number } | null>(null);
   const [showActive, setShowActive] = useState(true);
 
   // Column order (UI preference — stored in localStorage)
@@ -338,6 +344,7 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
     if ('name' in patch) dbPatch.name = patch.name;
     if ('photoUrl' in patch) dbPatch.photo_url = patch.photoUrl ?? null;
     if ('paymentStatus' in patch) dbPatch.payment_status = patch.paymentStatus;
+    if ('amount' in patch) dbPatch.amount = patch.amount;
     if ('service' in patch) dbPatch.service = patch.service;
     if ('leader' in patch) dbPatch.leader = patch.leader;
     if ('status' in patch) dbPatch.status = patch.status;
@@ -493,7 +500,7 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
       <div className="rounded-xl border border-[#2f2f2f] overflow-visible">
         <table className="w-full text-sm" style={{ borderCollapse: 'separate', borderSpacing: 0, tableLayout: 'fixed' }}>
           <colgroup>
-            <col style={{ width: '25%' }} />
+            <col style={{ width: '22%' }} />
             {columnOrder.map(col => (
               <col key={col} style={{ width: COLUMN_WIDTHS[col] }} />
             ))}
@@ -531,6 +538,22 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
                     colorMap={paymentColors}
                   />
                 ),
+                amount: (
+                  <div className="flex items-center gap-0.5" onClick={e => e.stopPropagation()}>
+                    <span className="text-xs text-[#555]">$</span>
+                    <input
+                      type="text"
+                      value={client.amount ? client.amount.toLocaleString() : ''}
+                      onChange={e => {
+                        const raw = e.target.value.replace(/[^0-9.]/g, '');
+                        const num = parseFloat(raw) || 0;
+                        updateClient(client.id, { amount: num });
+                      }}
+                      className="bg-transparent text-xs font-medium text-[#ECECEC] focus:outline-none w-[80px] placeholder-[#3a3a3a]"
+                      placeholder="0"
+                    />
+                  </div>
+                ),
                 service: (
                   <SelectCell
                     value={client.service}
@@ -559,7 +582,7 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
                 <tr
                   key={client.id}
                   className="group bg-[#212121] hover:bg-[#1e1e1e] transition-colors cursor-pointer"
-                  onClick={() => setSelectedClient({ id: client.id, name: client.name, photoUrl: client.photoUrl, status: client.status })}
+                  onClick={() => setSelectedClient({ id: client.id, name: client.name, photoUrl: client.photoUrl, status: client.status, paymentStatus: client.paymentStatus, amount: client.amount })}
                 >
                   {/* Name + Avatar */}
                   <td className="px-6 py-4">

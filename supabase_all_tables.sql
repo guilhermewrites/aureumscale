@@ -106,3 +106,30 @@ ALTER TABLE client_details ADD COLUMN IF NOT EXISTS ad_performance_notes TEXT NO
 ALTER TABLE client_details ADD COLUMN IF NOT EXISTS contact_email TEXT NOT NULL DEFAULT '';
 ALTER TABLE client_details ADD COLUMN IF NOT EXISTS client_since TEXT NOT NULL DEFAULT '';
 ALTER TABLE client_details ADD COLUMN IF NOT EXISTS funnel_url TEXT NOT NULL DEFAULT '';
+
+-- Add amount column to clients table:
+ALTER TABLE clients ADD COLUMN IF NOT EXISTS amount NUMERIC NOT NULL DEFAULT 0;
+
+-- ============================================================
+-- 5. BILLING_HISTORY TABLE
+-- ============================================================
+CREATE TABLE IF NOT EXISTS billing_history (
+  id             TEXT PRIMARY KEY,
+  client_id      TEXT NOT NULL,
+  user_id        TEXT NOT NULL,
+  invoice_number TEXT NOT NULL DEFAULT '',
+  amount         NUMERIC NOT NULL DEFAULT 0,
+  service        TEXT NOT NULL DEFAULT '',
+  status         TEXT NOT NULL DEFAULT 'Draft',
+  date_sent      TEXT NOT NULL DEFAULT '',
+  date_paid      TEXT NOT NULL DEFAULT '',
+  notes          TEXT NOT NULL DEFAULT '',
+  created_at     TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE billing_history ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "allow_all" ON billing_history
+  FOR ALL
+  USING (true)
+  WITH CHECK (true);
