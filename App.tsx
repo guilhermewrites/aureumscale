@@ -100,6 +100,58 @@ const App: React.FC = () => {
     load();
   }, [storagePrefix]);
 
+  // Load billing invoices for projected revenue
+  const [billingInvoices, setBillingInvoices] = useState<{ amount: number; status: string; date_due: string; date_paid: string }[]>([]);
+
+  useEffect(() => {
+    if (!supabase) return;
+    (async () => {
+      const { data } = await supabase
+        .from('billing_history')
+        .select('amount, status, date_due, date_paid')
+        .eq('user_id', storagePrefix);
+      if (data) setBillingInvoices(data);
+    })();
+  }, [storagePrefix]);
+
+  // Projected revenue this month = sum of unpaid invoices due this month + already paid this month
+  const projectedMonthlyRevenue = useMemo(() => {
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+
+    return billingInvoices.reduce((sum, inv) => {
+      // Already paid this month
+      if (inv.status === 'Paid' && inv.date_paid) {
+        const paid = new Date(inv.date_paid);
+        if (paid.getMonth() === currentMonth && paid.getFullYear() === currentYear) {
+          return sum + (inv.amount || 0);
+        }
+      }
+      // Due this month but not yet paid
+      if (inv.status !== 'Paid' && inv.status !== 'Cancelled' && inv.date_due) {
+        const due = new Date(inv.date_due);
+        if (due.getMonth() === currentMonth && due.getFullYear() === currentYear) {
+          return sum + (inv.amount || 0);
+        }
+      }
+      return sum;
+    }, 0);
+  }, [billingInvoices]);
+
+  const paidThisMonth = useMemo(() => {
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+    return billingInvoices
+      .filter(inv => {
+        if (inv.status !== 'Paid' || !inv.date_paid) return false;
+        const d = new Date(inv.date_paid);
+        return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+      })
+      .reduce((sum, inv) => sum + (inv.amount || 0), 0);
+  }, [billingInvoices]);
+
   // Content chart: multi-select platforms (empty = all)
   const [contentChartSelectedPlatforms, setContentChartSelectedPlatforms] = useState<Platform[]>([]);
   const toggleContentPlatform = (p: Platform) => {
@@ -372,11 +424,11 @@ const App: React.FC = () => {
             {/* Top Stat Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                <div className="bg-[#2f2f2f] border border-[#3a3a3a] p-6 rounded-xl">
-                  <p className="text-[#9B9B9B] text-sm font-medium mb-2">Total Revenue</p>
-                  <h3 className="text-3xl font-bold text-[#ECECEC] mb-1">${totalRevenue.toLocaleString()}</h3>
+                  <p className="text-[#9B9B9B] text-sm font-medium mb-2">Projected Revenue</p>
+                  <h3 className="text-3xl font-bold text-emerald-400 mb-1">${projectedMonthlyRevenue.toLocaleString()}</h3>
                   <div className="flex items-center gap-2 text-xs">
-                     <span className="text-[#ECECEC] font-medium">Live</span>
-                     <span className="text-[#666666]">updates from Finance</span>
+                     <span className="text-emerald-400 font-medium">${paidThisMonth.toLocaleString()} collected</span>
+                     <span className="text-[#666666]">· ${(projectedMonthlyRevenue - paidThisMonth).toLocaleString()} pending</span>
                   </div>
                </div>
 
@@ -399,11 +451,11 @@ const App: React.FC = () => {
                </div>
 
                <div className="bg-[#2f2f2f] border border-[#3a3a3a] p-6 rounded-xl">
-                  <p className="text-[#9B9B9B] text-sm font-medium mb-2">Team Spend (MTD)</p>
-                  <h3 className="text-3xl font-bold text-[#ECECEC] mb-1">$9,600.00</h3>
+                  <p className="text-[#9B9B9B] text-sm font-medium mb-2">Total Revenue</p>
+                  <h3 className="text-3xl font-bold text-[#ECECEC] mb-1">${totalRevenue.toLocaleString()}</h3>
                   <div className="flex items-center gap-2 text-xs">
-                     <span className="text-[#b4b4b4] font-medium">96%</span>
-                     <span className="text-[#666666]">of budget utilized</span>
+                     <span className="text-[#ECECEC] font-medium">Live</span>
+                     <span className="text-[#666666]">updates from Finance</span>
                   </div>
                </div>
             </div>

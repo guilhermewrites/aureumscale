@@ -340,11 +340,11 @@ const COLUMN_LABELS: Record<ColumnId, string> = {
 };
 
 const COLUMN_WIDTHS: Record<ColumnId, string> = {
-  payment: '15%',
-  amount: '11%',
-  service: '16%',
-  leader: '15%',
-  status: '13%',
+  payment: '14%',
+  amount: '13%',
+  service: '15%',
+  leader: '14%',
+  status: '14%',
 };
 
 interface ClientsManagerProps {

@@ -23,6 +23,7 @@ interface BillingInvoice {
   amount: number;
   service: string;
   status: 'Draft' | 'Sent' | 'Paid' | 'Overdue' | 'Cancelled';
+  date_due: string;
   date_sent: string;
   date_paid: string;
   notes: string;
@@ -324,6 +325,7 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
           amount: r.amount ?? 0,
           service: r.service ?? '',
           status: r.status ?? 'Draft',
+          date_due: r.date_due ?? '',
           date_sent: r.date_sent ?? '',
           date_paid: r.date_paid ?? '',
           notes: r.notes ?? '',
@@ -342,6 +344,7 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
       amount: client.amount ?? 0,
       service: client.service ?? '',
       status: 'Draft',
+      date_due: '',
       date_sent: '',
       date_paid: '',
       notes: '',
@@ -363,6 +366,7 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
       if ('amount' in patch) dbPatch.amount = patch.amount;
       if ('service' in patch) dbPatch.service = patch.service;
       if ('status' in patch) dbPatch.status = patch.status;
+      if ('date_due' in patch) dbPatch.date_due = patch.date_due;
       if ('date_sent' in patch) dbPatch.date_sent = patch.date_sent;
       if ('date_paid' in patch) dbPatch.date_paid = patch.date_paid;
       if ('notes' in patch) dbPatch.notes = patch.notes;
@@ -566,18 +570,19 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
                 ) : (
                   <div className="rounded-2xl overflow-hidden" style={{ background: '#161616' }}>
                     {/* Header */}
-                    <div className="grid grid-cols-[1fr_100px_120px_100px_100px_100px_40px] gap-2 px-5 py-3 text-[10px] font-semibold uppercase tracking-widest" style={{ color: '#444', borderBottom: '1px solid #222' }}>
+                    <div className="grid grid-cols-[1fr_90px_1fr_90px_90px_90px_90px_36px] gap-3 px-5 py-3 text-[10px] font-semibold uppercase tracking-widest" style={{ color: '#444', borderBottom: '1px solid #222' }}>
                       <span>Invoice #</span>
                       <span>Amount</span>
                       <span>Service</span>
                       <span>Status</span>
+                      <span>Due Date</span>
                       <span>Date Sent</span>
                       <span>Date Paid</span>
                       <span></span>
                     </div>
                     {/* Rows */}
                     {invoices.map(inv => (
-                      <div key={inv.id} className="grid grid-cols-[1fr_100px_120px_100px_100px_100px_40px] gap-2 px-5 py-3 items-center transition-colors"
+                      <div key={inv.id} className="grid grid-cols-[1fr_90px_1fr_90px_90px_90px_90px_36px] gap-3 px-5 py-3 items-center transition-colors"
                         style={{ borderBottom: '1px solid #222' }}
                         onMouseEnter={e => (e.currentTarget.style.background = '#1a1a1a')}
                         onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
@@ -589,7 +594,7 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
                           placeholder="INV-001"
                         />
                         <div className="flex items-center gap-0.5">
-                          <span className="text-[10px]" style={{ color: '#555' }}>$</span>
+                          <span className="text-[10px] text-emerald-500/60">$</span>
                           <input
                             type="text"
                             value={inv.amount ? inv.amount.toLocaleString() : ''}
@@ -597,7 +602,7 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
                               const raw = e.target.value.replace(/[^0-9.]/g, '');
                               updateInvoice(inv.id, { amount: parseFloat(raw) || 0 });
                             }}
-                            className="bg-transparent text-xs font-medium text-[#ECECEC] focus:outline-none w-full placeholder-[#333]"
+                            className="bg-transparent text-xs font-medium text-emerald-400 focus:outline-none w-full placeholder-[#333]"
                             placeholder="0"
                           />
                         </div>
@@ -610,6 +615,12 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
                         <InvoiceStatusSelect
                           value={inv.status}
                           onChange={v => updateInvoice(inv.id, { status: v })}
+                        />
+                        <input
+                          type="date" value={inv.date_due}
+                          onChange={e => updateInvoice(inv.id, { date_due: e.target.value })}
+                          className="bg-transparent text-[10px] text-[#ECECEC] focus:outline-none w-full"
+                          style={{ colorScheme: 'dark' }}
                         />
                         <input
                           type="date" value={inv.date_sent}

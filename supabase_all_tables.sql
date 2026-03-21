@@ -128,6 +128,9 @@ CREATE TABLE IF NOT EXISTS billing_history (
   created_at     TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- Add due date column to billing_history:
+ALTER TABLE billing_history ADD COLUMN IF NOT EXISTS date_due TEXT NOT NULL DEFAULT '';
+
 ALTER TABLE billing_history ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "allow_all" ON billing_history
