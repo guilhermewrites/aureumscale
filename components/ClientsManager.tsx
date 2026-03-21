@@ -390,23 +390,23 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
 
       {/* Table */}
       <div className="rounded-xl border border-[#2f2f2f] overflow-visible">
-        <table className="w-full table-fixed text-sm" style={{ borderCollapse: 'separate', borderSpacing: 0 }}>
+        <table className="w-full text-sm" style={{ borderCollapse: 'separate', borderSpacing: 0, tableLayout: 'fixed' }}>
           <colgroup>
-            <col style={{ width: '30%' }} />
-            <col style={{ width: '15%' }} />
-            <col style={{ width: '21%' }} />
+            <col style={{ width: '25%' }} />
             <col style={{ width: '17%' }} />
-            <col style={{ width: '13%' }} />
-            <col style={{ width: '4%' }} />
+            <col style={{ width: '20%' }} />
+            <col style={{ width: '18%' }} />
+            <col style={{ width: '14%' }} />
+            <col style={{ width: '6%' }} />
           </colgroup>
           <thead>
             <tr className="border-b border-[#2f2f2f]" style={{ background: '#1a1a1a' }}>
-              <th className="text-left px-5 py-3 text-xs font-semibold text-[#555] uppercase tracking-wider rounded-tl-xl">Name</th>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-[#555] uppercase tracking-wider">Payment</th>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-[#555] uppercase tracking-wider">Service</th>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-[#555] uppercase tracking-wider">Leader</th>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-[#555] uppercase tracking-wider">Status</th>
-              <th className="px-2 py-3 rounded-tr-xl"></th>
+              <th className="text-left px-6 py-3.5 text-xs font-semibold text-[#555] uppercase tracking-wider rounded-tl-xl">Name</th>
+              <th className="text-left px-6 py-3.5 text-xs font-semibold text-[#555] uppercase tracking-wider">Payment</th>
+              <th className="text-left px-6 py-3.5 text-xs font-semibold text-[#555] uppercase tracking-wider">Service</th>
+              <th className="text-left px-6 py-3.5 text-xs font-semibold text-[#555] uppercase tracking-wider">Leader</th>
+              <th className="text-left px-6 py-3.5 text-xs font-semibold text-[#555] uppercase tracking-wider">Status</th>
+              <th className="px-3 py-3.5 rounded-tr-xl"></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-[#2f2f2f]">
@@ -417,7 +417,7 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
                 onClick={() => setSelectedClient({ id: client.id, name: client.name, photoUrl: client.photoUrl })}
               >
                 {/* Name + Avatar */}
-                <td className="px-5 py-3.5">
+                <td className="px-6 py-4">
                   <div className="flex items-center gap-3">
                     <div onClick={e => e.stopPropagation()}>
                       <Avatar
@@ -436,7 +436,7 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
                   </div>
                 </td>
                 {/* Payment Status */}
-                <td className="px-4 py-3.5" onClick={e => e.stopPropagation()}>
+                <td className="px-6 py-4" onClick={e => e.stopPropagation()}>
                   <SelectCell
                     value={client.paymentStatus}
                     options={PAYMENT_STATUSES}
@@ -445,7 +445,7 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
                   />
                 </td>
                 {/* Service */}
-                <td className="px-4 py-3.5" onClick={e => e.stopPropagation()}>
+                <td className="px-6 py-4" onClick={e => e.stopPropagation()}>
                   <SelectCell
                     value={client.service}
                     options={SERVICES}
@@ -453,7 +453,7 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
                   />
                 </td>
                 {/* Leader */}
-                <td className="px-4 py-3.5" onClick={e => e.stopPropagation()}>
+                <td className="px-6 py-4" onClick={e => e.stopPropagation()}>
                   <SelectCell
                     value={client.leader}
                     options={LEADERS}
@@ -461,7 +461,7 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
                   />
                 </td>
                 {/* Status */}
-                <td className="px-4 py-3.5" onClick={e => e.stopPropagation()}>
+                <td className="px-6 py-4" onClick={e => e.stopPropagation()}>
                   <SelectCell
                     value={client.status}
                     options={CLIENT_STATUSES}
@@ -470,7 +470,7 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
                   />
                 </td>
                 {/* Delete */}
-                <td className="px-3 py-3.5 text-right">
+                <td className="px-3 py-4 text-center">
                   <button
                     onClick={e => { e.stopPropagation(); deleteClient(client.id); }}
                     className="opacity-0 group-hover:opacity-100 text-[#555] hover:text-red-400 transition-all"
