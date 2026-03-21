@@ -386,13 +386,15 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
                 onClick={() => setSelectedClient({ id: client.id, name: client.name, photoUrl: client.photoUrl })}
               >
                 {/* Name + Avatar */}
-                <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
+                <td className="px-4 py-3">
                   <div className="flex items-center gap-3">
-                    <Avatar
-                      name={client.name}
-                      photoUrl={client.photoUrl}
-                      onPhotoChange={url => updateClient(client.id, { photoUrl: url })}
-                    />
+                    <div onClick={e => e.stopPropagation()}>
+                      <Avatar
+                        name={client.name}
+                        photoUrl={client.photoUrl}
+                        onPhotoChange={url => updateClient(client.id, { photoUrl: url })}
+                      />
+                    </div>
                     <input
                       value={client.name}
                       onChange={e => updateClientName(client.id, e.target.value)}
@@ -403,43 +405,51 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
                   </div>
                 </td>
                 {/* Payment Status */}
-                <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
-                  <SelectCell
-                    value={client.paymentStatus}
-                    options={PAYMENT_STATUSES}
-                    onChange={v => updateClient(client.id, { paymentStatus: v })}
-                    colorMap={paymentColors}
-                  />
+                <td className="px-4 py-3">
+                  <div onClick={e => e.stopPropagation()}>
+                    <SelectCell
+                      value={client.paymentStatus}
+                      options={PAYMENT_STATUSES}
+                      onChange={v => updateClient(client.id, { paymentStatus: v })}
+                      colorMap={paymentColors}
+                    />
+                  </div>
                 </td>
                 {/* Service */}
-                <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
-                  <SelectCell
-                    value={client.service}
-                    options={SERVICES}
-                    onChange={v => updateClient(client.id, { service: v })}
-                  />
+                <td className="px-4 py-3">
+                  <div onClick={e => e.stopPropagation()}>
+                    <SelectCell
+                      value={client.service}
+                      options={SERVICES}
+                      onChange={v => updateClient(client.id, { service: v })}
+                    />
+                  </div>
                 </td>
                 {/* Leader */}
-                <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
-                  <SelectCell
-                    value={client.leader}
-                    options={LEADERS}
-                    onChange={v => updateClient(client.id, { leader: v })}
-                  />
+                <td className="px-4 py-3">
+                  <div onClick={e => e.stopPropagation()}>
+                    <SelectCell
+                      value={client.leader}
+                      options={LEADERS}
+                      onChange={v => updateClient(client.id, { leader: v })}
+                    />
+                  </div>
                 </td>
                 {/* Status */}
-                <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
-                  <SelectCell
-                    value={client.status}
-                    options={CLIENT_STATUSES}
-                    onChange={v => updateClient(client.id, { status: v })}
-                    colorMap={statusColors}
-                  />
+                <td className="px-4 py-3">
+                  <div onClick={e => e.stopPropagation()}>
+                    <SelectCell
+                      value={client.status}
+                      options={CLIENT_STATUSES}
+                      onChange={v => updateClient(client.id, { status: v })}
+                      colorMap={statusColors}
+                    />
+                  </div>
                 </td>
                 {/* Delete */}
-                <td className="px-4 py-3 text-right" onClick={e => e.stopPropagation()}>
+                <td className="px-4 py-3 text-right">
                   <button
-                    onClick={() => deleteClient(client.id)}
+                    onClick={e => { e.stopPropagation(); deleteClient(client.id); }}
                     className="opacity-0 group-hover:opacity-100 text-[#666666] hover:text-red-400 transition-all"
                   >
                     <Trash2 size={15} />
