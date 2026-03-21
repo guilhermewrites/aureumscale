@@ -55,13 +55,47 @@ const TABS = [
 ] as const;
 type Tab = typeof TABS[number]['id'];
 
-const SOCIAL_LIST: { key: keyof SocialPlatforms; label: string; bg: string; color: string; abbr: string }[] = [
-  { key: 'instagram', label: 'Instagram', bg: '#E1306C22', color: '#E1306C', abbr: 'IG' },
-  { key: 'tiktok',    label: 'TikTok',    bg: '#69C9D022', color: '#69C9D0', abbr: 'TT' },
-  { key: 'youtube',   label: 'YouTube',   bg: '#FF000022', color: '#FF4444', abbr: 'YT' },
-  { key: 'twitter',   label: 'Twitter/X', bg: '#1DA1F222', color: '#1DA1F2', abbr: 'X' },
-  { key: 'linkedin',  label: 'LinkedIn',  bg: '#0A66C222', color: '#0A66C2', abbr: 'LI' },
-  { key: 'facebook',  label: 'Facebook',  bg: '#1877F222', color: '#1877F2', abbr: 'FB' },
+// SVG icons for each platform
+const InstagramIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+    <rect x="2" y="2" width="20" height="20" rx="6" stroke="currentColor" strokeWidth="2"/>
+    <circle cx="12" cy="12" r="5" stroke="currentColor" strokeWidth="2"/>
+    <circle cx="17.5" cy="6.5" r="1.5" fill="currentColor"/>
+  </svg>
+);
+const TikTokIcon = () => (
+  <svg width="16" height="18" viewBox="0 0 16 18" fill="currentColor">
+    <path d="M12.5 0C12.5 2.5 14.5 4 16 4.2V7.2C14.5 7.2 13 6.5 12.5 6V12.5C12.5 16 9.5 18 6.5 17.5C3.5 17 1 14.5 1.5 11.5C2 8.5 5 7 7 7.5V10.8C6 10.5 4.5 11 4.2 12.5C3.9 14 5 15.2 6.5 15.2C8 15.2 9.2 14 9.2 12.3V0H12.5Z"/>
+  </svg>
+);
+const YouTubeIcon = () => (
+  <svg width="20" height="16" viewBox="0 0 24 18" fill="currentColor">
+    <path d="M23.5 3.5C23.2 2.2 22.2 1.2 21 .9 19.2.4 12 .4 12 .4S4.8.4 3 .9C1.8 1.2.8 2.2.5 3.5.1 5.3.1 9 .1 9s0 3.7.4 5.5c.3 1.3 1.3 2.3 2.5 2.6C4.8 17.6 12 17.6 12 17.6s7.2 0 9-0.5c1.2-.3 2.2-1.3 2.5-2.6.4-1.8.4-5.5.4-5.5s0-3.7-.4-5.5zM9.6 12.8V5.2L15.8 9l-6.2 3.8z"/>
+  </svg>
+);
+const XIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+  </svg>
+);
+const LinkedInIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+  </svg>
+);
+const FacebookIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+  </svg>
+);
+
+const SOCIAL_LIST: { key: keyof SocialPlatforms; label: string; color: string; icon: React.FC }[] = [
+  { key: 'instagram', label: 'Instagram', color: '#E1306C', icon: InstagramIcon },
+  { key: 'tiktok',    label: 'TikTok',    color: '#ECECEC', icon: TikTokIcon },
+  { key: 'youtube',   label: 'YouTube',   color: '#FF4444', icon: YouTubeIcon },
+  { key: 'twitter',   label: 'Twitter/X', color: '#ECECEC', icon: XIcon },
+  { key: 'linkedin',  label: 'LinkedIn',  color: '#0A66C2', icon: LinkedInIcon },
+  { key: 'facebook',  label: 'Facebook',  color: '#1877F2', icon: FacebookIcon },
 ];
 
 const ADS_METRICS: { key: keyof AdsPerformance; label: string; prefix?: string }[] = [
@@ -385,15 +419,14 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
             {activeTab === 'Social' && (
               <Block title="Platforms">
                 <div className="rounded-2xl overflow-hidden" style={{ border: '1px solid #252525' }}>
-                  {SOCIAL_LIST.map(({ key, label, bg, color, abbr }, i) => (
+                  {SOCIAL_LIST.map(({ key, label, color, icon: Icon }, i) => (
                     <div key={key} className="flex items-center gap-4 px-5 py-3.5 transition-colors"
                       style={{ borderTop: i === 0 ? 'none' : '1px solid #252525', background: 'transparent' }}
                       onMouseEnter={e => (e.currentTarget.style.background = '#202020')}
                       onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
                     >
-                      <div className="w-7 h-7 rounded-lg flex items-center justify-center text-[10px] font-black flex-shrink-0"
-                        style={{ background: bg, color }}>
-                        {abbr}
+                      <div className="w-7 h-7 flex items-center justify-center flex-shrink-0" style={{ color }}>
+                        <Icon />
                       </div>
                       <span className="text-sm font-medium w-24 flex-shrink-0" style={{ color: '#555' }}>{label}</span>
                       <input type="text" value={details.social_platforms[key]}
