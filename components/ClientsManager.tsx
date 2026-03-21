@@ -393,7 +393,7 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
   }
 
   return (
-    <div className="p-6 space-y-4">
+    <div className="space-y-4">
       {/* Header — tabs + add button */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-1 p-1 rounded-xl" style={{ background: '#1a1a1a' }}>
