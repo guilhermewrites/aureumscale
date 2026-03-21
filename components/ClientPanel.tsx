@@ -390,7 +390,7 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
   const card = { background: '#1c1c1c', borderRadius: 20 };
 
   return (
-    <div className="flex w-full h-full overflow-hidden gap-6" style={{ background: '#131313', borderRadius: 20 }}>
+    <div className="flex w-full h-full overflow-hidden gap-6 p-6" style={{ background: '#131313', borderRadius: 20 }}>
 
       {/* ── LEFT CARD ─────────────────────────────────────────────────────────── */}
       <div
@@ -510,7 +510,7 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
       </div>
 
       {/* ── RIGHT CONTENT ─────────────────────────────────────────────────────── */}
-      <div className="flex-1 overflow-y-auto py-6 pr-6">
+      <div className="flex-1 overflow-y-auto">
         {loading ? (
           <div className="flex items-center justify-center h-full gap-2.5" style={{ color: '#444' }}>
             <Loader2 size={20} className="animate-spin" />
