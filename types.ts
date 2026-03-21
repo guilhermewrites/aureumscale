@@ -42,6 +42,12 @@ export interface AdMetric {
 
 export enum NavigationItem {
   DASHBOARD = 'Dashboard',
+  CLIENTS = 'Clients',
+  SWIPEFILE = 'Swipe File',
+  TEAM = 'Team',
+  CONTRACTS = 'Contracts',
+  FINANCE = 'Finance',
+  // Legacy (kept to avoid breaking existing data)
   PLANNER = 'Planner',
   CONTENT = 'Content',
   ADS = 'Ads',
@@ -50,9 +56,6 @@ export enum NavigationItem {
   PAGES = 'Pages',
   NEWSLETTER = 'Newsletter',
   WEBINAR = 'Webinar',
-  TEAM = 'Team',
-  FINANCE = 'Finance',
-  SWIPEFILE = 'Swipefile'
 }
 
 // --- User / Workspace ---

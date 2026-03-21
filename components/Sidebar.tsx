@@ -1,23 +1,17 @@
 import React, { useState, useRef } from 'react';
 import {
   LayoutDashboard,
-  FileText,
-  Megaphone,
-  PlaySquare,
-  Layers,
-  Mail,
-  MonitorPlay,
-  Users,
-  DollarSign,
+  Briefcase,
   Library,
-  GitBranch,
+  Users,
+  ScrollText,
+  DollarSign,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
   Check,
   Camera,
   Settings,
-  ClipboardList
 } from 'lucide-react';
 import { NavigationItem, AppUser } from '../types';
 import useLocalStorage from '../hooks/useLocalStorage';
@@ -116,16 +110,10 @@ const Sidebar: React.FC<SidebarProps> = ({ activeItem, onNavigate, activeUserId,
 
   const menuItems = [
     { id: NavigationItem.DASHBOARD, icon: LayoutDashboard, label: 'Dashboard' },
-    { id: NavigationItem.PLANNER, icon: ClipboardList, label: 'Planner' },
-    { id: NavigationItem.CONTENT, icon: FileText, label: 'Content' },
-    { id: NavigationItem.ADS, icon: Megaphone, label: 'Ads' },
-    { id: NavigationItem.FUNNELS, icon: GitBranch, label: 'Funnels' },
-    { id: NavigationItem.SWIPEFILE, icon: Library, label: 'Swipefile' },
-    { id: NavigationItem.VSLS, icon: PlaySquare, label: 'VSLs' },
-    { id: NavigationItem.PAGES, icon: Layers, label: 'Pages' },
-    { id: NavigationItem.NEWSLETTER, icon: Mail, label: 'Newsletter' },
-    { id: NavigationItem.WEBINAR, icon: MonitorPlay, label: 'Webinar' },
+    { id: NavigationItem.CLIENTS, icon: Briefcase, label: 'Clients' },
+    { id: NavigationItem.SWIPEFILE, icon: Library, label: 'Swipe File' },
     { id: NavigationItem.TEAM, icon: Users, label: 'Team' },
+    { id: NavigationItem.CONTRACTS, icon: ScrollText, label: 'Contracts' },
     { id: NavigationItem.FINANCE, icon: DollarSign, label: 'Finance' },
   ];
 
