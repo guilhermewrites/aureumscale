@@ -1,32 +1,23 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { ArrowLeft, ExternalLink, Plus, Trash2, Loader2, BarChart2, Share2, GitBranch, FileText, StickyNote, LayoutDashboard } from 'lucide-react';
+import {
+  ArrowLeft, ExternalLink, Plus, Trash2, Loader2,
+  BarChart2, Share2, GitBranch, FileText, StickyNote, LayoutDashboard,
+} from 'lucide-react';
 import { supabase } from '../services/supabaseClient';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface AdsPerformance {
-  roas: string;
-  spend: string;
-  impressions: string;
-  ctr: string;
-  conversions: string;
-  revenue: string;
+  roas: string; spend: string; impressions: string;
+  ctr: string; conversions: string; revenue: string;
 }
 
 interface SocialPlatforms {
-  instagram: string;
-  tiktok: string;
-  youtube: string;
-  twitter: string;
-  linkedin: string;
-  facebook: string;
+  instagram: string; tiktok: string; youtube: string;
+  twitter: string; linkedin: string; facebook: string;
 }
 
-interface ScriptedAd {
-  id: string;
-  title: string;
-  content: string;
-}
+interface ScriptedAd { id: string; title: string; content: string; }
 
 interface ClientDetails {
   ads_performance: AdsPerformance;
@@ -40,20 +31,19 @@ interface ClientDetails {
   ad_performance_notes: string;
 }
 
+const EMPTY_ADS: AdsPerformance = { roas: '', spend: '', impressions: '', ctr: '', conversions: '', revenue: '' };
+const EMPTY_SOCIAL: SocialPlatforms = { instagram: '', tiktok: '', youtube: '', twitter: '', linkedin: '', facebook: '' };
+
 const DEFAULT_DETAILS: ClientDetails = {
-  ads_performance: { roas: '', spend: '', impressions: '', ctr: '', conversions: '', revenue: '' },
-  social_platforms: { instagram: '', tiktok: '', youtube: '', twitter: '', linkedin: '', facebook: '' },
-  strategy_overview: '',
-  google_drive_url: '',
-  funnel_notes: '',
-  funnel_url: '',
-  scripted_ads: [],
-  notes: '',
-  ad_performance_notes: '',
+  ads_performance: EMPTY_ADS,
+  social_platforms: EMPTY_SOCIAL,
+  strategy_overview: '', google_drive_url: '',
+  funnel_notes: '', funnel_url: '',
+  scripted_ads: [], notes: '', ad_performance_notes: '',
 };
 
 export interface ClientPanelProps {
-  client: { id: string; name: string; photoUrl?: string } | null;
+  client: { id: string; name: string; photoUrl?: string; service?: string } | null;
   storagePrefix: string;
   onClose: () => void;
 }
@@ -67,45 +57,42 @@ function getInitials(name: string) {
 type SaveStatus = 'idle' | 'saving' | 'saved';
 
 const TABS = [
-  { id: 'Overview',  label: 'Overview',  icon: LayoutDashboard },
-  { id: 'Ads',       label: 'Ads',       icon: BarChart2 },
-  { id: 'Social',    label: 'Social',    icon: Share2 },
-  { id: 'Funnel',    label: 'Funnel',    icon: GitBranch },
-  { id: 'Scripts',   label: 'Scripts',   icon: FileText },
-  { id: 'Notes',     label: 'Notes',     icon: StickyNote },
+  { id: 'Overview', label: 'Overview',  Icon: LayoutDashboard },
+  { id: 'Ads',      label: 'Ads',       Icon: BarChart2 },
+  { id: 'Social',   label: 'Social',    Icon: Share2 },
+  { id: 'Funnel',   label: 'Funnel',    Icon: GitBranch },
+  { id: 'Scripts',  label: 'Scripts',   Icon: FileText },
+  { id: 'Notes',    label: 'Notes',     Icon: StickyNote },
 ] as const;
-
 type Tab = typeof TABS[number]['id'];
 
-const SOCIAL_PLATFORMS: { key: keyof SocialPlatforms; label: string; emoji: string }[] = [
-  { key: 'instagram', label: 'Instagram', emoji: '📸' },
-  { key: 'tiktok',    label: 'TikTok',    emoji: '🎵' },
-  { key: 'youtube',   label: 'YouTube',   emoji: '▶️' },
-  { key: 'twitter',   label: 'Twitter/X', emoji: '🐦' },
-  { key: 'linkedin',  label: 'LinkedIn',  emoji: '💼' },
-  { key: 'facebook',  label: 'Facebook',  emoji: '📘' },
+const SOCIAL_LIST: { key: keyof SocialPlatforms; label: string; color: string; letter: string }[] = [
+  { key: 'instagram', label: 'Instagram', color: '#E1306C', letter: 'IG' },
+  { key: 'tiktok',    label: 'TikTok',    color: '#69C9D0', letter: 'TT' },
+  { key: 'youtube',   label: 'YouTube',   color: '#FF0000', letter: 'YT' },
+  { key: 'twitter',   label: 'Twitter/X', color: '#1DA1F2', letter: 'X' },
+  { key: 'linkedin',  label: 'LinkedIn',  color: '#0A66C2', letter: 'LI' },
+  { key: 'facebook',  label: 'Facebook',  color: '#1877F2', letter: 'FB' },
 ];
 
-const ADS_METRICS: { key: keyof AdsPerformance; label: string }[] = [
-  { key: 'roas',        label: 'ROAS' },
-  { key: 'spend',       label: 'Spend' },
-  { key: 'impressions', label: 'Impressions' },
-  { key: 'ctr',         label: 'CTR' },
-  { key: 'conversions', label: 'Conversions' },
-  { key: 'revenue',     label: 'Revenue' },
+const ADS_METRICS: { key: keyof AdsPerformance; label: string; prefix?: string }[] = [
+  { key: 'roas',        label: 'ROAS',        prefix: '' },
+  { key: 'spend',       label: 'Ad Spend',    prefix: '$' },
+  { key: 'revenue',     label: 'Revenue',     prefix: '$' },
+  { key: 'impressions', label: 'Impressions', prefix: '' },
+  { key: 'ctr',         label: 'CTR',         prefix: '' },
+  { key: 'conversions', label: 'Conversions', prefix: '' },
 ];
 
 // ─── Auto-resize textarea ─────────────────────────────────────────────────────
 
-interface AutoTextareaProps {
+function AutoTextarea({ value, onChange, className, placeholder, style }: {
   value: string;
   onChange?: React.ChangeEventHandler<HTMLTextAreaElement>;
   className?: string;
   placeholder?: string;
   style?: React.CSSProperties;
-}
-
-function AutoTextarea({ value, className, ...rest }: AutoTextareaProps) {
+}) {
   const ref = useRef<HTMLTextAreaElement>(null);
   useEffect(() => {
     const el = ref.current;
@@ -113,7 +100,13 @@ function AutoTextarea({ value, className, ...rest }: AutoTextareaProps) {
     el.style.height = 'auto';
     el.style.height = `${el.scrollHeight}px`;
   }, [value]);
-  return <textarea ref={ref} value={value} className={className} rows={4} {...rest} />;
+  return (
+    <textarea
+      ref={ref} value={value} onChange={onChange}
+      className={className} placeholder={placeholder}
+      rows={4} style={style}
+    />
+  );
 }
 
 // ─── Main Component ───────────────────────────────────────────────────────────
@@ -127,7 +120,7 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const savedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // ─── Load ─────────────────────────────────────────────────────────────────
+  // ─── Load ──────────────────────────────────────────────────────────────────
 
   useEffect(() => {
     if (!client) return;
@@ -138,49 +131,34 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
 
     const load = async () => {
       if (!supabase) { setLoading(false); return; }
-
       try {
         const { data, error } = await supabase
-          .from('client_details')
-          .select('*')
-          .eq('client_id', client.id)
-          .single();
-
+          .from('client_details').select('*').eq('client_id', client.id).single();
         if (cancelled) return;
-
-        if (error && error.code !== 'PGRST116') {
-          console.error('ClientPanel load error:', error);
-          setLoading(false);
-          return;
-        }
-
+        if (error && error.code !== 'PGRST116') { setLoading(false); return; }
         if (!data) {
           await supabase.from('client_details').insert({
-            client_id: client.id,
-            user_id: storagePrefix,
-            ...DEFAULT_DETAILS,
-            scripted_ads: [],
+            client_id: client.id, user_id: storagePrefix, ...DEFAULT_DETAILS, scripted_ads: [],
           });
           if (!cancelled) setLoading(false);
           return;
         }
-
         if (!cancelled) {
           setDetails({
-            ads_performance:     data.ads_performance     ?? DEFAULT_DETAILS.ads_performance,
-            social_platforms:    data.social_platforms    ?? DEFAULT_DETAILS.social_platforms,
-            strategy_overview:   data.strategy_overview   ?? '',
-            google_drive_url:    data.google_drive_url    ?? '',
-            funnel_notes:        data.funnel_notes        ?? '',
-            funnel_url:          data.funnel_url          ?? '',
-            scripted_ads:        data.scripted_ads        ?? [],
-            notes:               data.notes               ?? '',
+            ads_performance:      data.ads_performance      ?? EMPTY_ADS,
+            social_platforms:     data.social_platforms     ?? EMPTY_SOCIAL,
+            strategy_overview:    data.strategy_overview    ?? '',
+            google_drive_url:     data.google_drive_url     ?? '',
+            funnel_notes:         data.funnel_notes         ?? '',
+            funnel_url:           data.funnel_url           ?? '',
+            scripted_ads:         data.scripted_ads         ?? [],
+            notes:                data.notes                ?? '',
             ad_performance_notes: data.ad_performance_notes ?? '',
           });
           setLoading(false);
         }
       } catch (err) {
-        console.error('ClientPanel unexpected error:', err);
+        console.error('ClientPanel load error:', err);
         if (!cancelled) setLoading(false);
       }
     };
@@ -196,73 +174,56 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
     setSaveStatus('saving');
     try {
       const { error } = await supabase.from('client_details').upsert({
-        client_id: client.id,
-        user_id: storagePrefix,
-        ...next,
+        client_id: client.id, user_id: storagePrefix, ...next,
         updated_at: new Date().toISOString(),
       });
       if (error) throw error;
       setSaveStatus('saved');
       if (savedTimerRef.current) clearTimeout(savedTimerRef.current);
-      savedTimerRef.current = setTimeout(() => setSaveStatus('idle'), 2000);
+      savedTimerRef.current = setTimeout(() => setSaveStatus('idle'), 2500);
     } catch (err) {
       console.error('ClientPanel save error:', err);
       setSaveStatus('idle');
     }
   }, [client, storagePrefix]);
 
-  const scheduleAutoSave = useCallback((next: ClientDetails) => {
+  const schedule = useCallback((next: ClientDetails) => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => saveDetails(next), 700);
+    debounceRef.current = setTimeout(() => saveDetails(next), 800);
   }, [saveDetails]);
 
-  const updateField = useCallback(<K extends keyof ClientDetails>(key: K, value: ClientDetails[K]) => {
-    setDetails(prev => {
-      const next = { ...prev, [key]: value };
-      scheduleAutoSave(next);
-      return next;
-    });
-  }, [scheduleAutoSave]);
+  const set = useCallback(<K extends keyof ClientDetails>(key: K, value: ClientDetails[K]) => {
+    setDetails(prev => { const n = { ...prev, [key]: value }; schedule(n); return n; });
+  }, [schedule]);
 
-  const updateAdsPerformance = useCallback((key: keyof AdsPerformance, value: string) => {
-    setDetails(prev => {
-      const next = { ...prev, ads_performance: { ...prev.ads_performance, [key]: value } };
-      scheduleAutoSave(next);
-      return next;
-    });
-  }, [scheduleAutoSave]);
+  const setAds = useCallback((key: keyof AdsPerformance, value: string) => {
+    setDetails(prev => { const n = { ...prev, ads_performance: { ...prev.ads_performance, [key]: value } }; schedule(n); return n; });
+  }, [schedule]);
 
-  const updateSocialPlatform = useCallback((key: keyof SocialPlatforms, value: string) => {
-    setDetails(prev => {
-      const next = { ...prev, social_platforms: { ...prev.social_platforms, [key]: value } };
-      scheduleAutoSave(next);
-      return next;
-    });
-  }, [scheduleAutoSave]);
+  const setSocial = useCallback((key: keyof SocialPlatforms, value: string) => {
+    setDetails(prev => { const n = { ...prev, social_platforms: { ...prev.social_platforms, [key]: value } }; schedule(n); return n; });
+  }, [schedule]);
 
   const addScript = useCallback(() => {
     setDetails(prev => {
-      const next: ClientDetails = { ...prev, scripted_ads: [...prev.scripted_ads, { id: crypto.randomUUID(), title: 'New Script', content: '' }] };
-      scheduleAutoSave(next);
-      return next;
+      const n: ClientDetails = { ...prev, scripted_ads: [...prev.scripted_ads, { id: crypto.randomUUID(), title: '', content: '' }] };
+      schedule(n); return n;
     });
-  }, [scheduleAutoSave]);
+  }, [schedule]);
 
-  const updateScript = useCallback((id: string, patch: Partial<ScriptedAd>) => {
+  const patchScript = useCallback((id: string, patch: Partial<ScriptedAd>) => {
     setDetails(prev => {
-      const next: ClientDetails = { ...prev, scripted_ads: prev.scripted_ads.map(s => s.id === id ? { ...s, ...patch } : s) };
-      scheduleAutoSave(next);
-      return next;
+      const n: ClientDetails = { ...prev, scripted_ads: prev.scripted_ads.map(s => s.id === id ? { ...s, ...patch } : s) };
+      schedule(n); return n;
     });
-  }, [scheduleAutoSave]);
+  }, [schedule]);
 
-  const deleteScript = useCallback((id: string) => {
+  const removeScript = useCallback((id: string) => {
     setDetails(prev => {
-      const next: ClientDetails = { ...prev, scripted_ads: prev.scripted_ads.filter(s => s.id !== id) };
-      scheduleAutoSave(next);
-      return next;
+      const n: ClientDetails = { ...prev, scripted_ads: prev.scripted_ads.filter(s => s.id !== id) };
+      schedule(n); return n;
     });
-  }, [scheduleAutoSave]);
+  }, [schedule]);
 
   useEffect(() => () => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
@@ -271,284 +232,340 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
 
   if (!client) return null;
 
-  const ta = 'bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl text-[#ECECEC] text-sm p-4 w-full focus:outline-none focus:border-[#444] resize-none leading-relaxed';
-  const inp = 'bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl text-[#ECECEC] text-sm px-4 py-2.5 w-full focus:outline-none focus:border-[#444]';
+  // ─── Shared styles ─────────────────────────────────────────────────────────
+
+  const ta = [
+    'w-full resize-none focus:outline-none',
+    'bg-[#181818] border border-[#252525] rounded-2xl',
+    'text-[#DEDEDE] text-sm leading-relaxed p-4',
+    'placeholder-[#383838] focus:border-[#383838] transition-colors',
+  ].join(' ');
+
+  const inp = [
+    'w-full focus:outline-none',
+    'bg-[#181818] border border-[#252525] rounded-2xl',
+    'text-[#DEDEDE] text-sm px-4 py-3',
+    'placeholder-[#383838] focus:border-[#383838] transition-colors',
+  ].join(' ');
 
   return (
-    <div className="flex flex-col w-full h-full" style={{ background: '#111111' }}>
+    <div className="flex w-full h-full overflow-hidden" style={{ background: '#0f0f0f' }}>
 
-      {/* ── Top Header ──────────────────────────────────────────────────────── */}
-      <div className="flex items-center justify-between px-8 py-4 border-b border-[#222] flex-shrink-0" style={{ background: '#161616' }}>
-        <div className="flex items-center gap-4">
-          {/* Back button */}
+      {/* ── Left Sidebar ────────────────────────────────────────────────────── */}
+      <aside
+        className="flex flex-col flex-shrink-0 h-full overflow-y-auto"
+        style={{ width: 240, background: '#141414', borderRight: '1px solid #1e1e1e' }}
+      >
+        {/* Back button */}
+        <div className="px-5 pt-6 pb-4 flex-shrink-0">
           <button
             onClick={onClose}
-            className="flex items-center gap-2 text-[#666] hover:text-[#ECECEC] transition-colors text-sm font-medium"
+            className="flex items-center justify-center w-8 h-8 rounded-xl transition-colors hover:bg-[#222]"
+            style={{ color: '#555' }}
+            title="Go back"
           >
-            <ArrowLeft size={16} />
-            <span>Clients</span>
+            <ArrowLeft size={17} />
           </button>
+        </div>
 
-          <span className="text-[#333]">/</span>
+        {/* Client identity */}
+        <div className="px-5 pb-6 border-b flex-shrink-0" style={{ borderColor: '#1e1e1e' }}>
+          <div
+            className="w-14 h-14 rounded-2xl flex items-center justify-center font-bold text-lg mb-3 overflow-hidden flex-shrink-0"
+            style={{ background: '#252525', color: '#ECECEC' }}
+          >
+            {client.photoUrl
+              ? <img src={client.photoUrl} alt={client.name} className="w-full h-full object-cover" />
+              : getInitials(client.name)
+            }
+          </div>
+          <p className="text-[#ECECEC] font-semibold text-sm leading-snug">{client.name}</p>
+          {client.service && (
+            <p className="text-[#555] text-xs mt-1">{client.service}</p>
+          )}
 
-          {/* Client avatar + name */}
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-full bg-[#2a2a2a] flex items-center justify-center text-[#ECECEC] text-xs font-bold flex-shrink-0 overflow-hidden border border-[#333]">
-              {client.photoUrl
-                ? <img src={client.photoUrl} alt={client.name} className="w-full h-full object-cover" />
-                : getInitials(client.name)
-              }
-            </div>
-            <div>
-              <h1 className="text-[#ECECEC] font-semibold text-base leading-none">{client.name}</h1>
-              <p className="text-[#555] text-xs mt-0.5">Client Workspace</p>
-            </div>
+          {/* Save status */}
+          <div className="mt-3 h-5">
+            {saveStatus !== 'idle' && (
+              <span className={`text-xs flex items-center gap-1.5 ${saveStatus === 'saving' ? 'text-[#555]' : 'text-emerald-500'}`}>
+                {saveStatus === 'saving'
+                  ? <><Loader2 size={11} className="animate-spin" /> Saving…</>
+                  : '✓ Saved'
+                }
+              </span>
+            )}
           </div>
         </div>
 
-        {/* Save status */}
-        <span className={`text-xs transition-opacity duration-300 ${
-          saveStatus === 'idle' ? 'opacity-0' :
-          saveStatus === 'saving' ? 'text-[#9B9B9B] opacity-100' :
-          'text-emerald-400 opacity-100'
-        }`}>
-          {saveStatus === 'saving' ? 'Saving…' : 'Saved ✓'}
-        </span>
-      </div>
-
-      {/* ── Body ────────────────────────────────────────────────────────────── */}
-      <div className="flex flex-1 overflow-hidden">
-
-        {/* Left Sidebar — vertical tabs */}
-        <div className="flex flex-col gap-1 p-4 border-r border-[#1e1e1e] flex-shrink-0" style={{ width: 200, background: '#161616' }}>
-          {TABS.map(({ id, label, icon: Icon }) => (
+        {/* Navigation tabs */}
+        <nav className="flex flex-col gap-0.5 p-3 flex-1">
+          {TABS.map(({ id, label, Icon }) => (
             <button
               key={id}
               onClick={() => setActiveTab(id)}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors text-left w-full ${
+              className={[
+                'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all text-left w-full',
                 activeTab === id
                   ? 'bg-[#222] text-white'
-                  : 'text-[#666] hover:text-[#ECECEC] hover:bg-[#1a1a1a]'
-              }`}
+                  : 'text-[#555] hover:text-[#ECECEC] hover:bg-[#1a1a1a]',
+              ].join(' ')}
             >
               <Icon size={15} className="flex-shrink-0" />
               {label}
             </button>
           ))}
-        </div>
+        </nav>
+      </aside>
 
-        {/* Main Content */}
-        <div className="flex-1 overflow-y-auto">
-          {loading ? (
-            <div className="flex items-center justify-center h-full gap-2 text-[#555]">
-              <Loader2 size={22} className="animate-spin" />
-              <span className="text-sm">Loading…</span>
-            </div>
-          ) : (
-            <div className="p-8 max-w-4xl space-y-8">
+      {/* ── Main Content ────────────────────────────────────────────────────── */}
+      <main className="flex-1 overflow-y-auto" style={{ background: '#0f0f0f' }}>
+        {loading ? (
+          <div className="flex items-center justify-center h-full gap-2.5" style={{ color: '#444' }}>
+            <Loader2 size={20} className="animate-spin" />
+            <span className="text-sm">Loading workspace…</span>
+          </div>
+        ) : (
+          <div className="px-10 py-10 max-w-3xl space-y-8">
 
-              {/* ── OVERVIEW ──────────────────────────────────────────────── */}
-              {activeTab === 'Overview' && (
-                <>
-                  <Section title="Strategy Overview">
-                    <AutoTextarea
-                      value={details.strategy_overview}
-                      onChange={e => updateField('strategy_overview', e.target.value)}
-                      className={ta}
-                      placeholder="Write the full strategy for this client — goals, approach, key focus areas…"
-                      style={{ minHeight: 200 }}
-                    />
-                  </Section>
+            {/* ── OVERVIEW ──────────────────────────────────────────────── */}
+            {activeTab === 'Overview' && (
+              <>
+                <Block title="Strategy Overview">
+                  <AutoTextarea
+                    value={details.strategy_overview}
+                    onChange={e => set('strategy_overview', e.target.value)}
+                    className={ta} style={{ minHeight: 180 }}
+                    placeholder="Describe the full strategy for this client — goals, channels, key messages, and approach…"
+                  />
+                </Block>
 
-                  <Section title="Google Drive">
-                    <div className="flex gap-3">
-                      <input type="url" value={details.google_drive_url}
-                        onChange={e => updateField('google_drive_url', e.target.value)}
-                        className={inp + ' flex-1'} placeholder="https://drive.google.com/…" />
-                      <button
-                        onClick={() => details.google_drive_url && window.open(details.google_drive_url, '_blank')}
-                        disabled={!details.google_drive_url}
-                        className="flex items-center gap-2 px-4 py-2.5 bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl text-sm text-[#9B9B9B] hover:text-white hover:border-[#444] transition-colors disabled:opacity-30 disabled:cursor-not-allowed whitespace-nowrap"
+                <Block title="Google Drive">
+                  <div className="flex gap-3">
+                    <input type="url" value={details.google_drive_url}
+                      onChange={e => set('google_drive_url', e.target.value)}
+                      className={inp + ' flex-1'} placeholder="Paste the Drive folder URL…" />
+                    <OpenButton href={details.google_drive_url} label="Open Drive" />
+                  </div>
+                </Block>
+              </>
+            )}
+
+            {/* ── ADS ───────────────────────────────────────────────────── */}
+            {activeTab === 'Ads' && (
+              <>
+                <Block title="Performance Metrics">
+                  <div className="grid grid-cols-3 gap-3">
+                    {ADS_METRICS.map(({ key, label, prefix }) => (
+                      <div
+                        key={key}
+                        className="rounded-2xl p-5 flex flex-col gap-2 transition-colors"
+                        style={{ background: '#161616', border: '1px solid #1e1e1e' }}
                       >
-                        <ExternalLink size={14} /> Open Drive
-                      </button>
-                    </div>
-                  </Section>
-                </>
-              )}
-
-              {/* ── ADS ───────────────────────────────────────────────────── */}
-              {activeTab === 'Ads' && (
-                <>
-                  <Section title="Performance Metrics">
-                    <div className="grid grid-cols-3 gap-4">
-                      {ADS_METRICS.map(({ key, label }) => (
-                        <div key={key} className="bg-[#1a1a1a] border border-[#222] rounded-2xl p-5 flex flex-col gap-3 hover:border-[#333] transition-colors">
-                          <span className="text-xs text-[#555] font-semibold uppercase tracking-widest">{label}</span>
+                        <span className="text-[10px] font-semibold uppercase tracking-widest" style={{ color: '#555' }}>
+                          {label}
+                        </span>
+                        <div className="flex items-baseline gap-0.5">
+                          {prefix && <span className="text-sm font-bold" style={{ color: '#444' }}>{prefix}</span>}
                           <input
                             type="text"
                             value={details.ads_performance[key]}
-                            onChange={e => updateAdsPerformance(key, e.target.value)}
-                            className="bg-transparent text-white text-2xl font-bold focus:outline-none w-full placeholder-[#333]"
+                            onChange={e => setAds(key, e.target.value)}
+                            className="bg-transparent text-2xl font-bold focus:outline-none w-full"
+                            style={{ color: '#ECECEC' }}
                             placeholder="—"
                           />
                         </div>
-                      ))}
-                    </div>
-                  </Section>
-
-                  <Section title="Performance Notes">
-                    <AutoTextarea
-                      value={details.ad_performance_notes}
-                      onChange={e => updateField('ad_performance_notes', e.target.value)}
-                      className={ta}
-                      placeholder="Notes on ad performance, trends, observations…"
-                      style={{ minHeight: 140 }}
-                    />
-                  </Section>
-                </>
-              )}
-
-              {/* ── SOCIAL ────────────────────────────────────────────────── */}
-              {activeTab === 'Social' && (
-                <Section title="Social Platforms">
-                  <div className="bg-[#1a1a1a] border border-[#222] rounded-2xl overflow-hidden divide-y divide-[#222]">
-                    {SOCIAL_PLATFORMS.map(({ key, label, emoji }) => (
-                      <div key={key} className="flex items-center gap-5 px-6 py-4 hover:bg-[#1e1e1e] transition-colors">
-                        <span className="text-xl w-7 flex-shrink-0 text-center">{emoji}</span>
-                        <span className="text-sm text-[#666] font-medium w-28 flex-shrink-0">{label}</span>
-                        <input
-                          type="text"
-                          value={details.social_platforms[key]}
-                          onChange={e => updateSocialPlatform(key, e.target.value)}
-                          className="bg-transparent text-[#ECECEC] text-sm focus:outline-none flex-1 placeholder-[#333]"
-                          placeholder="Handle or profile URL…"
-                        />
-                        {details.social_platforms[key] && (
-                          <button
-                            onClick={() => window.open(details.social_platforms[key], '_blank')}
-                            className="text-[#444] hover:text-[#ECECEC] transition-colors"
-                          >
-                            <ExternalLink size={14} />
-                          </button>
-                        )}
                       </div>
                     ))}
                   </div>
-                </Section>
-              )}
+                </Block>
 
-              {/* ── FUNNEL ────────────────────────────────────────────────── */}
-              {activeTab === 'Funnel' && (
-                <>
-                  <Section title="Funnel Overview">
-                    <AutoTextarea
-                      value={details.funnel_notes}
-                      onChange={e => updateField('funnel_notes', e.target.value)}
-                      className={ta}
-                      placeholder="Describe the full funnel — landing pages, emails, ads, offers, upsells…"
-                      style={{ minHeight: 240 }}
-                    />
-                  </Section>
-
-                  <Section title="Funnel Link">
-                    <div className="flex gap-3">
-                      <input type="url" value={details.funnel_url}
-                        onChange={e => updateField('funnel_url', e.target.value)}
-                        className={inp + ' flex-1'} placeholder="https://…" />
-                      <button
-                        onClick={() => details.funnel_url && window.open(details.funnel_url, '_blank')}
-                        disabled={!details.funnel_url}
-                        className="flex items-center gap-2 px-4 py-2.5 bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl text-sm text-[#9B9B9B] hover:text-white hover:border-[#444] transition-colors disabled:opacity-30 disabled:cursor-not-allowed whitespace-nowrap"
-                      >
-                        <ExternalLink size={14} /> Open
-                      </button>
-                    </div>
-                  </Section>
-                </>
-              )}
-
-              {/* ── SCRIPTS ───────────────────────────────────────────────── */}
-              {activeTab === 'Scripts' && (
-                <Section
-                  title={`Scripted Ads ${details.scripted_ads.length > 0 ? `(${details.scripted_ads.length})` : ''}`}
-                  action={
-                    <button onClick={addScript}
-                      className="flex items-center gap-2 px-4 py-2 bg-white text-black rounded-lg text-sm font-semibold hover:bg-[#e0e0e0] transition-colors">
-                      <Plus size={14} /> New Script
-                    </button>
-                  }
-                >
-                  {details.scripted_ads.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-20 text-[#444]">
-                      <FileText size={36} className="mb-3 opacity-40" />
-                      <p className="text-sm font-medium">No scripts yet</p>
-                      <p className="text-xs mt-1">Click "New Script" to write your first ad.</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-4">
-                      {details.scripted_ads.map((script, index) => (
-                        <div key={script.id} className="bg-[#1a1a1a] border border-[#222] rounded-2xl p-6 space-y-4 hover:border-[#333] transition-colors">
-                          <div className="flex items-center gap-3">
-                            <span className="text-xs text-[#444] font-bold w-6">#{index + 1}</span>
-                            <input
-                              type="text"
-                              value={script.title}
-                              onChange={e => updateScript(script.id, { title: e.target.value })}
-                              className="bg-transparent text-white text-base font-semibold focus:outline-none flex-1 placeholder-[#333] border-b border-transparent focus:border-[#333] pb-0.5"
-                              placeholder="Script title…"
-                            />
-                            <button onClick={() => deleteScript(script.id)}
-                              className="text-[#444] hover:text-red-400 transition-colors p-1 rounded">
-                              <Trash2 size={15} />
-                            </button>
-                          </div>
-                          <AutoTextarea
-                            value={script.content}
-                            onChange={e => updateScript(script.id, { content: e.target.value })}
-                            className={ta}
-                            placeholder="Write the full ad script here…"
-                            style={{ minHeight: 160 }}
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </Section>
-              )}
-
-              {/* ── NOTES ─────────────────────────────────────────────────── */}
-              {activeTab === 'Notes' && (
-                <Section title="Internal Notes">
+                <Block title="Notes">
                   <AutoTextarea
-                    value={details.notes}
-                    onChange={e => updateField('notes', e.target.value)}
-                    className={ta}
-                    placeholder="Internal notes about this client — meetings, feedback, reminders…"
-                    style={{ minHeight: 320 }}
+                    value={details.ad_performance_notes}
+                    onChange={e => set('ad_performance_notes', e.target.value)}
+                    className={ta} style={{ minHeight: 120 }}
+                    placeholder="Observations, trends, what's working…"
                   />
-                </Section>
-              )}
+                </Block>
+              </>
+            )}
 
-            </div>
-          )}
-        </div>
-      </div>
+            {/* ── SOCIAL ────────────────────────────────────────────────── */}
+            {activeTab === 'Social' && (
+              <Block title="Platforms">
+                <div className="rounded-2xl overflow-hidden" style={{ border: '1px solid #1e1e1e' }}>
+                  {SOCIAL_LIST.map(({ key, label, color, letter }, i) => (
+                    <div
+                      key={key}
+                      className="flex items-center gap-4 px-5 py-3.5 transition-colors hover:bg-[#161616]"
+                      style={{ borderTop: i === 0 ? 'none' : '1px solid #1e1e1e', background: 'transparent' }}
+                    >
+                      <div
+                        className="w-7 h-7 rounded-lg flex items-center justify-center text-[10px] font-black flex-shrink-0"
+                        style={{ background: color + '22', color }}
+                      >
+                        {letter}
+                      </div>
+                      <span className="text-sm font-medium w-24 flex-shrink-0" style={{ color: '#555' }}>{label}</span>
+                      <input
+                        type="text"
+                        value={details.social_platforms[key]}
+                        onChange={e => setSocial(key, e.target.value)}
+                        className="bg-transparent text-sm focus:outline-none flex-1 placeholder-[#2e2e2e]"
+                        style={{ color: '#DEDEDE' }}
+                        placeholder="@handle or profile URL…"
+                      />
+                      {details.social_platforms[key] && (
+                        <button
+                          onClick={() => window.open(details.social_platforms[key], '_blank')}
+                          className="transition-colors flex-shrink-0"
+                          style={{ color: '#383838' }}
+                          onMouseEnter={e => (e.currentTarget.style.color = '#ECECEC')}
+                          onMouseLeave={e => (e.currentTarget.style.color = '#383838')}
+                        >
+                          <ExternalLink size={13} />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </Block>
+            )}
+
+            {/* ── FUNNEL ────────────────────────────────────────────────── */}
+            {activeTab === 'Funnel' && (
+              <>
+                <Block title="Funnel Overview">
+                  <AutoTextarea
+                    value={details.funnel_notes}
+                    onChange={e => set('funnel_notes', e.target.value)}
+                    className={ta} style={{ minHeight: 240 }}
+                    placeholder="Describe the full funnel — landing pages, emails, ads, offers, upsells, retargeting…"
+                  />
+                </Block>
+
+                <Block title="Funnel Link">
+                  <div className="flex gap-3">
+                    <input type="url" value={details.funnel_url}
+                      onChange={e => set('funnel_url', e.target.value)}
+                      className={inp + ' flex-1'} placeholder="https://…" />
+                    <OpenButton href={details.funnel_url} label="Open" />
+                  </div>
+                </Block>
+              </>
+            )}
+
+            {/* ── SCRIPTS ───────────────────────────────────────────────── */}
+            {activeTab === 'Scripts' && (
+              <Block
+                title={`Scripts${details.scripted_ads.length > 0 ? ` · ${details.scripted_ads.length}` : ''}`}
+                action={
+                  <button
+                    onClick={addScript}
+                    className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-colors"
+                    style={{ background: '#ECECEC', color: '#0f0f0f' }}
+                    onMouseEnter={e => (e.currentTarget.style.background = '#ffffff')}
+                    onMouseLeave={e => (e.currentTarget.style.background = '#ECECEC')}
+                  >
+                    <Plus size={14} /> New Script
+                  </button>
+                }
+              >
+                {details.scripted_ads.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-20 gap-2" style={{ color: '#333' }}>
+                    <FileText size={32} strokeWidth={1.5} />
+                    <p className="text-sm font-medium mt-1" style={{ color: '#444' }}>No scripts yet</p>
+                    <p className="text-xs">Click "New Script" to write your first ad.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {details.scripted_ads.map((script, index) => (
+                      <div
+                        key={script.id}
+                        className="rounded-2xl p-6 space-y-4"
+                        style={{ background: '#161616', border: '1px solid #1e1e1e' }}
+                      >
+                        <div className="flex items-center gap-3">
+                          <span className="text-xs font-bold w-5 flex-shrink-0" style={{ color: '#383838' }}>
+                            {String(index + 1).padStart(2, '0')}
+                          </span>
+                          <input
+                            type="text"
+                            value={script.title}
+                            onChange={e => patchScript(script.id, { title: e.target.value })}
+                            className="bg-transparent text-sm font-semibold focus:outline-none flex-1 placeholder-[#2e2e2e] border-b border-transparent focus:border-[#2e2e2e] pb-0.5 transition-colors"
+                            style={{ color: '#ECECEC' }}
+                            placeholder="Script title…"
+                          />
+                          <button
+                            onClick={() => removeScript(script.id)}
+                            className="flex-shrink-0 p-1.5 rounded-lg transition-colors"
+                            style={{ color: '#383838' }}
+                            onMouseEnter={e => (e.currentTarget.style.color = '#ef4444')}
+                            onMouseLeave={e => (e.currentTarget.style.color = '#383838')}
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                        <AutoTextarea
+                          value={script.content}
+                          onChange={e => patchScript(script.id, { content: e.target.value })}
+                          className={ta} style={{ minHeight: 160 }}
+                          placeholder="Write the full ad script here…"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </Block>
+            )}
+
+            {/* ── NOTES ─────────────────────────────────────────────────── */}
+            {activeTab === 'Notes' && (
+              <Block title="Internal Notes">
+                <AutoTextarea
+                  value={details.notes}
+                  onChange={e => set('notes', e.target.value)}
+                  className={ta} style={{ minHeight: 360 }}
+                  placeholder="Meetings, feedback, action items, reminders…"
+                />
+              </Block>
+            )}
+
+          </div>
+        )}
+      </main>
     </div>
   );
 };
 
-// ─── Section wrapper ──────────────────────────────────────────────────────────
+// ─── Sub-components ───────────────────────────────────────────────────────────
 
-function Section({ title, children, action }: { title: string; children: React.ReactNode; action?: React.ReactNode }) {
+function Block({ title, children, action }: { title: string; children: React.ReactNode; action?: React.ReactNode }) {
   return (
-    <div className="space-y-3">
+    <section className="space-y-3">
       <div className="flex items-center justify-between">
-        <h2 className="text-sm font-semibold text-[#ECECEC] uppercase tracking-wider">{title}</h2>
+        <h2 className="text-xs font-semibold uppercase tracking-widest" style={{ color: '#444' }}>{title}</h2>
         {action}
       </div>
       {children}
-    </div>
+    </section>
+  );
+}
+
+function OpenButton({ href, label }: { href: string; label: string }) {
+  return (
+    <button
+      onClick={() => href && window.open(href, '_blank')}
+      disabled={!href}
+      className="flex items-center gap-2 px-4 py-3 rounded-2xl text-sm font-medium transition-colors whitespace-nowrap disabled:opacity-30 disabled:cursor-not-allowed"
+      style={{ background: '#161616', border: '1px solid #1e1e1e', color: '#777' }}
+      onMouseEnter={e => { if (href) e.currentTarget.style.color = '#ECECEC'; }}
+      onMouseLeave={e => { e.currentTarget.style.color = '#777'; }}
+    >
+      <ExternalLink size={13} /> {label}
+    </button>
   );
 }
 
