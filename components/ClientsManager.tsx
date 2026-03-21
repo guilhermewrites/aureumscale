@@ -4,7 +4,7 @@ import { Plus, Trash2, ChevronDown, Camera, Loader2, Archive, RotateCcw } from '
 import { supabase } from '../services/supabaseClient';
 import ClientPanel from './ClientPanel';
 
-type PaymentStatus = 'Missing Invoice' | 'Pending' | 'Paid';
+type PaymentStatus = 'Missing Invoice' | 'Pending' | 'Paid' | 'Late';
 type Service = 'Full-on-marketing' | 'Ghostwriting' | 'Social Media Management' | 'Webinar' | 'Design' | 'Video-Editing';
 type Leader = 'Guilherme Writes' | 'Jhacson Mossman';
 type ClientStatus = 'Happy' | 'Moderate' | 'Frustrated';
@@ -21,21 +21,22 @@ interface Client {
   active: boolean;
 }
 
-const PAYMENT_STATUSES: PaymentStatus[] = ['Missing Invoice', 'Pending', 'Paid'];
+const PAYMENT_STATUSES: PaymentStatus[] = ['Missing Invoice', 'Pending', 'Paid', 'Late'];
 const SERVICES: Service[] = ['Full-on-marketing', 'Ghostwriting', 'Social Media Management', 'Webinar', 'Design', 'Video-Editing'];
 const LEADERS: Leader[] = ['Guilherme Writes', 'Jhacson Mossman'];
 const CLIENT_STATUSES: ClientStatus[] = ['Happy', 'Moderate', 'Frustrated'];
 
 const paymentColors: Record<PaymentStatus, string> = {
-  'Missing Invoice': 'bg-[#2a2a2a] text-red-400 border border-[#3a3a3a]',
-  'Pending': 'bg-[#2a2a2a] text-[#9B9B9B] border border-[#3a3a3a]',
-  'Paid': 'bg-[#2a2a2a] text-emerald-400 border border-[#3a3a3a]',
+  'Missing Invoice': 'text-red-400',
+  'Pending': 'text-[#9B9B9B]',
+  'Paid': 'text-emerald-400',
+  'Late': 'text-orange-400',
 };
 
 const statusColors: Record<ClientStatus, string> = {
-  'Happy': 'bg-[#2a2a2a] text-emerald-400 border border-[#3a3a3a]',
-  'Moderate': 'bg-[#2a2a2a] text-[#9B9B9B] border border-[#3a3a3a]',
-  'Frustrated': 'bg-[#2a2a2a] text-red-400 border border-[#3a3a3a]',
+  'Happy': 'text-emerald-400',
+  'Moderate': 'text-[#9B9B9B]',
+  'Frustrated': 'text-red-400',
 };
 
 function getInitials(name: string) {
@@ -135,7 +136,7 @@ function SelectCell<T extends string>({ value, options, onChange, colorMap }: Se
     setOpen(o => !o);
   };
 
-  const pillClass = colorMap?.[value] ?? 'bg-[#2a2a2a] text-[#ECECEC] border border-[#3a3a3a]';
+  const textColor = colorMap?.[value] ?? 'text-[#ECECEC]';
 
   return (
     <>
@@ -143,10 +144,11 @@ function SelectCell<T extends string>({ value, options, onChange, colorMap }: Se
         ref={btnRef}
         type="button"
         onClick={toggle}
-        className={`flex items-center gap-1 text-xs font-medium px-2.5 py-1.5 rounded-full cursor-pointer whitespace-nowrap ${pillClass}`}
+        className={`flex items-center justify-between text-xs font-medium px-3 py-1.5 rounded-lg cursor-pointer whitespace-nowrap w-[120px] ${textColor}`}
+        style={{ background: '#2a2a2a' }}
       >
-        <span className="truncate max-w-[100px]">{value}</span>
-        <ChevronDown size={10} className="flex-shrink-0 opacity-50" />
+        <span className="truncate">{value}</span>
+        <ChevronDown size={10} className="flex-shrink-0 opacity-40" />
       </button>
 
       {open && createPortal(
@@ -392,13 +394,29 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
 
   return (
     <div className="p-6 space-y-4">
-      {/* Header */}
+      {/* Header — tabs + add button */}
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-semibold text-[#ECECEC]">Clients</h1>
-          <p className="text-sm text-[#666666] mt-0.5">
-            {activeClients.length} active · {inactiveClients.length} inactive
-          </p>
+        <div className="flex items-center gap-1 p-1 rounded-xl" style={{ background: '#1a1a1a' }}>
+          <button
+            onClick={() => setShowActive(true)}
+            className="px-4 py-1.5 text-xs font-semibold rounded-lg transition-all"
+            style={{
+              background: showActive ? '#2a2a2a' : 'transparent',
+              color: showActive ? '#ECECEC' : '#555',
+            }}
+          >
+            Active ({activeClients.length})
+          </button>
+          <button
+            onClick={() => setShowActive(false)}
+            className="px-4 py-1.5 text-xs font-semibold rounded-lg transition-all"
+            style={{
+              background: !showActive ? '#2a2a2a' : 'transparent',
+              color: !showActive ? '#ECECEC' : '#555',
+            }}
+          >
+            Inactive ({inactiveClients.length})
+          </button>
         </div>
         <button
           onClick={() => setIsAdding(true)}
@@ -406,30 +424,6 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
         >
           <Plus size={16} />
           Add Client
-        </button>
-      </div>
-
-      {/* Active / Inactive tabs */}
-      <div className="flex items-center gap-1 p-1 rounded-xl" style={{ background: '#1a1a1a', width: 'fit-content' }}>
-        <button
-          onClick={() => setShowActive(true)}
-          className="px-4 py-1.5 text-xs font-semibold rounded-lg transition-all"
-          style={{
-            background: showActive ? '#2a2a2a' : 'transparent',
-            color: showActive ? '#ECECEC' : '#555',
-          }}
-        >
-          Active ({activeClients.length})
-        </button>
-        <button
-          onClick={() => setShowActive(false)}
-          className="px-4 py-1.5 text-xs font-semibold rounded-lg transition-all"
-          style={{
-            background: !showActive ? '#2a2a2a' : 'transparent',
-            color: !showActive ? '#ECECEC' : '#555',
-          }}
-        >
-          Inactive ({inactiveClients.length})
         </button>
       </div>
 
@@ -548,9 +542,9 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
 
             {/* Add new row */}
             {isAdding && (
-              <tr className="bg-[#252525]">
-                <td className="px-4 py-3">
-                  <div className="flex items-center gap-3">
+              <tr className="bg-[#1e1e1e]">
+                <td className="px-6 py-4" colSpan={6}>
+                  <div className="flex items-center gap-4">
                     <Avatar
                       name={draft.name}
                       photoUrl={draft.photoUrl}
@@ -561,27 +555,19 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
                       value={draft.name}
                       onChange={e => setDraft(d => ({ ...d, name: e.target.value }))}
                       onKeyDown={e => { if (e.key === 'Enter') handleAddSave(); if (e.key === 'Escape') handleAddCancel(); }}
-                      className="bg-transparent text-[#ECECEC] font-medium flex-1 min-w-0 focus:outline-none border-b border-[#3a3a3a] placeholder-[#666666]"
+                      className="bg-transparent text-[#ECECEC] text-sm font-medium flex-1 min-w-0 focus:outline-none placeholder-[#555]"
                       placeholder="Client name..."
                     />
-                  </div>
-                </td>
-                <td className="px-4 py-3">
-                  <SelectCell value={draft.paymentStatus} options={PAYMENT_STATUSES} onChange={v => setDraft(d => ({ ...d, paymentStatus: v }))} colorMap={paymentColors} />
-                </td>
-                <td className="px-4 py-3">
-                  <SelectCell value={draft.service} options={SERVICES} onChange={v => setDraft(d => ({ ...d, service: v }))} />
-                </td>
-                <td className="px-4 py-3">
-                  <SelectCell value={draft.leader} options={LEADERS} onChange={v => setDraft(d => ({ ...d, leader: v }))} />
-                </td>
-                <td className="px-4 py-3">
-                  <SelectCell value={draft.status} options={CLIENT_STATUSES} onChange={v => setDraft(d => ({ ...d, status: v }))} colorMap={statusColors} />
-                </td>
-                <td className="px-4 py-3">
-                  <div className="flex flex-col gap-1">
-                    <button onClick={handleAddSave} className="text-xs text-emerald-400 hover:text-emerald-300 font-medium">Save</button>
-                    <button onClick={handleAddCancel} className="text-xs text-[#666666] hover:text-[#ECECEC]">Cancel</button>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <SelectCell value={draft.paymentStatus} options={PAYMENT_STATUSES} onChange={v => setDraft(d => ({ ...d, paymentStatus: v }))} colorMap={paymentColors} />
+                      <SelectCell value={draft.service} options={SERVICES} onChange={v => setDraft(d => ({ ...d, service: v }))} />
+                      <SelectCell value={draft.leader} options={LEADERS} onChange={v => setDraft(d => ({ ...d, leader: v }))} />
+                      <SelectCell value={draft.status} options={CLIENT_STATUSES} onChange={v => setDraft(d => ({ ...d, status: v }))} colorMap={statusColors} />
+                    </div>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <button onClick={handleAddSave} className="text-xs text-emerald-400 hover:text-emerald-300 font-semibold px-3 py-1.5 rounded-lg transition-colors" style={{ background: '#2a2a2a' }}>Save</button>
+                      <button onClick={handleAddCancel} className="text-xs text-[#555] hover:text-[#ECECEC] px-3 py-1.5 rounded-lg transition-colors">Cancel</button>
+                    </div>
                   </div>
                 </td>
               </tr>
