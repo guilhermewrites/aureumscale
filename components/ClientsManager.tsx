@@ -358,6 +358,20 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
     setIsAdding(false);
   };
 
+  const toggleClientActive = useCallback(async (id: string, active: boolean) => {
+    setClients(prev => prev.map(c => c.id === id ? { ...c, active } : c));
+    if (!supabase) return;
+    try {
+      await supabase.from('clients').update({ active }).eq('id', id).eq('user_id', storagePrefix);
+    } catch (err) {
+      console.error('Failed to update client active status:', err);
+    }
+  }, [storagePrefix]);
+
+  const activeClients = clients.filter(c => c.active);
+  const inactiveClients = clients.filter(c => !c.active);
+  const filteredClients = showActive ? activeClients : inactiveClients;
+
   // ── Full-page client workspace ──────────────────────────────────────────────
   if (selectedClient) {
     return (
@@ -377,20 +391,6 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
       </div>
     );
   }
-
-  const activeClients = clients.filter(c => c.active);
-  const inactiveClients = clients.filter(c => !c.active);
-  const filteredClients = showActive ? activeClients : inactiveClients;
-
-  const toggleClientActive = useCallback(async (id: string, active: boolean) => {
-    setClients(prev => prev.map(c => c.id === id ? { ...c, active } : c));
-    if (!supabase) return;
-    try {
-      await supabase.from('clients').update({ active }).eq('id', id).eq('user_id', storagePrefix);
-    } catch (err) {
-      console.error('Failed to update client active status:', err);
-    }
-  }, [storagePrefix]);
 
   return (
     <div className="p-6 space-y-4">
