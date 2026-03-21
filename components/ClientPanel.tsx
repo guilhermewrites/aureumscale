@@ -41,7 +41,7 @@ const DEFAULT_DETAILS: ClientDetails = {
 };
 
 export interface ClientPanelProps {
-  client: { id: string; name: string; photoUrl?: string; service?: string } | null;
+  client: { id: string; name: string; photoUrl?: string; service?: string; status?: string } | null;
   storagePrefix: string;
   onClose: () => void;
 }
@@ -323,48 +323,61 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
             {client.name || 'Client Name'}
           </p>
 
-          {/* Contact */}
-          <div className="mt-4 space-y-2.5">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-medium" style={{ color: '#555' }}>Contact</span>
-              <input
-                type="email"
-                value={details.contact_email}
+          {/* Info rows */}
+          <div className="mt-4 space-y-0">
+            <CardRow label="Contact">
+              <input type="email" value={details.contact_email}
                 onChange={e => setField('contact_email', e.target.value)}
-                className="text-xs text-right bg-transparent focus:outline-none w-[140px] truncate"
-                style={{ color: '#ECECEC' }}
-                placeholder="email@example.com"
-              />
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-medium" style={{ color: '#555' }}>Client since</span>
-              <input
-                type="date"
-                value={details.client_since}
+                className="text-xs text-right bg-transparent focus:outline-none w-full truncate"
+                style={{ color: '#ECECEC' }} placeholder="email@example.com" />
+            </CardRow>
+            <CardRow label="Client since">
+              <input type="date" value={details.client_since}
                 onChange={e => setField('client_since', e.target.value)}
-                className="text-xs text-right bg-transparent focus:outline-none"
-                style={{ color: '#ECECEC', colorScheme: 'dark' }}
+                className="text-xs text-right bg-transparent focus:outline-none w-full"
+                style={{ color: '#ECECEC', colorScheme: 'dark' }} />
+            </CardRow>
+            <CardRow label="Status">
+              <CardStatusSelect
+                value={(client as any).status ?? 'Happy'}
+                onChange={(v) => {
+                  // Update the client status in Supabase
+                  if (supabase && client) {
+                    supabase.from('clients').update({ status: v }).eq('id', client.id).eq('user_id', storagePrefix);
+                  }
+                }}
               />
-            </div>
-          </div>
-
-          {/* Social icons */}
-          <div className="flex items-center justify-center gap-3 mt-4">
-            <SocialIconBtn
-              href={details.social_platforms.instagram}
-              icon={<InstagramIcon />}
-              color="#E1306C"
-            />
-            <SocialIconBtn
-              href={details.social_platforms.twitter}
-              icon={<XIcon />}
-              color="#ECECEC"
-            />
-            <SocialIconBtn
-              href={details.social_platforms.linkedin}
-              icon={<LinkedInIcon />}
-              color="#0A66C2"
-            />
+            </CardRow>
+            <CardRow label="Instagram" icon={<InstagramIcon />} iconColor="#E1306C">
+              <input type="text" value={details.social_platforms.instagram}
+                onChange={e => setSocial('instagram', e.target.value)}
+                className="text-xs text-right bg-transparent focus:outline-none w-full truncate"
+                style={{ color: '#ECECEC' }} placeholder="@handle or URL" />
+            </CardRow>
+            <CardRow label="X" icon={<XIcon />} iconColor="#ECECEC">
+              <input type="text" value={details.social_platforms.twitter}
+                onChange={e => setSocial('twitter', e.target.value)}
+                className="text-xs text-right bg-transparent focus:outline-none w-full truncate"
+                style={{ color: '#ECECEC' }} placeholder="@handle or URL" />
+            </CardRow>
+            <CardRow label="LinkedIn" icon={<LinkedInIcon />} iconColor="#0A66C2">
+              <input type="text" value={details.social_platforms.linkedin}
+                onChange={e => setSocial('linkedin', e.target.value)}
+                className="text-xs text-right bg-transparent focus:outline-none w-full truncate"
+                style={{ color: '#ECECEC' }} placeholder="URL" />
+            </CardRow>
+            <CardRow label="YouTube" icon={<YouTubeIcon />} iconColor="#FF4444">
+              <input type="text" value={details.social_platforms.youtube}
+                onChange={e => setSocial('youtube', e.target.value)}
+                className="text-xs text-right bg-transparent focus:outline-none w-full truncate"
+                style={{ color: '#ECECEC' }} placeholder="URL" />
+            </CardRow>
+            <CardRow label="Google Drive">
+              <input type="url" value={details.google_drive_url}
+                onChange={e => setField('google_drive_url', e.target.value)}
+                className="text-xs text-right bg-transparent focus:outline-none w-full truncate"
+                style={{ color: '#ECECEC' }} placeholder="Drive folder URL" />
+            </CardRow>
           </div>
 
           {/* Save status */}
@@ -606,6 +619,64 @@ function OpenBtn({ href, label }: { href: string; label: string }) {
     >
       <ExternalLink size={13} /> {label}
     </button>
+  );
+}
+
+function CardRow({ label, children, icon, iconColor }: {
+  label: string; children: React.ReactNode; icon?: React.ReactNode; iconColor?: string;
+}) {
+  return (
+    <div className="flex items-center justify-between py-2.5" style={{ borderBottom: '1px solid #222' }}>
+      <div className="flex items-center gap-2 flex-shrink-0">
+        {icon && <span style={{ color: iconColor ?? '#555' }} className="flex items-center">{icon}</span>}
+        <span className="text-xs font-medium" style={{ color: '#555' }}>{label}</span>
+      </div>
+      <div className="flex-1 min-w-0 ml-3">{children}</div>
+    </div>
+  );
+}
+
+function CardStatusSelect({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const statuses = ['Happy', 'Moderate', 'Frustrated'] as const;
+  const colors: Record<string, string> = {
+    Happy: '#4ade80', Moderate: '#9B9B9B', Frustrated: '#f87171',
+  };
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [open]);
+
+  return (
+    <div ref={ref} className="relative flex justify-end">
+      <button onClick={() => setOpen(o => !o)}
+        className="text-xs font-medium flex items-center gap-1 cursor-pointer"
+        style={{ color: colors[value] ?? '#ECECEC' }}
+      >
+        <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: colors[value] ?? '#ECECEC' }} />
+        {value}
+      </button>
+      {open && (
+        <div className="absolute right-0 top-full mt-1 z-50 py-1 min-w-[120px] shadow-xl"
+          style={{ background: '#222', borderRadius: 10 }}>
+          {statuses.map(s => (
+            <button key={s} onClick={() => { onChange(s); setOpen(false); }}
+              className={`flex items-center gap-2 w-full text-left text-xs px-3 py-2 transition-colors hover:bg-[#2a2a2a] ${s === value ? 'font-semibold' : ''}`}
+              style={{ color: colors[s] }}
+            >
+              <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: colors[s] }} />
+              {s}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 

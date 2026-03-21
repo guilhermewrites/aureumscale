@@ -221,7 +221,7 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
   const [error, setError] = useState<string | null>(null);
   const [isAdding, setIsAdding] = useState(false);
   const [draft, setDraft] = useState<Client>(newClient(0));
-  const [selectedClient, setSelectedClient] = useState<{ id: string; name: string; photoUrl?: string } | null>(null);
+  const [selectedClient, setSelectedClient] = useState<{ id: string; name: string; photoUrl?: string; status?: string } | null>(null);
 
   // Debounce refs for name updates
   const nameDebounceRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
@@ -414,7 +414,7 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
               <tr
                 key={client.id}
                 className="group bg-[#212121] hover:bg-[#1e1e1e] transition-colors cursor-pointer"
-                onClick={() => setSelectedClient({ id: client.id, name: client.name, photoUrl: client.photoUrl })}
+                onClick={() => setSelectedClient({ id: client.id, name: client.name, photoUrl: client.photoUrl, status: client.status })}
               >
                 {/* Name + Avatar */}
                 <td className="px-6 py-4">
