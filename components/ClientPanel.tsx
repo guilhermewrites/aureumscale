@@ -98,8 +98,12 @@ const ADS_METRICS: { key: keyof AdsPerformance; label: string }[] = [
 
 // ─── Textarea that auto-resizes ───────────────────────────────────────────────
 
-interface AutoTextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
+interface AutoTextareaProps {
   value: string;
+  onChange?: React.ChangeEventHandler<HTMLTextAreaElement>;
+  className?: string;
+  placeholder?: string;
+  style?: React.CSSProperties;
 }
 
 function AutoTextarea({ value, className, ...rest }: AutoTextareaProps) {
