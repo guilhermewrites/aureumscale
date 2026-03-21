@@ -280,16 +280,16 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
   if (!client) return null;
 
   // Shared field styles
-  const ta = 'w-full resize-none focus:outline-none bg-[#1e1e1e] border border-[#2a2a2a] rounded-2xl text-[#DEDEDE] text-sm leading-relaxed p-4 placeholder-[#3a3a3a] focus:border-[#3a3a3a] transition-colors';
-  const inp = 'flex-1 focus:outline-none bg-[#1e1e1e] border border-[#2a2a2a] rounded-2xl text-[#DEDEDE] text-sm px-4 py-3 placeholder-[#3a3a3a] focus:border-[#3a3a3a] transition-colors';
+  const ta = 'w-full resize-none focus:outline-none bg-[#1a1a1a] rounded-2xl text-[#DEDEDE] text-sm leading-relaxed p-4 placeholder-[#3a3a3a] focus:ring-1 focus:ring-[#333] transition-all';
+  const inp = 'flex-1 focus:outline-none bg-[#1a1a1a] rounded-2xl text-[#DEDEDE] text-sm px-4 py-3 placeholder-[#3a3a3a] focus:ring-1 focus:ring-[#333] transition-all';
 
   return (
-    <div className="flex w-full h-full overflow-hidden p-5 gap-4" style={{ background: '#111' }}>
+    <div className="flex w-full h-full overflow-hidden p-6 gap-6">
 
       {/* ── LEFT CARD ─────────────────────────────────────────────────────────── */}
       <div
-        className="flex flex-col flex-shrink-0 rounded-3xl overflow-hidden"
-        style={{ width: 260, background: '#1a1a1a', border: '1px solid #252525' }}
+        className="flex flex-col flex-shrink-0 overflow-hidden"
+        style={{ width: 260, background: '#1a1a1a', borderRadius: 20 }}
       >
         {/* Photo */}
         <div
@@ -313,7 +313,7 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
         </div>
 
         {/* Name + Contact Info */}
-        <div className="px-5 pt-4 pb-4 border-b" style={{ borderColor: '#252525' }}>
+        <div className="px-5 pt-4 pb-4 border-b" style={{ borderColor: '#222' }}>
           <p
             className="text-center text-xl font-bold leading-tight"
             style={{ color: '#ECECEC', fontFamily: "'Georgia', 'Times New Roman', serif", fontStyle: 'italic' }}
@@ -394,24 +394,21 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
         </nav>
 
         {/* Back button at bottom */}
-        <div className="p-3 border-t" style={{ borderColor: '#252525' }}>
+        <div className="p-3 border-t" style={{ borderColor: '#222' }}>
           <button
             onClick={onClose}
-            className="w-full text-xs font-medium py-2 rounded-xl transition-colors text-center"
-            style={{ color: '#444', background: 'transparent' }}
+            className="w-full text-xs font-medium py-2.5 transition-colors text-center"
+            style={{ color: '#555', background: 'transparent', borderRadius: 12 }}
             onMouseEnter={e => { e.currentTarget.style.color = '#ECECEC'; e.currentTarget.style.background = '#222'; }}
-            onMouseLeave={e => { e.currentTarget.style.color = '#444'; e.currentTarget.style.background = 'transparent'; }}
+            onMouseLeave={e => { e.currentTarget.style.color = '#555'; e.currentTarget.style.background = 'transparent'; }}
           >
             ← Back to Clients
           </button>
         </div>
       </div>
 
-      {/* ── RIGHT CARD ────────────────────────────────────────────────────────── */}
-      <div
-        className="flex-1 rounded-3xl overflow-y-auto"
-        style={{ background: '#1a1a1a', border: '1px solid #252525' }}
-      >
+      {/* ── RIGHT CONTENT ─────────────────────────────────────────────────────── */}
+      <div className="flex-1 overflow-y-auto">
         {loading ? (
           <div className="flex items-center justify-center h-full gap-2.5" style={{ color: '#444' }}>
             <Loader2 size={20} className="animate-spin" />
@@ -445,7 +442,7 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
               <Block title="Performance Metrics">
                 <div className="grid grid-cols-3 gap-3">
                   {ADS_METRICS.map(({ key, label, prefix }) => (
-                    <div key={key} className="rounded-2xl p-5 flex flex-col gap-2" style={{ background: '#202020', border: '1px solid #2a2a2a' }}>
+                    <div key={key} className="rounded-2xl p-5 flex flex-col gap-2" style={{ background: '#1a1a1a' }}>
                       <span className="text-[10px] font-semibold uppercase tracking-widest" style={{ color: '#555' }}>{label}</span>
                       <div className="flex items-baseline gap-0.5">
                         {prefix && <span className="text-sm font-bold" style={{ color: '#3a3a3a' }}>{prefix}</span>}
@@ -469,10 +466,10 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
             {/* ── SOCIAL ──────────────────────────────────────────────────── */}
             {activeTab === 'Social' && (
               <Block title="Platforms">
-                <div className="rounded-2xl overflow-hidden" style={{ border: '1px solid #252525' }}>
+                <div className="rounded-2xl overflow-hidden" style={{ background: '#1a1a1a' }}>
                   {SOCIAL_LIST.map(({ key, label, color, icon: Icon }, i) => (
                     <div key={key} className="flex items-center gap-4 px-5 py-3.5 transition-colors"
-                      style={{ borderTop: i === 0 ? 'none' : '1px solid #252525', background: 'transparent' }}
+                      style={{ borderTop: i === 0 ? 'none' : '1px solid #222', background: 'transparent' }}
                       onMouseEnter={e => (e.currentTarget.style.background = '#202020')}
                       onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
                     >
@@ -537,7 +534,7 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
                 ) : (
                   <div className="space-y-4">
                     {details.scripted_ads.map((script, index) => (
-                      <div key={script.id} className="rounded-2xl p-6 space-y-4" style={{ background: '#202020', border: '1px solid #2a2a2a' }}>
+                      <div key={script.id} className="rounded-2xl p-6 space-y-4" style={{ background: '#1a1a1a' }}>
                         <div className="flex items-center gap-3">
                           <span className="text-xs font-bold w-5 flex-shrink-0" style={{ color: '#3a3a3a' }}>
                             {String(index + 1).padStart(2, '0')}
@@ -601,7 +598,7 @@ function OpenBtn({ href, label }: { href: string; label: string }) {
       onClick={() => href && window.open(href, '_blank')}
       disabled={!href}
       className="flex items-center gap-2 px-4 py-3 rounded-2xl text-sm font-medium transition-colors whitespace-nowrap disabled:opacity-30 disabled:cursor-not-allowed flex-shrink-0"
-      style={{ background: '#202020', border: '1px solid #2a2a2a', color: '#777' }}
+      style={{ background: '#1a1a1a', color: '#777' }}
       onMouseEnter={e => { if (href) e.currentTarget.style.color = '#ECECEC'; }}
       onMouseLeave={e => { e.currentTarget.style.color = '#777'; }}
     >
