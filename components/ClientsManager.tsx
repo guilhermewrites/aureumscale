@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Plus, Trash2, ChevronDown } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { Plus, Trash2, ChevronDown, Camera } from 'lucide-react';
 import useLocalStorage from '../hooks/useLocalStorage';
 
 type PaymentStatus = 'Missing Invoice' | 'Pending' | 'Paid';
@@ -10,6 +10,7 @@ type ClientStatus = 'Happy' | 'Moderate' | 'Frustrated';
 interface Client {
   id: string;
   name: string;
+  photoUrl?: string;
   paymentStatus: PaymentStatus;
   service: Service;
   leader: Leader;
@@ -33,16 +34,15 @@ const statusColors: Record<ClientStatus, string> = {
   'Frustrated': 'bg-red-500/15 text-red-400 border border-red-500/30',
 };
 
-const statusEmoji: Record<ClientStatus, string> = {
-  'Happy': '😊',
-  'Moderate': '😐',
-  'Frustrated': '😤',
-};
+function getInitials(name: string) {
+  return name.trim().split(' ').filter(Boolean).map(w => w[0]).slice(0, 2).join('').toUpperCase() || '?';
+}
 
 function newClient(): Client {
   return {
     id: crypto.randomUUID(),
     name: '',
+    photoUrl: undefined,
     paymentStatus: 'Pending',
     service: 'Ghostwriting',
     leader: 'Guilherme Writes',
@@ -50,26 +50,87 @@ function newClient(): Client {
   };
 }
 
+function compressImage(file: File): Promise<string> {
+  return new Promise(resolve => {
+    const img = new window.Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const size = 80;
+      const canvas = document.createElement('canvas');
+      canvas.width = size;
+      canvas.height = size;
+      const ctx = canvas.getContext('2d')!;
+      const min = Math.min(img.width, img.height);
+      const sx = (img.width - min) / 2;
+      const sy = (img.height - min) / 2;
+      ctx.drawImage(img, sx, sy, min, min, 0, 0, size, size);
+      resolve(canvas.toDataURL('image/jpeg', 0.75));
+    };
+    img.src = url;
+  });
+}
+
 interface SelectCellProps<T extends string> {
   value: T;
   options: T[];
   onChange: (v: T) => void;
   colorMap?: Record<T, string>;
+  minWidth?: string;
 }
 
-function SelectCell<T extends string>({ value, options, onChange, colorMap }: SelectCellProps<T>) {
+function SelectCell<T extends string>({ value, options, onChange, colorMap, minWidth }: SelectCellProps<T>) {
   return (
-    <div className="relative group">
+    <div className="relative inline-flex" style={{ minWidth }}>
       <select
         value={value}
         onChange={e => onChange(e.target.value as T)}
-        className={`appearance-none w-full text-xs font-medium px-2.5 py-1.5 rounded-full pr-6 cursor-pointer bg-transparent border-0 focus:outline-none ${colorMap ? colorMap[value] : 'text-[#ECECEC] bg-[#2f2f2f]'}`}
+        className={`appearance-none text-xs font-medium px-3 py-1.5 rounded-full pr-7 cursor-pointer bg-transparent border-0 focus:outline-none w-full ${colorMap ? colorMap[value] : 'text-[#ECECEC] bg-[#2a2a2a]'}`}
       >
         {options.map(o => (
           <option key={o} value={o} className="bg-[#1a1a1a] text-[#ECECEC]">{o}</option>
         ))}
       </select>
-      <ChevronDown size={10} className="absolute right-1.5 top-1/2 -translate-y-1/2 pointer-events-none text-current opacity-60" />
+      <ChevronDown size={10} className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-current opacity-60" />
+    </div>
+  );
+}
+
+interface AvatarProps {
+  name: string;
+  photoUrl?: string;
+  onPhotoChange: (url: string) => void;
+  size?: number;
+}
+
+function Avatar({ name, photoUrl, onPhotoChange, size = 36 }: AvatarProps) {
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const compressed = await compressImage(file);
+    onPhotoChange(compressed);
+  };
+
+  return (
+    <div
+      className="relative flex-shrink-0 cursor-pointer group"
+      style={{ width: size, height: size }}
+      onClick={() => inputRef.current?.click()}
+      title="Upload photo"
+    >
+      <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={handleFile} />
+      {photoUrl ? (
+        <img src={photoUrl} alt={name} className="w-full h-full rounded-full object-cover" />
+      ) : (
+        <div className="w-full h-full rounded-full bg-[#3a3a3a] flex items-center justify-center text-[#ECECEC] text-xs font-semibold">
+          {getInitials(name) || <Camera size={14} className="text-[#666666]" />}
+        </div>
+      )}
+      <div className="absolute inset-0 rounded-full bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+        <Camera size={12} className="text-white" />
+      </div>
     </div>
   );
 }
@@ -83,8 +144,8 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
   const [isAdding, setIsAdding] = useState(false);
   const [draft, setDraft] = useState<Client>(newClient());
 
-  const updateClient = (id: string, field: keyof Client, value: string) => {
-    setClients(prev => prev.map(c => c.id === id ? { ...c, [field]: value } : c));
+  const updateClient = (id: string, patch: Partial<Client>) => {
+    setClients(prev => prev.map(c => c.id === id ? { ...c, ...patch } : c));
   };
 
   const deleteClient = (id: string) => {
@@ -121,37 +182,45 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
       </div>
 
       {/* Table */}
-      <div className="rounded-xl border border-[#2f2f2f] overflow-hidden">
-        <table className="w-full text-sm">
+      <div className="rounded-xl border border-[#2f2f2f] overflow-x-auto">
+        <table className="w-full text-sm" style={{ minWidth: 740 }}>
           <thead>
             <tr className="border-b border-[#2f2f2f] bg-[#1a1a1a]">
-              <th className="text-left px-4 py-3 text-xs font-semibold text-[#666666] uppercase tracking-wider">Name</th>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-[#666666] uppercase tracking-wider">Payment Status</th>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-[#666666] uppercase tracking-wider">Service</th>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-[#666666] uppercase tracking-wider">Leader</th>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-[#666666] uppercase tracking-wider">Status</th>
-              <th className="px-4 py-3 w-10"></th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-[#666666] uppercase tracking-wider" style={{ minWidth: 220 }}>Name</th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-[#666666] uppercase tracking-wider" style={{ minWidth: 150 }}>Payment Status</th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-[#666666] uppercase tracking-wider" style={{ minWidth: 190 }}>Service</th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-[#666666] uppercase tracking-wider" style={{ minWidth: 160 }}>Leader</th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-[#666666] uppercase tracking-wider" style={{ minWidth: 110 }}>Status</th>
+              <th className="px-4 py-3" style={{ width: 40 }}></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-[#2f2f2f]">
             {clients.map(client => (
               <tr key={client.id} className="group bg-[#212121] hover:bg-[#252525] transition-colors">
-                {/* Name */}
+                {/* Name + Avatar */}
                 <td className="px-4 py-3">
-                  <input
-                    value={client.name}
-                    onChange={e => updateClient(client.id, 'name', e.target.value)}
-                    className="bg-transparent text-[#ECECEC] font-medium w-full focus:outline-none focus:border-b focus:border-[#3a3a3a] placeholder-[#666666]"
-                    placeholder="Client name"
-                  />
+                  <div className="flex items-center gap-3">
+                    <Avatar
+                      name={client.name}
+                      photoUrl={client.photoUrl}
+                      onPhotoChange={url => updateClient(client.id, { photoUrl: url })}
+                    />
+                    <input
+                      value={client.name}
+                      onChange={e => updateClient(client.id, { name: e.target.value })}
+                      className="bg-transparent text-[#ECECEC] font-medium flex-1 min-w-0 focus:outline-none focus:border-b focus:border-[#3a3a3a] placeholder-[#666666]"
+                      placeholder="Client name"
+                    />
+                  </div>
                 </td>
                 {/* Payment Status */}
                 <td className="px-4 py-3">
                   <SelectCell
                     value={client.paymentStatus}
                     options={PAYMENT_STATUSES}
-                    onChange={v => updateClient(client.id, 'paymentStatus', v)}
+                    onChange={v => updateClient(client.id, { paymentStatus: v })}
                     colorMap={paymentColors}
+                    minWidth="140px"
                   />
                 </td>
                 {/* Service */}
@@ -159,7 +228,8 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
                   <SelectCell
                     value={client.service}
                     options={SERVICES}
-                    onChange={v => updateClient(client.id, 'service', v)}
+                    onChange={v => updateClient(client.id, { service: v })}
+                    minWidth="180px"
                   />
                 </td>
                 {/* Leader */}
@@ -167,7 +237,8 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
                   <SelectCell
                     value={client.leader}
                     options={LEADERS}
-                    onChange={v => updateClient(client.id, 'leader', v)}
+                    onChange={v => updateClient(client.id, { leader: v })}
+                    minWidth="150px"
                   />
                 </td>
                 {/* Status */}
@@ -175,12 +246,13 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
                   <SelectCell
                     value={client.status}
                     options={CLIENT_STATUSES}
-                    onChange={v => updateClient(client.id, 'status', v)}
+                    onChange={v => updateClient(client.id, { status: v })}
                     colorMap={statusColors}
+                    minWidth="100px"
                   />
                 </td>
                 {/* Delete */}
-                <td className="px-4 py-3">
+                <td className="px-4 py-3 text-right">
                   <button
                     onClick={() => deleteClient(client.id)}
                     className="opacity-0 group-hover:opacity-100 text-[#666666] hover:text-red-400 transition-all"
@@ -195,30 +267,39 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
             {isAdding && (
               <tr className="bg-[#252525]">
                 <td className="px-4 py-3">
-                  <input
-                    autoFocus
-                    value={draft.name}
-                    onChange={e => setDraft(d => ({ ...d, name: e.target.value }))}
-                    onKeyDown={e => { if (e.key === 'Enter') handleAddSave(); if (e.key === 'Escape') handleAddCancel(); }}
-                    className="bg-transparent text-[#ECECEC] font-medium w-full focus:outline-none border-b border-[#3a3a3a] placeholder-[#666666]"
-                    placeholder="Client name..."
-                  />
+                  <div className="flex items-center gap-3">
+                    <Avatar
+                      name={draft.name}
+                      photoUrl={draft.photoUrl}
+                      onPhotoChange={url => setDraft(d => ({ ...d, photoUrl: url }))}
+                    />
+                    <input
+                      autoFocus
+                      value={draft.name}
+                      onChange={e => setDraft(d => ({ ...d, name: e.target.value }))}
+                      onKeyDown={e => { if (e.key === 'Enter') handleAddSave(); if (e.key === 'Escape') handleAddCancel(); }}
+                      className="bg-transparent text-[#ECECEC] font-medium flex-1 min-w-0 focus:outline-none border-b border-[#3a3a3a] placeholder-[#666666]"
+                      placeholder="Client name..."
+                    />
+                  </div>
                 </td>
                 <td className="px-4 py-3">
-                  <SelectCell value={draft.paymentStatus} options={PAYMENT_STATUSES} onChange={v => setDraft(d => ({ ...d, paymentStatus: v }))} colorMap={paymentColors} />
+                  <SelectCell value={draft.paymentStatus} options={PAYMENT_STATUSES} onChange={v => setDraft(d => ({ ...d, paymentStatus: v }))} colorMap={paymentColors} minWidth="140px" />
                 </td>
                 <td className="px-4 py-3">
-                  <SelectCell value={draft.service} options={SERVICES} onChange={v => setDraft(d => ({ ...d, service: v }))} />
+                  <SelectCell value={draft.service} options={SERVICES} onChange={v => setDraft(d => ({ ...d, service: v }))} minWidth="180px" />
                 </td>
                 <td className="px-4 py-3">
-                  <SelectCell value={draft.leader} options={LEADERS} onChange={v => setDraft(d => ({ ...d, leader: v }))} />
+                  <SelectCell value={draft.leader} options={LEADERS} onChange={v => setDraft(d => ({ ...d, leader: v }))} minWidth="150px" />
                 </td>
                 <td className="px-4 py-3">
-                  <SelectCell value={draft.status} options={CLIENT_STATUSES} onChange={v => setDraft(d => ({ ...d, status: v }))} colorMap={statusColors} />
+                  <SelectCell value={draft.status} options={CLIENT_STATUSES} onChange={v => setDraft(d => ({ ...d, status: v }))} colorMap={statusColors} minWidth="100px" />
                 </td>
-                <td className="px-4 py-3 flex gap-2">
-                  <button onClick={handleAddSave} className="text-xs text-emerald-400 hover:text-emerald-300 font-medium">Save</button>
-                  <button onClick={handleAddCancel} className="text-xs text-[#666666] hover:text-[#ECECEC]">Cancel</button>
+                <td className="px-4 py-3">
+                  <div className="flex flex-col gap-1">
+                    <button onClick={handleAddSave} className="text-xs text-emerald-400 hover:text-emerald-300 font-medium">Save</button>
+                    <button onClick={handleAddCancel} className="text-xs text-[#666666] hover:text-[#ECECEC]">Cancel</button>
+                  </div>
                 </td>
               </tr>
             )}
