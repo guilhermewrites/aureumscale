@@ -145,7 +145,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeItem, onNavigate, activeUserId,
             <Camera size={12} className="text-white" />
           </div>
         </label>
-        {!collapsed && <span className="text-xl tracking-wide text-[#ECECEC] flex-1 min-w-0 truncate" style={{ fontFamily: "'Cormorant Garamond', serif", fontStyle: 'italic', fontWeight: 600 }}>Aureum</span>}
+        {!collapsed && <span className="text-xl tracking-wide text-[#ECECEC] flex-1 min-w-0 truncate" style={{ fontFamily: "'Cormorant Garamond', serif", fontStyle: 'italic', fontWeight: 700 }}>Aureum</span>}
         <button
           onClick={onToggleCollapse}
           className={`${collapsed ? 'absolute -right-3 top-5' : ''} w-6 h-6 rounded-full bg-[#2f2f2f] border border-[#3a3a3a] flex items-center justify-center text-[#9B9B9B] hover:text-[#ECECEC] hover:bg-[#3a3a3a] flex-shrink-0`}
