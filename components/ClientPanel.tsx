@@ -297,7 +297,7 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
   const card = { background: '#1c1c1c', borderRadius: 20 };
 
   return (
-    <div className="flex w-full h-full overflow-hidden p-6 gap-6" style={{ background: '#131313' }}>
+    <div className="flex w-full h-full overflow-hidden p-6 gap-6" style={{ background: '#131313', borderRadius: 20 }}>
 
       {/* ── LEFT CARD ─────────────────────────────────────────────────────────── */}
       <div
