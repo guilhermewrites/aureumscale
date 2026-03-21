@@ -279,17 +279,19 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
 
   if (!client) return null;
 
-  // Shared field styles
-  const ta = 'w-full resize-none focus:outline-none bg-[#1a1a1a] rounded-2xl text-[#DEDEDE] text-sm leading-relaxed p-4 placeholder-[#3a3a3a] focus:ring-1 focus:ring-[#333] transition-all';
-  const inp = 'flex-1 focus:outline-none bg-[#1a1a1a] rounded-2xl text-[#DEDEDE] text-sm px-4 py-3 placeholder-[#3a3a3a] focus:ring-1 focus:ring-[#333] transition-all';
+  // Shared field styles — slightly darker than card bg (#1c1c1c)
+  const ta = 'w-full resize-none focus:outline-none bg-[#161616] rounded-xl text-[#DEDEDE] text-sm leading-relaxed p-4 placeholder-[#3a3a3a] focus:ring-1 focus:ring-[#333] transition-all';
+  const inp = 'flex-1 focus:outline-none bg-[#161616] rounded-xl text-[#DEDEDE] text-sm px-4 py-3 placeholder-[#3a3a3a] focus:ring-1 focus:ring-[#333] transition-all';
+
+  const card = { background: '#1c1c1c', borderRadius: 16 };
 
   return (
-    <div className="flex w-full h-full overflow-hidden p-6 gap-6">
+    <div className="flex w-full h-full overflow-hidden p-6 gap-6" style={{ background: '#131313' }}>
 
       {/* ── LEFT CARD ─────────────────────────────────────────────────────────── */}
       <div
         className="flex flex-col flex-shrink-0 overflow-hidden"
-        style={{ width: 260, background: '#1a1a1a', borderRadius: 20 }}
+        style={{ width: 260, ...card }}
       >
         {/* Photo */}
         <div
@@ -415,7 +417,7 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
             <span className="text-sm">Loading workspace…</span>
           </div>
         ) : (
-          <div className="p-8 space-y-8 max-w-2xl">
+          <div className="space-y-5 max-w-2xl">
 
             {/* ── OVERVIEW ────────────────────────────────────────────────── */}
             {activeTab === 'Overview' && (<>
@@ -442,7 +444,7 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
               <Block title="Performance Metrics">
                 <div className="grid grid-cols-3 gap-3">
                   {ADS_METRICS.map(({ key, label, prefix }) => (
-                    <div key={key} className="rounded-2xl p-5 flex flex-col gap-2" style={{ background: '#1a1a1a' }}>
+                    <div key={key} className="rounded-2xl p-5 flex flex-col gap-2" style={{ background: '#161616' }}>
                       <span className="text-[10px] font-semibold uppercase tracking-widest" style={{ color: '#555' }}>{label}</span>
                       <div className="flex items-baseline gap-0.5">
                         {prefix && <span className="text-sm font-bold" style={{ color: '#3a3a3a' }}>{prefix}</span>}
@@ -466,7 +468,7 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
             {/* ── SOCIAL ──────────────────────────────────────────────────── */}
             {activeTab === 'Social' && (
               <Block title="Platforms">
-                <div className="rounded-2xl overflow-hidden" style={{ background: '#1a1a1a' }}>
+                <div className="rounded-2xl overflow-hidden" style={{ background: '#161616' }}>
                   {SOCIAL_LIST.map(({ key, label, color, icon: Icon }, i) => (
                     <div key={key} className="flex items-center gap-4 px-5 py-3.5 transition-colors"
                       style={{ borderTop: i === 0 ? 'none' : '1px solid #222', background: 'transparent' }}
@@ -534,7 +536,7 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
                 ) : (
                   <div className="space-y-4">
                     {details.scripted_ads.map((script, index) => (
-                      <div key={script.id} className="rounded-2xl p-6 space-y-4" style={{ background: '#1a1a1a' }}>
+                      <div key={script.id} className="rounded-2xl p-6 space-y-4" style={{ background: '#161616' }}>
                         <div className="flex items-center gap-3">
                           <span className="text-xs font-bold w-5 flex-shrink-0" style={{ color: '#3a3a3a' }}>
                             {String(index + 1).padStart(2, '0')}
@@ -582,7 +584,7 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
 
 function Block({ title, children, action }: { title: string; children: React.ReactNode; action?: React.ReactNode }) {
   return (
-    <section className="space-y-3">
+    <section className="p-6 space-y-4" style={{ background: '#1c1c1c', borderRadius: 16 }}>
       <div className="flex items-center justify-between">
         <h2 className="text-xs font-semibold uppercase tracking-widest" style={{ color: '#555' }}>{title}</h2>
         {action}
@@ -598,7 +600,7 @@ function OpenBtn({ href, label }: { href: string; label: string }) {
       onClick={() => href && window.open(href, '_blank')}
       disabled={!href}
       className="flex items-center gap-2 px-4 py-3 rounded-2xl text-sm font-medium transition-colors whitespace-nowrap disabled:opacity-30 disabled:cursor-not-allowed flex-shrink-0"
-      style={{ background: '#1a1a1a', color: '#777' }}
+      style={{ background: '#161616', color: '#777' }}
       onMouseEnter={e => { if (href) e.currentTarget.style.color = '#ECECEC'; }}
       onMouseLeave={e => { e.currentTarget.style.color = '#777'; }}
     >
