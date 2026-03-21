@@ -107,8 +107,9 @@ ALTER TABLE client_details ADD COLUMN IF NOT EXISTS contact_email TEXT NOT NULL 
 ALTER TABLE client_details ADD COLUMN IF NOT EXISTS client_since TEXT NOT NULL DEFAULT '';
 ALTER TABLE client_details ADD COLUMN IF NOT EXISTS funnel_url TEXT NOT NULL DEFAULT '';
 
--- Add amount column to clients table:
+-- Add amount and client_type columns to clients table:
 ALTER TABLE clients ADD COLUMN IF NOT EXISTS amount NUMERIC NOT NULL DEFAULT 0;
+ALTER TABLE clients ADD COLUMN IF NOT EXISTS client_type TEXT NOT NULL DEFAULT 'recurring';
 
 -- ============================================================
 -- 5. BILLING_HISTORY TABLE

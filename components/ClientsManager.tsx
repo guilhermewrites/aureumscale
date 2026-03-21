@@ -4,6 +4,8 @@ import { Plus, Trash2, ChevronDown, Camera, Loader2, Archive, RotateCcw, GripVer
 import { supabase } from '../services/supabaseClient';
 import ClientPanel from './ClientPanel';
 
+type ClientType = 'recurring' | 'one-time';
+
 interface Client {
   id: string;
   name: string;
@@ -13,6 +15,7 @@ interface Client {
   service: string;
   leader: string;
   status: string;
+  clientType: ClientType;
   orderNum: number;
   active: boolean;
 }
@@ -39,7 +42,7 @@ function getInitials(name: string) {
   return name.trim().split(' ').filter(Boolean).map(w => w[0]).slice(0, 2).join('').toUpperCase() || '?';
 }
 
-function newClient(orderNum: number): Client {
+function newClient(orderNum: number, clientType: ClientType = 'recurring'): Client {
   return {
     id: crypto.randomUUID(),
     name: '',
@@ -49,6 +52,7 @@ function newClient(orderNum: number): Client {
     service: 'Ghostwriting',
     leader: 'Guilherme Writes',
     status: 'Happy',
+    clientType,
     orderNum,
     active: true,
   };
@@ -65,6 +69,7 @@ function toDbRow(client: Client, userId: string) {
     service: client.service,
     leader: client.leader,
     status: client.status,
+    client_type: client.clientType,
     order_num: client.orderNum,
     active: client.active,
   };
@@ -80,6 +85,7 @@ function fromDbRow(row: any): Client {
     service: row.service ?? 'Ghostwriting',
     leader: row.leader ?? 'Guilherme Writes',
     status: row.status ?? 'Happy',
+    clientType: row.client_type ?? 'recurring',
     orderNum: row.order_num ?? 0,
     active: row.active ?? true,
   };
@@ -334,11 +340,11 @@ const COLUMN_LABELS: Record<ColumnId, string> = {
 };
 
 const COLUMN_WIDTHS: Record<ColumnId, string> = {
-  payment: '14%',
-  amount: '12%',
-  service: '18%',
-  leader: '16%',
-  status: '12%',
+  payment: '15%',
+  amount: '11%',
+  service: '16%',
+  leader: '15%',
+  status: '13%',
 };
 
 interface ClientsManagerProps {
@@ -358,6 +364,7 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isAdding, setIsAdding] = useState(false);
+  const [addingType, setAddingType] = useState<ClientType>('recurring');
   const [draft, setDraft] = useState<Client>(newClient(0));
   const [selectedClient, setSelectedClient] = useState<{ id: string; name: string; photoUrl?: string; status?: string; paymentStatus?: string; amount?: number } | null>(null);
   const [showActive, setShowActive] = useState(true);
@@ -553,6 +560,7 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
     if ('service' in patch) dbPatch.service = patch.service;
     if ('leader' in patch) dbPatch.leader = patch.leader;
     if ('status' in patch) dbPatch.status = patch.status;
+    if ('clientType' in patch) dbPatch.client_type = patch.clientType;
 
     try {
       const { error: updateError } = await supabase
@@ -630,6 +638,7 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
   const handleAddCancel = () => {
     setDraft(newClient(0));
     setIsAdding(false);
+    setAddingType('recurring');
   };
 
   const toggleClientActive = useCallback(async (id: string, active: boolean) => {
@@ -644,7 +653,9 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
 
   const activeClients = clients.filter(c => c.active);
   const inactiveClients = clients.filter(c => !c.active);
-  const filteredClients = showActive ? activeClients : inactiveClients;
+
+  const recurringClients = (showActive ? activeClients : inactiveClients).filter(c => c.clientType === 'recurring');
+  const oneTimeClients = (showActive ? activeClients : inactiveClients).filter(c => c.clientType === 'one-time');
 
   // ── Full-page client workspace ──────────────────────────────────────────────
   if (selectedClient) {
@@ -677,8 +688,204 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
     );
   }
 
+  // ── Shared cell map builder ────────────────────────────────────────────────
+  const buildCellMap = (client: Client): Record<ColumnId, React.ReactNode> => ({
+    payment: (
+      <SelectCell
+        value={client.paymentStatus}
+        options={columnOptions.payment}
+        onChange={v => updateClient(client.id, { paymentStatus: v })}
+        colorMap={paymentColors}
+        onAddOption={v => addColumnOption('payment', v)}
+        onEditOption={(o, n) => editColumnOption('payment', o, n)}
+        onDeleteOption={v => deleteColumnOption('payment', v)}
+      />
+    ),
+    amount: (
+      <div className="flex items-center gap-0.5">
+        <span className="text-xs text-emerald-500/60">$</span>
+        <input
+          type="text"
+          value={client.amount ? client.amount.toLocaleString() : ''}
+          onChange={e => {
+            const raw = e.target.value.replace(/[^0-9.]/g, '');
+            const num = parseFloat(raw) || 0;
+            updateClient(client.id, { amount: num });
+          }}
+          className="bg-transparent text-xs font-medium text-emerald-400 focus:outline-none w-[80px] placeholder-[#3a3a3a]"
+          placeholder="0"
+        />
+      </div>
+    ),
+    service: (
+      <SelectCell
+        value={client.service}
+        options={columnOptions.service}
+        onChange={v => updateClient(client.id, { service: v })}
+        onAddOption={v => addColumnOption('service', v)}
+        onEditOption={(o, n) => editColumnOption('service', o, n)}
+        onDeleteOption={v => deleteColumnOption('service', v)}
+      />
+    ),
+    leader: (
+      <SelectCell
+        value={client.leader}
+        options={columnOptions.leader}
+        onChange={v => updateClient(client.id, { leader: v })}
+        onAddOption={v => addColumnOption('leader', v)}
+        onEditOption={(o, n) => editColumnOption('leader', o, n)}
+        onDeleteOption={v => deleteColumnOption('leader', v)}
+      />
+    ),
+    status: (
+      <SelectCell
+        value={client.status}
+        options={columnOptions.status}
+        onChange={v => updateClient(client.id, { status: v })}
+        colorMap={statusColors}
+        onAddOption={v => addColumnOption('status', v)}
+        onEditOption={(o, n) => editColumnOption('status', o, n)}
+        onDeleteOption={v => deleteColumnOption('status', v)}
+      />
+    ),
+  });
+
+  // ── Shared table renderer ─────────────────────────────────────────────────
+  const renderTable = (clientList: Client[], sectionType: ClientType) => (
+    <div className="rounded-xl border border-[#2f2f2f] overflow-visible">
+      <table className="w-full text-sm" style={{ borderCollapse: 'separate', borderSpacing: 0, tableLayout: 'fixed' }}>
+        <colgroup>
+          <col style={{ width: '24%' }} />
+          {columnOrder.map(col => (
+            <col key={col} style={{ width: COLUMN_WIDTHS[col] }} />
+          ))}
+          <col style={{ width: '6%' }} />
+        </colgroup>
+        <thead>
+          <tr className="border-b border-[#2f2f2f]" style={{ background: '#1a1a1a' }}>
+            <th className="text-left px-5 py-3 text-xs font-semibold text-[#555] uppercase tracking-wider rounded-tl-xl">Name</th>
+            {columnOrder.map(col => (
+              <th
+                key={col}
+                draggable
+                onDragStart={() => handleColumnDragStart(col)}
+                onDragOver={e => handleColumnDragOver(e, col)}
+                onDrop={handleColumnDrop}
+                className="text-left px-5 py-3 text-xs font-semibold text-[#555] uppercase tracking-wider select-none cursor-grab active:cursor-grabbing"
+              >
+                <div className="flex items-center gap-1.5">
+                  <GripVertical size={10} className="flex-shrink-0" style={{ opacity: 0.2 }} />
+                  {COLUMN_LABELS[col]}
+                </div>
+              </th>
+            ))}
+            <th className="px-3 py-3 rounded-tr-xl"></th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-[#2f2f2f]">
+          {clientList.map(client => {
+            const cellMap = buildCellMap(client);
+            return (
+              <tr
+                key={client.id}
+                className="group bg-[#212121] hover:bg-[#1e1e1e] transition-colors cursor-pointer"
+                onClick={() => setSelectedClient({ id: client.id, name: client.name, photoUrl: client.photoUrl, status: client.status, paymentStatus: client.paymentStatus, amount: client.amount })}
+              >
+                <td className="px-5 py-3.5">
+                  <div className="flex items-center gap-3">
+                    <div onClick={e => e.stopPropagation()}>
+                      <Avatar
+                        name={client.name}
+                        photoUrl={client.photoUrl}
+                        onPhotoChange={url => updateClient(client.id, { photoUrl: url })}
+                      />
+                    </div>
+                    <input
+                      value={client.name}
+                      onChange={e => updateClientName(client.id, e.target.value)}
+                      className="bg-transparent text-[#ECECEC] text-sm font-medium flex-1 min-w-0 focus:outline-none placeholder-[#555] cursor-text"
+                      placeholder="Client name"
+                      onClick={e => e.stopPropagation()}
+                    />
+                  </div>
+                </td>
+                {columnOrder.map(col => (
+                  <td key={col} className="px-5 py-3.5" onClick={e => e.stopPropagation()}>{cellMap[col]}</td>
+                ))}
+                <td className="px-3 py-3.5 text-center">
+                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all justify-end">
+                    {showActive ? (
+                      <button
+                        onClick={e => { e.stopPropagation(); toggleClientActive(client.id, false); }}
+                        className="text-[#555] hover:text-[#ECECEC] transition-colors p-1"
+                        title="Archive client"
+                      ><Archive size={13} /></button>
+                    ) : (
+                      <button
+                        onClick={e => { e.stopPropagation(); toggleClientActive(client.id, true); }}
+                        className="text-[#555] hover:text-emerald-400 transition-colors p-1"
+                        title="Reactivate client"
+                      ><RotateCcw size={13} /></button>
+                    )}
+                    <button
+                      onClick={e => { e.stopPropagation(); deleteClient(client.id); }}
+                      className="text-[#555] hover:text-red-400 transition-colors p-1"
+                      title="Delete client"
+                    ><Trash2 size={13} /></button>
+                  </div>
+                </td>
+              </tr>
+            );
+          })}
+
+          {/* Add new row */}
+          {isAdding && addingType === sectionType && (
+            <tr className="bg-[#1e1e1e]">
+              <td className="px-5 py-3.5" colSpan={columnOrder.length + 2}>
+                <div className="flex items-center gap-4">
+                  <Avatar
+                    name={draft.name}
+                    photoUrl={draft.photoUrl}
+                    onPhotoChange={url => setDraft(d => ({ ...d, photoUrl: url }))}
+                  />
+                  <input
+                    autoFocus
+                    value={draft.name}
+                    onChange={e => setDraft(d => ({ ...d, name: e.target.value }))}
+                    onKeyDown={e => { if (e.key === 'Enter') handleAddSave(); if (e.key === 'Escape') handleAddCancel(); }}
+                    className="bg-transparent text-[#ECECEC] text-sm font-medium flex-1 min-w-0 focus:outline-none placeholder-[#555]"
+                    placeholder="Client name..."
+                  />
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <SelectCell value={draft.paymentStatus} options={columnOptions.payment} onChange={v => setDraft(d => ({ ...d, paymentStatus: v }))} colorMap={paymentColors} />
+                    <SelectCell value={draft.service} options={columnOptions.service} onChange={v => setDraft(d => ({ ...d, service: v }))} />
+                    <SelectCell value={draft.leader} options={columnOptions.leader} onChange={v => setDraft(d => ({ ...d, leader: v }))} />
+                    <SelectCell value={draft.status} options={columnOptions.status} onChange={v => setDraft(d => ({ ...d, status: v }))} colorMap={statusColors} />
+                  </div>
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <button onClick={handleAddSave} className="text-xs text-emerald-400 hover:text-emerald-300 font-semibold px-3 py-1.5 rounded-lg transition-colors" style={{ background: '#2a2a2a' }}>Save</button>
+                    <button onClick={handleAddCancel} className="text-xs text-[#555] hover:text-[#ECECEC] px-3 py-1.5 rounded-lg transition-colors">Cancel</button>
+                  </div>
+                </div>
+              </td>
+            </tr>
+          )}
+
+          {/* Empty state */}
+          {clientList.length === 0 && !(isAdding && addingType === sectionType) && (
+            <tr>
+              <td colSpan={columnOrder.length + 2} className="px-4 py-12 text-center text-[#666666]">
+                <p className="text-sm">No {sectionType === 'recurring' ? 'recurring clients' : 'one-time services'} yet.</p>
+              </td>
+            </tr>
+          )}
+        </tbody>
+      </table>
+    </div>
+  );
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-8">
       {/* Header — tabs + add button */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-1 p-1 rounded-xl" style={{ background: '#1a1a1a' }}>
@@ -703,219 +910,40 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
             Inactive ({inactiveClients.length})
           </button>
         </div>
-        <button
-          onClick={() => setIsAdding(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-[#ECECEC] text-[#121212] text-sm font-medium rounded-lg hover:bg-white transition-colors"
-        >
-          <Plus size={16} />
-          Add Client
-        </button>
       </div>
 
-      {/* Table */}
-      <div className="rounded-xl border border-[#2f2f2f] overflow-visible">
-        <table className="w-full text-sm" style={{ borderCollapse: 'separate', borderSpacing: 0, tableLayout: 'fixed' }}>
-          <colgroup>
-            <col style={{ width: '22%' }} />
-            {columnOrder.map(col => (
-              <col key={col} style={{ width: COLUMN_WIDTHS[col] }} />
-            ))}
-            <col style={{ width: '6%' }} />
-          </colgroup>
-          <thead>
-            <tr className="border-b border-[#2f2f2f]" style={{ background: '#1a1a1a' }}>
-              <th className="text-left px-6 py-3.5 text-xs font-semibold text-[#555] uppercase tracking-wider rounded-tl-xl">Name</th>
-              {columnOrder.map((col, i) => (
-                <th
-                  key={col}
-                  draggable
-                  onDragStart={() => handleColumnDragStart(col)}
-                  onDragOver={e => handleColumnDragOver(e, col)}
-                  onDrop={handleColumnDrop}
-                  className="text-left px-6 py-3.5 text-xs font-semibold text-[#555] uppercase tracking-wider select-none cursor-grab active:cursor-grabbing"
-                >
-                  <div className="flex items-center gap-1.5">
-                    <GripVertical size={10} className="opacity-0 group-hover:opacity-30 flex-shrink-0" style={{ opacity: 0.2 }} />
-                    {COLUMN_LABELS[col]}
-                  </div>
-                </th>
-              ))}
-              <th className="px-3 py-3.5 rounded-tr-xl"></th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-[#2f2f2f]">
-            {filteredClients.map(client => {
-              const cellMap: Record<ColumnId, React.ReactNode> = {
-                payment: (
-                  <SelectCell
-                    value={client.paymentStatus}
-                    options={columnOptions.payment}
-                    onChange={v => updateClient(client.id, { paymentStatus: v })}
-                    colorMap={paymentColors}
-                    onAddOption={v => addColumnOption('payment', v)}
-                    onEditOption={(o, n) => editColumnOption('payment', o, n)}
-                    onDeleteOption={v => deleteColumnOption('payment', v)}
-                  />
-                ),
-                amount: (
-                  <div className="flex items-center gap-0.5" onClick={e => e.stopPropagation()}>
-                    <span className="text-xs text-[#555]">$</span>
-                    <input
-                      type="text"
-                      value={client.amount ? client.amount.toLocaleString() : ''}
-                      onChange={e => {
-                        const raw = e.target.value.replace(/[^0-9.]/g, '');
-                        const num = parseFloat(raw) || 0;
-                        updateClient(client.id, { amount: num });
-                      }}
-                      className="bg-transparent text-xs font-medium text-[#ECECEC] focus:outline-none w-[80px] placeholder-[#3a3a3a]"
-                      placeholder="0"
-                    />
-                  </div>
-                ),
-                service: (
-                  <SelectCell
-                    value={client.service}
-                    options={columnOptions.service}
-                    onChange={v => updateClient(client.id, { service: v })}
-                    onAddOption={v => addColumnOption('service', v)}
-                    onEditOption={(o, n) => editColumnOption('service', o, n)}
-                    onDeleteOption={v => deleteColumnOption('service', v)}
-                  />
-                ),
-                leader: (
-                  <SelectCell
-                    value={client.leader}
-                    options={columnOptions.leader}
-                    onChange={v => updateClient(client.id, { leader: v })}
-                    onAddOption={v => addColumnOption('leader', v)}
-                    onEditOption={(o, n) => editColumnOption('leader', o, n)}
-                    onDeleteOption={v => deleteColumnOption('leader', v)}
-                  />
-                ),
-                status: (
-                  <SelectCell
-                    value={client.status}
-                    options={columnOptions.status}
-                    onChange={v => updateClient(client.id, { status: v })}
-                    colorMap={statusColors}
-                    onAddOption={v => addColumnOption('status', v)}
-                    onEditOption={(o, n) => editColumnOption('status', o, n)}
-                    onDeleteOption={v => deleteColumnOption('status', v)}
-                  />
-                ),
-              };
+      {/* ── Recurring Clients ──────────────────────────────────────────────── */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-semibold" style={{ color: '#ECECEC' }}>Recurring Clients</h2>
+          <button
+            onClick={() => { setAddingType('recurring'); setDraft(newClient(clients.length, 'recurring')); setIsAdding(true); }}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition-colors"
+            style={{ background: '#2a2a2a', color: '#ECECEC' }}
+            onMouseEnter={e => (e.currentTarget.style.background = '#333')}
+            onMouseLeave={e => (e.currentTarget.style.background = '#2a2a2a')}
+          >
+            <Plus size={13} /> Add Client
+          </button>
+        </div>
+        {renderTable(recurringClients, 'recurring')}
+      </div>
 
-              return (
-                <tr
-                  key={client.id}
-                  className="group bg-[#212121] hover:bg-[#1e1e1e] transition-colors cursor-pointer"
-                  onClick={() => setSelectedClient({ id: client.id, name: client.name, photoUrl: client.photoUrl, status: client.status, paymentStatus: client.paymentStatus, amount: client.amount })}
-                >
-                  {/* Name + Avatar */}
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      <div onClick={e => e.stopPropagation()}>
-                        <Avatar
-                          name={client.name}
-                          photoUrl={client.photoUrl}
-                          onPhotoChange={url => updateClient(client.id, { photoUrl: url })}
-                        />
-                      </div>
-                      <input
-                        value={client.name}
-                        onChange={e => updateClientName(client.id, e.target.value)}
-                        className="bg-transparent text-[#ECECEC] text-sm font-medium flex-1 min-w-0 focus:outline-none placeholder-[#555] cursor-text"
-                        placeholder="Client name"
-                        onClick={e => e.stopPropagation()}
-                      />
-                    </div>
-                  </td>
-                  {/* Dynamic columns */}
-                  {columnOrder.map(col => (
-                    <td key={col} className="px-6 py-4">{cellMap[col]}</td>
-                  ))}
-                  {/* Actions */}
-                  <td className="px-3 py-4 text-center">
-                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all justify-end">
-                      {showActive ? (
-                        <button
-                          onClick={e => { e.stopPropagation(); toggleClientActive(client.id, false); }}
-                          className="text-[#555] hover:text-[#ECECEC] transition-colors p-1"
-                          title="Archive client"
-                        >
-                          <Archive size={13} />
-                        </button>
-                      ) : (
-                        <button
-                          onClick={e => { e.stopPropagation(); toggleClientActive(client.id, true); }}
-                          className="text-[#555] hover:text-emerald-400 transition-colors p-1"
-                          title="Reactivate client"
-                        >
-                          <RotateCcw size={13} />
-                        </button>
-                      )}
-                      <button
-                        onClick={e => { e.stopPropagation(); deleteClient(client.id); }}
-                        className="text-[#555] hover:text-red-400 transition-colors p-1"
-                        title="Delete client"
-                      >
-                        <Trash2 size={13} />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              );
-            })}
-
-            {/* Add new row */}
-            {isAdding && (
-              <tr className="bg-[#1e1e1e]">
-                <td className="px-6 py-4" colSpan={7}>
-                  <div className="flex items-center gap-4">
-                    <Avatar
-                      name={draft.name}
-                      photoUrl={draft.photoUrl}
-                      onPhotoChange={url => setDraft(d => ({ ...d, photoUrl: url }))}
-                    />
-                    <input
-                      autoFocus
-                      value={draft.name}
-                      onChange={e => setDraft(d => ({ ...d, name: e.target.value }))}
-                      onKeyDown={e => { if (e.key === 'Enter') handleAddSave(); if (e.key === 'Escape') handleAddCancel(); }}
-                      className="bg-transparent text-[#ECECEC] text-sm font-medium flex-1 min-w-0 focus:outline-none placeholder-[#555]"
-                      placeholder="Client name..."
-                    />
-                    <div className="flex items-center gap-2 flex-shrink-0">
-                      <SelectCell value={draft.paymentStatus} options={columnOptions.payment} onChange={v => setDraft(d => ({ ...d, paymentStatus: v }))} colorMap={paymentColors} />
-                      <SelectCell value={draft.service} options={columnOptions.service} onChange={v => setDraft(d => ({ ...d, service: v }))} />
-                      <SelectCell value={draft.leader} options={columnOptions.leader} onChange={v => setDraft(d => ({ ...d, leader: v }))} />
-                      <SelectCell value={draft.status} options={columnOptions.status} onChange={v => setDraft(d => ({ ...d, status: v }))} colorMap={statusColors} />
-                    </div>
-                    <div className="flex items-center gap-2 flex-shrink-0">
-                      <button onClick={handleAddSave} className="text-xs text-emerald-400 hover:text-emerald-300 font-semibold px-3 py-1.5 rounded-lg transition-colors" style={{ background: '#2a2a2a' }}>Save</button>
-                      <button onClick={handleAddCancel} className="text-xs text-[#555] hover:text-[#ECECEC] px-3 py-1.5 rounded-lg transition-colors">Cancel</button>
-                    </div>
-                  </div>
-                </td>
-              </tr>
-            )}
-
-            {/* Empty state */}
-            {filteredClients.length === 0 && !isAdding && (
-              <tr>
-                <td colSpan={7} className="px-4 py-16 text-center text-[#666666]">
-                  <p className="text-base font-medium mb-1">
-                    {showActive ? 'No active clients' : 'No inactive clients'}
-                  </p>
-                  <p className="text-sm">
-                    {showActive ? 'Click "Add Client" to get started.' : 'Archived clients will appear here.'}
-                  </p>
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+      {/* ── One-time Services ──────────────────────────────────────────────── */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-semibold" style={{ color: '#ECECEC' }}>One-Time Services</h2>
+          <button
+            onClick={() => { setAddingType('one-time'); setDraft(newClient(clients.length, 'one-time')); setIsAdding(true); }}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition-colors"
+            style={{ background: '#2a2a2a', color: '#ECECEC' }}
+            onMouseEnter={e => (e.currentTarget.style.background = '#333')}
+            onMouseLeave={e => (e.currentTarget.style.background = '#2a2a2a')}
+          >
+            <Plus size={13} /> Add Client
+          </button>
+        </div>
+        {renderTable(oneTimeClients, 'one-time')}
       </div>
 
       {/* Error toast */}
