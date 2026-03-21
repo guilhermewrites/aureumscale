@@ -108,18 +108,45 @@ interface SelectCellProps<T extends string> {
 }
 
 function SelectCell<T extends string>({ value, options, onChange, colorMap }: SelectCellProps<T>) {
+  const [open, setOpen] = React.useState(false);
+  const ref = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  const pillClass = colorMap
+    ? colorMap[value]
+    : 'bg-[#2a2a2a] text-[#ECECEC] border border-[#3a3a3a]';
+
   return (
-    <div className="relative w-full">
-      <select
-        value={value}
-        onChange={e => onChange(e.target.value as T)}
-        className={`appearance-none text-xs font-medium px-2.5 py-1.5 rounded-full pr-6 cursor-pointer bg-transparent border-0 focus:outline-none w-full truncate ${colorMap ? colorMap[value] : 'text-[#ECECEC] bg-[#2a2a2a]'}`}
+    <div ref={ref} className="relative inline-block">
+      <button
+        type="button"
+        onClick={() => setOpen(o => !o)}
+        className={`flex items-center gap-1 text-xs font-medium px-2.5 py-1.5 rounded-full cursor-pointer whitespace-nowrap ${pillClass}`}
       >
-        {options.map(o => (
-          <option key={o} value={o} className="bg-[#1a1a1a] text-[#ECECEC]">{o}</option>
-        ))}
-      </select>
-      <ChevronDown size={10} className="absolute right-1.5 top-1/2 -translate-y-1/2 pointer-events-none text-current opacity-60" />
+        <span className="truncate max-w-[110px]">{value}</span>
+        <ChevronDown size={10} className="flex-shrink-0 opacity-60" />
+      </button>
+      {open && (
+        <div className="absolute left-0 top-full mt-1 z-50 min-w-max bg-[#1e1e1e] border border-[#3a3a3a] rounded-lg shadow-xl overflow-hidden">
+          {options.map(o => (
+            <button
+              key={o}
+              type="button"
+              onClick={() => { onChange(o); setOpen(false); }}
+              className={`block w-full text-left text-xs px-3 py-2 hover:bg-[#2a2a2a] transition-colors ${o === value ? 'text-white font-semibold' : 'text-[#9B9B9B]'}`}
+            >
+              {o}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
