@@ -436,7 +436,7 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
                   </div>
                 </td>
                 {/* Payment Status */}
-                <td className="px-6 py-4" onClick={e => e.stopPropagation()}>
+                <td className="px-6 py-4">
                   <SelectCell
                     value={client.paymentStatus}
                     options={PAYMENT_STATUSES}
@@ -445,7 +445,7 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
                   />
                 </td>
                 {/* Service */}
-                <td className="px-6 py-4" onClick={e => e.stopPropagation()}>
+                <td className="px-6 py-4">
                   <SelectCell
                     value={client.service}
                     options={SERVICES}
@@ -453,7 +453,7 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
                   />
                 </td>
                 {/* Leader */}
-                <td className="px-6 py-4" onClick={e => e.stopPropagation()}>
+                <td className="px-6 py-4">
                   <SelectCell
                     value={client.leader}
                     options={LEADERS}
@@ -461,7 +461,7 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
                   />
                 </td>
                 {/* Status */}
-                <td className="px-6 py-4" onClick={e => e.stopPropagation()}>
+                <td className="px-6 py-4">
                   <SelectCell
                     value={client.status}
                     options={CLIENT_STATUSES}
