@@ -76,22 +76,21 @@ interface SelectCellProps<T extends string> {
   options: T[];
   onChange: (v: T) => void;
   colorMap?: Record<T, string>;
-  minWidth?: string;
 }
 
-function SelectCell<T extends string>({ value, options, onChange, colorMap, minWidth }: SelectCellProps<T>) {
+function SelectCell<T extends string>({ value, options, onChange, colorMap }: SelectCellProps<T>) {
   return (
-    <div className="relative inline-flex" style={{ minWidth }}>
+    <div className="relative w-full">
       <select
         value={value}
         onChange={e => onChange(e.target.value as T)}
-        className={`appearance-none text-xs font-medium px-3 py-1.5 rounded-full pr-7 cursor-pointer bg-transparent border-0 focus:outline-none w-full ${colorMap ? colorMap[value] : 'text-[#ECECEC] bg-[#2a2a2a]'}`}
+        className={`appearance-none text-xs font-medium px-2.5 py-1.5 rounded-full pr-6 cursor-pointer bg-transparent border-0 focus:outline-none w-full truncate ${colorMap ? colorMap[value] : 'text-[#ECECEC] bg-[#2a2a2a]'}`}
       >
         {options.map(o => (
           <option key={o} value={o} className="bg-[#1a1a1a] text-[#ECECEC]">{o}</option>
         ))}
       </select>
-      <ChevronDown size={10} className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-current opacity-60" />
+      <ChevronDown size={10} className="absolute right-1.5 top-1/2 -translate-y-1/2 pointer-events-none text-current opacity-60" />
     </div>
   );
 }
@@ -182,16 +181,24 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
       </div>
 
       {/* Table */}
-      <div className="rounded-xl border border-[#2f2f2f] overflow-x-auto">
-        <table className="w-full text-sm" style={{ minWidth: 740 }}>
+      <div className="rounded-xl border border-[#2f2f2f] overflow-hidden">
+        <table className="w-full table-fixed text-sm">
+          <colgroup>
+            <col style={{ width: '28%' }} />
+            <col style={{ width: '18%' }} />
+            <col style={{ width: '22%' }} />
+            <col style={{ width: '18%' }} />
+            <col style={{ width: '12%' }} />
+            <col style={{ width: '2%' }} />
+          </colgroup>
           <thead>
             <tr className="border-b border-[#2f2f2f] bg-[#1a1a1a]">
-              <th className="text-left px-4 py-3 text-xs font-semibold text-[#666666] uppercase tracking-wider" style={{ minWidth: 220 }}>Name</th>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-[#666666] uppercase tracking-wider" style={{ minWidth: 150 }}>Payment Status</th>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-[#666666] uppercase tracking-wider" style={{ minWidth: 190 }}>Service</th>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-[#666666] uppercase tracking-wider" style={{ minWidth: 160 }}>Leader</th>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-[#666666] uppercase tracking-wider" style={{ minWidth: 110 }}>Status</th>
-              <th className="px-4 py-3" style={{ width: 40 }}></th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-[#666666] uppercase tracking-wider">Name</th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-[#666666] uppercase tracking-wider">Payment</th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-[#666666] uppercase tracking-wider">Service</th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-[#666666] uppercase tracking-wider">Leader</th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-[#666666] uppercase tracking-wider">Status</th>
+              <th className="px-2 py-3"></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-[#2f2f2f]">
@@ -284,16 +291,16 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
                   </div>
                 </td>
                 <td className="px-4 py-3">
-                  <SelectCell value={draft.paymentStatus} options={PAYMENT_STATUSES} onChange={v => setDraft(d => ({ ...d, paymentStatus: v }))} colorMap={paymentColors} minWidth="140px" />
+                  <SelectCell value={draft.paymentStatus} options={PAYMENT_STATUSES} onChange={v => setDraft(d => ({ ...d, paymentStatus: v }))} colorMap={paymentColors} />
                 </td>
                 <td className="px-4 py-3">
-                  <SelectCell value={draft.service} options={SERVICES} onChange={v => setDraft(d => ({ ...d, service: v }))} minWidth="180px" />
+                  <SelectCell value={draft.service} options={SERVICES} onChange={v => setDraft(d => ({ ...d, service: v }))} />
                 </td>
                 <td className="px-4 py-3">
-                  <SelectCell value={draft.leader} options={LEADERS} onChange={v => setDraft(d => ({ ...d, leader: v }))} minWidth="150px" />
+                  <SelectCell value={draft.leader} options={LEADERS} onChange={v => setDraft(d => ({ ...d, leader: v }))} />
                 </td>
                 <td className="px-4 py-3">
-                  <SelectCell value={draft.status} options={CLIENT_STATUSES} onChange={v => setDraft(d => ({ ...d, status: v }))} colorMap={statusColors} minWidth="100px" />
+                  <SelectCell value={draft.status} options={CLIENT_STATUSES} onChange={v => setDraft(d => ({ ...d, status: v }))} colorMap={statusColors} />
                 </td>
                 <td className="px-4 py-3">
                   <div className="flex flex-col gap-1">
