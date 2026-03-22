@@ -23,7 +23,7 @@ interface BillingInvoice {
   invoice_number: string;
   amount: number;
   service: string;
-  status: 'Draft' | 'Sent' | 'Paid' | 'Overdue' | 'Cancelled';
+  status: 'Draft' | 'Scheduled' | 'Sent' | 'Paid' | 'Overdue' | 'Cancelled';
   date_due: string;
   date_sent: string;
   date_paid: string;
@@ -72,9 +72,9 @@ const TABS = [
 ] as const;
 type Tab = typeof TABS[number]['id'];
 
-const INVOICE_STATUSES: BillingInvoice['status'][] = ['Draft', 'Sent', 'Paid', 'Overdue', 'Cancelled'];
+const INVOICE_STATUSES: BillingInvoice['status'][] = ['Draft', 'Scheduled', 'Sent', 'Paid', 'Overdue', 'Cancelled'];
 const invoiceStatusColors: Record<string, string> = {
-  Draft: '#9B9B9B', Sent: '#60a5fa', Paid: '#4ade80', Overdue: '#f97316', Cancelled: '#ef4444',
+  Draft: '#9B9B9B', Scheduled: '#a78bfa', Sent: '#60a5fa', Paid: '#4ade80', Overdue: '#f97316', Cancelled: '#ef4444',
 };
 
 // SVG icons for each platform
@@ -661,7 +661,7 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
                           className="bg-transparent text-[10px] text-[#ECECEC] focus:outline-none w-full"
                           style={{ colorScheme: 'dark' }}
                         />
-                        <span className="text-[10px] font-semibold" style={{ color: speedColor }}>{speedLabel}</span>
+                        <span className="text-xs font-medium" style={{ color: speedColor }}>{speedLabel}</span>
                         <button
                           onClick={() => deleteInvoice(inv.id)}
                           className="p-1 rounded-lg transition-colors flex-shrink-0"

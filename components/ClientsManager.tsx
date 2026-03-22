@@ -861,17 +861,13 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
                         onPhotoChange={url => updateClient(client.id, { photoUrl: url })}
                       />
                     </div>
-                    <input
-                      value={client.name}
-                      onChange={e => updateClientName(client.id, e.target.value)}
-                      className="bg-transparent text-[#ECECEC] text-sm font-medium flex-1 min-w-0 focus:outline-none placeholder-[#555] cursor-text"
-                      placeholder="Client name"
-                      onClick={e => e.stopPropagation()}
-                    />
+                    <span
+                      className="text-[#ECECEC] text-sm font-medium flex-1 min-w-0 cursor-pointer truncate"
+                    >{client.name || 'Unnamed'}</span>
                   </div>
                 </td>
                 {columnOrder.map(col => (
-                  <td key={col} className="px-5 py-3.5">{cellMap[col]}</td>
+                  <td key={col} className="px-5 py-3.5" onClick={e => { e.stopPropagation(); }}>{cellMap[col]}</td>
                 ))}
                 <td className="px-3 py-3.5 text-center">
                   <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all justify-end">

@@ -122,15 +122,15 @@ const App: React.FC = () => {
     return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
   };
 
-  // Paid this month — invoices with status 'Paid'
+  // Paid this month — invoices with status 'Paid' where date_paid falls this month
   const paidThisMonth = useMemo(() => {
     return billingInvoices
       .filter(inv => inv.status === 'Paid')
-      .filter(inv => isThisMonth(inv.date_paid) || isThisMonth(inv.date_due) || isThisMonth(inv.date_sent))
+      .filter(inv => isThisMonth(inv.date_paid))
       .reduce((sum, inv) => sum + (inv.amount || 0), 0);
   }, [billingInvoices]);
 
-  // Pending this month — invoices due this month that are NOT Paid and NOT Cancelled
+  // Pending this month — NOT Paid/Cancelled, due date OR sent date this month (includes Scheduled)
   const pendingThisMonth = useMemo(() => {
     return billingInvoices
       .filter(inv => inv.status !== 'Paid' && inv.status !== 'Cancelled')
