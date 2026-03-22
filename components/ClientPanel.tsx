@@ -218,6 +218,8 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
   interface MemoryItem { id: string; content: string; category: string; }
   const [clientMemories, setClientMemories] = useState<MemoryItem[]>([]);
   const [memoriesLoading, setMemoriesLoading] = useState(false);
+  const [expandedMemId, setExpandedMemId] = useState<string | null>(null);
+  const [memSavedId, setMemSavedId] = useState<string | null>(null);
   const memoryDebounceRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
   const MEMORY_CATEGORIES = [
     { id: 'tone', label: 'Tone & Voice', placeholder: 'e.g. "This client prefers a professional, authoritative tone."' },
@@ -1397,6 +1399,10 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
                           ) : (
                             <div className="px-4 pb-3 space-y-2">
                               {items.map(mem => {
+                                const isExpanded = expandedMemId === mem.id;
+                                const justSaved = memSavedId === mem.id;
+                                const COLLAPSED_HEIGHT = 80;
+
                                 const renderLines = (text: string) =>
                                   text.replace(/\r/g, '').split('\n').map((line: string, li: number) => {
                                     const t = line.trim();
@@ -1407,32 +1413,78 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
                                   });
 
                                 return (
-                                  <div key={mem.id} className="relative group/mem rounded-lg" style={{ border: '1px solid #252525' }}>
-                                    {/* Live preview of content */}
-                                    <div className="p-3 pointer-events-none select-none" aria-hidden>
-                                      {mem.content ? renderLines(mem.content) : (
-                                        <span className="text-[12px]" style={{ color: '#3a3a3a' }}>{cat.placeholder}</span>
+                                  <div key={mem.id} className="relative group/mem rounded-lg overflow-hidden transition-all" style={{ border: '1px solid #252525' }}>
+                                    {/* Content area — collapsed or expanded */}
+                                    <div
+                                      className="relative"
+                                      style={{ maxHeight: isExpanded ? 'none' : COLLAPSED_HEIGHT, overflow: 'hidden', cursor: isExpanded ? undefined : 'pointer' }}
+                                      onClick={() => { if (!isExpanded) setExpandedMemId(mem.id); }}
+                                    >
+                                      {/* Live preview */}
+                                      <div className="p-3 pointer-events-none select-none" aria-hidden>
+                                        {mem.content ? renderLines(mem.content) : (
+                                          <span className="text-[12px]" style={{ color: '#3a3a3a' }}>{cat.placeholder}</span>
+                                        )}
+                                      </div>
+                                      {/* Invisible textarea on top (only when expanded) */}
+                                      {isExpanded && (
+                                        <textarea
+                                          autoFocus
+                                          value={mem.content}
+                                          onChange={e => {
+                                            const val = e.target.value;
+                                            setClientMemories(prev => prev.map(m => m.id === mem.id ? { ...m, content: val } : m));
+                                            if (memoryDebounceRef.current[mem.id]) clearTimeout(memoryDebounceRef.current[mem.id] as unknown as number);
+                                            memoryDebounceRef.current[mem.id] = setTimeout(async () => {
+                                              if (supabase) {
+                                                await supabase.from('ai_memory').update({ content: val, updated_at: new Date().toISOString() }).eq('id', mem.id).eq('user_id', storagePrefix);
+                                              }
+                                            }, 800);
+                                          }}
+                                          className="absolute inset-0 w-full h-full bg-transparent text-transparent caret-white text-[12px] leading-5 focus:outline-none resize-none p-3"
+                                          style={{ caretColor: '#D4A843' }}
+                                          placeholder={cat.placeholder}
+                                        />
+                                      )}
+                                      {/* Fade overlay when collapsed */}
+                                      {!isExpanded && mem.content && mem.content.split('\n').length > 3 && (
+                                        <div className="absolute bottom-0 left-0 right-0 h-8" style={{ background: 'linear-gradient(transparent, #161616)' }} />
                                       )}
                                     </div>
-                                    {/* Invisible textarea on top for editing */}
-                                    <textarea
-                                      value={mem.content}
-                                      onChange={e => {
-                                        const val = e.target.value;
-                                        setClientMemories(prev => prev.map(m => m.id === mem.id ? { ...m, content: val } : m));
-                                        if (memoryDebounceRef.current[mem.id]) clearTimeout(memoryDebounceRef.current[mem.id] as unknown as number);
-                                        memoryDebounceRef.current[mem.id] = setTimeout(async () => {
-                                          if (supabase) {
-                                            await supabase.from('ai_memory').update({ content: val, updated_at: new Date().toISOString() }).eq('id', mem.id).eq('user_id', storagePrefix);
-                                          }
-                                        }, 800);
-                                      }}
-                                      className="absolute inset-0 w-full h-full bg-transparent text-transparent caret-white text-[12px] leading-5 focus:outline-none resize-none p-3"
-                                      style={{ caretColor: '#D4A843' }}
-                                      placeholder={cat.placeholder}
-                                    />
+
+                                    {/* Bottom bar with Save (only when expanded) */}
+                                    {isExpanded && (
+                                      <div className="flex items-center justify-between px-3 py-2" style={{ background: '#1a1a1a', borderTop: '1px solid #252525' }}>
+                                        <div>
+                                          {justSaved && (
+                                            <span className="text-[11px] font-medium" style={{ color: '#34d399' }}>✓ Saved</span>
+                                          )}
+                                        </div>
+                                        <div className="flex gap-2">
+                                          <button
+                                            onClick={() => setExpandedMemId(null)}
+                                            className="px-3 py-1 rounded-md text-[11px] font-medium"
+                                            style={{ color: '#888' }}
+                                          >Collapse</button>
+                                          <button
+                                            onClick={async () => {
+                                              if (supabase) {
+                                                await supabase.from('ai_memory').update({ content: mem.content, updated_at: new Date().toISOString() }).eq('id', mem.id).eq('user_id', storagePrefix);
+                                              }
+                                              setMemSavedId(mem.id);
+                                              setTimeout(() => setMemSavedId(null), 2000);
+                                            }}
+                                            className="px-4 py-1 rounded-md text-[11px] font-semibold"
+                                            style={{ background: '#D4A843', color: '#000' }}
+                                          >Save</button>
+                                        </div>
+                                      </div>
+                                    )}
+
+                                    {/* Delete button */}
                                     <button
-                                      onClick={async () => {
+                                      onClick={async (e) => {
+                                        e.stopPropagation();
                                         setClientMemories(prev => prev.filter(m => m.id !== mem.id));
                                         if (supabase) await supabase.from('ai_memory').delete().eq('id', mem.id).eq('user_id', storagePrefix);
                                       }}
