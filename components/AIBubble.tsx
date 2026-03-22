@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Send, Trash2, Loader2, X, Minimize2 } from 'lucide-react';
+import { Send, Trash2, Loader2, Minimize2 } from 'lucide-react';
 import { supabase } from '../services/supabaseClient';
 
 interface ChatMessage {
@@ -15,9 +15,15 @@ interface Memory {
   category: string;
 }
 
+interface ClientRecord {
+  id: string;
+  name: string;
+  service: string;
+  photo_url: string | null;
+}
+
 interface AIBubbleProps {
   storagePrefix: string;
-  /** Current client context (if viewing a client panel) */
   clientId?: string;
   clientName?: string;
   clientService?: string;
@@ -38,40 +44,38 @@ const AIBubble: React.FC<AIBubbleProps> = ({
   const chatRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
+  // @mention state
+  const [allClients, setAllClients] = useState<ClientRecord[]>([]);
+  const [mentionQuery, setMentionQuery] = useState<string | null>(null);
+  const [mentionIdx, setMentionIdx] = useState(0);
+  const [mentionStart, setMentionStart] = useState(-1);
+
+  // Load all clients for @mention autocomplete
+  useEffect(() => {
+    if (!supabase) return;
+    supabase.from('clients').select('id, name, service, photo_url').eq('user_id', storagePrefix)
+      .then(({ data }) => setAllClients(data ?? []));
+  }, [storagePrefix]);
+
   // Load conversations & memories when opened
   useEffect(() => {
     if (!isOpen || !supabase) return;
     setLoading(true);
-
-    // Load chat history (global, not per-client)
-    supabase
-      .from('ai_conversations')
-      .select('*')
-      .eq('user_id', storagePrefix)
-      .is('client_id', null)
-      .order('created_at', { ascending: true })
+    supabase.from('ai_conversations').select('*').eq('user_id', storagePrefix)
+      .is('client_id', null).order('created_at', { ascending: true })
       .then(({ data }) => {
         setMessages((data ?? []).map((m: any) => ({
           id: m.id, role: m.role, content: m.content, created_at: m.created_at,
         })));
         setLoading(false);
       });
-
-    // Load all memories (global + client-specific)
-    supabase
-      .from('ai_memory')
-      .select('id, content, category')
-      .eq('user_id', storagePrefix)
+    supabase.from('ai_memory').select('id, content, category').eq('user_id', storagePrefix)
       .then(({ data }) => setMemories(data ?? []));
   }, [isOpen, storagePrefix]);
 
-  // Load client-specific memories when clientId changes
   useEffect(() => {
     if (!supabase || !clientId) return;
-    supabase
-      .from('ai_memory')
-      .select('id, content, category')
-      .eq('user_id', storagePrefix)
+    supabase.from('ai_memory').select('id, content, category').eq('user_id', storagePrefix)
       .then(({ data }) => setMemories(data ?? []));
   }, [clientId, storagePrefix]);
 
@@ -85,18 +89,74 @@ const AIBubble: React.FC<AIBubbleProps> = ({
     if (isOpen) setTimeout(() => inputRef.current?.focus(), 100);
   }, [isOpen]);
 
+  // Filtered clients for @mention dropdown
+  const mentionResults = mentionQuery !== null
+    ? allClients.filter(c => c.name.toLowerCase().includes(mentionQuery.toLowerCase())).slice(0, 5)
+    : [];
+
+  // Handle input change — detect @mention
+  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const val = e.target.value;
+    const cursorPos = e.target.selectionStart;
+    setInputText(val);
+
+    // Find if we're inside an @mention
+    const beforeCursor = val.slice(0, cursorPos);
+    const atMatch = beforeCursor.match(/@([^\s@]*)$/);
+    if (atMatch) {
+      setMentionQuery(atMatch[1]);
+      setMentionStart(cursorPos - atMatch[0].length);
+      setMentionIdx(0);
+    } else {
+      setMentionQuery(null);
+      setMentionStart(-1);
+    }
+  };
+
+  // Insert mention
+  const insertMention = (client: ClientRecord) => {
+    const before = inputText.slice(0, mentionStart);
+    const after = inputText.slice(inputRef.current?.selectionStart ?? inputText.length);
+    const newText = before + '@' + client.name + ' ' + after;
+    setInputText(newText);
+    setMentionQuery(null);
+    setMentionStart(-1);
+    setTimeout(() => {
+      const pos = before.length + client.name.length + 2;
+      inputRef.current?.setSelectionRange(pos, pos);
+      inputRef.current?.focus();
+    }, 0);
+  };
+
+  // Handle keyboard in mention dropdown
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (mentionQuery !== null && mentionResults.length > 0) {
+      if (e.key === 'ArrowDown') { e.preventDefault(); setMentionIdx(i => Math.min(i + 1, mentionResults.length - 1)); return; }
+      if (e.key === 'ArrowUp') { e.preventDefault(); setMentionIdx(i => Math.max(i - 1, 0)); return; }
+      if (e.key === 'Enter' || e.key === 'Tab') { e.preventDefault(); insertMention(mentionResults[mentionIdx]); return; }
+      if (e.key === 'Escape') { e.preventDefault(); setMentionQuery(null); return; }
+    }
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+  };
+
   const sendMessage = useCallback(async () => {
     const text = inputText.trim();
     if (!text || sending) return;
+
+    // Parse @mentions — find all @ClientName references
+    const mentionedNames = [...text.matchAll(/@([^\s@]+(?:\s[^\s@]+)*)/g)].map(m => m[1]);
+    const mentionedClients = mentionedNames
+      .map(name => allClients.find(c => c.name.toLowerCase() === name.toLowerCase()))
+      .filter(Boolean) as ClientRecord[];
 
     const userMsg: ChatMessage = {
       id: crypto.randomUUID(), role: 'user', content: text, created_at: new Date().toISOString(),
     };
     setMessages(prev => [...prev, userMsg]);
     setInputText('');
+    setMentionQuery(null);
     setSending(true);
 
-    // Save user message
     if (supabase) {
       supabase.from('ai_conversations').insert({
         id: userMsg.id, user_id: storagePrefix, client_id: null, role: 'user', content: text,
@@ -106,15 +166,41 @@ const AIBubble: React.FC<AIBubbleProps> = ({
     try {
       const apiMessages = [...messages, userMsg].slice(-20).map(m => ({ role: m.role, content: m.content }));
 
-      // Build client context if viewing a client
-      const clientContext = clientId ? {
-        name: clientName, service: clientService, handle: clientHandle, bio: clientBio, recentTweets: clientTweets,
-      } : undefined;
+      // Build client context — from URL-based client OR from @mention
+      let clientContext: any = undefined;
+      let clientMemories = memories;
+
+      if (mentionedClients.length > 0) {
+        // Use the first @mentioned client
+        const mc = mentionedClients[0];
+        // Load this client's memories
+        if (supabase) {
+          const { data: mcMems } = await supabase.from('ai_memory').select('id, content, category').eq('user_id', storagePrefix);
+          if (mcMems) clientMemories = mcMems;
+        }
+        // Load client details
+        let handle = '';
+        if (supabase) {
+          const { data: det } = await supabase.from('client_details').select('social_platforms').eq('client_id', mc.id).eq('user_id', storagePrefix).single();
+          if (det?.social_platforms) handle = (det.social_platforms as any)?.twitter || '';
+        }
+        // Load recent tweets
+        let recentTweets = '';
+        if (supabase) {
+          const { data: tweets } = await supabase.from('client_tweets').select('text').eq('client_id', mc.id).eq('user_id', storagePrefix).order('created_at', { ascending: false }).limit(5);
+          if (tweets) recentTweets = tweets.map(t => t.text).filter(Boolean).join('\n---\n');
+        }
+        clientContext = { name: mc.name, service: mc.service, handle, recentTweets };
+      } else if (clientId) {
+        clientContext = {
+          name: clientName, service: clientService, handle: clientHandle, bio: clientBio, recentTweets: clientTweets,
+        };
+      }
 
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: apiMessages, memories, clientContext }),
+        body: JSON.stringify({ messages: apiMessages, memories: clientMemories, clientContext }),
       });
 
       const contentType = res.headers.get('content-type') || '';
@@ -144,7 +230,7 @@ const AIBubble: React.FC<AIBubbleProps> = ({
       setSending(false);
       inputRef.current?.focus();
     }
-  }, [inputText, sending, messages, memories, storagePrefix, clientId, clientName, clientService, clientHandle, clientBio, clientTweets]);
+  }, [inputText, sending, messages, memories, allClients, storagePrefix, clientId, clientName, clientService, clientHandle, clientBio, clientTweets]);
 
   const clearChat = useCallback(async () => {
     setMessages([]);
@@ -153,7 +239,21 @@ const AIBubble: React.FC<AIBubbleProps> = ({
     }
   }, [storagePrefix]);
 
-  // Render the bubble + panel
+  // Render @mention in message text
+  const renderMessageText = (text: string) => {
+    const parts = text.split(/(@\S+)/g);
+    return parts.map((part, i) => {
+      if (part.startsWith('@')) {
+        const name = part.slice(1);
+        const isClient = allClients.some(c => c.name.toLowerCase() === name.toLowerCase());
+        if (isClient) {
+          return <span key={i} className="font-semibold" style={{ color: '#D4A843' }}>{part}</span>;
+        }
+      }
+      return <React.Fragment key={i}>{part}</React.Fragment>;
+    });
+  };
+
   return (
     <>
       {/* ── Floating bubble ── */}
@@ -162,23 +262,13 @@ const AIBubble: React.FC<AIBubbleProps> = ({
           onClick={() => setIsOpen(true)}
           className="fixed z-[9999] rounded-full shadow-2xl transition-all hover:scale-110 active:scale-95 group"
           style={{
-            bottom: 28,
-            right: 28,
-            width: 56,
-            height: 56,
-            background: '#1c1c1c',
-            border: '1px solid #333',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
+            bottom: 28, right: 28, width: 56, height: 56,
+            background: '#1c1c1c', border: '1px solid #333',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}
         >
           <img src="/aureum-logo.svg" alt="Aureum Agent" style={{ width: 28, height: 28 }} />
-          {/* Subtle pulse ring */}
-          <span
-            className="absolute inset-0 rounded-full animate-ping"
-            style={{ background: 'rgba(212,168,67,0.15)', animationDuration: '3s' }}
-          />
+          <span className="absolute inset-0 rounded-full animate-ping" style={{ background: 'rgba(212,168,67,0.15)', animationDuration: '3s' }} />
         </button>
       )}
 
@@ -187,14 +277,9 @@ const AIBubble: React.FC<AIBubbleProps> = ({
         <div
           className="fixed z-[9999] flex flex-col shadow-2xl"
           style={{
-            bottom: 28,
-            right: 28,
-            width: 400,
-            height: 540,
-            background: '#1c1c1c',
-            borderRadius: 20,
-            border: '1px solid #2a2a2a',
-            overflow: 'hidden',
+            bottom: 28, right: 28, width: 400, height: 540,
+            background: '#1c1c1c', borderRadius: 20,
+            border: '1px solid #2a2a2a', overflow: 'hidden',
           }}
         >
           {/* Header */}
@@ -204,34 +289,21 @@ const AIBubble: React.FC<AIBubbleProps> = ({
               <div>
                 <span className="text-sm font-bold" style={{ color: '#ECECEC' }}>Aureum Agent</span>
                 {clientName && (
-                  <span className="text-[11px] ml-2" style={{ color: '#D4A843' }}>
-                    {clientName}
-                  </span>
+                  <span className="text-[11px] ml-2" style={{ color: '#888' }}>· {clientName}</span>
                 )}
               </div>
             </div>
             <div className="flex items-center gap-1">
               {messages.length > 0 && (
-                <button
-                  onClick={clearChat}
-                  className="p-1.5 rounded-lg transition-colors"
-                  style={{ color: '#555' }}
+                <button onClick={clearChat} className="p-1.5 rounded-lg transition-colors" style={{ color: '#555' }}
                   onMouseEnter={e => (e.currentTarget.style.color = '#f87171')}
-                  onMouseLeave={e => (e.currentTarget.style.color = '#555')}
-                  title="Clear chat"
-                >
-                  <Trash2 size={14} />
-                </button>
+                  onMouseLeave={e => (e.currentTarget.style.color = '#555')} title="Clear chat"
+                ><Trash2 size={14} /></button>
               )}
-              <button
-                onClick={() => setIsOpen(false)}
-                className="p-1.5 rounded-lg transition-colors"
-                style={{ color: '#555' }}
+              <button onClick={() => setIsOpen(false)} className="p-1.5 rounded-lg transition-colors" style={{ color: '#555' }}
                 onMouseEnter={e => (e.currentTarget.style.color = '#ECECEC')}
                 onMouseLeave={e => (e.currentTarget.style.color = '#555')}
-              >
-                <Minimize2 size={14} />
-              </button>
+              ><Minimize2 size={14} /></button>
             </div>
           </div>
 
@@ -247,15 +319,18 @@ const AIBubble: React.FC<AIBubbleProps> = ({
                   <img src="/aureum-logo.svg" alt="" style={{ width: 30, height: 30 }} />
                 </div>
                 <p className="text-[15px] font-semibold mb-1" style={{ color: '#ECECEC' }}>Aureum Agent</p>
-                <p className="text-xs leading-relaxed" style={{ color: '#666' }}>
+                <p className="text-xs leading-relaxed mb-1" style={{ color: '#666' }}>
                   {clientName
                     ? `Ask me anything about ${clientName} — content ideas, strategy, copy...`
-                    : 'Ask me to brainstorm content, refine copy, or strategize. I learn from your Memory.'
+                    : 'Ask me to brainstorm content, refine copy, or strategize.'
                   }
+                </p>
+                <p className="text-[11px]" style={{ color: '#555' }}>
+                  Type <span style={{ color: '#888' }}>@</span> to mention a client
                 </p>
                 <div className="flex flex-wrap gap-1.5 mt-4 justify-center">
                   {(clientName ? [
-                    `Give me 5 tweet ideas for ${clientName}`,
+                    `Give me 5 tweet ideas for @${clientName}`,
                     'Write a thread hook',
                     'Suggest a content calendar',
                   ] : [
@@ -263,16 +338,13 @@ const AIBubble: React.FC<AIBubbleProps> = ({
                     'Write a thread hook',
                     'Help me brainstorm',
                   ]).map(prompt => (
-                    <button
-                      key={prompt}
+                    <button key={prompt}
                       onClick={() => { setInputText(prompt); inputRef.current?.focus(); }}
                       className="px-3 py-1.5 rounded-full text-[11px] font-medium transition-colors"
                       style={{ background: '#252525', color: '#999', border: '1px solid #333' }}
-                      onMouseEnter={e => { e.currentTarget.style.borderColor = '#D4A843'; e.currentTarget.style.color = '#ECECEC'; }}
+                      onMouseEnter={e => { e.currentTarget.style.borderColor = '#555'; e.currentTarget.style.color = '#ECECEC'; }}
                       onMouseLeave={e => { e.currentTarget.style.borderColor = '#333'; e.currentTarget.style.color = '#999'; }}
-                    >
-                      {prompt}
-                    </button>
+                    >{prompt}</button>
                   ))}
                 </div>
               </div>
@@ -291,7 +363,7 @@ const AIBubble: React.FC<AIBubbleProps> = ({
                     {msg.content.split('\n').map((line, i) => (
                       <React.Fragment key={i}>
                         {i > 0 && <br />}
-                        {line}
+                        {msg.role === 'user' ? line : renderMessageText(line)}
                       </React.Fragment>
                     ))}
                   </div>
@@ -311,17 +383,44 @@ const AIBubble: React.FC<AIBubbleProps> = ({
             )}
           </div>
 
-          {/* Input */}
-          <div className="p-3" style={{ borderTop: '1px solid #222' }}>
+          {/* Input area */}
+          <div className="p-3 relative" style={{ borderTop: '1px solid #222' }}>
+            {/* @mention dropdown */}
+            {mentionQuery !== null && mentionResults.length > 0 && (
+              <div className="absolute bottom-full left-3 right-3 mb-1 rounded-xl overflow-hidden shadow-2xl" style={{ background: '#252525', border: '1px solid #333' }}>
+                {mentionResults.map((c, i) => (
+                  <button
+                    key={c.id}
+                    onMouseDown={(e) => { e.preventDefault(); insertMention(c); }}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 text-left transition-colors"
+                    style={{ background: i === mentionIdx ? '#333' : 'transparent' }}
+                    onMouseEnter={() => setMentionIdx(i)}
+                  >
+                    {c.photo_url ? (
+                      <img src={c.photo_url} alt="" className="w-7 h-7 rounded-full object-cover" />
+                    ) : (
+                      <div className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold" style={{ background: '#444', color: '#ccc' }}>
+                        {c.name.charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                    <div>
+                      <div className="text-[13px] font-medium" style={{ color: '#ECECEC' }}>{c.name}</div>
+                      {c.service && <div className="text-[11px]" style={{ color: '#666' }}>{c.service}</div>}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+
             <div className="flex items-end gap-2 rounded-xl p-2" style={{ background: '#161616', border: '1px solid #2a2a2a' }}>
               <textarea
                 ref={inputRef}
                 value={inputText}
-                onChange={e => setInputText(e.target.value)}
-                onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
+                onChange={handleInputChange}
+                onKeyDown={handleKeyDown}
                 className="flex-1 bg-transparent text-[13px] leading-5 focus:outline-none resize-none placeholder-[#444]"
                 style={{ color: '#ECECEC', maxHeight: 100 }}
-                placeholder={clientName ? `Ask about ${clientName}...` : 'Ask anything...'}
+                placeholder={clientName ? `Ask about ${clientName}...` : 'Type @ to mention a client...'}
                 rows={1}
               />
               <button
