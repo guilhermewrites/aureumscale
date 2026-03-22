@@ -167,6 +167,10 @@ CREATE TABLE IF NOT EXISTS client_tweets (
   text         TEXT NOT NULL DEFAULT '',
   post_date    TEXT NOT NULL DEFAULT '',
   image_url    TEXT NOT NULL DEFAULT '',
+  likes        INTEGER NOT NULL DEFAULT 0,
+  retweets     INTEGER NOT NULL DEFAULT 0,
+  replies      INTEGER NOT NULL DEFAULT 0,
+  views        INTEGER NOT NULL DEFAULT 0,
   created_at   TIMESTAMPTZ DEFAULT NOW()
 );
 
