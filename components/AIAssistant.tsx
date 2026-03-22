@@ -182,6 +182,13 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ storagePrefix, clientId, clie
         }),
       });
 
+      // Handle non-JSON responses (e.g. 404 HTML page)
+      const contentType = res.headers.get('content-type') || '';
+      if (!contentType.includes('application/json')) {
+        const text = await res.text();
+        throw new Error(`API returned ${res.status}: ${text.slice(0, 200)}`);
+      }
+
       const data = await res.json();
 
       if (!res.ok) {

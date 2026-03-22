@@ -16,6 +16,15 @@ export default async function handler(req: Request) {
     });
   }
 
+  // Health check — visit /api/chat in browser to test
+  if (req.method === 'GET') {
+    const hasKey = !!process.env.ANTHROPIC_API_KEY;
+    return new Response(JSON.stringify({ status: 'ok', hasApiKey: hasKey }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
   if (req.method !== 'POST') {
     return new Response(JSON.stringify({ error: 'Method not allowed' }), {
       status: 405,
