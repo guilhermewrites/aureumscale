@@ -883,7 +883,7 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
                   </div>
 
                   {/* Avatar + Post button */}
-                  <div className="px-4" style={{ marginTop: -40 }}>
+                  <div className="px-4 relative z-10" style={{ marginTop: -40 }}>
                     <div className="flex items-end justify-between">
                       {avatar ? (
                         <img src={avatar} alt="" className="rounded-full object-cover" style={{ width: 80, height: 80, border: '4px solid #000' }} />
