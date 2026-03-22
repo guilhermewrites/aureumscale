@@ -54,6 +54,8 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ storagePrefix, clientId, clie
   const [memoriesLoading, setMemoriesLoading] = useState(true);
   const [expandedCats, setExpandedCats] = useState<Set<string>>(new Set(['tone']));
   const [editingMemoryId, setEditingMemoryId] = useState<string | null>(null);
+  const [editDraft, setEditDraft] = useState('');
+  const [memorySaved, setMemorySaved] = useState(false);
 
   // ── Chat state ──
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -287,6 +289,9 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ storagePrefix, clientId, clie
           >
             <Brain size={12} /> Memory {memoryCount > 0 && <span className="opacity-60">({memoryCount})</span>}
           </button>
+          {memorySaved && (
+            <span className="text-[11px] font-medium ml-auto animate-pulse" style={{ color: '#34d399' }}>✓ Saved</span>
+          )}
         </div>
       </div>
 
@@ -473,23 +478,50 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ storagePrefix, clientId, clie
                         ) : (
                           catMemories.map(mem => {
                             const isEditing = editingMemoryId === mem.id;
-                            const sections = mem.content.split(/\n*-{5,}\n*/);
+                            const displayContent = isEditing ? editDraft : mem.content;
+                            const sections = displayContent.split(/^-{5,}$/m).filter(s => s.trim() !== '');
                             return (
                               <div key={mem.id} className="relative group/mem">
                                 {isEditing ? (
-                                  <textarea
-                                    autoFocus
-                                    value={mem.content}
-                                    onChange={e => updateMemory(mem.id, e.target.value)}
-                                    onBlur={() => setEditingMemoryId(null)}
-                                    className="w-full bg-transparent text-[12px] leading-5 focus:outline-none resize-none placeholder-[#3a3a3a] rounded-lg p-2 transition-colors"
-                                    style={{ color: '#ccc', border: '1px solid #D4A84344' }}
-                                    placeholder={`${cat.placeholder}\n\nTip: Type ----- to create a separator`}
-                                    rows={Math.max(3, mem.content.split('\n').length + 1)}
-                                  />
+                                  <div className="space-y-2">
+                                    <textarea
+                                      autoFocus
+                                      value={editDraft}
+                                      onChange={e => setEditDraft(e.target.value)}
+                                      className="w-full bg-transparent text-[12px] leading-5 focus:outline-none resize-none placeholder-[#3a3a3a] rounded-lg p-2 transition-colors"
+                                      style={{ color: '#ccc', border: '1px solid #D4A84344' }}
+                                      placeholder={`${cat.placeholder}\n\nTip: Type ----- on its own line to create a separator`}
+                                      rows={Math.max(4, editDraft.split('\n').length + 1)}
+                                    />
+                                    <div className="flex gap-2 justify-end">
+                                      <button
+                                        onClick={() => setEditingMemoryId(null)}
+                                        className="px-3 py-1 rounded-md text-[11px] font-medium transition-colors"
+                                        style={{ color: '#888', border: '1px solid #333' }}
+                                        onMouseEnter={e => (e.currentTarget.style.borderColor = '#555')}
+                                        onMouseLeave={e => (e.currentTarget.style.borderColor = '#333')}
+                                      >
+                                        Cancel
+                                      </button>
+                                      <button
+                                        onClick={() => {
+                                          updateMemory(mem.id, editDraft);
+                                          setEditingMemoryId(null);
+                                          setMemorySaved(true);
+                                          setTimeout(() => setMemorySaved(false), 2000);
+                                        }}
+                                        className="px-3 py-1 rounded-md text-[11px] font-medium transition-colors"
+                                        style={{ background: '#D4A843', color: '#000' }}
+                                        onMouseEnter={e => (e.currentTarget.style.background = '#e0b84d')}
+                                        onMouseLeave={e => (e.currentTarget.style.background = '#D4A843')}
+                                      >
+                                        Save
+                                      </button>
+                                    </div>
+                                  </div>
                                 ) : (
                                   <div
-                                    onClick={() => setEditingMemoryId(mem.id)}
+                                    onClick={() => { setEditingMemoryId(mem.id); setEditDraft(mem.content); }}
                                     className="w-full rounded-lg p-2 cursor-text transition-colors"
                                     style={{ border: '1px solid #252525' }}
                                     onMouseEnter={e => (e.currentTarget.style.borderColor = '#333')}
@@ -498,11 +530,11 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ storagePrefix, clientId, clie
                                     {mem.content ? sections.map((section, i) => (
                                       <React.Fragment key={i}>
                                         {i > 0 && (
-                                          <div className="my-2 flex items-center gap-2">
-                                            <div className="flex-1" style={{ height: 1, background: 'linear-gradient(90deg, transparent, #D4A84344, transparent)' }} />
+                                          <div className="my-2.5 flex items-center gap-2">
+                                            <div className="flex-1" style={{ height: 1, background: 'linear-gradient(90deg, transparent, #D4A843, transparent)' }} />
                                           </div>
                                         )}
-                                        <pre className="text-[12px] leading-5 whitespace-pre-wrap" style={{ color: '#ccc', fontFamily: 'inherit' }}>{section}</pre>
+                                        <pre className="text-[12px] leading-5 whitespace-pre-wrap" style={{ color: '#ccc', fontFamily: 'inherit' }}>{section.trim()}</pre>
                                       </React.Fragment>
                                     )) : (
                                       <span className="text-[12px]" style={{ color: '#3a3a3a' }}>{cat.placeholder}</span>
