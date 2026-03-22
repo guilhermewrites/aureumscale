@@ -218,7 +218,6 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
   interface MemoryItem { id: string; content: string; category: string; }
   const [clientMemories, setClientMemories] = useState<MemoryItem[]>([]);
   const [memoriesLoading, setMemoriesLoading] = useState(false);
-  const [expandedMemId, setExpandedMemId] = useState<string | null>(null);
   const [memSavedId, setMemSavedId] = useState<string | null>(null);
   const memoryDebounceRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
   const MEMORY_CATEGORIES = [
@@ -1400,48 +1399,29 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
                             <div className="px-4 pb-3 space-y-2">
                               {items.map(mem => {
                                 const justSaved = memSavedId === mem.id;
-                                const isFocused = expandedMemId === mem.id;
-
-                                const renderLines = (text: string) =>
-                                  text.replace(/\r/g, '').split('\n').map((line: string, li: number) => {
-                                    const t = line.trim();
-                                    if (t.length >= 5 && /^-+$/.test(t)) {
-                                      return <div key={li} style={{ height: 1, margin: '10px 0', background: 'linear-gradient(90deg, transparent 0%, #444 30%, #444 70%, transparent 100%)' }} />;
-                                    }
-                                    return <div key={li} className="text-[12px] leading-5" style={{ color: '#ccc' }}>{line || '\u00A0'}</div>;
-                                  });
 
                                 return (
                                   <div key={mem.id} className="relative group/mem rounded-lg" style={{ border: '1px solid #252525' }}>
-                                    {/* Content: live preview + invisible textarea always present */}
-                                    <div className="relative">
-                                      <div className="p-3 pointer-events-none select-none" aria-hidden>
-                                        {mem.content ? renderLines(mem.content) : (
-                                          <span className="text-[12px]" style={{ color: '#3a3a3a' }}>{cat.placeholder}</span>
-                                        )}
-                                      </div>
-                                      <textarea
-                                        value={mem.content}
-                                        onFocus={() => setExpandedMemId(mem.id)}
-                                        onBlur={() => setTimeout(() => setExpandedMemId(prev => prev === mem.id ? null : prev), 150)}
-                                        onChange={e => {
-                                          const val = e.target.value;
-                                          setClientMemories(prev => prev.map(m => m.id === mem.id ? { ...m, content: val } : m));
-                                          if (memoryDebounceRef.current[mem.id]) clearTimeout(memoryDebounceRef.current[mem.id] as unknown as number);
-                                          memoryDebounceRef.current[mem.id] = setTimeout(async () => {
-                                            if (supabase) {
-                                              await supabase.from('ai_memory').update({ content: val, updated_at: new Date().toISOString() }).eq('id', mem.id).eq('user_id', storagePrefix);
-                                            }
-                                          }, 800);
-                                        }}
-                                        className="absolute inset-0 w-full h-full bg-transparent text-[12px] leading-5 focus:outline-none resize-none p-3"
-                                        style={{ color: 'transparent', WebkitTextFillColor: 'transparent', caretColor: '#ccc' }}
-                                        placeholder={cat.placeholder}
-                                      />
-                                    </div>
+                                    <textarea
+                                      value={mem.content}
+                                      onChange={e => {
+                                        const val = e.target.value;
+                                        setClientMemories(prev => prev.map(m => m.id === mem.id ? { ...m, content: val } : m));
+                                        if (memoryDebounceRef.current[mem.id]) clearTimeout(memoryDebounceRef.current[mem.id] as unknown as number);
+                                        memoryDebounceRef.current[mem.id] = setTimeout(async () => {
+                                          if (supabase) {
+                                            await supabase.from('ai_memory').update({ content: val, updated_at: new Date().toISOString() }).eq('id', mem.id).eq('user_id', storagePrefix);
+                                          }
+                                        }, 800);
+                                      }}
+                                      className="w-full bg-transparent text-[12px] leading-5 focus:outline-none resize-none p-3"
+                                      style={{ color: '#ccc', borderBottom: '1px solid #1e1e1e' }}
+                                      placeholder={cat.placeholder}
+                                      rows={Math.max(2, mem.content.split('\n').length)}
+                                    />
 
-                                    {/* Save bar — always rendered to prevent layout shift */}
-                                    <div className="flex items-center justify-between px-3 py-2" style={{ borderTop: '1px solid #1e1e1e' }}>
+                                    {/* Save bar */}
+                                    <div className="flex items-center justify-between px-3 py-2">
                                       <div>
                                         {justSaved && (
                                           <span className="text-[11px] font-medium" style={{ color: '#34d399' }}>✓ Saved</span>
@@ -1457,9 +1437,9 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
                                           setTimeout(() => setMemSavedId(null), 2000);
                                         }}
                                         className="px-4 py-1.5 rounded-lg text-[11px] font-semibold transition-all active:scale-95"
-                                        style={{ background: isFocused ? '#333' : '#252525', color: isFocused ? '#ccc' : '#555' }}
+                                        style={{ background: '#282828', color: '#888' }}
                                         onMouseEnter={e => { e.currentTarget.style.background = '#444'; e.currentTarget.style.color = '#fff'; }}
-                                        onMouseLeave={e => { e.currentTarget.style.background = isFocused ? '#333' : '#252525'; e.currentTarget.style.color = isFocused ? '#ccc' : '#555'; }}
+                                        onMouseLeave={e => { e.currentTarget.style.background = '#282828'; e.currentTarget.style.color = '#888'; }}
                                       >Save</button>
                                     </div>
 
