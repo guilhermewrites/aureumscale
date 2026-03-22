@@ -600,15 +600,10 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
 
   // Update a field immediately in state, then persist to Supabase
   const updateClient = useCallback(async (id: string, patch: Partial<Client>, immediate = true) => {
-    console.log('[ClientsManager] updateClient called:', id, patch);
-    setClients(prev => {
-      const updated = prev.map(c => c.id === id ? { ...c, ...patch } : c);
-      console.log('[ClientsManager] clients updated in state, found match:', prev.some(c => c.id === id));
-      return updated;
-    });
+    setClients(prev => prev.map(c => c.id === id ? { ...c, ...patch } : c));
 
-    if (!immediate) return; // caller will handle debounce
-    if (!supabase) { console.warn('[ClientsManager] no supabase!'); return; }
+    if (!immediate) return;
+    if (!supabase) return;
 
     const dbPatch: Record<string, any> = {};
     if ('name' in patch) dbPatch.name = patch.name;
@@ -620,7 +615,6 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
     if ('status' in patch) dbPatch.status = patch.status;
     if ('clientType' in patch) dbPatch.client_type = patch.clientType;
 
-    console.log('[ClientsManager] saving to Supabase:', dbPatch);
     try {
       const { error: updateError } = await supabase
         .from('clients')
@@ -628,10 +622,9 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
         .eq('id', id)
         .eq('user_id', storagePrefix);
       if (updateError) throw updateError;
-      console.log('[ClientsManager] Supabase save SUCCESS');
     } catch (err: any) {
       showError('Failed to save change to Supabase.');
-      console.error('[ClientsManager] Supabase save FAILED:', err);
+      console.error('ClientsManager update error:', err);
     }
   }, [storagePrefix, showError]);
 

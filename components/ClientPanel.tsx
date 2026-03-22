@@ -642,7 +642,7 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
               <CardStatusSelect
                 value={localStatus}
                 onChange={(v) => {
-                  console.log('[ClientPanel] Status changed to:', v, 'client:', client?.id, 'has onClientUpdate:', !!onClientUpdate);
+
                   setLocalStatus(v);
                   if (client && onClientUpdate) {
                     onClientUpdate(client.id, { status: v });
@@ -654,7 +654,7 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
               <CardPaymentSelect
                 value={localPayment}
                 onChange={(v) => {
-                  console.log('[ClientPanel] Payment changed to:', v, 'client:', client?.id, 'has onClientUpdate:', !!onClientUpdate);
+
                   setLocalPayment(v);
                   if (client && onClientUpdate) {
                     onClientUpdate(client.id, { paymentStatus: v });
@@ -1674,7 +1674,7 @@ function CardStatusSelect({ value, onChange }: { value: string; onChange: (v: st
           style={{ background: '#222', borderRadius: 10, zIndex: 99999, top: pos.top, left: pos.left }}>
           {statuses.map(s => (
             <button key={s}
-              onClick={() => { console.log('[CardStatusSelect] clicked:', s); onChange(s); setOpen(false); }}
+              onClick={() => { onChange(s); setOpen(false); }}
               className={`flex items-center gap-2 w-full text-left text-xs px-3 py-2 transition-colors hover:bg-[#2a2a2a] ${s === value ? 'font-semibold' : ''}`}
               style={{ color: colors[s] }}
             >
@@ -1756,7 +1756,7 @@ function CardPaymentSelect({ value, onChange }: { value: string; onChange: (v: s
           style={{ background: '#222', borderRadius: 10, zIndex: 99999, top: pos.top, left: pos.left }}>
           {statuses.map(s => (
             <button key={s}
-              onClick={() => { console.log('[CardPaymentSelect] clicked:', s); onChange(s); setOpen(false); }}
+              onClick={() => { onChange(s); setOpen(false); }}
               className={`flex items-center gap-2 w-full text-left text-xs px-3 py-2 transition-colors hover:bg-[#2a2a2a] ${s === value ? 'font-semibold' : ''}`}
               style={{ color: colors[s] }}
             >
