@@ -1,10 +1,10 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { Plus, Trash2, ChevronDown, Camera, Loader2, Archive, RotateCcw, GripVertical, Pencil, X, Check } from 'lucide-react';
+import { Plus, Trash2, ChevronDown, Camera, Loader2, Archive, RotateCcw, GripVertical, Pencil, X, Check, ArrowRightLeft } from 'lucide-react';
 import { supabase } from '../services/supabaseClient';
 import ClientPanel from './ClientPanel';
 
-type ClientType = 'recurring' | 'one-time';
+type ClientType = 'recurring' | 'one-time' | 'profit-share';
 
 interface Client {
   id: string;
@@ -294,6 +294,50 @@ interface AvatarProps {
   photoUrl?: string;
   onPhotoChange: (url: string) => void;
   size?: number;
+}
+
+function MoveToMenu({ currentType, onMove }: { currentType: ClientType; onMove: (t: ClientType) => void }) {
+  const [open, setOpen] = useState(false);
+  const [coords, setCoords] = useState({ top: 0, left: 0 });
+  const btnRef = useRef<HTMLButtonElement>(null);
+  const allTypes: ClientType[] = ['recurring', 'one-time', 'profit-share'];
+  const labels: Record<ClientType, string> = { 'recurring': 'Recurring', 'one-time': 'One-Time', 'profit-share': 'Profit Share' };
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = () => setOpen(false);
+    window.addEventListener('click', handler);
+    return () => window.removeEventListener('click', handler);
+  }, [open]);
+
+  const toggle = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!open && btnRef.current) {
+      const r = btnRef.current.getBoundingClientRect();
+      setCoords({ top: r.bottom + 4, left: r.left - 80 });
+    }
+    setOpen(!open);
+  };
+
+  return (
+    <>
+      <button ref={btnRef} onClick={toggle} className="text-[#555] hover:text-[#ECECEC] transition-colors p-1" title="Move to section">
+        <ArrowRightLeft size={13} />
+      </button>
+      {open && createPortal(
+        <div onClick={e => e.stopPropagation()} className="fixed z-[9999] rounded-xl py-1 shadow-2xl border" style={{ top: coords.top, left: coords.left, background: '#1c1c1c', borderColor: '#2f2f2f', minWidth: 140 }}>
+          <p className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-widest" style={{ color: '#444' }}>Move to</p>
+          {allTypes.filter(t => t !== currentType).map(t => (
+            <button key={t} onClick={e => { e.stopPropagation(); onMove(t); setOpen(false); }}
+              className="w-full text-left px-3 py-2 text-xs font-medium hover:bg-[#2a2a2a] transition-colors"
+              style={{ color: '#ECECEC' }}
+            >{labels[t]}</button>
+          ))}
+        </div>,
+        document.body
+      )}
+    </>
+  );
 }
 
 function Avatar({ name, photoUrl, onPhotoChange, size = 36 }: AvatarProps) {
@@ -656,6 +700,23 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
 
   const recurringClients = (showActive ? activeClients : inactiveClients).filter(c => c.clientType === 'recurring');
   const oneTimeClients = (showActive ? activeClients : inactiveClients).filter(c => c.clientType === 'one-time');
+  const profitShareClients = (showActive ? activeClients : inactiveClients).filter(c => c.clientType === 'profit-share');
+
+  const CLIENT_TYPE_LABELS: Record<ClientType, string> = {
+    'recurring': 'Recurring',
+    'one-time': 'One-Time',
+    'profit-share': 'Profit Share',
+  };
+
+  const moveClientToType = useCallback(async (clientId: string, newType: ClientType) => {
+    setClients(prev => prev.map(c => c.id === clientId ? { ...c, clientType: newType } : c));
+    if (!supabase) return;
+    try {
+      await supabase.from('clients').update({ client_type: newType }).eq('id', clientId).eq('user_id', storagePrefix);
+    } catch (err) {
+      console.error('Failed to move client:', err);
+    }
+  }, [storagePrefix]);
 
   // ── Full-page client workspace ──────────────────────────────────────────────
   if (selectedClient) {
@@ -759,7 +820,7 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
           {columnOrder.map(col => (
             <col key={col} style={{ width: COLUMN_WIDTHS[col] }} />
           ))}
-          <col style={{ width: '6%' }} />
+          <col style={{ width: '8%' }} />
         </colgroup>
         <thead>
           <tr className="border-b border-[#2f2f2f]" style={{ background: '#1a1a1a' }}>
@@ -814,6 +875,10 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
                 ))}
                 <td className="px-3 py-3.5 text-center">
                   <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all justify-end">
+                    <MoveToMenu
+                      currentType={client.clientType}
+                      onMove={type => moveClientToType(client.id, type)}
+                    />
                     {showActive ? (
                       <button
                         onClick={e => { e.stopPropagation(); toggleClientActive(client.id, false); }}
@@ -875,7 +940,7 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
           {clientList.length === 0 && !(isAdding && addingType === sectionType) && (
             <tr>
               <td colSpan={columnOrder.length + 2} className="px-4 py-12 text-center text-[#666666]">
-                <p className="text-sm">No {sectionType === 'recurring' ? 'recurring clients' : 'one-time services'} yet.</p>
+                <p className="text-sm">No {CLIENT_TYPE_LABELS[sectionType]?.toLowerCase() || sectionType} clients yet.</p>
               </td>
             </tr>
           )}
@@ -944,6 +1009,23 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
           </button>
         </div>
         {renderTable(oneTimeClients, 'one-time')}
+      </div>
+
+      {/* ── Profit Share ──────────────────────────────────────────────────── */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-semibold" style={{ color: '#ECECEC' }}>Profit Share</h2>
+          <button
+            onClick={() => { setAddingType('profit-share'); setDraft(newClient(clients.length, 'profit-share')); setIsAdding(true); }}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition-colors"
+            style={{ background: '#2a2a2a', color: '#ECECEC' }}
+            onMouseEnter={e => (e.currentTarget.style.background = '#333')}
+            onMouseLeave={e => (e.currentTarget.style.background = '#2a2a2a')}
+          >
+            <Plus size={13} /> Add Client
+          </button>
+        </div>
+        {renderTable(profitShareClients, 'profit-share')}
       </div>
 
       {/* Error toast */}
