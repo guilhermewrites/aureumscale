@@ -186,6 +186,7 @@ function AutoTextarea({ value, onChange, className, placeholder, style }: {
 
 const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClose }) => {
   const [activeTab, setActiveTab] = useState<Tab>('Overview');
+  const [xTab, setXTab] = useState<'posts'|'replies'|'media'|'likes'>('posts');
   const [details, setDetails] = useState<ClientDetails>(DEFAULT_DETAILS);
   const [loading, setLoading] = useState(false);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');
@@ -833,8 +834,6 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
               const tFollowers = details.twitter_followers || 0;
               const tFollowing = details.twitter_following || 0;
               const tBanner = details.twitter_banner_url || '';
-
-              const [xTab, setXTab] = React.useState<'posts'|'replies'|'media'|'likes'>('posts');
 
               const uploadBanner = () => {
                 const inp = document.createElement('input');
