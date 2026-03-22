@@ -5,7 +5,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '../services/supabaseClient';
 
-// ─── Types ──────────────────────────────────────────────────────────────────
+// ─── Types ─── v2 ───────────────────────────────────────────────────────────
 
 interface Memory {
   id: string;
