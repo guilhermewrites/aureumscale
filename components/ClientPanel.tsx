@@ -399,7 +399,9 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
       .select('id, content, category')
       .eq('user_id', storagePrefix)
       .order('created_at', { ascending: true })
-      .then(({ data }) => {
+      .then(({ data, error }) => {
+        if (error) console.error('Failed to load ai_memory:', error);
+        console.log('ai_memory loaded:', data?.length, 'items for user', storagePrefix);
         setClientMemories(data ?? []);
         setMemoriesLoading(false);
       });
@@ -1372,7 +1374,9 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
                                   onClick={async () => {
                                     if (!supabase) return;
                                     for (const mem of items) {
-                                      await supabase.from('ai_memory').update({ content: mem.content, updated_at: new Date().toISOString() }).eq('id', mem.id).eq('user_id', storagePrefix);
+                                      const { error } = await supabase.from('ai_memory').update({ content: mem.content, updated_at: new Date().toISOString() }).eq('id', mem.id).eq('user_id', storagePrefix);
+                                      if (error) console.error('Save memory error:', error, 'id:', mem.id);
+                                      else console.log('Saved memory:', mem.id, 'content length:', mem.content.length);
                                     }
                                     setMemSavedId(cat.id);
                                     setTimeout(() => setMemSavedId(null), 2000);
@@ -1433,7 +1437,7 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
                                           const above = sepMatch[1];
                                           const below = (sepMatch[2] || '').trim();
                                           setClientMemories(prev => prev.map(m => m.id === mem.id ? { ...m, content: above } : m));
-                                          if (supabase) supabase.from('ai_memory').update({ content: above, updated_at: new Date().toISOString() }).eq('id', mem.id).eq('user_id', storagePrefix);
+                                          if (supabase) supabase.from('ai_memory').update({ content: above, updated_at: new Date().toISOString() }).eq('id', mem.id).eq('user_id', storagePrefix).then(r => { if (r.error) console.error('split update err:', r.error); });
                                           const newMem = { id: crypto.randomUUID(), user_id: storagePrefix, content: below, category: cat.id, created_at: new Date().toISOString(), updated_at: new Date().toISOString() };
                                           setClientMemories(prev => {
                                             const idx = prev.findIndex(m => m.id === mem.id);
@@ -1441,7 +1445,7 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
                                             next.splice(idx + 1, 0, { id: newMem.id, content: below, category: cat.id });
                                             return next;
                                           });
-                                          if (supabase) supabase.from('ai_memory').insert(newMem);
+                                          if (supabase) supabase.from('ai_memory').insert(newMem).then(r => { if (r.error) console.error('split insert err:', r.error); });
                                           return;
                                         }
                                         setClientMemories(prev => prev.map(m => m.id === mem.id ? { ...m, content: val } : m));
