@@ -1406,13 +1406,13 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
                                   text.replace(/\r/g, '').split('\n').map((line: string, li: number) => {
                                     const t = line.trim();
                                     if (t.length >= 5 && /^-+$/.test(t)) {
-                                      return <div key={li} style={{ height: 1, margin: '10px 0', background: 'linear-gradient(90deg, transparent 0%, #D4A843 30%, #D4A843 70%, transparent 100%)' }} />;
+                                      return <div key={li} style={{ height: 1, margin: '10px 0', background: 'linear-gradient(90deg, transparent 0%, #444 30%, #444 70%, transparent 100%)' }} />;
                                     }
                                     return <div key={li} className="text-[12px] leading-5" style={{ color: '#ccc' }}>{line || '\u00A0'}</div>;
                                   });
 
                                 return (
-                                  <div key={mem.id} className="relative group/mem rounded-lg" style={{ border: `1px solid ${isFocused ? '#D4A84344' : '#252525'}` }}>
+                                  <div key={mem.id} className="relative group/mem rounded-lg" style={{ border: '1px solid #252525' }}>
                                     {/* Content: live preview + invisible textarea always present */}
                                     <div className="relative">
                                       <div className="p-3 pointer-events-none select-none" aria-hidden>
@@ -1435,35 +1435,33 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
                                           }, 800);
                                         }}
                                         className="absolute inset-0 w-full h-full bg-transparent text-[12px] leading-5 focus:outline-none resize-none p-3"
-                                        style={{ color: 'transparent', WebkitTextFillColor: 'transparent', caretColor: '#D4A843' }}
+                                        style={{ color: 'transparent', WebkitTextFillColor: 'transparent', caretColor: '#ccc' }}
                                         placeholder={cat.placeholder}
                                       />
                                     </div>
 
-                                    {/* Save bar — shows on focus */}
-                                    {isFocused && (
-                                      <div className="flex items-center justify-between px-3 py-2" style={{ borderTop: '1px solid #252525' }}>
-                                        <div>
-                                          {justSaved && (
-                                            <span className="text-[11px] font-medium" style={{ color: '#34d399' }}>✓ Saved</span>
-                                          )}
-                                        </div>
-                                        <button
-                                          onMouseDown={async (e) => {
-                                            e.preventDefault();
-                                            if (supabase) {
-                                              await supabase.from('ai_memory').update({ content: mem.content, updated_at: new Date().toISOString() }).eq('id', mem.id).eq('user_id', storagePrefix);
-                                            }
-                                            setMemSavedId(mem.id);
-                                            setTimeout(() => setMemSavedId(null), 2000);
-                                          }}
-                                          className="px-4 py-1.5 rounded-lg text-[11px] font-semibold transition-all active:scale-95"
-                                          style={{ background: '#D4A843', color: '#000' }}
-                                          onMouseEnter={e => (e.currentTarget.style.background = '#e0b84d')}
-                                          onMouseLeave={e => (e.currentTarget.style.background = '#D4A843')}
-                                        >Save</button>
+                                    {/* Save bar — always rendered to prevent layout shift */}
+                                    <div className="flex items-center justify-between px-3 py-2" style={{ borderTop: '1px solid #1e1e1e' }}>
+                                      <div>
+                                        {justSaved && (
+                                          <span className="text-[11px] font-medium" style={{ color: '#34d399' }}>✓ Saved</span>
+                                        )}
                                       </div>
-                                    )}
+                                      <button
+                                        onMouseDown={async (e) => {
+                                          e.preventDefault();
+                                          if (supabase) {
+                                            await supabase.from('ai_memory').update({ content: mem.content, updated_at: new Date().toISOString() }).eq('id', mem.id).eq('user_id', storagePrefix);
+                                          }
+                                          setMemSavedId(mem.id);
+                                          setTimeout(() => setMemSavedId(null), 2000);
+                                        }}
+                                        className="px-4 py-1.5 rounded-lg text-[11px] font-semibold transition-all active:scale-95"
+                                        style={{ background: isFocused ? '#333' : '#252525', color: isFocused ? '#ccc' : '#555' }}
+                                        onMouseEnter={e => { e.currentTarget.style.background = '#444'; e.currentTarget.style.color = '#fff'; }}
+                                        onMouseLeave={e => { e.currentTarget.style.background = isFocused ? '#333' : '#252525'; e.currentTarget.style.color = isFocused ? '#ccc' : '#555'; }}
+                                      >Save</button>
+                                    </div>
 
                                     {/* Delete button */}
                                     <button
