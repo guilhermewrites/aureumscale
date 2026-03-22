@@ -250,16 +250,16 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ storagePrefix, clientId, clie
 
       {/* ── Header ── */}
       <div className="px-4 pt-4 pb-3" style={{ borderBottom: '1px solid #222' }}>
-        <div className="flex items-center gap-2 mb-3">
-          <Sparkles size={16} style={{ color: '#a78bfa' }} />
-          <span className="text-sm font-bold" style={{ color: '#ECECEC' }}>AI Assistant</span>
+        <div className="flex items-center gap-2.5 mb-3">
+          <img src="/aureum-logo.svg" alt="Aureum" style={{ width: 18, height: 18 }} />
+          <span className="text-sm font-bold" style={{ color: '#ECECEC' }}>Aureum Agent</span>
         </div>
         <div className="flex gap-1">
           <button
             onClick={() => setActiveView('chat')}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors"
             style={{
-              background: activeView === 'chat' ? '#a78bfa' : 'transparent',
+              background: activeView === 'chat' ? '#D4A843' : 'transparent',
               color: activeView === 'chat' ? '#fff' : '#666',
             }}
           >
@@ -269,7 +269,7 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ storagePrefix, clientId, clie
             onClick={() => setActiveView('memory')}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors"
             style={{
-              background: activeView === 'memory' ? '#a78bfa' : 'transparent',
+              background: activeView === 'memory' ? '#D4A843' : 'transparent',
               color: activeView === 'memory' ? '#fff' : '#666',
             }}
           >
@@ -285,15 +285,15 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ storagePrefix, clientId, clie
           <div className="flex-1 overflow-y-auto p-3 space-y-3">
             {chatLoading ? (
               <div className="flex items-center justify-center py-12">
-                <Loader2 size={18} className="animate-spin" style={{ color: '#a78bfa' }} />
+                <Loader2 size={18} className="animate-spin" style={{ color: '#D4A843' }} />
               </div>
             ) : messages.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-10 px-4 text-center">
-                <div className="w-12 h-12 rounded-2xl flex items-center justify-center mb-3" style={{ background: 'rgba(167,139,250,0.1)' }}>
-                  <Sparkles size={22} style={{ color: '#a78bfa' }} />
+                <div className="w-12 h-12 rounded-2xl flex items-center justify-center mb-3" style={{ background: 'rgba(212,168,67,0.1)' }}>
+                  <img src="/aureum-logo.svg" alt="Aureum" style={{ width: 26, height: 26 }} />
                 </div>
                 <p className="text-sm font-semibold mb-1" style={{ color: '#ECECEC' }}>
-                  Your AI content partner
+                  Aureum Agent
                 </p>
                 <p className="text-xs leading-relaxed" style={{ color: '#666' }}>
                   Ask me to brainstorm tweet ideas, refine your copy, suggest hooks, or anything content-related. Teach me your style in the Memory tab.
@@ -310,7 +310,7 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ storagePrefix, clientId, clie
                       onClick={() => { setInputText(prompt); inputRef.current?.focus(); }}
                       className="px-3 py-1.5 rounded-full text-[11px] font-medium transition-colors"
                       style={{ background: '#252525', color: '#999', border: '1px solid #333' }}
-                      onMouseEnter={e => { e.currentTarget.style.borderColor = '#a78bfa'; e.currentTarget.style.color = '#ECECEC'; }}
+                      onMouseEnter={e => { e.currentTarget.style.borderColor = '#D4A843'; e.currentTarget.style.color = '#ECECEC'; }}
                       onMouseLeave={e => { e.currentTarget.style.borderColor = '#333'; e.currentTarget.style.color = '#999'; }}
                     >
                       {prompt}
@@ -325,7 +325,7 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ storagePrefix, clientId, clie
                     <div
                       className="rounded-2xl px-3.5 py-2.5 text-[13px] leading-relaxed max-w-[90%]"
                       style={{
-                        background: msg.role === 'user' ? '#a78bfa' : '#252525',
+                        background: msg.role === 'user' ? '#D4A843' : '#252525',
                         color: msg.role === 'user' ? '#fff' : '#ECECEC',
                         borderBottomRightRadius: msg.role === 'user' ? 6 : 16,
                         borderBottomLeftRadius: msg.role === 'user' ? 16 : 6,
@@ -344,9 +344,9 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ storagePrefix, clientId, clie
                   <div className="flex justify-start">
                     <div className="rounded-2xl px-4 py-3 flex items-center gap-2" style={{ background: '#252525' }}>
                       <div className="flex gap-1">
-                        <div className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ background: '#a78bfa', animationDelay: '0ms' }} />
-                        <div className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ background: '#a78bfa', animationDelay: '150ms' }} />
-                        <div className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ background: '#a78bfa', animationDelay: '300ms' }} />
+                        <div className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ background: '#D4A843', animationDelay: '0ms' }} />
+                        <div className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ background: '#D4A843', animationDelay: '150ms' }} />
+                        <div className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ background: '#D4A843', animationDelay: '300ms' }} />
                       </div>
                     </div>
                   </div>
@@ -389,7 +389,7 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ storagePrefix, clientId, clie
                 onClick={sendMessage}
                 disabled={!inputText.trim() || sending}
                 className="flex-shrink-0 p-2 rounded-lg transition-colors disabled:opacity-30"
-                style={{ background: inputText.trim() ? '#a78bfa' : 'transparent', color: '#fff' }}
+                style={{ background: inputText.trim() ? '#D4A843' : 'transparent', color: '#fff' }}
               >
                 <Send size={14} />
               </button>
@@ -403,7 +403,7 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ storagePrefix, clientId, clie
         <div className="flex-1 overflow-y-auto p-3 space-y-2">
           {memoriesLoading ? (
             <div className="flex items-center justify-center py-12">
-              <Loader2 size={18} className="animate-spin" style={{ color: '#a78bfa' }} />
+              <Loader2 size={18} className="animate-spin" style={{ color: '#D4A843' }} />
             </div>
           ) : (
             <>
@@ -429,7 +429,7 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ storagePrefix, clientId, clie
                         {isOpen ? <ChevronDown size={13} style={{ color: '#666' }} /> : <ChevronRight size={13} style={{ color: '#666' }} />}
                         <span className="text-xs font-semibold">{cat.label}</span>
                         {catMemories.length > 0 && (
-                          <span className="text-[10px] px-1.5 py-0.5 rounded-full" style={{ background: 'rgba(167,139,250,0.15)', color: '#a78bfa' }}>
+                          <span className="text-[10px] px-1.5 py-0.5 rounded-full" style={{ background: 'rgba(167,139,250,0.15)', color: '#D4A843' }}>
                             {catMemories.length}
                           </span>
                         )}
@@ -438,7 +438,7 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ storagePrefix, clientId, clie
                         onClick={e => { e.stopPropagation(); addMemory(cat.id); if (!isOpen) toggleCat(cat.id); }}
                         className="p-1 rounded-md transition-colors"
                         style={{ color: '#555' }}
-                        onMouseEnter={e => { e.currentTarget.style.color = '#a78bfa'; }}
+                        onMouseEnter={e => { e.currentTarget.style.color = '#D4A843'; }}
                         onMouseLeave={e => { e.currentTarget.style.color = '#555'; }}
                       >
                         <Plus size={13} />
@@ -453,7 +453,7 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ storagePrefix, clientId, clie
                             onClick={() => addMemory(cat.id)}
                             className="w-full flex items-center justify-center gap-2 py-3 rounded-lg text-[11px] font-medium transition-colors"
                             style={{ color: '#555', border: '1px dashed #2a2a2a' }}
-                            onMouseEnter={e => { e.currentTarget.style.color = '#a78bfa'; e.currentTarget.style.borderColor = '#a78bfa44'; }}
+                            onMouseEnter={e => { e.currentTarget.style.color = '#D4A843'; e.currentTarget.style.borderColor = '#D4A84344'; }}
                             onMouseLeave={e => { e.currentTarget.style.color = '#555'; e.currentTarget.style.borderColor = '#2a2a2a'; }}
                           >
                             <Plus size={12} /> Add {cat.label.toLowerCase()}
@@ -466,7 +466,7 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ storagePrefix, clientId, clie
                                 onChange={e => updateMemory(mem.id, e.target.value)}
                                 className="w-full bg-transparent text-[12px] leading-5 focus:outline-none resize-none placeholder-[#3a3a3a] rounded-lg p-2 transition-colors"
                                 style={{ color: '#ccc', border: '1px solid #252525' }}
-                                onFocus={e => (e.currentTarget.style.borderColor = '#a78bfa44')}
+                                onFocus={e => (e.currentTarget.style.borderColor = '#D4A84344')}
                                 onBlur={e => (e.currentTarget.style.borderColor = '#252525')}
                                 placeholder={cat.placeholder}
                                 rows={Math.max(2, mem.content.split('\n').length)}

@@ -1306,7 +1306,7 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
             {/* ── Content Journal ── */}
             <div
               className="overflow-y-auto flex flex-col"
-              style={{ flex: '1 1 0%', ...card }}
+              style={{ flex: '0.8 1 0%', ...card }}
             >
               {/* Header */}
               <div className="p-4 flex items-center justify-between" style={{ borderBottom: '1px solid #222' }}>
@@ -1427,7 +1427,7 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
             </div>
 
             {/* ── AI Assistant ── */}
-            <div style={{ flex: '1 1 0%', minHeight: 300 }}>
+            <div style={{ flex: '1.5 1 0%', minHeight: 380 }}>
               <AIAssistant
                 storagePrefix={storagePrefix}
                 clientId={client?.id}
