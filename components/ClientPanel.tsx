@@ -187,7 +187,12 @@ function AutoTextarea({ value, onChange, className, placeholder, style }: {
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClose, onClientUpdate }) => {
-  const [activeTab, setActiveTab] = useState<Tab>('Overview');
+  // Remember last active tab per client
+  const [activeTab, setActiveTab] = useState<Tab>(() => {
+    if (!client?.id) return 'Overview';
+    const saved = localStorage.getItem(`aureum_tab_${client.id}`);
+    return (saved as Tab) || 'Overview';
+  });
   const [xTab, setXTab] = useState<'posts'|'replies'|'highlights'|'articles'|'media'|'likes'>('posts');
   const [details, setDetails] = useState<ClientDetails>(DEFAULT_DETAILS);
   const [loading, setLoading] = useState(false);
@@ -209,6 +214,11 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
 
   useEffect(() => { setLocalPhoto(client?.photoUrl); }, [client?.photoUrl]);
 
+  // Save active tab per client
+  useEffect(() => {
+    if (client?.id) localStorage.setItem(`aureum_tab_${client.id}`, activeTab);
+  }, [activeTab, client?.id]);
+
   // ─── Load ──────────────────────────────────────────────────────────────────
 
   useEffect(() => {
@@ -216,7 +226,9 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
     let cancelled = false;
     setLoading(true);
     setDetails(DEFAULT_DETAILS);
-    setActiveTab('Overview');
+    // Restore saved tab or default to Overview
+    const saved = localStorage.getItem(`aureum_tab_${client.id}`);
+    setActiveTab((saved as Tab) || 'Overview');
 
     const load = async () => {
       if (!supabase) { setLoading(false); return; }
@@ -1516,7 +1528,10 @@ function CardStatusSelect({ value, onChange }: { value: string; onChange: (v: st
   useEffect(() => {
     if (!open) return;
     const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+      // Small delay so click on option fires first
+      setTimeout(() => {
+        if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+      }, 0);
     };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
@@ -1535,7 +1550,8 @@ function CardStatusSelect({ value, onChange }: { value: string; onChange: (v: st
         <div className="absolute right-0 top-full mt-1 z-50 py-1 min-w-[120px] shadow-xl"
           style={{ background: '#222', borderRadius: 10 }}>
           {statuses.map(s => (
-            <button key={s} onClick={() => { onChange(s); setOpen(false); }}
+            <button key={s}
+              onMouseDown={(e) => { e.stopPropagation(); onChange(s); setOpen(false); }}
               className={`flex items-center gap-2 w-full text-left text-xs px-3 py-2 transition-colors hover:bg-[#2a2a2a] ${s === value ? 'font-semibold' : ''}`}
               style={{ color: colors[s] }}
             >
@@ -1584,7 +1600,9 @@ function CardPaymentSelect({ value, onChange }: { value: string; onChange: (v: s
   useEffect(() => {
     if (!open) return;
     const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+      setTimeout(() => {
+        if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+      }, 0);
     };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
@@ -1603,7 +1621,8 @@ function CardPaymentSelect({ value, onChange }: { value: string; onChange: (v: s
         <div className="absolute right-0 top-full mt-1 z-50 py-1 min-w-[140px] shadow-xl"
           style={{ background: '#222', borderRadius: 10 }}>
           {statuses.map(s => (
-            <button key={s} onClick={() => { onChange(s); setOpen(false); }}
+            <button key={s}
+              onMouseDown={(e) => { e.stopPropagation(); onChange(s); setOpen(false); }}
               className={`flex items-center gap-2 w-full text-left text-xs px-3 py-2 transition-colors hover:bg-[#2a2a2a] ${s === value ? 'font-semibold' : ''}`}
               style={{ color: colors[s] }}
             >

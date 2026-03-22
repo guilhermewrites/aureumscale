@@ -104,9 +104,13 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ storagePrefix, clientId, clie
     });
   }, [storagePrefix, clientId]);
 
-  // Auto-scroll to bottom
+  // Auto-scroll chat to bottom (only within chat container, not the page)
+  const chatContainerRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    const container = chatContainerRef.current;
+    if (container) {
+      container.scrollTop = container.scrollHeight;
+    }
   }, [messages]);
 
   // ── Memory CRUD ──
@@ -289,7 +293,7 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ storagePrefix, clientId, clie
       {activeView === 'chat' && (
         <div className="flex flex-col flex-1 min-h-0">
           {/* Messages */}
-          <div className="flex-1 overflow-y-auto p-3 space-y-3">
+          <div ref={chatContainerRef} className="flex-1 overflow-y-auto p-3 space-y-3">
             {chatLoading ? (
               <div className="flex items-center justify-center py-12">
                 <Loader2 size={18} className="animate-spin" style={{ color: '#D4A843' }} />
@@ -358,7 +362,7 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ storagePrefix, clientId, clie
                     </div>
                   </div>
                 )}
-                <div ref={messagesEndRef} />
+                <div />
               </>
             )}
           </div>
