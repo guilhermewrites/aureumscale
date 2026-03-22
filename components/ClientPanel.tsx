@@ -364,10 +364,10 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
           text: r.text ?? '',
           post_date: r.post_date ?? '',
           image_url: r.image_url ?? '',
-          likes: r.likes ?? Math.floor(Math.random() * 800) + 5,
-          retweets: r.retweets ?? Math.floor(Math.random() * 120) + 1,
-          replies: r.replies ?? Math.floor(Math.random() * 40) + 1,
-          views: r.views ?? Math.floor(Math.random() * 50000) + 500,
+          likes: r.likes || Math.floor(Math.random() * 800) + 5,
+          retweets: r.retweets || Math.floor(Math.random() * 120) + 1,
+          replies: r.replies || Math.floor(Math.random() * 40) + 1,
+          views: r.views || Math.floor(Math.random() * 50000) + 500,
         })));
       }
       setTweetsLoading(false);
@@ -415,13 +415,18 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
 
   const uploadTweetImage = useCallback(async (tweetId: string, file: File) => {
     if (!supabase) return;
-    const ext = file.name.split('.').pop();
-    const path = `tweet-images/${tweetId}.${ext}`;
-    const { error } = await supabase.storage.from('funnel-media').upload(path, file, { upsert: true });
-    if (error) { console.error('Upload error:', error); return; }
-    const { data: urlData } = supabase.storage.from('funnel-media').getPublicUrl(path);
-    if (urlData?.publicUrl) {
-      updateTweet(tweetId, { image_url: urlData.publicUrl });
+    try {
+      const ext = file.name.split('.').pop() || 'jpg';
+      const path = `tweet-images/${tweetId}_${Date.now()}.${ext}`;
+      const { error } = await supabase.storage.from('funnel-media').upload(path, file, { upsert: true, contentType: file.type });
+      if (error) { console.error('Tweet image upload error:', error); alert('Image upload failed. Check storage bucket permissions.'); return; }
+      const { data: urlData } = supabase.storage.from('funnel-media').getPublicUrl(path);
+      if (urlData?.publicUrl) {
+        const url = urlData.publicUrl + '?t=' + Date.now();
+        updateTweet(tweetId, { image_url: url });
+      }
+    } catch (err) {
+      console.error('Tweet image upload error:', err);
     }
   }, [updateTweet]);
 
@@ -784,23 +789,74 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
               const ShareIcon = () => <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 2.59l5.7 5.7-1.41 1.42L13 6.41V16h-2V6.41l-3.3 3.3-1.41-1.42L12 2.59zM21 15l-.02 3.51c0 1.38-1.12 2.49-2.5 2.49H5.5C4.11 21 3 19.88 3 18.5V15h2v3.5c0 .28.22.5.5.5h12.98c.28 0 .5-.22.5-.5L19 15h2z"/></svg>;
               const VerifiedIcon = () => <svg viewBox="0 0 22 22" width="16" height="16" fill="#1d9bf0"><path d="M20.396 11c-.018-.646-.215-1.275-.57-1.816-.354-.54-.852-.972-1.438-1.246.223-.607.27-1.264.14-1.897-.131-.634-.437-1.218-.882-1.687-.47-.445-1.053-.75-1.687-.882-.633-.13-1.29-.083-1.897.14-.273-.587-.704-1.086-1.245-1.44S11.647 1.62 11 1.604c-.646.017-1.273.213-1.813.568s-.969.855-1.24 1.44c-.608-.223-1.267-.272-1.902-.14-.635.13-1.22.436-1.69.882-.445.47-.749 1.055-.878 1.69-.13.633-.08 1.29.144 1.896-.587.274-1.087.705-1.443 1.245-.356.54-.555 1.17-.574 1.817.02.647.218 1.276.574 1.817.356.54.856.972 1.443 1.245-.224.606-.274 1.263-.144 1.896.13.636.433 1.221.878 1.69.47.446 1.055.752 1.69.883.635.13 1.294.083 1.902-.143.271.586.702 1.084 1.24 1.438.54.354 1.167.551 1.813.569.647-.016 1.276-.213 1.817-.567s.972-.854 1.245-1.44c.604.225 1.261.272 1.894.143.634-.131 1.218-.434 1.69-.88.445-.47.75-1.055.88-1.69.13-.634.085-1.29-.138-1.898.586-.272 1.084-.703 1.438-1.244.354-.54.551-1.17.569-1.816zM9.662 14.85l-3.429-3.428 1.293-1.302 2.072 2.072 4.4-4.794 1.347 1.246z"/></svg>;
 
+              // Random follower/following counts (stable per client)
+              const seed = client.id.charCodeAt(0) + client.id.charCodeAt(1);
+              const followers = Math.floor(seed * 47 + 1200);
+              const following = Math.floor(seed * 3 + 180);
+              const bio = details.strategy_overview
+                ? details.strategy_overview.split('\n')[0].slice(0, 120)
+                : 'No bio yet — add one in the Overview tab.';
+
               return (
-              <div>
-                {/* Header bar */}
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <XIcon />
-                    <span className="text-sm font-bold" style={{ color: '#ECECEC' }}>Posts</span>
-                    {tweets.length > 0 && <span className="text-xs" style={{ color: '#555' }}>{tweets.length}</span>}
-                  </div>
-                  <button onClick={addTweet}
-                    className="flex items-center gap-2 px-5 py-2 rounded-full text-sm font-bold transition-colors"
-                    style={{ background: '#1d9bf0', color: '#fff' }}
-                    onMouseEnter={e => (e.currentTarget.style.background = '#1a8cd8')}
-                    onMouseLeave={e => (e.currentTarget.style.background = '#1d9bf0')}
+              <div className="rounded-2xl overflow-hidden" style={{ background: '#000', border: '1px solid #2f3336' }}>
+                {/* ── Twitter Profile Header ── */}
+                <div>
+                  {/* Banner */}
+                  <div style={{ height: 120, background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)' }} />
+
+                  {/* Avatar + Follow */}
+                  <div className="px-4" style={{ marginTop: -40 }}>
+                    <div className="flex items-end justify-between">
+                      {avatar ? (
+                        <img src={avatar} alt="" className="rounded-full object-cover" style={{ width: 76, height: 76, border: '4px solid #000' }} />
+                      ) : (
+                        <div className="rounded-full flex items-center justify-center text-2xl font-bold" style={{ width: 76, height: 76, border: '4px solid #000', background: '#333', color: '#ECECEC' }}>
+                          {displayName.charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                      <button onClick={addTweet}
+                        className="flex items-center gap-2 px-5 py-2 rounded-full text-sm font-bold transition-colors mb-1"
+                        style={{ background: '#1d9bf0', color: '#fff' }}
+                        onMouseEnter={e => (e.currentTarget.style.background = '#1a8cd8')}
+                        onMouseLeave={e => (e.currentTarget.style.background = '#1d9bf0')}
                   ><Plus size={14} /> Post</button>
+                    </div>
+
+                    {/* Name + handle */}
+                    <div className="mt-3">
+                      <div className="flex items-center gap-1">
+                        <span className="text-xl font-extrabold" style={{ color: '#e7e9ea' }}>{displayName}</span>
+                        <VerifiedIcon />
+                      </div>
+                      <span className="text-[15px]" style={{ color: '#71767b' }}>{handle}</span>
+                    </div>
+
+                    {/* Bio */}
+                    <p className="text-[15px] mt-2" style={{ color: '#e7e9ea', lineHeight: '20px' }}>{bio}</p>
+
+                    {/* Followers / Following */}
+                    <div className="flex items-center gap-4 mt-3 mb-3">
+                      <span className="text-sm">
+                        <span className="font-bold" style={{ color: '#e7e9ea' }}>{following.toLocaleString()}</span>
+                        <span style={{ color: '#71767b' }}> Following</span>
+                      </span>
+                      <span className="text-sm">
+                        <span className="font-bold" style={{ color: '#e7e9ea' }}>{followers.toLocaleString()}</span>
+                        <span style={{ color: '#71767b' }}> Followers</span>
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Tab bar */}
+                  <div className="flex" style={{ borderBottom: '1px solid #2f3336' }}>
+                    <div className="flex-1 text-center py-3 text-sm font-bold" style={{ color: '#e7e9ea', borderBottom: '4px solid #1d9bf0' }}>Posts</div>
+                    <div className="flex-1 text-center py-3 text-sm font-bold" style={{ color: '#71767b' }}>Replies</div>
+                    <div className="flex-1 text-center py-3 text-sm font-bold" style={{ color: '#71767b' }}>Media</div>
+                    <div className="flex-1 text-center py-3 text-sm font-bold" style={{ color: '#71767b' }}>Likes</div>
+                  </div>
                 </div>
 
+                {/* ── Tweet Feed ── */}
                 {tweetsLoading ? (
                   <div className="flex items-center justify-center py-12 gap-2" style={{ color: '#444' }}>
                     <Loader2 size={16} className="animate-spin" />
