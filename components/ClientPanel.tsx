@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import {
   ExternalLink, Plus, Trash2, Loader2,
   BarChart2, Share2, GitBranch, FileText, StickyNote, LayoutDashboard, Camera,
-  Receipt, DollarSign,
+  Receipt, DollarSign, Pen, Image as ImageIcon, Calendar,
 } from 'lucide-react';
 import { supabase } from '../services/supabaseClient';
 
@@ -64,6 +64,7 @@ type SaveStatus = 'idle' | 'saving' | 'saved';
 const TABS = [
   { id: 'Overview', label: 'Overview', Icon: LayoutDashboard },
   { id: 'Billing',  label: 'Billing',  Icon: Receipt },
+  { id: 'Content',  label: 'Content',  Icon: Pen },
   { id: 'Ads',      label: 'Ads',      Icon: BarChart2 },
   { id: 'Social',   label: 'Social',   Icon: Share2 },
   { id: 'Funnel',   label: 'Funnel',   Icon: GitBranch },
@@ -184,6 +185,13 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
   const [localPhoto, setLocalPhoto] = useState<string | undefined>(client?.photoUrl);
   const [invoices, setInvoices] = useState<BillingInvoice[]>([]);
   const [invoicesLoading, setInvoicesLoading] = useState(false);
+
+  // Tweets (X content)
+  interface Tweet { id: string; text: string; post_date: string; image_url: string; }
+  const [tweets, setTweets] = useState<Tweet[]>([]);
+  const [tweetsLoading, setTweetsLoading] = useState(false);
+  const tweetDebounceRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+  const tweetImageRef = useRef<HTMLInputElement>(null);
   const photoInputRef = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const savedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -336,6 +344,70 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
     })();
     return () => { cancelled = true; };
   }, [client?.id, storagePrefix]);
+
+  // ─── Load Tweets ──────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (!client || !supabase) return;
+    let cancelled = false;
+    setTweetsLoading(true);
+    (async () => {
+      const { data, error } = await supabase
+        .from('client_tweets')
+        .select('*')
+        .eq('client_id', client.id)
+        .eq('user_id', storagePrefix)
+        .order('post_date', { ascending: true });
+      if (cancelled) return;
+      if (!error && data) {
+        setTweets(data.map((r: any) => ({
+          id: r.id,
+          text: r.text ?? '',
+          post_date: r.post_date ?? '',
+          image_url: r.image_url ?? '',
+        })));
+      }
+      setTweetsLoading(false);
+    })();
+    return () => { cancelled = true; };
+  }, [client?.id, storagePrefix]);
+
+  const addTweet = useCallback(async () => {
+    if (!supabase || !client) return;
+    const tw: Tweet = { id: crypto.randomUUID(), text: '', post_date: '', image_url: '' };
+    setTweets(prev => [...prev, tw]);
+    await supabase.from('client_tweets').insert({ ...tw, client_id: client.id, user_id: storagePrefix });
+  }, [client, storagePrefix]);
+
+  const updateTweet = useCallback((id: string, patch: Partial<Tweet>) => {
+    setTweets(prev => prev.map(t => t.id === id ? { ...t, ...patch } : t));
+    // Debounced save
+    if (tweetDebounceRef.current[id]) clearTimeout(tweetDebounceRef.current[id]);
+    tweetDebounceRef.current[id] = setTimeout(async () => {
+      if (!supabase) return;
+      const dbPatch: any = {};
+      if ('text' in patch) dbPatch.text = patch.text;
+      if ('post_date' in patch) dbPatch.post_date = patch.post_date;
+      if ('image_url' in patch) dbPatch.image_url = patch.image_url;
+      await supabase.from('client_tweets').update(dbPatch).eq('id', id);
+    }, 600);
+  }, []);
+
+  const deleteTweet = useCallback(async (id: string) => {
+    setTweets(prev => prev.filter(t => t.id !== id));
+    if (supabase) await supabase.from('client_tweets').delete().eq('id', id);
+  }, []);
+
+  const uploadTweetImage = useCallback(async (tweetId: string, file: File) => {
+    if (!supabase) return;
+    const ext = file.name.split('.').pop();
+    const path = `tweet-images/${tweetId}.${ext}`;
+    const { error } = await supabase.storage.from('funnel-media').upload(path, file, { upsert: true });
+    if (error) { console.error('Upload error:', error); return; }
+    const { data: urlData } = supabase.storage.from('funnel-media').getPublicUrl(path);
+    if (urlData?.publicUrl) {
+      updateTweet(tweetId, { image_url: urlData.publicUrl });
+    }
+  }, [updateTweet]);
 
   const addInvoice = useCallback(async () => {
     if (!supabase || !client) return;
@@ -669,6 +741,118 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
                       </div>
                       );
                     })}
+                  </div>
+                )}
+              </Block>
+            )}
+
+            {/* ── CONTENT ───────────────────────────────────────────────── */}
+            {activeTab === 'Content' && (
+              <Block
+                title={`X (Twitter)${tweets.length > 0 ? ` · ${tweets.length}` : ''}`}
+                action={
+                  <button onClick={addTweet}
+                    className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-colors"
+                    style={{ background: '#ECECEC', color: '#111' }}
+                    onMouseEnter={e => (e.currentTarget.style.background = '#fff')}
+                    onMouseLeave={e => (e.currentTarget.style.background = '#ECECEC')}
+                  ><Plus size={14} /> New Tweet</button>
+                }
+              >
+                {tweetsLoading ? (
+                  <div className="flex items-center justify-center py-12 gap-2" style={{ color: '#444' }}>
+                    <Loader2 size={16} className="animate-spin" />
+                    <span className="text-sm">Loading tweets…</span>
+                  </div>
+                ) : tweets.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-16 gap-2" style={{ color: '#333' }}>
+                    <Pen size={32} strokeWidth={1.5} />
+                    <p className="text-sm font-medium mt-1" style={{ color: '#444' }}>No tweets yet</p>
+                    <p className="text-xs">Click "New Tweet" to start drafting content.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {tweets.map(tw => (
+                      <div key={tw.id} className="rounded-2xl overflow-hidden" style={{ background: '#161616' }}>
+                        <div className="p-4">
+                          {/* Top row: date + delete */}
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-center gap-2">
+                              <Calendar size={13} style={{ color: '#555' }} />
+                              <input
+                                type="date"
+                                value={tw.post_date}
+                                onChange={e => updateTweet(tw.id, { post_date: e.target.value })}
+                                className="bg-transparent text-xs text-[#ECECEC] focus:outline-none"
+                                style={{ colorScheme: 'dark' }}
+                              />
+                              {tw.post_date && (() => {
+                                const d = new Date(tw.post_date);
+                                const now = new Date(); now.setHours(0,0,0,0);
+                                const diff = Math.ceil((d.getTime() - now.getTime()) / (1000*60*60*24));
+                                const label = diff === 0 ? 'Today' : diff === 1 ? 'Tomorrow' : diff > 0 ? `In ${diff} days` : `${Math.abs(diff)}d ago`;
+                                const color = diff < 0 ? '#f87171' : diff === 0 ? '#4ade80' : '#555';
+                                return <span className="text-[10px] font-medium" style={{ color }}>{label}</span>;
+                              })()}
+                            </div>
+                            <button
+                              onClick={() => deleteTweet(tw.id)}
+                              className="p-1 rounded-lg transition-colors"
+                              style={{ color: '#333' }}
+                              onMouseEnter={e => (e.currentTarget.style.color = '#ef4444')}
+                              onMouseLeave={e => (e.currentTarget.style.color = '#333')}
+                            ><Trash2 size={13} /></button>
+                          </div>
+
+                          {/* Tweet text */}
+                          <textarea
+                            value={tw.text}
+                            onChange={e => updateTweet(tw.id, { text: e.target.value })}
+                            className="w-full bg-transparent text-sm text-[#ECECEC] focus:outline-none resize-none placeholder-[#333]"
+                            style={{ minHeight: 80 }}
+                            placeholder="Write your tweet…"
+                          />
+                          <div className="flex items-center justify-between mt-2">
+                            <span className="text-[10px] font-medium" style={{ color: tw.text.length > 280 ? '#f87171' : '#444' }}>
+                              {tw.text.length}/280
+                            </span>
+                          </div>
+
+                          {/* Image */}
+                          {tw.image_url && (
+                            <div className="mt-3 relative rounded-xl overflow-hidden" style={{ maxHeight: 200 }}>
+                              <img src={tw.image_url} alt="" className="w-full object-cover rounded-xl" style={{ maxHeight: 200 }} />
+                              <button
+                                onClick={() => updateTweet(tw.id, { image_url: '' })}
+                                className="absolute top-2 right-2 p-1.5 rounded-lg transition-colors"
+                                style={{ background: 'rgba(0,0,0,0.7)', color: '#ECECEC' }}
+                              ><Trash2 size={12} /></button>
+                            </div>
+                          )}
+
+                          {/* Add image button */}
+                          {!tw.image_url && (
+                            <button
+                              onClick={() => {
+                                // Store which tweet we're adding image to
+                                const inp = document.createElement('input');
+                                inp.type = 'file';
+                                inp.accept = 'image/*';
+                                inp.onchange = (e: any) => {
+                                  const file = e.target.files?.[0];
+                                  if (file) uploadTweetImage(tw.id, file);
+                                };
+                                inp.click();
+                              }}
+                              className="flex items-center gap-2 mt-2 px-3 py-2 rounded-xl text-xs font-medium transition-colors"
+                              style={{ color: '#555', background: '#1c1c1c' }}
+                              onMouseEnter={e => { e.currentTarget.style.color = '#ECECEC'; e.currentTarget.style.background = '#222'; }}
+                              onMouseLeave={e => { e.currentTarget.style.color = '#555'; e.currentTarget.style.background = '#1c1c1c'; }}
+                            ><ImageIcon size={13} /> Add Image</button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 )}
               </Block>

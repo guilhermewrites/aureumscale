@@ -156,3 +156,23 @@ CREATE POLICY "allow_all" ON column_options
   FOR ALL
   USING (true)
   WITH CHECK (true);
+
+-- ============================================================
+-- 7. CLIENT_TWEETS TABLE (X/Twitter content per client)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS client_tweets (
+  id           TEXT PRIMARY KEY,
+  client_id    TEXT NOT NULL,
+  user_id      TEXT NOT NULL,
+  text         TEXT NOT NULL DEFAULT '',
+  post_date    TEXT NOT NULL DEFAULT '',
+  image_url    TEXT NOT NULL DEFAULT '',
+  created_at   TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE client_tweets ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "allow_all" ON client_tweets
+  FOR ALL
+  USING (true)
+  WITH CHECK (true);
