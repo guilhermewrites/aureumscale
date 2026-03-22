@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import {
   ExternalLink, Plus, Trash2, Loader2,
   BarChart2, Share2, GitBranch, FileText, StickyNote, LayoutDashboard, Camera,
-  Receipt, DollarSign, Pen, Image as ImageIcon, Calendar, Brain, ChevronDown, ChevronRight, X,
+  Receipt, DollarSign, Pen, Image as ImageIcon, Calendar, Brain, ChevronDown, ChevronRight, X, Check,
 } from 'lucide-react';
 import { supabase } from '../services/supabaseClient';
 
@@ -1365,18 +1365,39 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
                                 </span>
                               )}
                             </div>
-                            <button
-                              onClick={async () => {
-                                if (!supabase) return;
-                                const mem = { id: crypto.randomUUID(), user_id: storagePrefix, content: '', category: cat.id, created_at: new Date().toISOString(), updated_at: new Date().toISOString() };
-                                setClientMemories(prev => [...prev, { id: mem.id, content: '', category: cat.id }]);
-                                await supabase.from('ai_memory').insert(mem);
-                              }}
-                              className="p-1 rounded-md transition-colors"
-                              style={{ color: '#555' }}
-                              onMouseEnter={e => (e.currentTarget.style.color = '#D4A843')}
-                              onMouseLeave={e => (e.currentTarget.style.color = '#555')}
-                            ><Plus size={14} /></button>
+                            <div className="flex items-center gap-1">
+                              {/* Save all in this category */}
+                              {items.length > 0 && (
+                                <button
+                                  onClick={async () => {
+                                    if (!supabase) return;
+                                    for (const mem of items) {
+                                      await supabase.from('ai_memory').update({ content: mem.content, updated_at: new Date().toISOString() }).eq('id', mem.id).eq('user_id', storagePrefix);
+                                    }
+                                    setMemSavedId(cat.id);
+                                    setTimeout(() => setMemSavedId(null), 2000);
+                                  }}
+                                  className="p-1 rounded-md transition-all active:scale-90"
+                                  style={{ color: memSavedId === cat.id ? '#34d399' : '#555' }}
+                                  onMouseEnter={e => { if (memSavedId !== cat.id) e.currentTarget.style.color = '#ccc'; }}
+                                  onMouseLeave={e => { if (memSavedId !== cat.id) e.currentTarget.style.color = '#555'; }}
+                                  title="Save all"
+                                ><Check size={14} /></button>
+                              )}
+                              {/* Add new */}
+                              <button
+                                onClick={async () => {
+                                  if (!supabase) return;
+                                  const mem = { id: crypto.randomUUID(), user_id: storagePrefix, content: '', category: cat.id, created_at: new Date().toISOString(), updated_at: new Date().toISOString() };
+                                  setClientMemories(prev => [...prev, { id: mem.id, content: '', category: cat.id }]);
+                                  await supabase.from('ai_memory').insert(mem);
+                                }}
+                                className="p-1 rounded-md transition-colors"
+                                style={{ color: '#555' }}
+                                onMouseEnter={e => (e.currentTarget.style.color = '#ccc')}
+                                onMouseLeave={e => (e.currentTarget.style.color = '#555')}
+                              ><Plus size={14} /></button>
+                            </div>
                           </div>
                           {items.length === 0 ? (
                             <div className="px-4 pb-3">
@@ -1434,33 +1455,10 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
                                         }, 800);
                                       }}
                                       className="w-full bg-transparent text-[12px] leading-5 focus:outline-none resize-none p-3"
-                                      style={{ color: '#ccc', borderBottom: '1px solid #1e1e1e' }}
+                                      style={{ color: '#ccc' }}
                                       placeholder={cat.placeholder}
                                       rows={Math.max(2, mem.content.split('\n').length)}
                                     />
-
-                                    {/* Save bar */}
-                                    <div className="flex items-center justify-between px-3 py-2">
-                                      <div>
-                                        {justSaved && (
-                                          <span className="text-[11px] font-medium" style={{ color: '#34d399' }}>✓ Saved</span>
-                                        )}
-                                      </div>
-                                      <button
-                                        onMouseDown={async (e) => {
-                                          e.preventDefault();
-                                          if (supabase) {
-                                            await supabase.from('ai_memory').update({ content: mem.content, updated_at: new Date().toISOString() }).eq('id', mem.id).eq('user_id', storagePrefix);
-                                          }
-                                          setMemSavedId(mem.id);
-                                          setTimeout(() => setMemSavedId(null), 2000);
-                                        }}
-                                        className="px-4 py-1.5 rounded-lg text-[11px] font-semibold transition-all active:scale-95"
-                                        style={{ background: '#282828', color: '#888' }}
-                                        onMouseEnter={e => { e.currentTarget.style.background = '#444'; e.currentTarget.style.color = '#fff'; }}
-                                        onMouseLeave={e => { e.currentTarget.style.background = '#282828'; e.currentTarget.style.color = '#888'; }}
-                                      >Save</button>
-                                    </div>
 
                                     {/* Delete button */}
                                     <button
