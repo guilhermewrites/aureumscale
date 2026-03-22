@@ -1360,7 +1360,7 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
                               <Brain size={13} style={{ color: '#666' }} />
                               <span className="text-xs font-semibold" style={{ color: '#ECECEC' }}>{cat.label}</span>
                               {items.length > 0 && (
-                                <span className="text-[10px] px-1.5 py-0.5 rounded-full" style={{ background: 'rgba(212,168,67,0.15)', color: '#D4A843' }}>
+                                <span className="text-[10px] px-1.5 py-0.5 rounded-full" style={{ background: 'rgba(255,255,255,0.06)', color: '#888' }}>
                                   {items.length}
                                 </span>
                               )}
@@ -1406,6 +1406,25 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
                                       value={mem.content}
                                       onChange={e => {
                                         const val = e.target.value;
+                                        // Check if user typed -----
+                                        const sepMatch = val.match(/^([\s\S]*?)\n-{5,}\n?([\s\S]*)$/);
+                                        if (sepMatch) {
+                                          const above = sepMatch[1];
+                                          const below = (sepMatch[2] || '').trim();
+                                          // Update current memory with text above the separator
+                                          setClientMemories(prev => prev.map(m => m.id === mem.id ? { ...m, content: above } : m));
+                                          if (supabase) supabase.from('ai_memory').update({ content: above, updated_at: new Date().toISOString() }).eq('id', mem.id).eq('user_id', storagePrefix);
+                                          // Create new memory with text below
+                                          const newMem = { id: crypto.randomUUID(), user_id: storagePrefix, content: below, category: cat.id, created_at: new Date().toISOString(), updated_at: new Date().toISOString() };
+                                          setClientMemories(prev => {
+                                            const idx = prev.findIndex(m => m.id === mem.id);
+                                            const next = [...prev];
+                                            next.splice(idx + 1, 0, { id: newMem.id, content: below, category: cat.id });
+                                            return next;
+                                          });
+                                          if (supabase) supabase.from('ai_memory').insert(newMem);
+                                          return;
+                                        }
                                         setClientMemories(prev => prev.map(m => m.id === mem.id ? { ...m, content: val } : m));
                                         if (memoryDebounceRef.current[mem.id]) clearTimeout(memoryDebounceRef.current[mem.id] as unknown as number);
                                         memoryDebounceRef.current[mem.id] = setTimeout(async () => {
