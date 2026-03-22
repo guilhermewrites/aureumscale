@@ -744,6 +744,9 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
           client={selectedClient}
           storagePrefix={storagePrefix}
           onClose={() => navigate('/clients')}
+          onClientUpdate={(id, patch) => {
+            updateClient(id, patch as Partial<Client>);
+          }}
         />
       </div>
     );

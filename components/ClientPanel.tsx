@@ -643,12 +643,7 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
                 value={localStatus}
                 onChange={(v) => {
                   setLocalStatus(v);
-                  if (client) {
-                    onClientUpdate?.(client.id, { status: v });
-                    if (supabase) {
-                      supabase.from('clients').update({ status: v }).eq('id', client.id).eq('user_id', storagePrefix);
-                    }
-                  }
+                  if (client) onClientUpdate?.(client.id, { status: v });
                 }}
               />
             </CardRow>
@@ -657,12 +652,7 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
                 value={localPayment}
                 onChange={(v) => {
                   setLocalPayment(v);
-                  if (client) {
-                    onClientUpdate?.(client.id, { paymentStatus: v });
-                    if (supabase) {
-                      supabase.from('clients').update({ payment_status: v }).eq('id', client.id).eq('user_id', storagePrefix);
-                    }
-                  }
+                  if (client) onClientUpdate?.(client.id, { paymentStatus: v });
                 }}
               />
             </CardRow>
