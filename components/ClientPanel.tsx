@@ -218,9 +218,6 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
   interface MemoryItem { id: string; content: string; category: string; }
   const [clientMemories, setClientMemories] = useState<MemoryItem[]>([]);
   const [memoriesLoading, setMemoriesLoading] = useState(false);
-  const [editingMemId, setEditingMemId] = useState<string | null>(null);
-  const [memDraft, setMemDraft] = useState('');
-  const [savedMemId, setSavedMemId] = useState<string | null>(null);
   const memoryDebounceRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
   const MEMORY_CATEGORIES = [
     { id: 'tone', label: 'Tone & Voice', placeholder: 'e.g. "This client prefers a professional, authoritative tone."' },
@@ -1400,68 +1397,46 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
                           ) : (
                             <div className="px-4 pb-3 space-y-2">
                               {items.map(mem => {
-                                const isEditing = editingMemId === mem.id;
-                                const justSaved = savedMemId === mem.id;
+                                const renderLines = (text: string) =>
+                                  text.replace(/\r/g, '').split('\n').map((line: string, li: number) => {
+                                    const t = line.trim();
+                                    if (t.length >= 5 && /^-+$/.test(t)) {
+                                      return <div key={li} style={{ height: 1, margin: '10px 0', background: 'linear-gradient(90deg, transparent 0%, #D4A843 30%, #D4A843 70%, transparent 100%)' }} />;
+                                    }
+                                    return <div key={li} className="text-[12px] leading-5" style={{ color: '#ccc' }}>{line || '\u00A0'}</div>;
+                                  });
+
                                 return (
-                                  <div key={mem.id} className="relative group/mem">
-                                    {isEditing ? (
-                                      <div className="rounded-lg overflow-hidden" style={{ border: '1px solid #D4A84366' }}>
-                                        <textarea
-                                          autoFocus
-                                          value={memDraft}
-                                          onChange={e => setMemDraft(e.target.value)}
-                                          className="w-full bg-transparent text-[12px] leading-5 focus:outline-none resize-none placeholder-[#3a3a3a] p-3"
-                                          style={{ color: '#ccc' }}
-                                          placeholder={cat.placeholder + '\n\nType ----- on its own line to add a separator'}
-                                          rows={Math.max(4, memDraft.split('\n').length + 1)}
-                                        />
-                                        <div className="flex gap-2 justify-end px-3 py-2" style={{ background: '#1a1a1a', borderTop: '1px solid #252525' }}>
-                                          <button
-                                            onClick={() => setEditingMemId(null)}
-                                            className="px-3 py-1 rounded-md text-[11px] font-medium"
-                                            style={{ color: '#888' }}
-                                          >Cancel</button>
-                                          <button
-                                            onClick={() => {
-                                              setClientMemories(prev => prev.map(m => m.id === mem.id ? { ...m, content: memDraft } : m));
-                                              if (supabase) supabase.from('ai_memory').update({ content: memDraft, updated_at: new Date().toISOString() }).eq('id', mem.id);
-                                              setEditingMemId(null);
-                                              setSavedMemId(mem.id);
-                                              setTimeout(() => setSavedMemId(null), 2000);
-                                            }}
-                                            className="px-4 py-1.5 rounded-md text-[11px] font-semibold"
-                                            style={{ background: '#D4A843', color: '#000' }}
-                                          >Save</button>
-                                        </div>
-                                      </div>
-                                    ) : (
-                                      <div
-                                        onClick={() => { setEditingMemId(mem.id); setMemDraft(mem.content); }}
-                                        className="w-full rounded-lg p-3 cursor-text"
-                                        style={{ border: '1px solid #252525' }}
-                                      >
-                                        {justSaved && (
-                                          <div className="text-[11px] font-medium mb-1.5" style={{ color: '#34d399' }}>✓ Saved to memory</div>
-                                        )}
-                                        {mem.content ? (
-                                          mem.content.replace(/\r/g, '').split('\n').map((line: string, li: number) => {
-                                            const t = line.trim();
-                                            if (t.length >= 5 && t.split('').every((c: string) => c === '-')) {
-                                              return <div key={li} style={{ height: 1, margin: '10px 0', background: 'linear-gradient(90deg, transparent 0%, #D4A843 30%, #D4A843 70%, transparent 100%)' }} />;
-                                            }
-                                            return <div key={li} className="text-[12px] leading-5" style={{ color: '#ccc', minHeight: line.trim() ? undefined : '1.25rem' }}>{line || '\u00A0'}</div>;
-                                          })
-                                        ) : (
-                                          <span className="text-[12px]" style={{ color: '#3a3a3a' }}>{cat.placeholder}</span>
-                                        )}
-                                      </div>
-                                    )}
+                                  <div key={mem.id} className="relative group/mem rounded-lg" style={{ border: '1px solid #252525' }}>
+                                    {/* Live preview of content */}
+                                    <div className="p-3 pointer-events-none select-none" aria-hidden>
+                                      {mem.content ? renderLines(mem.content) : (
+                                        <span className="text-[12px]" style={{ color: '#3a3a3a' }}>{cat.placeholder}</span>
+                                      )}
+                                    </div>
+                                    {/* Invisible textarea on top for editing */}
+                                    <textarea
+                                      value={mem.content}
+                                      onChange={e => {
+                                        const val = e.target.value;
+                                        setClientMemories(prev => prev.map(m => m.id === mem.id ? { ...m, content: val } : m));
+                                        if (memoryDebounceRef.current[mem.id]) clearTimeout(memoryDebounceRef.current[mem.id] as unknown as number);
+                                        memoryDebounceRef.current[mem.id] = setTimeout(async () => {
+                                          if (supabase) {
+                                            await supabase.from('ai_memory').update({ content: val, updated_at: new Date().toISOString() }).eq('id', mem.id).eq('user_id', storagePrefix);
+                                          }
+                                        }, 800);
+                                      }}
+                                      className="absolute inset-0 w-full h-full bg-transparent text-transparent caret-white text-[12px] leading-5 focus:outline-none resize-none p-3"
+                                      style={{ caretColor: '#D4A843' }}
+                                      placeholder={cat.placeholder}
+                                    />
                                     <button
                                       onClick={async () => {
                                         setClientMemories(prev => prev.filter(m => m.id !== mem.id));
-                                        if (supabase) await supabase.from('ai_memory').delete().eq('id', mem.id);
+                                        if (supabase) await supabase.from('ai_memory').delete().eq('id', mem.id).eq('user_id', storagePrefix);
                                       }}
-                                      className="absolute top-1 right-1 p-1 rounded-md opacity-0 group-hover/mem:opacity-100 transition-opacity"
+                                      className="absolute top-1 right-1 p-1 rounded-md opacity-0 group-hover/mem:opacity-100 transition-opacity z-10"
                                       style={{ color: '#555' }}
                                       onMouseEnter={e => (e.currentTarget.style.color = '#f87171')}
                                       onMouseLeave={e => (e.currentTarget.style.color = '#555')}
