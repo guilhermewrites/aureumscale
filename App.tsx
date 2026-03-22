@@ -57,6 +57,47 @@ const App: React.FC = () => {
   return <AuthenticatedApp user={user} signOut={signOut} />;
 };
 
+// Wrapper that passes current client context to AIBubble based on URL
+const AIBubbleWithClient: React.FC<{ storagePrefix: string }> = ({ storagePrefix }) => {
+  const location = useLocation();
+  const [clientInfo, setClientInfo] = React.useState<{ id: string; name: string; service: string; handle: string; bio: string } | null>(null);
+
+  React.useEffect(() => {
+    const match = location.pathname.match(/^\/clients\/(.+)$/);
+    if (!match) { setClientInfo(null); return; }
+    const clientId = match[1];
+    if (!supabase) return;
+    supabase.from('clients').select('id, name, service').eq('id', clientId).eq('user_id', storagePrefix).single()
+      .then(({ data }) => {
+        if (data) {
+          supabase!.from('client_details').select('social_platforms').eq('client_id', clientId).eq('user_id', storagePrefix).single()
+            .then(({ data: det }) => {
+              const socials = det?.social_platforms as any;
+              setClientInfo({
+                id: data.id,
+                name: data.name || '',
+                service: data.service || '',
+                handle: socials?.twitter || '',
+                bio: '',
+              });
+            });
+        } else {
+          setClientInfo(null);
+        }
+      });
+  }, [location.pathname, storagePrefix]);
+
+  return (
+    <AIBubble
+      storagePrefix={storagePrefix}
+      clientId={clientInfo?.id}
+      clientName={clientInfo?.name}
+      clientService={clientInfo?.service}
+      clientHandle={clientInfo?.handle}
+    />
+  );
+};
+
 const AuthenticatedApp: React.FC<{ user: User; signOut: () => Promise<void> }> = ({ user, signOut }) => {
   const location = useLocation();
   // Derive the active nav label from the current route
@@ -711,8 +752,8 @@ const AuthenticatedApp: React.FC<{ user: User; signOut: () => Promise<void> }> =
         </Routes>
       </main>
 
-      {/* Floating AI bubble — always visible */}
-      <AIBubble storagePrefix={storagePrefix} />
+      {/* Floating AI bubble — always visible, passes current client context from URL */}
+      <AIBubbleWithClient storagePrefix={storagePrefix} />
     </div>
   );
 };
