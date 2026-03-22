@@ -46,6 +46,7 @@ interface ClientDetails {
   twitter_bio: string;
   twitter_followers: number;
   twitter_following: number;
+  content_drafts: string;
 }
 
 const EMPTY_ADS: AdsPerformance = { roas: '', spend: '', impressions: '', ctr: '', conversions: '', revenue: '' };
@@ -1499,7 +1500,12 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
               {/* Header */}
               <div className="p-4 flex items-center justify-between" style={{ borderBottom: '1px solid #222' }}>
                 <div>
-                  <span className="text-sm font-bold" style={{ color: '#ECECEC' }}>Content Journal</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-bold" style={{ color: '#ECECEC' }}>Content Journal</span>
+                    {(() => { const count = (details.ad_performance_notes || '').split('\n---\n').filter(s => s.trim()).length; return count > 0 ? (
+                      <span className="text-[11px] font-medium px-1.5 py-0.5 rounded-full" style={{ background: 'rgba(255,255,255,0.06)', color: '#888' }}>{count}</span>
+                    ) : null; })()}
+                  </div>
                   <p className="text-[11px] mt-0.5" style={{ color: '#555' }}>Brainstorm ideas, then push to posts</p>
                 </div>
               </div>
