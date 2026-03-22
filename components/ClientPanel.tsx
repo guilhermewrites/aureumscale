@@ -198,6 +198,8 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
   const [loading, setLoading] = useState(false);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');
   const [localPhoto, setLocalPhoto] = useState<string | undefined>(client?.photoUrl);
+  const [localStatus, setLocalStatus] = useState<string>((client as any)?.status ?? 'Happy');
+  const [localPayment, setLocalPayment] = useState<string>(client?.paymentStatus ?? 'Pending');
   const [invoices, setInvoices] = useState<BillingInvoice[]>([]);
   const [invoicesLoading, setInvoicesLoading] = useState(false);
 
@@ -226,6 +228,8 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
   ];
 
   useEffect(() => { setLocalPhoto(client?.photoUrl); }, [client?.photoUrl]);
+  useEffect(() => { setLocalStatus((client as any)?.status ?? 'Happy'); }, [(client as any)?.status]);
+  useEffect(() => { setLocalPayment(client?.paymentStatus ?? 'Pending'); }, [client?.paymentStatus]);
 
   // Save active tab per client
   useEffect(() => {
@@ -636,8 +640,9 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
             </CardRow>
             <CardRow label="Status">
               <CardStatusSelect
-                value={(client as any).status ?? 'Happy'}
+                value={localStatus}
                 onChange={(v) => {
+                  setLocalStatus(v);
                   if (client) {
                     onClientUpdate?.(client.id, { status: v });
                     if (supabase) {
@@ -649,8 +654,9 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
             </CardRow>
             <CardRow label="Payment">
               <CardPaymentSelect
-                value={client.paymentStatus ?? 'Pending'}
+                value={localPayment}
                 onChange={(v) => {
+                  setLocalPayment(v);
                   if (client) {
                     onClientUpdate?.(client.id, { paymentStatus: v });
                     if (supabase) {
