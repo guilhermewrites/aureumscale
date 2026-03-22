@@ -1417,12 +1417,12 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
                               </button>
                             </div>
                           ) : (
-                            <div className="px-4 pb-3 space-y-2">
-                              {items.map(mem => {
-                                const justSaved = memSavedId === mem.id;
+                            <div className="px-4 pb-3">
+                              <div className="rounded-lg overflow-hidden" style={{ border: '1px solid #252525' }}>
+                              {items.map((mem, memIdx) => {
 
                                 return (
-                                  <div key={mem.id} className="relative group/mem rounded-lg" style={{ border: '1px solid #252525' }}>
+                                  <div key={mem.id} className="relative group/mem" style={{ borderTop: memIdx > 0 ? '1px solid #252525' : undefined }}>
                                     <textarea
                                       value={mem.content}
                                       onChange={e => {
@@ -1432,10 +1432,8 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
                                         if (sepMatch) {
                                           const above = sepMatch[1];
                                           const below = (sepMatch[2] || '').trim();
-                                          // Update current memory with text above the separator
                                           setClientMemories(prev => prev.map(m => m.id === mem.id ? { ...m, content: above } : m));
                                           if (supabase) supabase.from('ai_memory').update({ content: above, updated_at: new Date().toISOString() }).eq('id', mem.id).eq('user_id', storagePrefix);
-                                          // Create new memory with text below
                                           const newMem = { id: crypto.randomUUID(), user_id: storagePrefix, content: below, category: cat.id, created_at: new Date().toISOString(), updated_at: new Date().toISOString() };
                                           setClientMemories(prev => {
                                             const idx = prev.findIndex(m => m.id === mem.id);
@@ -1475,6 +1473,7 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
                                   </div>
                                 );
                               })}
+                              </div>
                             </div>
                           )}
                         </div>
