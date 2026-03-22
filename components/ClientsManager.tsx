@@ -410,7 +410,7 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
   const [isAdding, setIsAdding] = useState(false);
   const [addingType, setAddingType] = useState<ClientType>('recurring');
   const [draft, setDraft] = useState<Client>(newClient(0));
-  const [selectedClient, setSelectedClient] = useState<{ id: string; name: string; photoUrl?: string; status?: string; paymentStatus?: string; amount?: number } | null>(null);
+  const [selectedClient, setSelectedClient] = useState<{ id: string; name: string; photoUrl?: string; status?: string; paymentStatus?: string; amount?: number; service?: string } | null>(null);
   const [showActive, setShowActive] = useState(true);
 
   // Custom column options — merged with defaults
@@ -763,7 +763,7 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
       />
     ),
     amount: (
-      <div className="flex items-center gap-0.5">
+      <div className="flex items-center gap-0.5" onClick={e => e.stopPropagation()}>
         <span className="text-xs text-emerald-500/60">$</span>
         <input
           type="text"
@@ -850,7 +850,7 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
               <tr
                 key={client.id}
                 className="group bg-[#212121] hover:bg-[#1e1e1e] transition-colors cursor-pointer"
-                onClick={() => setSelectedClient({ id: client.id, name: client.name, photoUrl: client.photoUrl, status: client.status, paymentStatus: client.paymentStatus, amount: client.amount })}
+                onClick={() => setSelectedClient({ id: client.id, name: client.name, photoUrl: client.photoUrl, status: client.status, paymentStatus: client.paymentStatus, amount: client.amount, service: client.service })}
               >
                 <td className="px-5 py-3.5">
                   <div className="flex items-center gap-3">
@@ -871,7 +871,7 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
                   </div>
                 </td>
                 {columnOrder.map(col => (
-                  <td key={col} className="px-5 py-3.5" onClick={e => e.stopPropagation()}>{cellMap[col]}</td>
+                  <td key={col} className="px-5 py-3.5">{cellMap[col]}</td>
                 ))}
                 <td className="px-3 py-3.5 text-center">
                   <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all justify-end">
