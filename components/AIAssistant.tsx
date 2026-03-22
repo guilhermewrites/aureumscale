@@ -55,7 +55,7 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ storagePrefix, clientId, clie
   const [expandedCats, setExpandedCats] = useState<Set<string>>(new Set(['tone']));
   const [editingMemoryId, setEditingMemoryId] = useState<string | null>(null);
   const [editDraft, setEditDraft] = useState('');
-  const [memorySaved, setMemorySaved] = useState(false);
+  const [memorySaved, setMemorySaved] = useState<string | false>(false);
 
   // ── Chat state ──
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -289,9 +289,6 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ storagePrefix, clientId, clie
           >
             <Brain size={12} /> Memory {memoryCount > 0 && <span className="opacity-60">({memoryCount})</span>}
           </button>
-          {memorySaved && (
-            <span className="text-[11px] font-medium ml-auto animate-pulse" style={{ color: '#34d399' }}>✓ Saved</span>
-          )}
         </div>
       </div>
 
@@ -478,28 +475,54 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ storagePrefix, clientId, clie
                         ) : (
                           catMemories.map(mem => {
                             const isEditing = editingMemoryId === mem.id;
-                            const displayContent = isEditing ? editDraft : mem.content;
-                            const sections = displayContent.split(/^-{5,}$/m).filter(s => s.trim() !== '');
+                            const savedJustNow = memorySaved === mem.id;
+
+                            /* Render lines: split content into visual blocks on ----- */
+                            const renderContent = (text: string) => {
+                              const lines = text.split('\n');
+                              const blocks: React.ReactNode[] = [];
+                              let current: string[] = [];
+                              lines.forEach((line, li) => {
+                                if (/^-{5,}\s*$/.test(line.trim())) {
+                                  if (current.length > 0) {
+                                    blocks.push(<pre key={`t${li}`} className="text-[12px] leading-5 whitespace-pre-wrap" style={{ color: '#ccc', fontFamily: 'inherit' }}>{current.join('\n')}</pre>);
+                                    current = [];
+                                  }
+                                  blocks.push(
+                                    <div key={`hr${li}`} className="my-2.5">
+                                      <div style={{ height: 1, background: 'linear-gradient(90deg, transparent 0%, #D4A843 30%, #D4A843 70%, transparent 100%)' }} />
+                                    </div>
+                                  );
+                                } else {
+                                  current.push(line);
+                                }
+                              });
+                              if (current.length > 0) {
+                                blocks.push(<pre key="last" className="text-[12px] leading-5 whitespace-pre-wrap" style={{ color: '#ccc', fontFamily: 'inherit' }}>{current.join('\n')}</pre>);
+                              }
+                              return blocks;
+                            };
+
                             return (
                               <div key={mem.id} className="relative group/mem">
                                 {isEditing ? (
-                                  <div className="space-y-2">
+                                  <div className="rounded-lg overflow-hidden" style={{ border: '1px solid #D4A84366' }}>
                                     <textarea
                                       autoFocus
                                       value={editDraft}
                                       onChange={e => setEditDraft(e.target.value)}
-                                      className="w-full bg-transparent text-[12px] leading-5 focus:outline-none resize-none placeholder-[#3a3a3a] rounded-lg p-2 transition-colors"
-                                      style={{ color: '#ccc', border: '1px solid #D4A84344' }}
+                                      className="w-full bg-transparent text-[12px] leading-5 focus:outline-none resize-none placeholder-[#3a3a3a] p-2"
+                                      style={{ color: '#ccc' }}
                                       placeholder={`${cat.placeholder}\n\nTip: Type ----- on its own line to create a separator`}
                                       rows={Math.max(4, editDraft.split('\n').length + 1)}
                                     />
-                                    <div className="flex gap-2 justify-end">
+                                    <div className="flex gap-2 justify-end px-2 py-1.5" style={{ background: '#1a1a1a', borderTop: '1px solid #252525' }}>
                                       <button
                                         onClick={() => setEditingMemoryId(null)}
                                         className="px-3 py-1 rounded-md text-[11px] font-medium transition-colors"
-                                        style={{ color: '#888', border: '1px solid #333' }}
-                                        onMouseEnter={e => (e.currentTarget.style.borderColor = '#555')}
-                                        onMouseLeave={e => (e.currentTarget.style.borderColor = '#333')}
+                                        style={{ color: '#888' }}
+                                        onMouseEnter={e => (e.currentTarget.style.color = '#ccc')}
+                                        onMouseLeave={e => (e.currentTarget.style.color = '#888')}
                                       >
                                         Cancel
                                       </button>
@@ -507,10 +530,10 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ storagePrefix, clientId, clie
                                         onClick={() => {
                                           updateMemory(mem.id, editDraft);
                                           setEditingMemoryId(null);
-                                          setMemorySaved(true);
+                                          setMemorySaved(mem.id);
                                           setTimeout(() => setMemorySaved(false), 2000);
                                         }}
-                                        className="px-3 py-1 rounded-md text-[11px] font-medium transition-colors"
+                                        className="px-3 py-1 rounded-md text-[11px] font-semibold transition-colors"
                                         style={{ background: '#D4A843', color: '#000' }}
                                         onMouseEnter={e => (e.currentTarget.style.background = '#e0b84d')}
                                         onMouseLeave={e => (e.currentTarget.style.background = '#D4A843')}
@@ -527,16 +550,10 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ storagePrefix, clientId, clie
                                     onMouseEnter={e => (e.currentTarget.style.borderColor = '#333')}
                                     onMouseLeave={e => (e.currentTarget.style.borderColor = '#252525')}
                                   >
-                                    {mem.content ? sections.map((section, i) => (
-                                      <React.Fragment key={i}>
-                                        {i > 0 && (
-                                          <div className="my-2.5 flex items-center gap-2">
-                                            <div className="flex-1" style={{ height: 1, background: 'linear-gradient(90deg, transparent, #D4A843, transparent)' }} />
-                                          </div>
-                                        )}
-                                        <pre className="text-[12px] leading-5 whitespace-pre-wrap" style={{ color: '#ccc', fontFamily: 'inherit' }}>{section.trim()}</pre>
-                                      </React.Fragment>
-                                    )) : (
+                                    {savedJustNow && (
+                                      <div className="text-[11px] font-medium mb-1.5 animate-pulse" style={{ color: '#34d399' }}>✓ Saved to memory</div>
+                                    )}
+                                    {mem.content ? renderContent(mem.content) : (
                                       <span className="text-[12px]" style={{ color: '#3a3a3a' }}>{cat.placeholder}</span>
                                     )}
                                   </div>
