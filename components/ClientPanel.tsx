@@ -1441,8 +1441,8 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
                                               }
                                             }, 800);
                                           }}
-                                          className="absolute inset-0 w-full h-full bg-transparent text-transparent caret-white text-[12px] leading-5 focus:outline-none resize-none p-3"
-                                          style={{ caretColor: '#D4A843' }}
+                                          className="absolute inset-0 w-full h-full bg-transparent text-[12px] leading-5 focus:outline-none resize-none p-3"
+                                          style={{ color: 'transparent', WebkitTextFillColor: 'transparent', caretColor: '#D4A843' }}
                                           placeholder={cat.placeholder}
                                         />
                                       )}
