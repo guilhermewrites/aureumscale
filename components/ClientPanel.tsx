@@ -428,19 +428,46 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
   const uploadTweetImage = useCallback(async (tweetId: string, file: File) => {
     if (!supabase) return;
     try {
-      const ext = file.name.split('.').pop() || 'jpg';
-      const path = `tweet-images/${tweetId}_${Date.now()}.${ext}`;
-      const { error } = await supabase.storage.from('funnel-media').upload(path, file, { upsert: true, contentType: file.type });
-      if (error) { console.error('Tweet image upload error:', error); alert('Image upload failed. Check storage bucket permissions.'); return; }
+      // Compress image first
+      const compressed = await new Promise<Blob>((resolve) => {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d')!;
+        const img = new Image();
+        img.onload = () => {
+          const max = 800;
+          let w = img.width, h = img.height;
+          if (w > max || h > max) { const r = Math.min(max / w, max / h); w *= r; h *= r; }
+          canvas.width = w; canvas.height = h;
+          ctx.drawImage(img, 0, 0, w, h);
+          canvas.toBlob(b => resolve(b || file), 'image/jpeg', 0.85);
+        };
+        img.src = URL.createObjectURL(file);
+      });
+
+      const path = `tweets/${storagePrefix}/${tweetId}.jpg`;
+      // Try to remove old file first (ignore error)
+      await supabase.storage.from('funnel-media').remove([path]);
+      const { error } = await supabase.storage.from('funnel-media').upload(path, compressed, { upsert: true, contentType: 'image/jpeg' });
+      if (error) {
+        console.error('Tweet image upload error:', error);
+        // Fallback: use base64 data URL
+        const reader = new FileReader();
+        reader.onload = () => { updateTweet(tweetId, { image_url: reader.result as string }); };
+        reader.readAsDataURL(compressed as Blob);
+        return;
+      }
       const { data: urlData } = supabase.storage.from('funnel-media').getPublicUrl(path);
       if (urlData?.publicUrl) {
-        const url = urlData.publicUrl + '?t=' + Date.now();
-        updateTweet(tweetId, { image_url: url });
+        updateTweet(tweetId, { image_url: urlData.publicUrl + '?t=' + Date.now() });
       }
     } catch (err) {
       console.error('Tweet image upload error:', err);
+      // Final fallback: base64
+      const reader = new FileReader();
+      reader.onload = () => { updateTweet(tweetId, { image_url: reader.result as string }); };
+      reader.readAsDataURL(file);
     }
-  }, [updateTweet]);
+  }, [updateTweet, storagePrefix]);
 
   const addInvoice = useCallback(async () => {
     if (!supabase || !client) return;
@@ -815,11 +842,25 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
                 inp.onchange = async (ev: any) => {
                   const file = ev.target.files?.[0];
                   if (!file || !supabase) return;
-                  const path = `twitter-banners/${client.id}_${Date.now()}.${file.name.split('.').pop() || 'jpg'}`;
-                  const { error } = await supabase.storage.from('funnel-media').upload(path, file, { upsert: true, contentType: file.type });
-                  if (error) { console.error('Banner upload error:', error); return; }
-                  const { data: urlData } = supabase.storage.from('funnel-media').getPublicUrl(path);
-                  if (urlData?.publicUrl) setField('twitter_banner_url', urlData.publicUrl + '?t=' + Date.now());
+                  try {
+                    const path = `banners/${storagePrefix}/${client.id}.jpg`;
+                    await supabase.storage.from('funnel-media').remove([path]);
+                    const { error } = await supabase.storage.from('funnel-media').upload(path, file, { upsert: true, contentType: file.type });
+                    if (error) {
+                      console.error('Banner upload error:', error);
+                      // Fallback to base64
+                      const reader = new FileReader();
+                      reader.onload = () => setField('twitter_banner_url', reader.result as string);
+                      reader.readAsDataURL(file);
+                      return;
+                    }
+                    const { data: urlData } = supabase.storage.from('funnel-media').getPublicUrl(path);
+                    if (urlData?.publicUrl) setField('twitter_banner_url', urlData.publicUrl + '?t=' + Date.now());
+                  } catch {
+                    const reader = new FileReader();
+                    reader.onload = () => setField('twitter_banner_url', reader.result as string);
+                    reader.readAsDataURL(file);
+                  }
                 };
                 inp.click();
               };
