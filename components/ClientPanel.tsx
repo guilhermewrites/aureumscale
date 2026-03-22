@@ -656,7 +656,7 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
       </div>
 
       {/* ── RIGHT CONTENT ─────────────────────────────────────────────────────── */}
-      <div className="flex-1 overflow-hidden flex gap-5">
+      <div className="flex-1 overflow-hidden flex gap-6">
         {/* Main content area */}
         <div className={`overflow-y-auto ${activeTab === 'Content' ? 'flex-1' : 'flex-1'}`}>
         {loading ? (
