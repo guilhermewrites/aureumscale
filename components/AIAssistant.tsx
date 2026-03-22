@@ -53,6 +53,7 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ storagePrefix, clientId, clie
   const [memories, setMemories] = useState<Memory[]>([]);
   const [memoriesLoading, setMemoriesLoading] = useState(true);
   const [expandedCats, setExpandedCats] = useState<Set<string>>(new Set(['tone']));
+  const [editingMemoryId, setEditingMemoryId] = useState<string | null>(null);
 
   // ── Chat state ──
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -470,29 +471,56 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ storagePrefix, clientId, clie
                             <Plus size={12} /> Add {cat.label.toLowerCase()}
                           </button>
                         ) : (
-                          catMemories.map(mem => (
-                            <div key={mem.id} className="relative group/mem">
-                              <textarea
-                                value={mem.content}
-                                onChange={e => updateMemory(mem.id, e.target.value)}
-                                className="w-full bg-transparent text-[12px] leading-5 focus:outline-none resize-none placeholder-[#3a3a3a] rounded-lg p-2 transition-colors"
-                                style={{ color: '#ccc', border: '1px solid #252525' }}
-                                onFocus={e => (e.currentTarget.style.borderColor = '#D4A84344')}
-                                onBlur={e => (e.currentTarget.style.borderColor = '#252525')}
-                                placeholder={cat.placeholder}
-                                rows={Math.max(2, mem.content.split('\n').length)}
-                              />
-                              <button
-                                onClick={() => deleteMemory(mem.id)}
-                                className="absolute top-1 right-1 p-1 rounded-md opacity-0 group-hover/mem:opacity-100 transition-opacity"
-                                style={{ color: '#555' }}
-                                onMouseEnter={e => (e.currentTarget.style.color = '#f87171')}
-                                onMouseLeave={e => (e.currentTarget.style.color = '#555')}
-                              >
-                                <X size={11} />
-                              </button>
-                            </div>
-                          ))
+                          catMemories.map(mem => {
+                            const isEditing = editingMemoryId === mem.id;
+                            const sections = mem.content.split(/\n*-{5,}\n*/);
+                            return (
+                              <div key={mem.id} className="relative group/mem">
+                                {isEditing ? (
+                                  <textarea
+                                    autoFocus
+                                    value={mem.content}
+                                    onChange={e => updateMemory(mem.id, e.target.value)}
+                                    onBlur={() => setEditingMemoryId(null)}
+                                    className="w-full bg-transparent text-[12px] leading-5 focus:outline-none resize-none placeholder-[#3a3a3a] rounded-lg p-2 transition-colors"
+                                    style={{ color: '#ccc', border: '1px solid #D4A84344' }}
+                                    placeholder={`${cat.placeholder}\n\nTip: Type ----- to create a separator`}
+                                    rows={Math.max(3, mem.content.split('\n').length + 1)}
+                                  />
+                                ) : (
+                                  <div
+                                    onClick={() => setEditingMemoryId(mem.id)}
+                                    className="w-full rounded-lg p-2 cursor-text transition-colors"
+                                    style={{ border: '1px solid #252525' }}
+                                    onMouseEnter={e => (e.currentTarget.style.borderColor = '#333')}
+                                    onMouseLeave={e => (e.currentTarget.style.borderColor = '#252525')}
+                                  >
+                                    {mem.content ? sections.map((section, i) => (
+                                      <React.Fragment key={i}>
+                                        {i > 0 && (
+                                          <div className="my-2 flex items-center gap-2">
+                                            <div className="flex-1" style={{ height: 1, background: 'linear-gradient(90deg, transparent, #D4A84344, transparent)' }} />
+                                          </div>
+                                        )}
+                                        <pre className="text-[12px] leading-5 whitespace-pre-wrap" style={{ color: '#ccc', fontFamily: 'inherit' }}>{section}</pre>
+                                      </React.Fragment>
+                                    )) : (
+                                      <span className="text-[12px]" style={{ color: '#3a3a3a' }}>{cat.placeholder}</span>
+                                    )}
+                                  </div>
+                                )}
+                                <button
+                                  onClick={() => deleteMemory(mem.id)}
+                                  className="absolute top-1 right-1 p-1 rounded-md opacity-0 group-hover/mem:opacity-100 transition-opacity"
+                                  style={{ color: '#555' }}
+                                  onMouseEnter={e => (e.currentTarget.style.color = '#f87171')}
+                                  onMouseLeave={e => (e.currentTarget.style.color = '#555')}
+                                >
+                                  <X size={11} />
+                                </button>
+                              </div>
+                            );
+                          })
                         )}
                       </div>
                     )}
