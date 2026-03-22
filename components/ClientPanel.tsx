@@ -1294,8 +1294,8 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
         {/* ── CONTENT JOURNAL (only on Content tab) ── */}
         {activeTab === 'Content' && (
           <div
-            className="flex-shrink-0 overflow-y-auto flex flex-col"
-            style={{ width: 340, ...card }}
+            className="flex-1 overflow-y-auto flex flex-col"
+            style={{ minWidth: 300, ...card }}
           >
             {/* Header */}
             <div className="p-4 flex items-center justify-between" style={{ borderBottom: '1px solid #222' }}>
