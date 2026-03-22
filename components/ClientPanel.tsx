@@ -923,7 +923,7 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
               const CalendarSmIcon = () => <svg viewBox="0 0 24 24" width="18.75" height="18.75" fill="currentColor"><path d="M7 4V3h2v1h6V3h2v1h1.5C19.89 4 21 5.12 21 6.5v12c0 1.38-1.11 2.5-2.5 2.5h-13C4.12 21 3 19.88 3 18.5v-12C3 5.12 4.12 4 5.5 4H7zm0 2H5.5c-.27 0-.5.22-.5.5v12c0 .28.23.5.5.5h13c.28 0 .5-.22.5-.5v-12c0-.28-.22-.5-.5-.5H17v1h-2V6H9v1H7V6zm-1 4h12v2H6v-2z"/></svg>;
 
               return (
-              <div className="rounded-2xl overflow-hidden" style={{ background: '#000', border: '1px solid #2f3336' }}>
+              <div className="rounded-2xl overflow-hidden flex flex-col" style={{ background: '#000', border: '1px solid #2f3336', minHeight: 'calc(100vh - 40px)' }}>
 
                 {/* ── Sticky top bar ── */}
                 <div className="flex items-center gap-6 px-4 py-1 sticky top-0 z-20" style={{ background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(12px)', borderRadius: '16px 16px 0 0' }}>
@@ -1041,6 +1041,7 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
                 </div>
 
                 {/* ── Tweet Feed ── */}
+                <div className="flex-1">
                 {xTab !== 'posts' ? (
                   <div className="flex flex-col items-center justify-center py-16 gap-1 px-8" style={{ color: '#71767b' }}>
                     <span className="text-[31px] font-extrabold" style={{ color: '#e7e9ea' }}>Nothing to see here — yet</span>
@@ -1200,6 +1201,7 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
                     ))}
                   </div>
                 )}
+                </div>
               </div>
               );
             })()}
