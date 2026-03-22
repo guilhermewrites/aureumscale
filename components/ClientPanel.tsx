@@ -656,9 +656,9 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
       </div>
 
       {/* ── RIGHT CONTENT ─────────────────────────────────────────────────────── */}
-      <div className="flex-1 flex gap-5 overflow-hidden">
+      <div className="flex-1 overflow-hidden flex gap-5">
         {/* Main content area */}
-        <div className="flex-1 overflow-y-auto">
+        <div className={`overflow-y-auto ${activeTab === 'Content' ? 'flex-1' : 'flex-1'}`}>
         {loading ? (
           <div className="flex items-center justify-center h-full gap-2.5" style={{ color: '#444' }}>
             <Loader2 size={20} className="animate-spin" />
@@ -875,7 +875,7 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
               <div className="rounded-2xl overflow-hidden" style={{ background: '#000', border: '1px solid #2f3336', maxWidth: 600 }}>
 
                 {/* ── Sticky top bar ── */}
-                <div className="flex items-center gap-6 px-4 py-1 sticky top-0 z-20" style={{ background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(12px)' }}>
+                <div className="flex items-center gap-6 px-4 py-1 sticky top-0 z-20" style={{ background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(12px)', borderRadius: '16px 16px 0 0' }}>
                   <div>
                     <h2 className="text-[17px] font-extrabold leading-6" style={{ color: '#e7e9ea' }}>{displayName}</h2>
                     <span className="text-[13px] leading-4" style={{ color: '#71767b' }}>{tweets.length} post{tweets.length !== 1 ? 's' : ''}</span>
@@ -1291,24 +1291,88 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
         )}
         </div>
 
-        {/* ── NOTES SIDEBAR ── */}
-        <div
-          className="flex-shrink-0 overflow-y-auto flex flex-col"
-          style={{ width: 280, ...card }}
-        >
-          <div className="p-4 flex items-center justify-between" style={{ borderBottom: '1px solid #222' }}>
-            <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: '#555' }}>Quick Notes</span>
+        {/* ── CONTENT JOURNAL (only on Content tab) ── */}
+        {activeTab === 'Content' && (
+          <div
+            className="flex-shrink-0 overflow-y-auto flex flex-col"
+            style={{ width: 340, ...card }}
+          >
+            {/* Header */}
+            <div className="p-4 flex items-center justify-between" style={{ borderBottom: '1px solid #222' }}>
+              <div>
+                <span className="text-sm font-bold" style={{ color: '#ECECEC' }}>Content Journal</span>
+                <p className="text-[11px] mt-0.5" style={{ color: '#555' }}>Brainstorm ideas, then push to posts</p>
+              </div>
+            </div>
+
+            {/* Journal entries */}
+            <div className="flex-1 overflow-y-auto p-3 space-y-2">
+              {(details.ad_performance_notes || '').split('\n---\n').filter(Boolean).map((entry, i, arr) => (
+                <div key={i} className="rounded-xl p-3 group/entry" style={{ background: '#161616' }}>
+                  <textarea
+                    value={entry}
+                    onChange={e => {
+                      const entries = (details.ad_performance_notes || '').split('\n---\n').filter(Boolean);
+                      entries[i] = e.target.value;
+                      setField('ad_performance_notes', entries.join('\n---\n'));
+                    }}
+                    className="w-full bg-transparent text-[13px] leading-5 focus:outline-none resize-none placeholder-[#333]"
+                    style={{ color: '#ECECEC' }}
+                    placeholder="Write an idea…"
+                    rows={Math.max(2, entry.split('\n').length)}
+                  />
+                  <div className="flex items-center justify-between mt-2 opacity-0 group-hover/entry:opacity-100 transition-opacity">
+                    <button
+                      onClick={() => {
+                        // Push this entry as a new tweet
+                        if (!supabase || !client) return;
+                        const eng = { likes: Math.floor(Math.random() * 800) + 5, retweets: Math.floor(Math.random() * 120) + 1, replies: Math.floor(Math.random() * 40) + 1, views: Math.floor(Math.random() * 50000) + 500 };
+                        const tw = { id: crypto.randomUUID(), text: entry.trim(), post_date: new Date().toISOString().split('T')[0], image_url: '', ...eng };
+                        setTweets(prev => [tw, ...prev]);
+                        supabase.from('client_tweets').insert({ ...tw, client_id: client.id, user_id: storagePrefix });
+                      }}
+                      className="flex items-center gap-1.5 text-[11px] font-semibold px-3 py-1.5 rounded-full transition-colors"
+                      style={{ background: '#1d9bf0', color: '#fff' }}
+                      onMouseEnter={e => (e.currentTarget.style.background = '#1a8cd8')}
+                      onMouseLeave={e => (e.currentTarget.style.background = '#1d9bf0')}
+                    >
+                      <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><path d="M12 2.59l5.7 5.7-1.41 1.42L13 6.41V16h-2V6.41l-3.3 3.3-1.41-1.42L12 2.59zM21 15l-.02 3.51c0 1.38-1.12 2.49-2.5 2.49H5.5C4.11 21 3 19.88 3 18.5V15h2v3.5c0 .28.22.5.5.5h12.98c.28 0 .5-.22.5-.5L19 15h2z"/></svg>
+                      Push to Post
+                    </button>
+                    <button
+                      onClick={() => {
+                        const entries = (details.ad_performance_notes || '').split('\n---\n').filter(Boolean);
+                        entries.splice(i, 1);
+                        setField('ad_performance_notes', entries.join('\n---\n'));
+                      }}
+                      className="p-1.5 rounded-full transition-colors"
+                      style={{ color: '#333' }}
+                      onMouseEnter={e => { e.currentTarget.style.color = '#ef4444'; }}
+                      onMouseLeave={e => { e.currentTarget.style.color = '#333'; }}
+                    >
+                      <Trash2 size={12} />
+                    </button>
+                  </div>
+                </div>
+              ))}
+
+              {/* Empty state or always-visible new entry */}
+              <button
+                onClick={() => {
+                  const current = details.ad_performance_notes || '';
+                  const newVal = current ? current + '\n---\n' : '';
+                  setField('ad_performance_notes', newVal + ' ');
+                }}
+                className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-xs font-semibold transition-colors"
+                style={{ color: '#555', border: '1px dashed #2a2a2a' }}
+                onMouseEnter={e => { e.currentTarget.style.color = '#ECECEC'; e.currentTarget.style.borderColor = '#444'; }}
+                onMouseLeave={e => { e.currentTarget.style.color = '#555'; e.currentTarget.style.borderColor = '#2a2a2a'; }}
+              >
+                <Plus size={14} /> New Idea
+              </button>
+            </div>
           </div>
-          <div className="flex-1 p-4">
-            <textarea
-              value={details.notes}
-              onChange={e => setField('notes', e.target.value)}
-              className="w-full h-full bg-transparent text-sm leading-relaxed focus:outline-none resize-none placeholder-[#333]"
-              style={{ color: '#ECECEC', minHeight: '100%' }}
-              placeholder="Ideas, thoughts, reminders…&#10;&#10;Use this space to brainstorm and jot down quick notes about this client."
-            />
-          </div>
-        </div>
+        )}
       </div>
     </div>
   );
