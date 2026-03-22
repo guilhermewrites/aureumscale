@@ -656,7 +656,9 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
       </div>
 
       {/* ── RIGHT CONTENT ─────────────────────────────────────────────────────── */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 flex gap-5 overflow-hidden">
+        {/* Main content area */}
+        <div className="flex-1 overflow-y-auto">
         {loading ? (
           <div className="flex items-center justify-center h-full gap-2.5" style={{ color: '#444' }}>
             <Loader2 size={20} className="animate-spin" />
@@ -1287,6 +1289,26 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
 
           </div>
         )}
+        </div>
+
+        {/* ── NOTES SIDEBAR ── */}
+        <div
+          className="flex-shrink-0 overflow-y-auto flex flex-col"
+          style={{ width: 280, ...card }}
+        >
+          <div className="p-4 flex items-center justify-between" style={{ borderBottom: '1px solid #222' }}>
+            <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: '#555' }}>Quick Notes</span>
+          </div>
+          <div className="flex-1 p-4">
+            <textarea
+              value={details.notes}
+              onChange={e => setField('notes', e.target.value)}
+              className="w-full h-full bg-transparent text-sm leading-relaxed focus:outline-none resize-none placeholder-[#333]"
+              style={{ color: '#ECECEC', minHeight: '100%' }}
+              placeholder="Ideas, thoughts, reminders…&#10;&#10;Use this space to brainstorm and jot down quick notes about this client."
+            />
+          </div>
+        </div>
       </div>
     </div>
   );
