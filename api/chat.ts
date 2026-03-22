@@ -91,8 +91,14 @@ When suggesting tweets, format them clearly. Keep them under 280 characters unle
 
     if (!response.ok) {
       const errText = await response.text();
-      console.error('Anthropic API error:', errText);
-      return new Response(JSON.stringify({ error: 'AI request failed', details: errText }), {
+      console.error('Anthropic API error:', response.status, errText);
+      // Parse the error for a user-friendly message
+      let errMsg = 'AI request failed';
+      try {
+        const errJson = JSON.parse(errText);
+        errMsg = errJson?.error?.message || errMsg;
+      } catch {}
+      return new Response(JSON.stringify({ error: `${errMsg} (${response.status})`, details: errText }), {
         status: response.status,
         headers: { 'Content-Type': 'application/json' },
       });
