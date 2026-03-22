@@ -1630,39 +1630,51 @@ function CardRow({ label, children, icon, iconColor, href }: {
 
 function CardStatusSelect({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
+  const btnRef = useRef<HTMLButtonElement>(null);
+  const dropRef = useRef<HTMLDivElement>(null);
   const statuses = ['Happy', 'Moderate', 'Frustrated'] as const;
   const colors: Record<string, string> = {
     Happy: '#4ade80', Moderate: '#9B9B9B', Frustrated: '#f87171',
   };
+  const [pos, setPos] = useState({ top: 0, left: 0 });
 
+  // Position dropdown relative to button
+  useEffect(() => {
+    if (open && btnRef.current) {
+      const rect = btnRef.current.getBoundingClientRect();
+      setPos({ top: rect.bottom + 4, left: rect.right - 120 });
+    }
+  }, [open]);
+
+  // Close on any click outside
   useEffect(() => {
     if (!open) return;
     const handler = (e: MouseEvent) => {
-      // Small delay so click on option fires first
-      setTimeout(() => {
-        if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-      }, 0);
+      if (dropRef.current && !dropRef.current.contains(e.target as Node) &&
+          btnRef.current && !btnRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
     };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
+    // Use click (not mousedown) so option clicks fire first
+    document.addEventListener('click', handler, true);
+    return () => document.removeEventListener('click', handler, true);
   }, [open]);
 
   return (
-    <div ref={ref} className="relative flex justify-end">
-      <button onClick={() => setOpen(o => !o)}
+    <div className="flex justify-end">
+      <button ref={btnRef} onClick={() => setOpen(o => !o)}
         className="text-xs font-medium flex items-center gap-1 cursor-pointer"
         style={{ color: colors[value] ?? '#ECECEC' }}
       >
         <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: colors[value] ?? '#ECECEC' }} />
         {value}
       </button>
-      {open && (
-        <div className="absolute right-0 top-full mt-1 z-50 py-1 min-w-[120px] shadow-xl"
-          style={{ background: '#222', borderRadius: 10 }}>
+      {open && createPortal(
+        <div ref={dropRef} className="fixed py-1 min-w-[120px] shadow-xl"
+          style={{ background: '#222', borderRadius: 10, zIndex: 99999, top: pos.top, left: pos.left }}>
           {statuses.map(s => (
             <button key={s}
-              onMouseDown={(e) => { e.stopPropagation(); onChange(s); setOpen(false); }}
+              onClick={() => { console.log('[CardStatusSelect] clicked:', s); onChange(s); setOpen(false); }}
               className={`flex items-center gap-2 w-full text-left text-xs px-3 py-2 transition-colors hover:bg-[#2a2a2a] ${s === value ? 'font-semibold' : ''}`}
               style={{ color: colors[s] }}
             >
@@ -1670,7 +1682,8 @@ function CardStatusSelect({ value, onChange }: { value: string; onChange: (v: st
               {s}
             </button>
           ))}
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
@@ -1702,38 +1715,48 @@ function SocialIconBtn({ href, icon, color }: { href: string; icon: React.ReactN
 
 function CardPaymentSelect({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
+  const btnRef = useRef<HTMLButtonElement>(null);
+  const dropRef = useRef<HTMLDivElement>(null);
   const statuses = ['Missing Invoice', 'Pending', 'Paid', 'Late'] as const;
   const colors: Record<string, string> = {
     'Missing Invoice': '#f87171', Pending: '#9B9B9B', Paid: '#4ade80', Late: '#f97316',
   };
+  const [pos, setPos] = useState({ top: 0, left: 0 });
+
+  useEffect(() => {
+    if (open && btnRef.current) {
+      const rect = btnRef.current.getBoundingClientRect();
+      setPos({ top: rect.bottom + 4, left: rect.right - 140 });
+    }
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;
     const handler = (e: MouseEvent) => {
-      setTimeout(() => {
-        if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-      }, 0);
+      if (dropRef.current && !dropRef.current.contains(e.target as Node) &&
+          btnRef.current && !btnRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
     };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
+    document.addEventListener('click', handler, true);
+    return () => document.removeEventListener('click', handler, true);
   }, [open]);
 
   return (
-    <div ref={ref} className="relative flex justify-end">
-      <button onClick={() => setOpen(o => !o)}
+    <div className="flex justify-end">
+      <button ref={btnRef} onClick={() => setOpen(o => !o)}
         className="text-xs font-medium flex items-center gap-1 cursor-pointer"
         style={{ color: colors[value] ?? '#ECECEC' }}
       >
         <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: colors[value] ?? '#ECECEC' }} />
         {value}
       </button>
-      {open && (
-        <div className="absolute right-0 top-full mt-1 z-50 py-1 min-w-[140px] shadow-xl"
-          style={{ background: '#222', borderRadius: 10 }}>
+      {open && createPortal(
+        <div ref={dropRef} className="fixed py-1 min-w-[140px] shadow-xl"
+          style={{ background: '#222', borderRadius: 10, zIndex: 99999, top: pos.top, left: pos.left }}>
           {statuses.map(s => (
             <button key={s}
-              onMouseDown={(e) => { e.stopPropagation(); onChange(s); setOpen(false); }}
+              onClick={() => { console.log('[CardPaymentSelect] clicked:', s); onChange(s); setOpen(false); }}
               className={`flex items-center gap-2 w-full text-left text-xs px-3 py-2 transition-colors hover:bg-[#2a2a2a] ${s === value ? 'font-semibold' : ''}`}
               style={{ color: colors[s] }}
             >
@@ -1741,7 +1764,8 @@ function CardPaymentSelect({ value, onChange }: { value: string; onChange: (v: s
               {s}
             </button>
           ))}
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
