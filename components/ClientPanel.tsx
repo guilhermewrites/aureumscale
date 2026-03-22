@@ -642,8 +642,11 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
               <CardStatusSelect
                 value={localStatus}
                 onChange={(v) => {
+                  console.log('[ClientPanel] Status changed to:', v, 'client:', client?.id, 'has onClientUpdate:', !!onClientUpdate);
                   setLocalStatus(v);
-                  if (client) onClientUpdate?.(client.id, { status: v });
+                  if (client && onClientUpdate) {
+                    onClientUpdate(client.id, { status: v });
+                  }
                 }}
               />
             </CardRow>
@@ -651,8 +654,11 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
               <CardPaymentSelect
                 value={localPayment}
                 onChange={(v) => {
+                  console.log('[ClientPanel] Payment changed to:', v, 'client:', client?.id, 'has onClientUpdate:', !!onClientUpdate);
                   setLocalPayment(v);
-                  if (client) onClientUpdate?.(client.id, { paymentStatus: v });
+                  if (client && onClientUpdate) {
+                    onClientUpdate(client.id, { paymentStatus: v });
+                  }
                 }}
               />
             </CardRow>
