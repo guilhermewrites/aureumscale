@@ -584,19 +584,32 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
                 ) : (
                   <div className="rounded-2xl overflow-hidden" style={{ background: '#161616' }}>
                     {/* Header */}
-                    <div className="grid grid-cols-[1fr_90px_1fr_90px_90px_90px_90px_36px] gap-3 px-5 py-3 text-[10px] font-semibold uppercase tracking-widest" style={{ color: '#444', borderBottom: '1px solid #222' }}>
+                    <div className="grid grid-cols-[1fr_80px_1fr_85px_90px_90px_90px_70px_36px] gap-2 px-5 py-3 text-[10px] font-semibold uppercase tracking-widest" style={{ color: '#444', borderBottom: '1px solid #222' }}>
                       <span>Invoice #</span>
                       <span>Amount</span>
                       <span>Service</span>
                       <span>Status</span>
-                      <span>Due Date</span>
                       <span>Date Sent</span>
+                      <span>Due Date</span>
                       <span>Date Paid</span>
+                      <span>Speed</span>
                       <span></span>
                     </div>
                     {/* Rows */}
-                    {invoices.map(inv => (
-                      <div key={inv.id} className="grid grid-cols-[1fr_90px_1fr_90px_90px_90px_90px_36px] gap-3 px-5 py-3 items-center transition-colors"
+                    {invoices.map(inv => {
+                      // Calculate payment speed
+                      let speedLabel = '—';
+                      let speedColor = '#444';
+                      if (inv.date_sent && inv.date_paid) {
+                        const sent = new Date(inv.date_sent);
+                        const paid = new Date(inv.date_paid);
+                        const diffDays = Math.floor((paid.getTime() - sent.getTime()) / (1000 * 60 * 60 * 24));
+                        if (diffDays <= 3) { speedLabel = 'Fast'; speedColor = '#34d399'; }
+                        else if (diffDays <= 7) { speedLabel = 'Moderate'; speedColor = '#fbbf24'; }
+                        else { speedLabel = 'Slow'; speedColor = '#f87171'; }
+                      }
+                      return (
+                      <div key={inv.id} className="grid grid-cols-[1fr_80px_1fr_85px_90px_90px_90px_70px_36px] gap-2 px-5 py-3 items-center transition-colors"
                         style={{ borderBottom: '1px solid #222' }}
                         onMouseEnter={e => (e.currentTarget.style.background = '#1a1a1a')}
                         onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
@@ -631,14 +644,14 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
                           onChange={v => updateInvoice(inv.id, { status: v })}
                         />
                         <input
-                          type="date" value={inv.date_due}
-                          onChange={e => updateInvoice(inv.id, { date_due: e.target.value })}
+                          type="date" value={inv.date_sent}
+                          onChange={e => updateInvoice(inv.id, { date_sent: e.target.value })}
                           className="bg-transparent text-[10px] text-[#ECECEC] focus:outline-none w-full"
                           style={{ colorScheme: 'dark' }}
                         />
                         <input
-                          type="date" value={inv.date_sent}
-                          onChange={e => updateInvoice(inv.id, { date_sent: e.target.value })}
+                          type="date" value={inv.date_due}
+                          onChange={e => updateInvoice(inv.id, { date_due: e.target.value })}
                           className="bg-transparent text-[10px] text-[#ECECEC] focus:outline-none w-full"
                           style={{ colorScheme: 'dark' }}
                         />
@@ -648,6 +661,7 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
                           className="bg-transparent text-[10px] text-[#ECECEC] focus:outline-none w-full"
                           style={{ colorScheme: 'dark' }}
                         />
+                        <span className="text-[10px] font-semibold" style={{ color: speedColor }}>{speedLabel}</span>
                         <button
                           onClick={() => deleteInvoice(inv.id)}
                           className="p-1 rounded-lg transition-colors flex-shrink-0"
@@ -658,7 +672,8 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
                           <Trash2 size={13} />
                         </button>
                       </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </Block>
