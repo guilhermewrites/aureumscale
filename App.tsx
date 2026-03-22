@@ -16,7 +16,8 @@ import ClientsManager from './components/ClientsManager';
 import AIBubble from './components/AIBubble';
 import { ChartViewType, NavigationItem, FinanceItem, InvoiceStatus, RevenueDataPoint, ContentDataPoint, ContentItem, AdMetric, ContentStatus, Platform } from './types';
 import { AD_METRICS } from './constants';
-import { Bell, Search, Calendar, Save, Check, Loader2, Settings, Filter } from 'lucide-react';
+import { Bell, Search, Calendar, Save, Check, Loader2, Settings, Filter, TrendingUp, TrendingDown, Users, DollarSign, ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import useLocalStorage from './hooks/useLocalStorage';
 import useAuth from './hooks/useAuth';
 import { syncLocalDataToSupabase } from './services/syncLocalToSupabase';
@@ -189,16 +190,29 @@ const AuthenticatedApp: React.FC<{ user: User; signOut: () => Promise<void> }> =
   }, [storagePrefix]);
 
   // Load billing invoices for projected revenue — refreshes every time you switch to Dashboard
-  const [billingInvoices, setBillingInvoices] = useState<{ amount: number; status: string; date_due: string; date_paid: string; date_sent: string }[]>([]);
+  const [billingInvoices, setBillingInvoices] = useState<{ amount: number; status: string; date_due: string; date_paid: string; date_sent: string; client_id: string; service: string }[]>([]);
 
   useEffect(() => {
     if (!supabase) return;
     (async () => {
       const { data } = await supabase
         .from('billing_history')
-        .select('amount, status, date_due, date_paid, date_sent')
+        .select('amount, status, date_due, date_paid, date_sent, client_id, service')
         .eq('user_id', storagePrefix);
       if (data) setBillingInvoices(data);
+    })();
+  }, [storagePrefix, activeNav]);
+
+  // Load all clients for dashboard
+  const [dashClients, setDashClients] = useState<{ id: string; name: string; service: string; amount: number; payment_status: string; status: string; active: boolean; photo_url: string }[]>([]);
+  useEffect(() => {
+    if (!supabase) return;
+    (async () => {
+      const { data } = await supabase
+        .from('clients')
+        .select('id, name, service, amount, payment_status, status, active, photo_url')
+        .eq('user_id', storagePrefix);
+      if (data) setDashClients(data);
     })();
   }, [storagePrefix, activeNav]);
 
@@ -240,6 +254,93 @@ const AuthenticatedApp: React.FC<{ user: User; signOut: () => Promise<void> }> =
   }, [billingInvoices]);
 
   const projectedMonthlyRevenue = paidThisMonth + pendingThisMonth;
+
+  // Dashboard view toggle: monthly vs weekly
+  const [dashView, setDashView] = useState<'monthly' | 'weekly'>('monthly');
+
+  // Active clients count
+  const activeClients = useMemo(() => dashClients.filter(c => c.active !== false).length, [dashClients]);
+
+  // MRR (Monthly Recurring Revenue) = sum of all active client amounts
+  const mrr = useMemo(() => dashClients.filter(c => c.active !== false).reduce((sum, c) => sum + (c.amount || 0), 0), [dashClients]);
+
+  // Outstanding (unpaid/pending invoices total)
+  const outstandingAmount = useMemo(() => {
+    return billingInvoices
+      .filter(inv => inv.status !== 'Paid' && inv.status !== 'Cancelled')
+      .reduce((sum, inv) => sum + (inv.amount || 0), 0);
+  }, [billingInvoices]);
+
+  // Revenue by month for chart (last 6 months)
+  const revenueByMonth = useMemo(() => {
+    const now = new Date();
+    const months: { label: string; month: number; year: number; paid: number; pending: number }[] = [];
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      months.push({ label: d.toLocaleDateString('en-US', { month: 'short', year: '2-digit' }), month: d.getMonth(), year: d.getFullYear(), paid: 0, pending: 0 });
+    }
+    billingInvoices.forEach(inv => {
+      const dateStr = inv.date_paid || inv.date_due || inv.date_sent;
+      if (!dateStr) return;
+      const d = new Date(dateStr);
+      if (isNaN(d.getTime())) return;
+      const entry = months.find(m => m.month === d.getMonth() && m.year === d.getFullYear());
+      if (!entry) return;
+      if (inv.status === 'Paid') entry.paid += inv.amount || 0;
+      else if (inv.status !== 'Cancelled') entry.pending += inv.amount || 0;
+    });
+    return months.map(m => ({ name: m.label, paid: m.paid, pending: m.pending, total: m.paid + m.pending }));
+  }, [billingInvoices]);
+
+  // Revenue by week for chart (last 8 weeks)
+  const revenueByWeek = useMemo(() => {
+    const now = new Date();
+    const weeks: { label: string; start: Date; end: Date; paid: number; pending: number }[] = [];
+    for (let i = 7; i >= 0; i--) {
+      const end = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i * 7);
+      const start = new Date(end.getFullYear(), end.getMonth(), end.getDate() - 6);
+      weeks.push({
+        label: `${start.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`,
+        start, end, paid: 0, pending: 0
+      });
+    }
+    billingInvoices.forEach(inv => {
+      const dateStr = inv.date_paid || inv.date_due || inv.date_sent;
+      if (!dateStr) return;
+      const d = new Date(dateStr);
+      if (isNaN(d.getTime())) return;
+      const entry = weeks.find(w => d >= w.start && d <= w.end);
+      if (!entry) return;
+      if (inv.status === 'Paid') entry.paid += inv.amount || 0;
+      else if (inv.status !== 'Cancelled') entry.pending += inv.amount || 0;
+    });
+    return weeks.map(w => ({ name: w.label, paid: w.paid, pending: w.pending, total: w.paid + w.pending }));
+  }, [billingInvoices]);
+
+  // Client revenue breakdown — aggregated from billing history
+  const clientRevenue = useMemo(() => {
+    const map: Record<string, { name: string; photo: string; service: string; paid: number; pending: number; invoiceCount: number }> = {};
+    billingInvoices.forEach(inv => {
+      if (!inv.client_id) return;
+      if (!map[inv.client_id]) {
+        const cl = dashClients.find(c => c.id === inv.client_id);
+        map[inv.client_id] = { name: cl?.name || 'Unknown', photo: cl?.photo_url || '', service: cl?.service || '', paid: 0, pending: 0, invoiceCount: 0 };
+      }
+      map[inv.client_id].invoiceCount++;
+      if (inv.status === 'Paid') map[inv.client_id].paid += inv.amount || 0;
+      else if (inv.status !== 'Cancelled') map[inv.client_id].pending += inv.amount || 0;
+    });
+    return Object.values(map).sort((a, b) => (b.paid + b.pending) - (a.paid + a.pending));
+  }, [billingInvoices, dashClients]);
+
+  // Month-over-month growth
+  const momGrowth = useMemo(() => {
+    if (revenueByMonth.length < 2) return 0;
+    const curr = revenueByMonth[revenueByMonth.length - 1].total;
+    const prev = revenueByMonth[revenueByMonth.length - 2].total;
+    if (prev === 0) return curr > 0 ? 100 : 0;
+    return Math.round(((curr - prev) / prev) * 100);
+  }, [revenueByMonth]);
 
   // Content chart: multi-select platforms (empty = all)
   const [contentChartSelectedPlatforms, setContentChartSelectedPlatforms] = useState<Platform[]>([]);
@@ -511,219 +612,206 @@ const AuthenticatedApp: React.FC<{ user: User; signOut: () => Promise<void> }> =
         <Routes>
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="/dashboard" element={
-          <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-            {/* Top Stat Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-               <div className="bg-[#2f2f2f] border border-[#3a3a3a] p-6 rounded-xl">
-                  <p className="text-[#9B9B9B] text-sm font-medium mb-2">Projected Revenue</p>
-                  <h3 className="text-3xl font-bold text-emerald-400 mb-1">${projectedMonthlyRevenue.toLocaleString()}</h3>
-                  <div className="flex items-center gap-2 text-xs flex-wrap">
+          <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
+
+            {/* ── Top Stat Cards ── */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+               {/* Monthly Revenue */}
+               <div className="bg-[#1c1c1c] p-5 rounded-2xl">
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-[#666] text-xs font-medium uppercase tracking-wider">This Month</p>
+                    <div className="p-1.5 rounded-lg" style={{ background: 'rgba(16,185,129,0.1)' }}><DollarSign size={14} className="text-emerald-400" /></div>
+                  </div>
+                  <h3 className="text-2xl font-bold text-[#ECECEC] mb-1">${projectedMonthlyRevenue.toLocaleString()}</h3>
+                  <div className="flex items-center gap-2 text-xs">
                      <span className="text-emerald-400 font-medium">${paidThisMonth.toLocaleString()} collected</span>
-                     {pendingThisMonth > 0 && <span className="text-[#666666]">· ${pendingThisMonth.toLocaleString()} pending</span>}
-                     {overdueAmount > 0 && <span className="text-red-400">· ${overdueAmount.toLocaleString()} overdue</span>}
+                     {pendingThisMonth > 0 && <span className="text-[#555]">· ${pendingThisMonth.toLocaleString()} pending</span>}
                   </div>
                </div>
 
-               <div className="bg-[#2f2f2f] border border-[#3a3a3a] p-6 rounded-xl">
-                  <p className="text-[#9B9B9B] text-sm font-medium mb-2">Content Buffer</p>
-                  <h3 className="text-3xl font-bold text-[#ECECEC] mb-1">
-                    {contentChartData.length > 0
-                      ? (() => {
-                          const totalPieces = contentChartData.reduce((s, d) => s + d.daysAhead, 0);
-                          const daysWithContent = contentChartData.filter(d => d.daysAhead > 0).length;
-                          const videoWord = totalPieces === 1 ? 'video' : 'videos';
-                          const platformLabel = contentChartSelectedPlatforms.length === 0 ? '' : contentChartSelectedPlatforms.length === 1 ? `${contentChartSelectedPlatforms[0]} ` : `${contentChartSelectedPlatforms.length} platforms `;
-                          return `${totalPieces} ${platformLabel}${videoWord} · ${daysWithContent} days`;
-                        })()
-                      : '—'}
-                  </h3>
-                  <div className="flex items-center gap-2 text-xs">
-                     <span className="text-[#666666]">Next 14 days from your content</span>
+               {/* Total Revenue */}
+               <div className="bg-[#1c1c1c] p-5 rounded-2xl">
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-[#666] text-xs font-medium uppercase tracking-wider">Total Revenue</p>
+                    <div className="p-1.5 rounded-lg" style={{ background: 'rgba(16,185,129,0.1)' }}><TrendingUp size={14} className="text-emerald-400" /></div>
+                  </div>
+                  <h3 className="text-2xl font-bold text-[#ECECEC] mb-1">${totalRevenue.toLocaleString()}</h3>
+                  <div className="flex items-center gap-1.5 text-xs">
+                    {momGrowth !== 0 && (
+                      <span className={`flex items-center gap-0.5 font-medium ${momGrowth > 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                        {momGrowth > 0 ? <ArrowUpRight size={12} /> : <ArrowDownRight size={12} />}
+                        {Math.abs(momGrowth)}%
+                      </span>
+                    )}
+                    <span className="text-[#555]">vs last month</span>
                   </div>
                </div>
 
-               <div className="bg-[#2f2f2f] border border-[#3a3a3a] p-6 rounded-xl">
-                  <p className="text-[#9B9B9B] text-sm font-medium mb-2">Total Revenue</p>
-                  <h3 className="text-3xl font-bold text-[#ECECEC] mb-1">${totalRevenue.toLocaleString()}</h3>
+               {/* Outstanding */}
+               <div className="bg-[#1c1c1c] p-5 rounded-2xl">
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-[#666] text-xs font-medium uppercase tracking-wider">Outstanding</p>
+                    <div className="p-1.5 rounded-lg" style={{ background: outstandingAmount > 0 ? 'rgba(239,68,68,0.1)' : 'rgba(255,255,255,0.04)' }}>
+                      <DollarSign size={14} className={outstandingAmount > 0 ? 'text-red-400' : 'text-[#555]'} />
+                    </div>
+                  </div>
+                  <h3 className={`text-2xl font-bold mb-1 ${outstandingAmount > 0 ? 'text-red-400' : 'text-[#ECECEC]'}`}>${outstandingAmount.toLocaleString()}</h3>
                   <div className="flex items-center gap-2 text-xs">
-                     <span className="text-[#ECECEC] font-medium">Live</span>
-                     <span className="text-[#666666]">updates from Finance</span>
+                    {overdueAmount > 0 && <span className="text-red-400 font-medium">${overdueAmount.toLocaleString()} overdue</span>}
+                    {overdueAmount === 0 && outstandingAmount > 0 && <span className="text-[#555]">All within due dates</span>}
+                    {outstandingAmount === 0 && <span className="text-emerald-400 font-medium">All paid</span>}
+                  </div>
+               </div>
+
+               {/* Active Clients + MRR */}
+               <div className="bg-[#1c1c1c] p-5 rounded-2xl">
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-[#666] text-xs font-medium uppercase tracking-wider">Clients</p>
+                    <div className="p-1.5 rounded-lg" style={{ background: 'rgba(255,255,255,0.04)' }}><Users size={14} className="text-[#888]" /></div>
+                  </div>
+                  <h3 className="text-2xl font-bold text-[#ECECEC] mb-1">{activeClients}</h3>
+                  <div className="flex items-center gap-2 text-xs">
+                    <span className="text-[#555]">MRR: ${mrr.toLocaleString()}</span>
                   </div>
                </div>
             </div>
 
-            {/* Main Charts */}
-            <section>
-              {activeChart === ChartViewType.CONTENT_SCHEDULE && (
-                <div className="flex items-center gap-2 mb-3">
-                  {/* Button 1: Filter */}
-                  <div className="relative">
-                    <button
-                      type="button"
-                      onClick={() => { setFilterPopoverOpen(!filterPopoverOpen); setSettingsPopoverOpen(false); }}
-                      className="flex items-center gap-2 px-4 py-2 bg-[#2f2f2f] border border-[#3a3a3a] rounded-lg text-sm font-medium text-[#ECECEC] hover:border-[#4a4a4a] transition-none"
-                    >
-                      <Filter size={16} />
-                      <span>Filter</span>
-                      {contentChartSelectedPlatforms.length > 0 && (
-                        <span className="ml-1 px-1.5 py-0.5 rounded-full bg-[#ECECEC] text-[#212121] text-[10px] font-bold leading-none">{contentChartSelectedPlatforms.length}</span>
-                      )}
-                    </button>
-                    {filterPopoverOpen && (
-                      <>
-                        <div className="fixed inset-0 z-40" onClick={() => setFilterPopoverOpen(false)} />
-                        <div className="absolute left-0 top-full mt-1 z-50 bg-[#2f2f2f] border border-[#3a3a3a] rounded-xl p-4 shadow-xl min-w-[200px]">
-                          <p className="text-xs font-semibold text-[#ECECEC] mb-3">Show Platforms</p>
-                          <div className="space-y-1">
-                            <button
-                              type="button"
-                              onClick={() => setContentChartSelectedPlatforms([])}
-                              className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-none ${contentChartSelectedPlatforms.length === 0 ? 'bg-[rgba(255,255,255,0.08)] text-[#ECECEC]' : 'text-[#9B9B9B] hover:bg-[rgba(255,255,255,0.05)]'}`}
-                            >
-                              <div className={`w-4 h-4 rounded border flex items-center justify-center ${contentChartSelectedPlatforms.length === 0 ? 'bg-[#ECECEC] border-[#ECECEC]' : 'border-[#666666]'}`}>
-                                {contentChartSelectedPlatforms.length === 0 && <Check size={10} className="text-[#212121]" />}
-                              </div>
-                              All Platforms
-                            </button>
-                            {allPlatformsList.map(p => {
-                              const on = contentChartSelectedPlatforms.includes(p);
-                              return (
-                                <button
-                                  key={p}
-                                  type="button"
-                                  onClick={() => toggleContentPlatform(p)}
-                                  className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-none ${on ? 'bg-[rgba(255,255,255,0.08)] text-[#ECECEC]' : 'text-[#9B9B9B] hover:bg-[rgba(255,255,255,0.05)]'}`}
-                                >
-                                  <div className={`w-4 h-4 rounded border flex items-center justify-center ${on ? 'bg-[#ECECEC] border-[#ECECEC]' : 'border-[#666666]'}`}>
-                                    {on && <Check size={10} className="text-[#212121]" />}
-                                  </div>
-                                  {p}
-                                </button>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      </>
-                    )}
+            {/* ── Revenue Chart ── */}
+            <div className="bg-[#1c1c1c] rounded-2xl p-6">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h2 className="text-sm font-bold text-[#ECECEC]">Revenue Overview</h2>
+                  <p className="text-[11px] text-[#555] mt-0.5">Paid vs pending revenue over time</p>
+                </div>
+                <div className="flex bg-[#161616] rounded-lg p-0.5 border border-[#252525]">
+                  <button onClick={() => setDashView('monthly')} className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${dashView === 'monthly' ? 'bg-[#252525] text-[#ECECEC]' : 'text-[#555] hover:text-[#888]'}`}>Monthly</button>
+                  <button onClick={() => setDashView('weekly')} className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${dashView === 'weekly' ? 'bg-[#252525] text-[#ECECEC]' : 'text-[#555] hover:text-[#888]'}`}>Weekly</button>
+                </div>
+              </div>
+              <div style={{ height: 300 }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={dashView === 'monthly' ? revenueByMonth : revenueByWeek} barCategoryGap="20%">
+                    <CartesianGrid strokeDasharray="3 3" stroke="#252525" vertical={false} />
+                    <XAxis dataKey="name" tick={{ fill: '#555', fontSize: 11 }} axisLine={false} tickLine={false} />
+                    <YAxis tick={{ fill: '#555', fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={v => `$${(v / 1000).toFixed(0)}k`} />
+                    <Tooltip
+                      contentStyle={{ background: '#1c1c1c', border: '1px solid #252525', borderRadius: 12, fontSize: 12, color: '#ECECEC' }}
+                      formatter={(value: number, name: string) => [`$${value.toLocaleString()}`, name === 'paid' ? 'Collected' : 'Pending']}
+                      labelStyle={{ color: '#888' }}
+                      cursor={{ fill: 'rgba(255,255,255,0.03)' }}
+                    />
+                    <Bar dataKey="paid" fill="#10b981" radius={[4, 4, 0, 0]} name="paid" />
+                    <Bar dataKey="pending" fill="#334155" radius={[4, 4, 0, 0]} name="pending" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="flex items-center gap-5 mt-4 pt-3" style={{ borderTop: '1px solid #222' }}>
+                <div className="flex items-center gap-2 text-xs text-[#888]"><span className="w-2.5 h-2.5 rounded-sm bg-emerald-500" /> Collected</div>
+                <div className="flex items-center gap-2 text-xs text-[#888]"><span className="w-2.5 h-2.5 rounded-sm" style={{ background: '#334155' }} /> Pending</div>
+              </div>
+            </div>
+
+            {/* ── Client Revenue Breakdown ── */}
+            <div className="bg-[#1c1c1c] rounded-2xl p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h2 className="text-sm font-bold text-[#ECECEC]">Client Revenue</h2>
+                  <p className="text-[11px] text-[#555] mt-0.5">Revenue breakdown by client from invoices</p>
+                </div>
+                <span className="text-[11px] text-[#555]">{clientRevenue.length} clients with invoices</span>
+              </div>
+              {clientRevenue.length === 0 ? (
+                <p className="text-center text-[#444] text-sm py-8">No invoice data yet. Create invoices in client billing tabs.</p>
+              ) : (
+                <div className="space-y-1">
+                  {/* Header */}
+                  <div className="grid grid-cols-12 gap-3 px-3 py-2 text-[10px] font-medium uppercase tracking-wider text-[#555]">
+                    <div className="col-span-4">Client</div>
+                    <div className="col-span-2 text-right">Collected</div>
+                    <div className="col-span-2 text-right">Pending</div>
+                    <div className="col-span-2 text-right">Total</div>
+                    <div className="col-span-2 text-right">Invoices</div>
                   </div>
-
-                  {/* Button 2: Settings */}
-                  <div className="relative">
-                    <button
-                      type="button"
-                      onClick={() => { setSettingsPopoverOpen(!settingsPopoverOpen); setFilterPopoverOpen(false); }}
-                      className="flex items-center gap-2 px-4 py-2 bg-[#2f2f2f] border border-[#3a3a3a] rounded-lg text-sm font-medium text-[#ECECEC] hover:border-[#4a4a4a] transition-none"
-                    >
-                      <Settings size={16} />
-                      <span>Settings</span>
-                    </button>
-                    {settingsPopoverOpen && (
-                      <>
-                        <div className="fixed inset-0 z-40" onClick={() => setSettingsPopoverOpen(false)} />
-                        <div className="absolute left-0 top-full mt-1 z-50 bg-[#2f2f2f] border border-[#3a3a3a] rounded-xl p-5 shadow-xl min-w-[340px] max-h-[70vh] overflow-y-auto">
-                          <p className="text-xs font-semibold text-[#ECECEC] mb-4">Expected Posting Schedule</p>
-                          <div className="space-y-5">
-                            {allPlatformsList.map(p => {
-                              const cfg = contentExpectedByPlatform[p] || defaultExpectedConfig[p];
-                              const platformColor = p === Platform.YOUTUBE ? '#ef4444' : p === Platform.INSTAGRAM ? '#c026d3' : p === Platform.TIKTOK ? '#06b6d4' : '#3b82f6';
-                              return (
-                                <div key={p} className="space-y-2">
-                                  <div className="flex items-center justify-between">
-                                    <span className="text-sm font-medium" style={{ color: platformColor }}>{p}</span>
-                                    {/* Mode toggle */}
-                                    <div className="flex bg-[#212121] rounded-lg p-0.5 border border-[#3a3a3a]">
-                                      <button
-                                        type="button"
-                                        onClick={() => updatePlatformConfig(p, { mode: 'daily' })}
-                                        className={`px-2.5 py-1 rounded-md text-[10px] font-medium transition-none ${cfg.mode === 'daily' ? 'bg-[#3a3a3a] text-[#ECECEC]' : 'text-[#666666] hover:text-[#9B9B9B]'}`}
-                                      >
-                                        Daily
-                                      </button>
-                                      <button
-                                        type="button"
-                                        onClick={() => updatePlatformConfig(p, { mode: 'weekly' })}
-                                        className={`px-2.5 py-1 rounded-md text-[10px] font-medium transition-none ${cfg.mode === 'weekly' ? 'bg-[#3a3a3a] text-[#ECECEC]' : 'text-[#666666] hover:text-[#9B9B9B]'}`}
-                                      >
-                                        Weekly
-                                      </button>
-                                    </div>
-                                  </div>
-
-                                  {cfg.mode === 'daily' ? (
-                                    <div className="flex items-center justify-between bg-[#212121] rounded-lg px-3 py-2 border border-[#3a3a3a]">
-                                      <span className="text-xs text-[#9B9B9B]">Posts per day</span>
-                                      <div className="flex items-center gap-2">
-                                        <button type="button" onClick={() => updatePlatformConfig(p, { postsPerDay: Math.max(0, cfg.postsPerDay - 1) })}
-                                          className="w-6 h-6 rounded bg-[#2f2f2f] border border-[#3a3a3a] text-[#9B9B9B] hover:text-[#ECECEC] flex items-center justify-center text-xs font-medium transition-none">−</button>
-                                        <span className="w-5 text-center text-sm font-medium text-[#ECECEC]">{cfg.postsPerDay}</span>
-                                        <button type="button" onClick={() => updatePlatformConfig(p, { postsPerDay: cfg.postsPerDay + 1 })}
-                                          className="w-6 h-6 rounded bg-[#2f2f2f] border border-[#3a3a3a] text-[#9B9B9B] hover:text-[#ECECEC] flex items-center justify-center text-xs font-medium transition-none">+</button>
-                                      </div>
-                                    </div>
-                                  ) : (
-                                    <div className="space-y-2">
-                                      {/* Day-of-week picker */}
-                                      <div className="flex gap-1">
-                                        {DAYS_LABELS.map((label, i) => {
-                                          const on = cfg.weeklyDays.includes(i);
-                                          return (
-                                            <button
-                                              key={i}
-                                              type="button"
-                                              onClick={() => {
-                                                const next = on ? cfg.weeklyDays.filter(d => d !== i) : [...cfg.weeklyDays, i].sort((a, b) => a - b);
-                                                updatePlatformConfig(p, { weeklyDays: next });
-                                              }}
-                                              className={`flex-1 h-7 rounded text-[10px] font-medium transition-none ${on ? 'text-[#212121]' : 'bg-[#212121] text-[#666666] hover:text-[#9B9B9B]'}`}
-                                              style={on ? { backgroundColor: platformColor } : undefined}
-                                            >
-                                              {label}
-                                            </button>
-                                          );
-                                        })}
-                                      </div>
-                                      {/* Posts per posting day */}
-                                      <div className="flex items-center justify-between bg-[#212121] rounded-lg px-3 py-2 border border-[#3a3a3a]">
-                                        <span className="text-xs text-[#9B9B9B]">Posts per posting day</span>
-                                        <div className="flex items-center gap-2">
-                                          <button type="button" onClick={() => updatePlatformConfig(p, { postsPerPostDay: Math.max(1, cfg.postsPerPostDay - 1) })}
-                                            className="w-6 h-6 rounded bg-[#2f2f2f] border border-[#3a3a3a] text-[#9B9B9B] hover:text-[#ECECEC] flex items-center justify-center text-xs font-medium transition-none">−</button>
-                                          <span className="w-5 text-center text-sm font-medium text-[#ECECEC]">{cfg.postsPerPostDay}</span>
-                                          <button type="button" onClick={() => updatePlatformConfig(p, { postsPerPostDay: cfg.postsPerPostDay + 1 })}
-                                            className="w-6 h-6 rounded bg-[#2f2f2f] border border-[#3a3a3a] text-[#9B9B9B] hover:text-[#ECECEC] flex items-center justify-center text-xs font-medium transition-none">+</button>
-                                        </div>
-                                      </div>
-                                    </div>
-                                  )}
-                                </div>
-                              );
-                            })}
-                          </div>
+                  {clientRevenue.map((cr, i) => (
+                    <div key={i} className="grid grid-cols-12 gap-3 items-center px-3 py-2.5 rounded-xl hover:bg-[rgba(255,255,255,0.03)] transition-colors">
+                      <div className="col-span-4 flex items-center gap-2.5 min-w-0">
+                        {cr.photo ? (
+                          <img src={cr.photo} alt="" className="w-7 h-7 rounded-full object-cover flex-shrink-0" />
+                        ) : (
+                          <div className="w-7 h-7 rounded-full bg-[#252525] flex items-center justify-center flex-shrink-0 text-[10px] font-bold text-[#888]">{cr.name.charAt(0)}</div>
+                        )}
+                        <div className="min-w-0">
+                          <p className="text-[13px] font-medium text-[#ECECEC] truncate">{cr.name}</p>
+                          <p className="text-[10px] text-[#555] truncate">{cr.service}</p>
                         </div>
-                      </>
-                    )}
+                      </div>
+                      <div className="col-span-2 text-right text-[13px] font-medium text-emerald-400">${cr.paid.toLocaleString()}</div>
+                      <div className="col-span-2 text-right text-[13px] font-medium text-[#666]">${cr.pending.toLocaleString()}</div>
+                      <div className="col-span-2 text-right text-[13px] font-bold text-[#ECECEC]">${(cr.paid + cr.pending).toLocaleString()}</div>
+                      <div className="col-span-2 text-right text-[13px] text-[#666]">{cr.invoiceCount}</div>
+                    </div>
+                  ))}
+                  {/* Totals row */}
+                  <div className="grid grid-cols-12 gap-3 px-3 py-2.5 mt-1" style={{ borderTop: '1px solid #252525' }}>
+                    <div className="col-span-4 text-[12px] font-semibold text-[#888]">Total</div>
+                    <div className="col-span-2 text-right text-[13px] font-bold text-emerald-400">${clientRevenue.reduce((s, c) => s + c.paid, 0).toLocaleString()}</div>
+                    <div className="col-span-2 text-right text-[13px] font-bold text-[#666]">${clientRevenue.reduce((s, c) => s + c.pending, 0).toLocaleString()}</div>
+                    <div className="col-span-2 text-right text-[13px] font-bold text-[#ECECEC]">${clientRevenue.reduce((s, c) => s + c.paid + c.pending, 0).toLocaleString()}</div>
+                    <div className="col-span-2 text-right text-[13px] font-bold text-[#666]">{clientRevenue.reduce((s, c) => s + c.invoiceCount, 0)}</div>
                   </div>
                 </div>
               )}
-              <AnalyticsChart
-                view={activeChart}
-                onChangeView={setActiveChart}
-                revenueData={revenueChartData}
-                contentData={contentChartData}
-                contentItemsByDate={contentItemsByDate}
-                visiblePlatforms={contentChartPlatforms}
-              />
-            </section>
+            </div>
 
-            {/* Table */}
-            <section>
-              <MetricsTable
-                data={campaignMetrics}
-                onUpdate={handleUpdateMetric}
-                onDelete={handleDeleteMetric}
-                onAdd={handleAddMetric}
-              />
-            </section>
+            {/* ── Growth & Client Status Summary ── */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              {/* Payment Status Breakdown */}
+              <div className="bg-[#1c1c1c] rounded-2xl p-6">
+                <h2 className="text-sm font-bold text-[#ECECEC] mb-4">Payment Status</h2>
+                <div className="space-y-3">
+                  {(['Paid', 'Pending', 'Late', 'Missing Invoice'] as const).map(status => {
+                    const count = dashClients.filter(c => c.active !== false && c.payment_status === status).length;
+                    const pct = activeClients > 0 ? Math.round((count / activeClients) * 100) : 0;
+                    const color = status === 'Paid' ? '#10b981' : status === 'Pending' ? '#eab308' : status === 'Late' ? '#ef4444' : '#666';
+                    return (
+                      <div key={status}>
+                        <div className="flex items-center justify-between mb-1.5">
+                          <span className="text-xs text-[#ECECEC]">{status}</span>
+                          <span className="text-xs text-[#666]">{count} clients · {pct}%</span>
+                        </div>
+                        <div className="h-1.5 rounded-full bg-[#161616] overflow-hidden">
+                          <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: color }} />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Client Satisfaction */}
+              <div className="bg-[#1c1c1c] rounded-2xl p-6">
+                <h2 className="text-sm font-bold text-[#ECECEC] mb-4">Client Satisfaction</h2>
+                <div className="space-y-3">
+                  {(['Happy', 'Moderate', 'Frustrated'] as const).map(status => {
+                    const count = dashClients.filter(c => c.active !== false && c.status === status).length;
+                    const pct = activeClients > 0 ? Math.round((count / activeClients) * 100) : 0;
+                    const color = status === 'Happy' ? '#10b981' : status === 'Moderate' ? '#eab308' : '#ef4444';
+                    return (
+                      <div key={status}>
+                        <div className="flex items-center justify-between mb-1.5">
+                          <span className="text-xs text-[#ECECEC]">{status}</span>
+                          <span className="text-xs text-[#666]">{count} clients · {pct}%</span>
+                        </div>
+                        <div className="h-1.5 rounded-full bg-[#161616] overflow-hidden">
+                          <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: color }} />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+
           </div>
           } />
 
