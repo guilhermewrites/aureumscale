@@ -185,7 +185,7 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ storagePrefix, clientId, clie
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.error || 'Request failed');
+        throw new Error(data.error || data.details || `Request failed (${res.status})`);
       }
 
       const assistantMsg: ChatMessage = {

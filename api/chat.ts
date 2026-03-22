@@ -4,6 +4,7 @@
 export const config = { runtime: 'edge' };
 
 export default async function handler(req: Request) {
+  // CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response(null, {
       status: 204,
@@ -16,12 +17,18 @@ export default async function handler(req: Request) {
   }
 
   if (req.method !== 'POST') {
-    return new Response(JSON.stringify({ error: 'Method not allowed' }), { status: 405 });
+    return new Response(JSON.stringify({ error: 'Method not allowed' }), {
+      status: 405,
+      headers: { 'Content-Type': 'application/json' },
+    });
   }
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
-    return new Response(JSON.stringify({ error: 'ANTHROPIC_API_KEY not configured' }), { status: 500 });
+    return new Response(
+      JSON.stringify({ error: 'ANTHROPIC_API_KEY not configured in Vercel. Go to Vercel → Settings → Environment Variables and add it.' }),
+      { status: 500, headers: { 'Content-Type': 'application/json' } },
+    );
   }
 
   try {
