@@ -1126,7 +1126,7 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
                             {/* Image */}
                             {tw.image_url && (
                               <div className="mt-3 relative overflow-hidden" style={{ borderRadius: 16, border: '1px solid #2f3336' }}>
-                                <img src={tw.image_url} alt="" className="w-full object-cover" style={{ maxHeight: 510 }} />
+                                <img src={tw.image_url} alt="" className="w-full" style={{ objectFit: 'contain', maxHeight: 510, background: '#000' }} />
                                 <button
                                   onClick={() => updateTweet(tw.id, { image_url: '' })}
                                   className="absolute top-1.5 right-1.5 p-1.5 rounded-full transition-colors"
