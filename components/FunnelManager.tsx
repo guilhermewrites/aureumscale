@@ -151,12 +151,13 @@ if (typeof document !== 'undefined' && !document.getElementById(NEON_STYLE_ID)) 
   document.head.appendChild(style);
 }
 
-// Strip large media data before saving to localStorage (5MB limit)
+// Strip large inline data (base64/blob) before saving to localStorage (5MB limit)
+// Supabase Storage URLs are small strings and safe to keep
 const stripMediaForLocalStorage = (funnels: CanvasFunnel[]): CanvasFunnel[] =>
   funnels.map(f => ({
     ...f,
     steps: f.steps.map(s => {
-      if (s.previewMedia && s.previewMedia.startsWith('data:')) {
+      if (s.previewMedia && (s.previewMedia.startsWith('data:') || s.previewMedia.startsWith('blob:'))) {
         return { ...s, previewMedia: undefined, previewMediaType: undefined };
       }
       return s;
@@ -191,8 +192,14 @@ const FunnelManager: React.FC<FunnelManagerProps> = ({ storagePrefix }) => {
     if (!supabase) return;
     try {
       if (action === 'upsert') {
-        // Store steps + connections together in the steps JSON column
-        const stepsPayload = { items: funnel.steps, connections: funnel.connections };
+        // Strip any inline base64/blob data before saving to DB — only URLs should persist
+        const cleanSteps = funnel.steps.map(s => {
+          if (s.previewMedia && (s.previewMedia.startsWith('data:') || s.previewMedia.startsWith('blob:'))) {
+            return { ...s, previewMedia: undefined, previewMediaType: undefined };
+          }
+          return s;
+        });
+        const stepsPayload = { items: cleanSteps, connections: funnel.connections };
         const { error } = await supabase.from('funnels').upsert({
           id: funnel.id,
           user_id: storagePrefix,
@@ -260,7 +267,8 @@ const FunnelManager: React.FC<FunnelManagerProps> = ({ storagePrefix }) => {
               }
             }
 
-            // Migration fallback: if any step has a blob: URL for previewMedia, clear it (blobs don't survive reloads)
+            // Clear blob URLs only (they can't survive reloads)
+            // Preserve data: URLs — they'll display fine, just won't be re-saved to DB
             steps = steps.map(s => {
               if (s.previewMedia && s.previewMedia.startsWith('blob:')) {
                 return { ...s, previewMedia: undefined, previewMediaType: undefined };
@@ -278,10 +286,57 @@ const FunnelManager: React.FC<FunnelManagerProps> = ({ storagePrefix }) => {
               createdAt: row.created_at,
             };
           });
-          // Replace with Supabase data - Supabase is the source of truth
-          setFunnels(supabaseFunnels);
-          // Re-sync to Supabase so migrated connections & cleaned blob URLs persist
-          supabaseFunnels.forEach(f => syncFunnelToSupabase(f, 'upsert'));
+          // Strip base64 from state immediately to prevent memory bloat, then migrate in background
+          const lightFunnels = supabaseFunnels.map(f => ({
+            ...f,
+            steps: f.steps.map(s => {
+              if (s.previewMedia && s.previewMedia.startsWith('data:')) {
+                return { ...s, previewMedia: undefined, previewMediaType: undefined };
+              }
+              return s;
+            }),
+          }));
+          setFunnels(lightFunnels);
+          // Re-sync cleaned data to Supabase
+          lightFunnels.forEach(f => syncFunnelToSupabase(f, 'upsert'));
+
+          // Background migration: upload any base64 media to Supabase Storage
+          if (supabase) {
+            // Ensure bucket exists before migrating
+            try {
+              const { data: bkt } = await supabase.storage.getBucket('funnel-media');
+              if (!bkt) await supabase.storage.createBucket('funnel-media', { public: true, fileSizeLimit: 104857600 });
+            } catch { /* bucket may already exist */ }
+
+            for (const funnel of supabaseFunnels) {
+              for (const step of funnel.steps) {
+                if (!step.previewMedia || !step.previewMedia.startsWith('data:')) continue;
+                try {
+                  // Convert base64 data URL to blob
+                  const res = await fetch(step.previewMedia);
+                  const blob = await res.blob();
+                  const isVid = step.previewMediaType === 'video';
+                  const ext = isVid ? 'mp4' : 'jpg';
+                  const path = `${storagePrefix}/${step.id}-${Date.now()}.${ext}`;
+                  const { error: upErr } = await supabase.storage.from('funnel-media').upload(path, blob, { contentType: blob.type, upsert: true });
+                  if (upErr) { console.warn('Migration upload failed for step', step.id, upErr.message); continue; }
+                  const { data: urlData } = supabase.storage.from('funnel-media').getPublicUrl(path);
+                  // Update the step in state with the new URL
+                  _setFunnelsState(prev => prev.map(f => f.id === funnel.id ? {
+                    ...f, steps: f.steps.map(s => s.id === step.id ? { ...s, previewMedia: urlData.publicUrl, previewMediaType: step.previewMediaType } : s)
+                  } : f));
+                  // Also sync to Supabase DB
+                  const updatedFunnel = lightFunnels.find(f => f.id === funnel.id);
+                  if (updatedFunnel) {
+                    const migratedFunnel = { ...updatedFunnel, steps: updatedFunnel.steps.map(s => s.id === step.id ? { ...s, previewMedia: urlData.publicUrl, previewMediaType: step.previewMediaType } : s) };
+                    syncFunnelToSupabase(migratedFunnel, 'upsert');
+                  }
+                } catch (err) {
+                  console.warn('Migration failed for step', step.id, err);
+                }
+              }
+            }
+          }
         }
       } catch (err) {
         console.error('Supabase load error:', err);
@@ -323,6 +378,7 @@ const FunnelManager: React.FC<FunnelManagerProps> = ({ storagePrefix }) => {
   const [statusDropdownOpen, setStatusDropdownOpen] = useState<'ad' | 'email' | 'sms' | null>(null);
   const statusDropdownRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploadingMedia, setUploadingMedia] = useState(false);
 
   const selectedFunnel = funnels.find(f => f.id === selectedFunnelId);
   const selectedStep = selectedFunnel?.steps.find(s => s.id === selectedStepId);
@@ -368,9 +424,23 @@ const FunnelManager: React.FC<FunnelManagerProps> = ({ storagePrefix }) => {
     setCanvasOffset({ x: 0, y: 0 }); setZoom(1);
   };
 
+  // ─── Media storage cleanup ──────────────────────────────
+  const deleteMediaFromStorage = useCallback(async (mediaUrl: string | undefined) => {
+    if (!mediaUrl || !supabase) return;
+    // Only delete files hosted in our Supabase storage bucket
+    try {
+      const bucketUrl = supabase.storage.from('funnel-media').getPublicUrl('').data.publicUrl;
+      if (!mediaUrl.startsWith(bucketUrl)) return;
+      const path = mediaUrl.replace(bucketUrl, '').replace(/^\//, '');
+      if (path) await supabase.storage.from('funnel-media').remove([path]);
+    } catch { /* best-effort cleanup */ }
+  }, []);
+
   const handleDeleteFunnel = (id: string) => {
     const funnel = funnels.find(f => f.id === id);
     if (funnel) {
+      // Clean up all media files from storage
+      funnel.steps.forEach(s => { if (s.previewMedia) deleteMediaFromStorage(s.previewMedia); });
       syncFunnelToSupabase(funnel, 'delete');
     }
     setFunnels(prev => prev.filter(f => f.id !== id));
@@ -431,6 +501,9 @@ const FunnelManager: React.FC<FunnelManagerProps> = ({ storagePrefix }) => {
 
   const deleteStep = (stepId: string) => {
     if (!selectedFunnel) return;
+    // Clean up media from storage before deleting step
+    const step = selectedFunnel.steps.find(s => s.id === stepId);
+    if (step?.previewMedia) deleteMediaFromStorage(step.previewMedia);
     setFunnels(prev => {
       const updated = prev.map(f =>
         f.id === selectedFunnel.id ? { ...f, steps: f.steps.filter(s => s.id !== stepId), connections: f.connections.filter(c => c.from !== stepId && c.to !== stepId) } : f
@@ -586,49 +659,84 @@ const FunnelManager: React.FC<FunnelManagerProps> = ({ storagePrefix }) => {
     setEditingStepId(null); setEditField(null);
   };
 
-  // ─── Media upload handler ─────────────────────────────────
-  const handleMediaUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // ─── Ensure Supabase Storage bucket exists ───────────────
+  const bucketEnsured = useRef(false);
+  const ensureBucket = useCallback(async () => {
+    if (bucketEnsured.current || !supabase) return;
+    try {
+      const { data } = await supabase.storage.getBucket('funnel-media');
+      if (!data) {
+        await supabase.storage.createBucket('funnel-media', { public: true, fileSizeLimit: 104857600 }); // 100MB limit
+      }
+      bucketEnsured.current = true;
+    } catch {
+      // Bucket may already exist or user lacks permissions to create — upload will surface the real error
+      bucketEnsured.current = true;
+    }
+  }, []);
+
+  // ─── Media upload handler (uploads to Supabase Storage) ──
+  const handleMediaUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     const stepId = selectedStepId;
     if (!file || !stepId) return;
     const isVideo = file.type.startsWith('video/');
     const isImage = file.type.startsWith('image/');
     if (!isVideo && !isImage) return;
-
-    if (isImage) {
-      // Resize image to max 400px and compress to JPEG data URL for persistence
-      const img = new window.Image();
-      const blobUrl = URL.createObjectURL(file);
-      img.onload = () => {
-        URL.revokeObjectURL(blobUrl);
-        const MAX = 400;
-        let w = img.width, h = img.height;
-        if (w > MAX || h > MAX) {
-          if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
-          else { w = Math.round(w * MAX / h); h = MAX; }
-        }
-        const canvas = document.createElement('canvas');
-        canvas.width = w; canvas.height = h;
-        const ctx = canvas.getContext('2d');
-        if (!ctx) return;
-        ctx.drawImage(img, 0, 0, w, h);
-        const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
-        updateStep(stepId, { previewMedia: dataUrl, previewMediaType: 'image' });
-      };
-      img.src = blobUrl;
-    } else {
-      // Videos: read as data URL (warn if too large)
-      if (file.size > 5 * 1024 * 1024) {
-        alert('Video files larger than 5MB may not persist. Consider using a smaller file or a URL instead.');
-      }
-      const reader = new FileReader();
-      reader.onload = () => {
-        const dataUrl = reader.result as string;
-        updateStep(stepId, { previewMedia: dataUrl, previewMediaType: 'video' });
-      };
-      reader.readAsDataURL(file);
-    }
     e.target.value = '';
+
+    if (!supabase) {
+      alert('Supabase is not connected. Cannot upload media.');
+      return;
+    }
+
+    setUploadingMedia(true);
+    try {
+      await ensureBucket();
+
+      // Generate unique storage path
+      const ext = file.name.split('.').pop() || (isVideo ? 'mp4' : 'jpg');
+      const storagePath = `${storagePrefix}/${stepId}-${Date.now()}.${ext}`;
+
+      if (isImage) {
+        // Resize image before upload to keep storage lean
+        const resized = await new Promise<Blob | null>((resolve) => {
+          const img = new window.Image();
+          const blobUrl = URL.createObjectURL(file);
+          img.onload = () => {
+            URL.revokeObjectURL(blobUrl);
+            const MAX = 800;
+            let w = img.width, h = img.height;
+            if (w > MAX || h > MAX) {
+              if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
+              else { w = Math.round(w * MAX / h); h = MAX; }
+            }
+            const canvas = document.createElement('canvas');
+            canvas.width = w; canvas.height = h;
+            const ctx = canvas.getContext('2d');
+            if (!ctx) { resolve(null); return; }
+            ctx.drawImage(img, 0, 0, w, h);
+            canvas.toBlob(blob => resolve(blob), 'image/jpeg', 0.8);
+          };
+          img.onerror = () => { URL.revokeObjectURL(blobUrl); resolve(null); };
+          img.src = blobUrl;
+        });
+        if (!resized) return;
+
+        const { error: upErr } = await supabase.storage.from('funnel-media').upload(storagePath, resized, { contentType: 'image/jpeg', upsert: true });
+        if (upErr) { console.error('Image upload error:', upErr.message); alert('Failed to upload image: ' + upErr.message); return; }
+        const { data: urlData } = supabase.storage.from('funnel-media').getPublicUrl(storagePath);
+        updateStep(stepId, { previewMedia: urlData.publicUrl, previewMediaType: 'image' });
+      } else {
+        // Upload video directly to Supabase Storage — no base64, no memory bloat
+        const { error: upErr } = await supabase.storage.from('funnel-media').upload(storagePath, file, { contentType: file.type, upsert: true });
+        if (upErr) { console.error('Video upload error:', upErr.message); alert('Failed to upload video: ' + upErr.message); return; }
+        const { data: urlData } = supabase.storage.from('funnel-media').getPublicUrl(storagePath);
+        updateStep(stepId, { previewMedia: urlData.publicUrl, previewMediaType: 'video' });
+      }
+    } finally {
+      setUploadingMedia(false);
+    }
   };
 
   // ─── Arrow path ────────────────────────────────────────────
@@ -972,9 +1080,9 @@ const FunnelManager: React.FC<FunnelManagerProps> = ({ storagePrefix }) => {
                     {step.previewMedia && step.previewMediaType ? (
                       <div className="w-full h-full relative">
                         {step.previewMediaType === 'video' ? (
-                          <video src={step.previewMedia} className="absolute inset-0 w-full h-full object-cover" controls />
+                          <video src={step.previewMedia} className="absolute inset-0 w-full h-full object-cover" preload="none" playsInline muted />
                         ) : (
-                          <img src={step.previewMedia} alt={step.name} className="absolute inset-0 w-full h-full object-cover" />
+                          <img src={step.previewMedia} alt={step.name} className="absolute inset-0 w-full h-full object-cover" loading="lazy" />
                         )}
                       </div>
                     ) : normalizedUrl ? (
@@ -1333,21 +1441,25 @@ const FunnelManager: React.FC<FunnelManagerProps> = ({ storagePrefix }) => {
 
             <div><label className="text-[10px] uppercase tracking-wider text-[#9B9B9B] font-medium">Preview Media</label>
               <input ref={fileInputRef} type="file" accept="image/*,video/mp4,video/webm" className="hidden" onChange={handleMediaUpload} />
-              {selectedStep.previewMedia ? (
+              {uploadingMedia ? (
+                <div className="w-full mt-1 flex items-center justify-center gap-2 px-3 py-4 border border-dashed border-[#4a4a4a] rounded-lg text-xs text-[#9B9B9B]">
+                  <div className="w-3 h-3 border-2 border-[#9B9B9B] border-t-transparent rounded-full animate-spin" /> Uploading...
+                </div>
+              ) : selectedStep.previewMedia ? (
                 <div className="mt-1 space-y-2">
                   <div className="relative rounded-lg overflow-hidden border border-[#3a3a3a]" style={{ height: 100 }}>
                     {selectedStep.previewMediaType === 'video' ? (
-                      <video src={selectedStep.previewMedia} className="w-full h-full object-cover" />
+                      <video src={selectedStep.previewMedia} className="w-full h-full object-cover" preload="metadata" />
                     ) : (
-                      <img src={selectedStep.previewMedia} alt="Preview" className="w-full h-full object-cover" />
+                      <img src={selectedStep.previewMedia} alt="Preview" className="w-full h-full object-cover" loading="lazy" />
                     )}
                   </div>
                   <div className="flex gap-2">
-                    <button onClick={() => fileInputRef.current?.click()}
+                    <button onClick={() => { deleteMediaFromStorage(selectedStep.previewMedia); fileInputRef.current?.click(); }}
                       className="flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 text-[10px] text-[#9B9B9B] hover:text-white bg-[#3a3a3a] rounded-lg transition-none">
                       <Upload size={10} /> Replace
                     </button>
-                    <button onClick={() => updateStep(selectedStep.id, { previewMedia: undefined, previewMediaType: undefined })}
+                    <button onClick={() => { deleteMediaFromStorage(selectedStep.previewMedia); updateStep(selectedStep.id, { previewMedia: undefined, previewMediaType: undefined }); }}
                       className="flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 text-[10px] text-[#9B9B9B] hover:text-rose-400 bg-[#3a3a3a] rounded-lg transition-none">
                       <Trash2 size={10} /> Remove
                     </button>

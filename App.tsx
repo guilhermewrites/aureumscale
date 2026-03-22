@@ -1,5 +1,8 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { User } from '@supabase/supabase-js';
 import Sidebar from './components/Sidebar';
+import LoginPage from './components/LoginPage';
 import AnalyticsChart from './components/AnalyticsChart';
 import MetricsTable from './components/MetricsTable';
 import ContentManager from './components/ContentManager';
@@ -14,17 +17,60 @@ import { ChartViewType, NavigationItem, FinanceItem, InvoiceStatus, RevenueDataP
 import { AD_METRICS } from './constants';
 import { Bell, Search, Calendar, Save, Check, Loader2, Settings, Filter } from 'lucide-react';
 import useLocalStorage from './hooks/useLocalStorage';
+import useAuth from './hooks/useAuth';
 import { syncLocalDataToSupabase } from './services/syncLocalToSupabase';
 import { supabase } from './services/supabaseClient';
 
+// Map route paths to NavigationItem labels for the header
+const routeToNav: Record<string, NavigationItem> = {
+  '/dashboard': NavigationItem.DASHBOARD,
+  '/clients': NavigationItem.CLIENTS,
+  '/swipefile': NavigationItem.SWIPEFILE,
+  '/team': NavigationItem.TEAM,
+  '/contracts': NavigationItem.CONTRACTS,
+  '/finance': NavigationItem.FINANCE,
+};
+
 const App: React.FC = () => {
-  const [activeNav, setActiveNav] = useLocalStorage<NavigationItem>('aureum_active_nav', NavigationItem.DASHBOARD);
+  const { user, loading: authLoading, signIn, signUp, signOut } = useAuth();
+
+  if (authLoading) {
+    return (
+      <div style={{
+        minHeight: '100vh',
+        background: '#131313',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}>
+        <Loader2 size={32} style={{ color: '#555', animation: 'spin 1s linear infinite' }} />
+        <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <LoginPage onSignIn={signIn} onSignUp={signUp} />;
+  }
+
+  return <AuthenticatedApp user={user} signOut={signOut} />;
+};
+
+const AuthenticatedApp: React.FC<{ user: User; signOut: () => Promise<void> }> = ({ user, signOut }) => {
+  const location = useLocation();
+  // Derive the active nav label from the current route
+  const activeNav = useMemo(() => {
+    const path = location.pathname;
+    // Check for /clients/:id pattern
+    if (path.startsWith('/clients')) return NavigationItem.CLIENTS;
+    return routeToNav[path] || NavigationItem.DASHBOARD;
+  }, [location.pathname]);
+
   const [sidebarCollapsed, setSidebarCollapsed] = useLocalStorage<boolean>('aureum_sidebar_collapsed', false);
   const [activeChart, setActiveChart] = useState<ChartViewType>(ChartViewType.REVENUE);
-  const [activeUserId, setActiveUserId] = useLocalStorage<string>('writestakeover_active_user', 'guilherme');
 
-  // Storage prefix per user - "guilherme" user keeps existing 'writestakeover' prefix so all existing data stays
-  const storagePrefix = activeUserId === 'guilherme' ? 'writestakeover' : `writestakeover_${activeUserId}`;
+  // Use authenticated user ID as storage prefix
+  const storagePrefix = user.id;
 
   // Sync state
   const [isSyncing, setIsSyncing] = useState(false);
@@ -360,15 +406,15 @@ const App: React.FC = () => {
   return (
     <div className="flex min-h-screen bg-[#212121] text-[#ECECEC] font-sans selection:bg-[#444444]">
       <Sidebar
-        activeItem={activeNav}
-        onNavigate={setActiveNav}
-        activeUserId={activeUserId}
-        onUserChange={setActiveUserId}
+        activeUserId={user.id}
+        onUserChange={() => {}}
         collapsed={sidebarCollapsed}
         onToggleCollapse={() => setSidebarCollapsed(c => !c)}
+        onSignOut={signOut}
+        userEmail={user.email}
       />
 
-      <main key={activeUserId} className={`flex-1 ${sidebarCollapsed ? 'ml-16' : 'ml-64'} p-8 overflow-y-auto`}>
+      <main key={user.id} className={`flex-1 ${sidebarCollapsed ? 'ml-16' : 'ml-64'} p-8 overflow-y-auto`}>
         {/* Header */}
         <header className="flex justify-between items-center mb-10">
           <div>
@@ -420,7 +466,9 @@ const App: React.FC = () => {
           </div>
         </header>
 
-        {activeNav === NavigationItem.DASHBOARD && (
+        <Routes>
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/dashboard" element={
           <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
             {/* Top Stat Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -635,54 +683,31 @@ const App: React.FC = () => {
               />
             </section>
           </div>
-        )}
+          } />
 
-        {activeNav === NavigationItem.PLANNER && (
-           <PlannerManager storagePrefix={storagePrefix} />
-        )}
-
-        {activeNav === NavigationItem.CONTENT && (
-           <ContentManager storagePrefix={storagePrefix} />
-        )}
-
-        {activeNav === NavigationItem.ADS && (
-           <AdsManager storagePrefix={storagePrefix} />
-        )}
-
-        {activeNav === NavigationItem.FUNNELS && (
-           <FunnelManager storagePrefix={storagePrefix} />
-        )}
-
-        {activeNav === NavigationItem.FINANCE && (
-           <FinanceManager
+          <Route path="/clients/:id" element={<ClientsManager storagePrefix={storagePrefix} />} />
+          <Route path="/clients" element={<ClientsManager storagePrefix={storagePrefix} />} />
+          <Route path="/swipefile" element={<SwipefileManager storagePrefix={storagePrefix} />} />
+          <Route path="/team" element={<TeamManager storagePrefix={storagePrefix} />} />
+          <Route path="/finance" element={
+            <FinanceManager
               items={financeItems}
               onAdd={handleAddFinanceItem}
               onUpdate={handleUpdateFinanceItem}
               onDelete={handleDeleteFinanceItem}
               revenueChartData={revenueChartData}
-           />
-        )}
-
-        {activeNav === NavigationItem.SWIPEFILE && (
-            <SwipefileManager storagePrefix={storagePrefix} />
-        )}
-
-        {activeNav === NavigationItem.TEAM && (
-            <TeamManager storagePrefix={storagePrefix} />
-        )}
-
-        {activeNav === NavigationItem.CLIENTS && (
-            <ClientsManager storagePrefix={storagePrefix} />
-        )}
-
-        {activeNav !== NavigationItem.DASHBOARD && activeNav !== NavigationItem.PLANNER && activeNav !== NavigationItem.CONTENT && activeNav !== NavigationItem.FINANCE && activeNav !== NavigationItem.SWIPEFILE && activeNav !== NavigationItem.TEAM && activeNav !== NavigationItem.ADS && activeNav !== NavigationItem.FUNNELS && activeNav !== NavigationItem.CLIENTS && (
-          <div className="h-96 flex flex-col items-center justify-center text-[#666666] border-2 border-dashed border-[#3a3a3a] rounded-xl">
-            <p className="text-lg font-medium mb-2">Work in Progress</p>
-            <p className="text-sm max-w-md text-center">
-              The {activeNav.toLowerCase()} view is currently under development. Please return to the Dashboard.
-            </p>
-          </div>
-        )}
+            />
+          } />
+          <Route path="/contracts" element={
+            <div className="h-96 flex flex-col items-center justify-center text-[#666666] border-2 border-dashed border-[#3a3a3a] rounded-xl">
+              <p className="text-lg font-medium mb-2">Work in Progress</p>
+              <p className="text-sm max-w-md text-center">
+                The contracts view is currently under development. Please return to the Dashboard.
+              </p>
+            </div>
+          } />
+          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+        </Routes>
       </main>
     </div>
   );

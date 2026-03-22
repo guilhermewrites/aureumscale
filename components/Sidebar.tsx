@@ -1,4 +1,5 @@
 import React, { useState, useRef } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard,
   Briefcase,
@@ -12,6 +13,7 @@ import {
   Check,
   Camera,
   Settings,
+  LogOut,
 } from 'lucide-react';
 import { NavigationItem, AppUser } from '../types';
 import useLocalStorage from '../hooks/useLocalStorage';
@@ -21,16 +23,44 @@ const DEFAULT_USERS: AppUser[] = [
   { id: 'ai_partner', name: 'The AI Partner', label: 'The AI Partner', initials: 'AI', color: 'bg-violet-500', firstName: 'The', lastName: 'AI Partner' },
 ];
 
+// Map NavigationItem enum values to URL paths
+const navToRoute: Record<string, string> = {
+  [NavigationItem.DASHBOARD]: '/dashboard',
+  [NavigationItem.CLIENTS]: '/clients',
+  [NavigationItem.SWIPEFILE]: '/swipefile',
+  [NavigationItem.TEAM]: '/team',
+  [NavigationItem.CONTRACTS]: '/contracts',
+  [NavigationItem.FINANCE]: '/finance',
+};
+
+const routeToNavItem: Record<string, NavigationItem> = {
+  '/dashboard': NavigationItem.DASHBOARD,
+  '/clients': NavigationItem.CLIENTS,
+  '/swipefile': NavigationItem.SWIPEFILE,
+  '/team': NavigationItem.TEAM,
+  '/contracts': NavigationItem.CONTRACTS,
+  '/finance': NavigationItem.FINANCE,
+};
+
 interface SidebarProps {
-  activeItem: NavigationItem;
-  onNavigate: (item: NavigationItem) => void;
   activeUserId: string;
   onUserChange: (userId: string) => void;
   collapsed: boolean;
   onToggleCollapse: () => void;
+  onSignOut?: () => void;
+  userEmail?: string;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ activeItem, onNavigate, activeUserId, onUserChange, collapsed, onToggleCollapse }) => {
+const Sidebar: React.FC<SidebarProps> = ({ activeUserId, onUserChange, collapsed, onToggleCollapse, onSignOut, userEmail }) => {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // Derive active item from the current route
+  const activeItem = (() => {
+    const path = location.pathname;
+    if (path.startsWith('/clients')) return NavigationItem.CLIENTS;
+    return routeToNavItem[path] || NavigationItem.DASHBOARD;
+  })();
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const [users, setUsers] = useLocalStorage<AppUser[]>('writestakeover_users', DEFAULT_USERS);
   const [customLogo, setCustomLogo] = useLocalStorage<string | null>('aureum_custom_logo', null);
@@ -161,7 +191,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeItem, onNavigate, activeUserId,
           return (
             <button
               key={item.id}
-              onClick={() => onNavigate(item.id)}
+              onClick={() => navigate(navToRoute[item.id] || '/dashboard')}
               title={collapsed ? item.label : undefined}
               className={`w-full flex items-center ${collapsed ? 'justify-center px-2' : 'gap-3 px-4'} py-3 rounded-lg transition-none group ${
                 isActive
@@ -290,6 +320,25 @@ const Sidebar: React.FC<SidebarProps> = ({ activeItem, onNavigate, activeUserId,
               <button onClick={saveProfile} className="px-4 py-2 bg-white hover:bg-[#e5e5e5] text-[#212121] rounded-lg text-sm font-medium transition-none">Save</button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Sign Out Button */}
+      {onSignOut && (
+        <div className={`px-2 pb-2 ${collapsed ? '' : ''}`}>
+          <button
+            onClick={onSignOut}
+            title={collapsed ? 'Sign out' : undefined}
+            className={`w-full flex items-center ${collapsed ? 'justify-center px-1 py-2' : 'gap-3 px-3 py-2'} rounded-lg text-[#9B9B9B] hover:text-[#ECECEC] hover:bg-[rgba(255,255,255,0.05)] transition-none`}
+          >
+            <LogOut size={16} />
+            {!collapsed && (
+              <div className="flex flex-col text-left flex-1 min-w-0">
+                <span className="text-xs font-medium">Sign out</span>
+                {userEmail && <span className="text-[10px] text-[#555] truncate">{userEmail}</span>}
+              </div>
+            )}
+          </button>
         </div>
       )}
     </aside>

@@ -13,7 +13,13 @@
       "WebFetch(domain:aureum-ochre.vercel.app)",
       "Bash(git add:*)",
       "Bash(git commit:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(npx supabase:*)",
+      "Bash(find:*)",
+      "Bash(npx vite build)",
+      "Bash(git -C \"/Users/guilherme/Aureum App\" remote -v)",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(open \"/Users/guilherme/Desktop/[ROAS] - [Webinar Funnel]/registration.html\")"
     ]
   }
 }

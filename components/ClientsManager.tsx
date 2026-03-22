@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Plus, Trash2, ChevronDown, Camera, Loader2, Archive, RotateCcw, GripVertical, Pencil, X, Check, ArrowRightLeft } from 'lucide-react';
 import { supabase } from '../services/supabaseClient';
 import ClientPanel from './ClientPanel';
@@ -404,13 +405,21 @@ type ColumnOptionsMap = {
 };
 
 const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
+  const navigate = useNavigate();
+  const { id: routeClientId } = useParams<{ id?: string }>();
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isAdding, setIsAdding] = useState(false);
   const [addingType, setAddingType] = useState<ClientType>('recurring');
   const [draft, setDraft] = useState<Client>(newClient(0));
-  const [selectedClient, setSelectedClient] = useState<{ id: string; name: string; photoUrl?: string; status?: string; paymentStatus?: string; amount?: number; service?: string } | null>(null);
+  // Derive selectedClient from route param + loaded clients
+  const selectedClient = (() => {
+    if (!routeClientId) return null;
+    const client = clients.find(c => c.id === routeClientId);
+    if (!client) return routeClientId ? { id: routeClientId, name: '', photoUrl: undefined, status: undefined, paymentStatus: undefined, amount: undefined, service: undefined } : null;
+    return { id: client.id, name: client.name, photoUrl: client.photoUrl, status: client.status, paymentStatus: client.paymentStatus, amount: client.amount, service: client.service };
+  })();
   const [showActive, setShowActive] = useState(true);
 
   // Custom column options — merged with defaults
@@ -723,7 +732,7 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
     return (
       <div className="space-y-4">
         <button
-          onClick={() => setSelectedClient(null)}
+          onClick={() => navigate('/clients')}
           className="flex items-center gap-2 text-sm font-medium transition-colors px-1 py-1"
           style={{ color: '#555' }}
           onMouseEnter={e => (e.currentTarget.style.color = '#ECECEC')}
@@ -734,7 +743,7 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
         <ClientPanel
           client={selectedClient}
           storagePrefix={storagePrefix}
-          onClose={() => setSelectedClient(null)}
+          onClose={() => navigate('/clients')}
         />
       </div>
     );
@@ -850,7 +859,7 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
               <tr
                 key={client.id}
                 className="group bg-[#212121] hover:bg-[#1e1e1e] transition-colors cursor-pointer"
-                onClick={() => setSelectedClient({ id: client.id, name: client.name, photoUrl: client.photoUrl, status: client.status, paymentStatus: client.paymentStatus, amount: client.amount, service: client.service })}
+                onClick={() => navigate(`/clients/${client.id}`)}
               >
                 <td className="px-5 py-3.5">
                   <div className="flex items-center gap-3">
