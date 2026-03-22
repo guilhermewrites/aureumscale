@@ -3,10 +3,9 @@ import { createPortal } from 'react-dom';
 import {
   ExternalLink, Plus, Trash2, Loader2,
   BarChart2, Share2, GitBranch, FileText, StickyNote, LayoutDashboard, Camera,
-  Receipt, DollarSign, Pen, Image as ImageIcon, Calendar,
+  Receipt, DollarSign, Pen, Image as ImageIcon, Calendar, Brain, ChevronDown, ChevronRight, X,
 } from 'lucide-react';
 import { supabase } from '../services/supabaseClient';
-import AIAssistant from './AIAssistant';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -79,6 +78,7 @@ const TABS = [
   { id: 'Funnel',   label: 'Funnel',   Icon: GitBranch },
   { id: 'Scripts',  label: 'Scripts',  Icon: FileText },
   { id: 'Notes',    label: 'Notes',    Icon: StickyNote },
+  { id: 'Memory',   label: 'Memory',   Icon: Brain },
 ] as const;
 type Tab = typeof TABS[number]['id'];
 
@@ -211,6 +211,19 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const savedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const invoiceDebounceRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+
+  // ── Client Memory (for AI) ──
+  interface MemoryItem { id: string; content: string; category: string; }
+  const [clientMemories, setClientMemories] = useState<MemoryItem[]>([]);
+  const [memoriesLoading, setMemoriesLoading] = useState(false);
+  const memoryDebounceRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+  const MEMORY_CATEGORIES = [
+    { id: 'tone', label: 'Tone & Voice', placeholder: 'e.g. "This client prefers a professional, authoritative tone."' },
+    { id: 'audience', label: 'Audience', placeholder: 'e.g. "Their audience is B2B SaaS founders, 30-50 years old."' },
+    { id: 'rules', label: 'Content Rules', placeholder: 'e.g. "Never use emojis. Always include a CTA."' },
+    { id: 'examples', label: 'Examples', placeholder: 'Paste content this client loved — the AI will learn from it.' },
+    { id: 'general', label: 'Other Context', placeholder: 'Anything else the AI should know about this client.' },
+  ];
 
   useEffect(() => { setLocalPhoto(client?.photoUrl); }, [client?.photoUrl]);
 
@@ -370,6 +383,21 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
       setInvoicesLoading(false);
     })();
     return () => { cancelled = true; };
+  }, [client?.id, storagePrefix]);
+
+  // ── Load client memories ──
+  useEffect(() => {
+    if (!client || !supabase) return;
+    setMemoriesLoading(true);
+    supabase
+      .from('ai_memory')
+      .select('id, content, category')
+      .eq('user_id', storagePrefix)
+      .order('created_at', { ascending: true })
+      .then(({ data }) => {
+        setClientMemories(data ?? []);
+        setMemoriesLoading(false);
+      });
   }, [client?.id, storagePrefix]);
 
   // ─── Load Tweets ──────────────────────────────────────────────────────────
@@ -1307,19 +1335,117 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
               </Block>
             )}
 
+            {/* ── MEMORY (for AI) ──────────────────────────────────────────── */}
+            {activeTab === 'Memory' && (
+              <Block title="Client Memory" action={
+                <span className="text-[10px]" style={{ color: '#666' }}>
+                  The Aureum Agent reads this when you ask about {client?.name || 'this client'}
+                </span>
+              }>
+                {memoriesLoading ? (
+                  <div className="flex items-center justify-center py-12">
+                    <Loader2 size={18} className="animate-spin" style={{ color: '#D4A843' }} />
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {MEMORY_CATEGORIES.map(cat => {
+                      const items = clientMemories.filter(m => m.category === cat.id);
+                      return (
+                        <div key={cat.id} className="rounded-xl overflow-hidden" style={{ background: '#161616' }}>
+                          <div className="flex items-center justify-between px-4 py-3">
+                            <div className="flex items-center gap-2">
+                              <Brain size={13} style={{ color: '#D4A843' }} />
+                              <span className="text-xs font-semibold" style={{ color: '#ECECEC' }}>{cat.label}</span>
+                              {items.length > 0 && (
+                                <span className="text-[10px] px-1.5 py-0.5 rounded-full" style={{ background: 'rgba(212,168,67,0.15)', color: '#D4A843' }}>
+                                  {items.length}
+                                </span>
+                              )}
+                            </div>
+                            <button
+                              onClick={async () => {
+                                if (!supabase) return;
+                                const mem = { id: crypto.randomUUID(), user_id: storagePrefix, content: '', category: cat.id, created_at: new Date().toISOString(), updated_at: new Date().toISOString() };
+                                setClientMemories(prev => [...prev, { id: mem.id, content: '', category: cat.id }]);
+                                await supabase.from('ai_memory').insert(mem);
+                              }}
+                              className="p-1 rounded-md transition-colors"
+                              style={{ color: '#555' }}
+                              onMouseEnter={e => (e.currentTarget.style.color = '#D4A843')}
+                              onMouseLeave={e => (e.currentTarget.style.color = '#555')}
+                            ><Plus size={14} /></button>
+                          </div>
+                          {items.length === 0 ? (
+                            <div className="px-4 pb-3">
+                              <button
+                                onClick={async () => {
+                                  if (!supabase) return;
+                                  const mem = { id: crypto.randomUUID(), user_id: storagePrefix, content: '', category: cat.id, created_at: new Date().toISOString(), updated_at: new Date().toISOString() };
+                                  setClientMemories(prev => [...prev, { id: mem.id, content: '', category: cat.id }]);
+                                  await supabase.from('ai_memory').insert(mem);
+                                }}
+                                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg text-[11px] font-medium transition-colors"
+                                style={{ color: '#444', border: '1px dashed #2a2a2a' }}
+                                onMouseEnter={e => { e.currentTarget.style.color = '#D4A843'; e.currentTarget.style.borderColor = '#D4A84344'; }}
+                                onMouseLeave={e => { e.currentTarget.style.color = '#444'; e.currentTarget.style.borderColor = '#2a2a2a'; }}
+                              >
+                                <Plus size={12} /> Add {cat.label.toLowerCase()}
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="px-4 pb-3 space-y-2">
+                              {items.map(mem => (
+                                <div key={mem.id} className="relative group/mem">
+                                  <textarea
+                                    value={mem.content}
+                                    onChange={e => {
+                                      const val = e.target.value;
+                                      setClientMemories(prev => prev.map(m => m.id === mem.id ? { ...m, content: val } : m));
+                                      // Debounced save
+                                      if (memoryDebounceRef.current[mem.id]) clearTimeout(memoryDebounceRef.current[mem.id]);
+                                      memoryDebounceRef.current[mem.id] = setTimeout(() => {
+                                        if (supabase) supabase.from('ai_memory').update({ content: val, updated_at: new Date().toISOString() }).eq('id', mem.id);
+                                      }, 600);
+                                    }}
+                                    className="w-full bg-transparent text-[12px] leading-5 focus:outline-none resize-none placeholder-[#3a3a3a] rounded-lg p-2 transition-colors"
+                                    style={{ color: '#ccc', border: '1px solid #252525' }}
+                                    onFocus={e => (e.currentTarget.style.borderColor = '#D4A84344')}
+                                    onBlur={e => (e.currentTarget.style.borderColor = '#252525')}
+                                    placeholder={cat.placeholder}
+                                    rows={Math.max(2, mem.content.split('\n').length)}
+                                  />
+                                  <button
+                                    onClick={async () => {
+                                      setClientMemories(prev => prev.filter(m => m.id !== mem.id));
+                                      if (supabase) await supabase.from('ai_memory').delete().eq('id', mem.id);
+                                    }}
+                                    className="absolute top-1 right-1 p-1 rounded-md opacity-0 group-hover/mem:opacity-100 transition-opacity"
+                                    style={{ color: '#555' }}
+                                    onMouseEnter={e => (e.currentTarget.style.color = '#f87171')}
+                                    onMouseLeave={e => (e.currentTarget.style.color = '#555')}
+                                  ><X size={11} /></button>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </Block>
+            )}
+
           </div>
         )}
         </div>
 
-        {/* ── RIGHT PANEL: Journal + AI (only on Content tab) ── */}
+        {/* ── RIGHT PANEL: Journal (only on Content tab) ── */}
         {activeTab === 'Content' && (
-          <div className="flex flex-col gap-4" style={{ flex: '2 1 0%', minWidth: 280 }}>
-
-            {/* ── Content Journal ── */}
-            <div
-              className="overflow-y-auto flex flex-col"
-              style={{ flex: '0.8 1 0%', ...card }}
-            >
+          <div
+            className="overflow-y-auto flex flex-col"
+            style={{ flex: '2 1 0%', minWidth: 280, ...card }}
+          >
               {/* Header */}
               <div className="p-4 flex items-center justify-between" style={{ borderBottom: '1px solid #222' }}>
                 <div>
@@ -1436,23 +1562,6 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
                   <Plus size={14} /> New Idea
                 </button>
               </div>
-            </div>
-
-            {/* ── AI Assistant ── */}
-            <div style={{ flex: '1.5 1 0%', minHeight: 380 }}>
-              <AIAssistant
-                storagePrefix={storagePrefix}
-                clientId={client?.id}
-                clientContext={{
-                  name: client?.name,
-                  service: client?.service,
-                  handle: details.social_platforms?.twitter || '',
-                  bio: details.twitter_bio || '',
-                  recentTweets: tweets.slice(0, 5).map(t => t.text).join('\n---\n'),
-                }}
-              />
-            </div>
-
           </div>
         )}
       </div>

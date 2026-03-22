@@ -13,6 +13,7 @@ import FunnelManager from './components/FunnelManager';
 import AdsManager from './components/AdsManager';
 import PlannerManager from './components/PlannerManager';
 import ClientsManager from './components/ClientsManager';
+import AIBubble from './components/AIBubble';
 import { ChartViewType, NavigationItem, FinanceItem, InvoiceStatus, RevenueDataPoint, ContentDataPoint, ContentItem, AdMetric, ContentStatus, Platform } from './types';
 import { AD_METRICS } from './constants';
 import { Bell, Search, Calendar, Save, Check, Loader2, Settings, Filter } from 'lucide-react';
@@ -709,6 +710,9 @@ const AuthenticatedApp: React.FC<{ user: User; signOut: () => Promise<void> }> =
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
       </main>
+
+      {/* Floating AI bubble — always visible */}
+      <AIBubble storagePrefix={storagePrefix} />
     </div>
   );
 };
