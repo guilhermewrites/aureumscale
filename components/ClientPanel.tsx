@@ -658,7 +658,7 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
       {/* ── RIGHT CONTENT ─────────────────────────────────────────────────────── */}
       <div className="flex-1 overflow-hidden flex gap-6">
         {/* Main content area */}
-        <div className={`overflow-y-auto ${activeTab === 'Content' ? 'flex-1' : 'flex-1'}`}>
+        <div className="overflow-y-auto" style={{ flex: activeTab === 'Content' ? '3 1 0%' : '1 1 0%' }}>
         {loading ? (
           <div className="flex items-center justify-center h-full gap-2.5" style={{ color: '#444' }}>
             <Loader2 size={20} className="animate-spin" />
@@ -872,7 +872,7 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
               const CalendarSmIcon = () => <svg viewBox="0 0 24 24" width="18.75" height="18.75" fill="currentColor"><path d="M7 4V3h2v1h6V3h2v1h1.5C19.89 4 21 5.12 21 6.5v12c0 1.38-1.11 2.5-2.5 2.5h-13C4.12 21 3 19.88 3 18.5v-12C3 5.12 4.12 4 5.5 4H7zm0 2H5.5c-.27 0-.5.22-.5.5v12c0 .28.23.5.5.5h13c.28 0 .5-.22.5-.5v-12c0-.28-.22-.5-.5-.5H17v1h-2V6H9v1H7V6zm-1 4h12v2H6v-2z"/></svg>;
 
               return (
-              <div className="rounded-2xl overflow-hidden" style={{ background: '#000', border: '1px solid #2f3336', maxWidth: 600 }}>
+              <div className="rounded-2xl overflow-hidden" style={{ background: '#000', border: '1px solid #2f3336' }}>
 
                 {/* ── Sticky top bar ── */}
                 <div className="flex items-center gap-6 px-4 py-1 sticky top-0 z-20" style={{ background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(12px)', borderRadius: '16px 16px 0 0' }}>
@@ -1294,8 +1294,8 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
         {/* ── CONTENT JOURNAL (only on Content tab) ── */}
         {activeTab === 'Content' && (
           <div
-            className="flex-1 overflow-y-auto flex flex-col"
-            style={{ minWidth: 300, ...card }}
+            className="overflow-y-auto flex flex-col"
+            style={{ flex: '2 1 0%', minWidth: 280, ...card }}
           >
             {/* Header */}
             <div className="p-4 flex items-center justify-between" style={{ borderBottom: '1px solid #222' }}>
@@ -1321,13 +1321,58 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
                     placeholder="Write an idea…"
                     rows={Math.max(2, entry.split('\n').length)}
                   />
+                  {/* Journal entry image */}
+                  {entry.match(/!\[img\]\((.*?)\)/) && (
+                    <div className="mt-2 relative rounded-xl overflow-hidden" style={{ maxHeight: 160 }}>
+                      <img src={entry.match(/!\[img\]\((.*?)\)/)![1]} alt="" className="w-full object-cover rounded-xl" style={{ maxHeight: 160 }} />
+                      <button
+                        onClick={() => {
+                          const entries = (details.ad_performance_notes || '').split('\n---\n').filter(Boolean);
+                          entries[i] = entries[i].replace(/!\[img\]\(.*?\)\n?/, '');
+                          setField('ad_performance_notes', entries.join('\n---\n'));
+                        }}
+                        className="absolute top-1 right-1 p-1 rounded-full"
+                        style={{ background: 'rgba(0,0,0,0.7)', color: '#ECECEC' }}
+                      ><Trash2 size={10} /></button>
+                    </div>
+                  )}
                   <div className="flex items-center justify-between mt-2 opacity-0 group-hover/entry:opacity-100 transition-opacity">
+                    <div className="flex items-center gap-1.5">
                     <button
                       onClick={() => {
-                        // Push this entry as a new tweet
+                        const inp = document.createElement('input');
+                        inp.type = 'file'; inp.accept = 'image/*';
+                        inp.onchange = async (ev: any) => {
+                          const file = ev.target.files?.[0];
+                          if (!file) return;
+                          // Convert to base64 for journal
+                          const reader = new FileReader();
+                          reader.onload = () => {
+                            const entries = (details.ad_performance_notes || '').split('\n---\n').filter(Boolean);
+                            // Remove any existing image from this entry
+                            entries[i] = entries[i].replace(/!\[img\]\(.*?\)\n?/, '');
+                            entries[i] = `![img](${reader.result})\n${entries[i]}`;
+                            setField('ad_performance_notes', entries.join('\n---\n'));
+                          };
+                          reader.readAsDataURL(file);
+                        };
+                        inp.click();
+                      }}
+                      className="p-1.5 rounded-full transition-colors"
+                      style={{ color: '#555' }}
+                      onMouseEnter={e => { e.currentTarget.style.color = '#1d9bf0'; }}
+                      onMouseLeave={e => { e.currentTarget.style.color = '#555'; }}
+                      title="Add image"
+                    ><ImageIcon size={13} /></button>
+                    <button
+                      onClick={() => {
+                        // Push this entry as a new tweet (with image if present)
                         if (!supabase || !client) return;
+                        const imgMatch = entry.match(/!\[img\]\((.*?)\)/);
+                        const imgUrl = imgMatch ? imgMatch[1] : '';
+                        const text = entry.replace(/!\[img\]\(.*?\)\n?/, '').trim();
                         const eng = { likes: Math.floor(Math.random() * 800) + 5, retweets: Math.floor(Math.random() * 120) + 1, replies: Math.floor(Math.random() * 40) + 1, views: Math.floor(Math.random() * 50000) + 500 };
-                        const tw = { id: crypto.randomUUID(), text: entry.trim(), post_date: new Date().toISOString().split('T')[0], image_url: '', ...eng };
+                        const tw = { id: crypto.randomUUID(), text, post_date: new Date().toISOString().split('T')[0], image_url: imgUrl, ...eng };
                         setTweets(prev => [tw, ...prev]);
                         supabase.from('client_tweets').insert({ ...tw, client_id: client.id, user_id: storagePrefix });
                       }}
@@ -1339,6 +1384,7 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
                       <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><path d="M12 2.59l5.7 5.7-1.41 1.42L13 6.41V16h-2V6.41l-3.3 3.3-1.41-1.42L12 2.59zM21 15l-.02 3.51c0 1.38-1.12 2.49-2.5 2.49H5.5C4.11 21 3 19.88 3 18.5V15h2v3.5c0 .28.22.5.5.5h12.98c.28 0 .5-.22.5-.5L19 15h2z"/></svg>
                       Push to Post
                     </button>
+                    </div>
                     <button
                       onClick={() => {
                         const entries = (details.ad_performance_notes || '').split('\n---\n').filter(Boolean);

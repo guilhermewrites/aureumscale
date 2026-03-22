@@ -20,7 +20,6 @@ import useLocalStorage from '../hooks/useLocalStorage';
 
 const DEFAULT_USERS: AppUser[] = [
   { id: 'guilherme', name: 'Guilherme', label: 'Guilherme', initials: 'GU', color: 'bg-emerald-500', firstName: 'Guilherme', lastName: '' },
-  { id: 'ai_partner', name: 'The AI Partner', label: 'The AI Partner', initials: 'AI', color: 'bg-violet-500', firstName: 'The', lastName: 'AI Partner' },
 ];
 
 // Map NavigationItem enum values to URL paths
