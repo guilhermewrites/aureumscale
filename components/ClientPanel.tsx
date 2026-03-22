@@ -497,12 +497,7 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
             </div>
           </div>
 
-          {/* Save status */}
-          {saveStatus !== 'idle' && (
-            <p className={`text-center text-xs mt-3 ${saveStatus === 'saving' ? 'text-[#555]' : 'text-emerald-500'}`}>
-              {saveStatus === 'saving' ? 'Saving…' : '✓ Saved'}
-            </p>
-          )}
+          {/* Auto-save runs silently in background */}
         </div>
 
         {/* Navigation */}
