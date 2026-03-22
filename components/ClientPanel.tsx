@@ -186,7 +186,7 @@ function AutoTextarea({ value, onChange, className, placeholder, style }: {
 
 const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClose }) => {
   const [activeTab, setActiveTab] = useState<Tab>('Overview');
-  const [xTab, setXTab] = useState<'posts'|'replies'|'media'|'likes'>('posts');
+  const [xTab, setXTab] = useState<'posts'|'replies'|'highlights'|'articles'|'media'|'likes'>('posts');
   const [details, setDetails] = useState<ClientDetails>(DEFAULT_DETAILS);
   const [loading, setLoading] = useState(false);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');
@@ -864,136 +864,151 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
                 inp.click();
               };
 
+              // Extra Twitter SVG icons
+              const BookmarkIcon = () => <svg viewBox="0 0 24 24" width="18.75" height="18.75" fill="currentColor"><path d="M4 4.5C4 3.12 5.119 2 6.5 2h11C18.881 2 20 3.12 20 4.5v18.44l-8-5.71-8 5.71V4.5zM6.5 4c-.276 0-.5.22-.5.5v14.56l6-4.29 6 4.29V4.5c0-.28-.224-.5-.5-.5h-11z"/></svg>;
+              const MoreIcon = () => <svg viewBox="0 0 24 24" width="18.75" height="18.75" fill="currentColor"><path d="M3 12c0-1.1.9-2 2-2s2 .9 2 2-.9 2-2 2-2-.9-2-2zm9 2c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm7 0c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2z"/></svg>;
+              const CalendarSmIcon = () => <svg viewBox="0 0 24 24" width="18.75" height="18.75" fill="currentColor"><path d="M7 4V3h2v1h6V3h2v1h1.5C19.89 4 21 5.12 21 6.5v12c0 1.38-1.11 2.5-2.5 2.5h-13C4.12 21 3 19.88 3 18.5v-12C3 5.12 4.12 4 5.5 4H7zm0 2H5.5c-.27 0-.5.22-.5.5v12c0 .28.23.5.5.5h13c.28 0 .5-.22.5-.5v-12c0-.28-.22-.5-.5-.5H17v1h-2V6H9v1H7V6zm-1 4h12v2H6v-2z"/></svg>;
+
               return (
-              <div className="rounded-2xl overflow-hidden" style={{ background: '#000', border: '1px solid #2f3336' }}>
-                {/* ── Twitter Profile Header ── */}
-                <div>
-                  {/* Banner — click to change */}
-                  <div
-                    onClick={uploadBanner}
-                    className="relative cursor-pointer group/banner"
-                    style={{
-                      height: 140,
-                      background: tBanner ? `url(${tBanner}) center/cover no-repeat` : 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)',
-                    }}
-                  >
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover/banner:bg-black/40 transition-colors">
-                      <Camera size={24} className="text-white opacity-0 group-hover/banner:opacity-80 transition-opacity" />
-                    </div>
+              <div className="rounded-2xl overflow-hidden" style={{ background: '#000', border: '1px solid #2f3336', maxWidth: 600 }}>
+
+                {/* ── Sticky top bar ── */}
+                <div className="flex items-center gap-6 px-4 py-1 sticky top-0 z-20" style={{ background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(12px)' }}>
+                  <div>
+                    <h2 className="text-[17px] font-extrabold leading-6" style={{ color: '#e7e9ea' }}>{displayName}</h2>
+                    <span className="text-[13px] leading-4" style={{ color: '#71767b' }}>{tweets.length} post{tweets.length !== 1 ? 's' : ''}</span>
                   </div>
+                </div>
 
-                  {/* Avatar + Post button */}
-                  <div className="px-4 relative z-10" style={{ marginTop: -40 }}>
-                    <div className="flex items-end justify-between">
-                      {avatar ? (
-                        <img src={avatar} alt="" className="rounded-full object-cover" style={{ width: 80, height: 80, border: '4px solid #000' }} />
-                      ) : (
-                        <div className="rounded-full flex items-center justify-center text-2xl font-bold" style={{ width: 80, height: 80, border: '4px solid #000', background: '#333', color: '#ECECEC' }}>
-                          {displayName.charAt(0).toUpperCase()}
-                        </div>
-                      )}
-                      <button onClick={addTweet}
-                        className="flex items-center gap-2 px-5 py-2 rounded-full text-sm font-bold transition-colors mb-1"
-                        style={{ background: '#1d9bf0', color: '#fff' }}
-                        onMouseEnter={e => (e.currentTarget.style.background = '#1a8cd8')}
-                        onMouseLeave={e => (e.currentTarget.style.background = '#1d9bf0')}
-                      ><Plus size={14} /> Post</button>
-                    </div>
+                {/* ── Banner — click to change ── */}
+                <div
+                  onClick={uploadBanner}
+                  className="relative cursor-pointer group/banner"
+                  style={{
+                    height: 200,
+                    background: tBanner ? `url(${tBanner}) center/cover no-repeat` : 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)',
+                  }}
+                >
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover/banner:bg-black/40 transition-colors">
+                    <Camera size={28} className="text-white opacity-0 group-hover/banner:opacity-80 transition-opacity" />
+                  </div>
+                </div>
 
-                    {/* Name + handle (editable) */}
-                    <div className="mt-3">
-                      <div className="flex items-center gap-1">
-                        <span className="text-xl font-extrabold" style={{ color: '#e7e9ea' }}>{displayName}</span>
-                        <VerifiedIcon />
+                {/* ── Profile info ── */}
+                <div className="px-4 relative z-10" style={{ marginTop: -67 }}>
+                  {/* Avatar row */}
+                  <div className="flex items-end justify-between mb-3">
+                    {avatar ? (
+                      <img src={avatar} alt="" className="rounded-full object-cover" style={{ width: 134, height: 134, border: '4px solid #000' }} />
+                    ) : (
+                      <div className="rounded-full flex items-center justify-center text-4xl font-bold" style={{ width: 134, height: 134, border: '4px solid #000', background: '#333', color: '#ECECEC' }}>
+                        {displayName.charAt(0).toUpperCase()}
                       </div>
+                    )}
+                    <button onClick={addTweet}
+                      className="flex items-center gap-2 px-5 py-2 rounded-full text-[15px] font-bold transition-colors"
+                      style={{ background: '#1d9bf0', color: '#fff', marginBottom: 12 }}
+                      onMouseEnter={e => (e.currentTarget.style.background = '#1a8cd8')}
+                      onMouseLeave={e => (e.currentTarget.style.background = '#1d9bf0')}
+                    ><Plus size={16} /> Post</button>
+                  </div>
+
+                  {/* Name + verified */}
+                  <div className="flex items-center gap-0.5">
+                    <span className="text-[20px] font-extrabold leading-6" style={{ color: '#e7e9ea' }}>{displayName}</span>
+                    <VerifiedIcon />
+                  </div>
+                  {/* Handle (editable) */}
+                  <input
+                    value={tHandle}
+                    onChange={e => setField('twitter_handle', e.target.value)}
+                    className="bg-transparent text-[15px] focus:outline-none w-full leading-5 mt-0.5"
+                    style={{ color: '#71767b' }}
+                    placeholder="@handle"
+                  />
+
+                  {/* Bio (editable) */}
+                  <textarea
+                    value={tBio}
+                    onChange={e => setField('twitter_bio', e.target.value)}
+                    className="w-full bg-transparent text-[15px] leading-5 focus:outline-none resize-none mt-3 placeholder-[#3e4144]"
+                    style={{ color: '#e7e9ea' }}
+                    placeholder="Write a bio…"
+                    rows={Math.max(1, tBio.split('\n').length)}
+                  />
+
+                  {/* Joined date row */}
+                  <div className="flex items-center gap-1 mt-3" style={{ color: '#71767b' }}>
+                    <CalendarSmIcon />
+                    <span className="text-[15px]">Joined {details.client_since ? new Date(details.client_since).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : 'recently'}</span>
+                  </div>
+
+                  {/* Followers / Following (editable) */}
+                  <div className="flex items-center gap-5 mt-3 mb-4">
+                    <span className="text-[14px] flex items-center gap-1 cursor-pointer hover:underline">
                       <input
-                        value={tHandle}
-                        onChange={e => setField('twitter_handle', e.target.value)}
-                        className="bg-transparent text-[15px] focus:outline-none w-full"
-                        style={{ color: '#71767b' }}
-                        placeholder="@handle"
+                        type="text"
+                        value={tFollowing || ''}
+                        onChange={e => setField('twitter_following', parseInt(e.target.value.replace(/[^0-9]/g, '')) || 0)}
+                        className="bg-transparent font-bold focus:outline-none w-[45px] text-right"
+                        style={{ color: '#e7e9ea' }}
+                        placeholder="0"
                       />
-                    </div>
-
-                    {/* Bio (editable) */}
-                    <textarea
-                      value={tBio}
-                      onChange={e => setField('twitter_bio', e.target.value)}
-                      className="w-full bg-transparent text-[15px] focus:outline-none resize-none mt-2 placeholder-[#3e4144]"
-                      style={{ color: '#e7e9ea', lineHeight: '20px' }}
-                      placeholder="Write a bio…"
-                      rows={Math.max(1, tBio.split('\n').length)}
-                    />
-
-                    {/* Followers / Following (editable) */}
-                    <div className="flex items-center gap-4 mt-2 mb-3">
-                      <span className="text-sm flex items-center gap-1">
-                        <input
-                          type="text"
-                          value={tFollowing || ''}
-                          onChange={e => setField('twitter_following', parseInt(e.target.value.replace(/[^0-9]/g, '')) || 0)}
-                          className="bg-transparent font-bold focus:outline-none w-[50px] text-right"
-                          style={{ color: '#e7e9ea' }}
-                          placeholder="0"
-                        />
-                        <span style={{ color: '#71767b' }}>Following</span>
-                      </span>
-                      <span className="text-sm flex items-center gap-1">
-                        <input
-                          type="text"
-                          value={tFollowers || ''}
-                          onChange={e => setField('twitter_followers', parseInt(e.target.value.replace(/[^0-9]/g, '')) || 0)}
-                          className="bg-transparent font-bold focus:outline-none w-[60px] text-right"
-                          style={{ color: '#e7e9ea' }}
-                          placeholder="0"
-                        />
-                        <span style={{ color: '#71767b' }}>Followers</span>
-                      </span>
-                    </div>
+                      <span style={{ color: '#71767b' }}>Following</span>
+                    </span>
+                    <span className="text-[14px] flex items-center gap-1 cursor-pointer hover:underline">
+                      <input
+                        type="text"
+                        value={tFollowers || ''}
+                        onChange={e => setField('twitter_followers', parseInt(e.target.value.replace(/[^0-9]/g, '')) || 0)}
+                        className="bg-transparent font-bold focus:outline-none w-[55px] text-right"
+                        style={{ color: '#e7e9ea' }}
+                        placeholder="0"
+                      />
+                      <span style={{ color: '#71767b' }}>Followers</span>
+                    </span>
                   </div>
+                </div>
 
-                  {/* Tab bar */}
-                  <div className="flex" style={{ borderBottom: '1px solid #2f3336' }}>
-                    {(['posts', 'replies', 'media', 'likes'] as const).map(tab => (
-                      <button
-                        key={tab}
-                        onClick={() => setXTab(tab)}
-                        className="flex-1 text-center py-3 text-sm font-bold transition-colors"
-                        style={{
-                          color: xTab === tab ? '#e7e9ea' : '#71767b',
-                          borderBottom: xTab === tab ? '4px solid #1d9bf0' : '4px solid transparent',
-                        }}
-                      >
-                        {tab.charAt(0).toUpperCase() + tab.slice(1)}
-                      </button>
-                    ))}
-                  </div>
+                {/* ── Tab bar ── */}
+                <div className="flex" style={{ borderBottom: '1px solid #2f3336' }}>
+                  {(['posts', 'replies', 'highlights', 'articles', 'media', 'likes'] as const).map(tab => (
+                    <button
+                      key={tab}
+                      onClick={() => setXTab(tab as any)}
+                      className="flex-1 text-center py-3 text-[15px] font-bold transition-colors hover:bg-[rgba(231,233,234,0.1)]"
+                      style={{
+                        color: xTab === tab ? '#e7e9ea' : '#71767b',
+                        borderBottom: xTab === tab ? '4px solid #1d9bf0' : '4px solid transparent',
+                      }}
+                    >
+                      {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                    </button>
+                  ))}
                 </div>
 
                 {/* ── Tweet Feed ── */}
                 {xTab !== 'posts' ? (
-                  <div className="flex flex-col items-center justify-center py-16 gap-1" style={{ color: '#71767b' }}>
-                    <span className="text-[15px] font-bold" style={{ color: '#e7e9ea' }}>{xTab === 'replies' ? 'No replies yet' : xTab === 'media' ? 'No media yet' : 'No likes yet'}</span>
-                    <span className="text-[13px]">{xTab === 'media' ? 'Photos and videos will appear here.' : xTab === 'likes' ? 'Liked posts will appear here.' : 'Replies will appear here.'}</span>
+                  <div className="flex flex-col items-center justify-center py-16 gap-1 px-8" style={{ color: '#71767b' }}>
+                    <span className="text-[31px] font-extrabold" style={{ color: '#e7e9ea' }}>Nothing to see here — yet</span>
+                    <span className="text-[15px] mt-1">When {displayName} posts, it'll show up here.</span>
                   </div>
                 ) : tweetsLoading ? (
                   <div className="flex items-center justify-center py-12 gap-2" style={{ color: '#444' }}>
-                    <Loader2 size={16} className="animate-spin" />
-                    <span className="text-sm">Loading posts…</span>
+                    <Loader2 size={20} className="animate-spin" style={{ color: '#1d9bf0' }} />
                   </div>
                 ) : tweets.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-16 gap-2" style={{ color: '#555' }}>
-                    <XIcon />
-                    <p className="text-base font-bold mt-2" style={{ color: '#ECECEC' }}>No posts yet</p>
-                    <p className="text-sm">When you create posts, they'll show up here.</p>
+                  <div className="flex flex-col items-center justify-center py-16 px-8" style={{ color: '#71767b' }}>
+                    <span className="text-[31px] font-extrabold" style={{ color: '#e7e9ea' }}>No posts yet</span>
+                    <span className="text-[15px] mt-1">When you create posts, they'll show up here.</span>
                   </div>
                 ) : (
-                  <div className="divide-y" style={{ borderColor: '#2f3336' }}>
+                  <div>
                     {tweets.map(tw => (
-                      <div key={tw.id} className="px-4 py-3 transition-colors hover:bg-[rgba(255,255,255,0.03)]" style={{ borderColor: '#2f3336' }}>
-                        <div className="flex gap-3">
+                      <div key={tw.id} className="border-b transition-colors hover:bg-[rgba(231,233,234,0.03)]" style={{ borderColor: '#2f3336' }}>
+                        <div className="flex gap-3 px-4 pt-3 pb-1">
                           {/* Avatar */}
-                          <div className="flex-shrink-0 mt-0.5">
+                          <div className="flex-shrink-0">
                             {avatar ? (
                               <img src={avatar} alt="" className="rounded-full object-cover" style={{ width: 40, height: 40 }} />
                             ) : (
@@ -1006,97 +1021,101 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
                           {/* Content */}
                           <div className="flex-1 min-w-0">
                             {/* Name row */}
-                            <div className="flex items-center gap-1 mb-0.5">
-                              <span className="text-[15px] font-bold" style={{ color: '#e7e9ea' }}>{displayName}</span>
+                            <div className="flex items-center gap-1">
+                              <span className="text-[15px] font-bold truncate" style={{ color: '#e7e9ea' }}>{displayName}</span>
                               <VerifiedIcon />
-                              <span className="text-[15px]" style={{ color: '#71767b' }}>{handle}</span>
-                              <span style={{ color: '#71767b' }}>·</span>
-                              <span className="text-[13px]" style={{ color: '#71767b' }}>{fmtDate(tw.post_date)}</span>
-                              {/* Schedule picker */}
+                              <span className="text-[15px] truncate" style={{ color: '#71767b' }}>{tHandle}</span>
+                              <span className="text-[15px] flex-shrink-0" style={{ color: '#71767b' }}>·</span>
+                              <span className="text-[15px] flex-shrink-0 hover:underline cursor-pointer" style={{ color: '#71767b' }}>{fmtDate(tw.post_date) || '—'}</span>
+                              {/* Schedule picker (subtle) */}
                               <input
                                 type="date"
                                 value={tw.post_date}
                                 onChange={e => updateTweet(tw.id, { post_date: e.target.value })}
-                                className="bg-transparent text-[11px] focus:outline-none ml-1 w-5 opacity-30 hover:opacity-100 cursor-pointer"
-                                style={{ colorScheme: 'dark' }}
+                                className="bg-transparent focus:outline-none w-4 opacity-0 hover:opacity-60 cursor-pointer flex-shrink-0"
+                                style={{ colorScheme: 'dark', fontSize: 10 }}
                                 title="Set post date"
                               />
-                              {/* Relative date label */}
                               {tw.post_date && (() => {
                                 const d = new Date(tw.post_date);
                                 const now = new Date(); now.setHours(0,0,0,0);
                                 const diff = Math.ceil((d.getTime() - now.getTime()) / (1000*60*60*24));
                                 if (diff <= 0 && diff >= -1) return null;
                                 const label = diff === 1 ? 'Tomorrow' : diff > 1 ? `In ${diff}d` : `${Math.abs(diff)}d ago`;
-                                const color = diff < 0 ? '#f87171' : '#1d9bf0';
-                                return <span className="text-[11px] font-medium ml-1 px-1.5 py-0.5 rounded" style={{ color, background: diff < 0 ? 'rgba(248,113,113,0.1)' : 'rgba(29,155,240,0.1)' }}>{label}</span>;
+                                const color = diff < 0 ? '#f4212e' : '#1d9bf0';
+                                return <span className="text-[11px] font-medium px-1.5 py-0.5 rounded-full flex-shrink-0" style={{ color, background: diff < 0 ? 'rgba(244,33,46,0.1)' : 'rgba(29,155,240,0.1)' }}>{label}</span>;
                               })()}
-                              {/* Spacer + delete */}
                               <div className="flex-1" />
+                              {/* More menu (delete) */}
                               <button
                                 onClick={() => deleteTweet(tw.id)}
-                                className="p-1 rounded-full transition-colors opacity-0 group-hover:opacity-100"
+                                className="p-1.5 -mr-1.5 rounded-full transition-colors"
                                 style={{ color: '#71767b' }}
-                                onMouseEnter={e => { e.currentTarget.style.color = '#f4212e'; e.currentTarget.style.opacity = '1'; }}
-                                onMouseLeave={e => { e.currentTarget.style.color = '#71767b'; e.currentTarget.style.opacity = ''; }}
-                              ><Trash2 size={14} /></button>
+                                onMouseEnter={e => { e.currentTarget.style.color = '#1d9bf0'; e.currentTarget.style.background = 'rgba(29,155,240,0.1)'; }}
+                                onMouseLeave={e => { e.currentTarget.style.color = '#71767b'; e.currentTarget.style.background = 'transparent'; }}
+                              ><MoreIcon /></button>
                             </div>
 
                             {/* Tweet body */}
                             <textarea
                               value={tw.text}
                               onChange={e => updateTweet(tw.id, { text: e.target.value })}
-                              className="w-full bg-transparent text-[15px] leading-[20px] focus:outline-none resize-none placeholder-[#71767b]"
-                              style={{ color: '#e7e9ea', minHeight: 24 }}
+                              className="w-full bg-transparent text-[15px] leading-5 focus:outline-none resize-none placeholder-[#536471] mt-0.5"
+                              style={{ color: '#e7e9ea' }}
                               placeholder="What is happening?!"
                               rows={Math.max(1, tw.text.split('\n').length)}
                             />
                             {tw.text.length > 260 && (
-                              <span className="text-[12px] font-medium" style={{ color: tw.text.length > 280 ? '#f4212e' : '#71767b' }}>
+                              <span className="text-[12px]" style={{ color: tw.text.length > 280 ? '#f4212e' : '#71767b' }}>
                                 {tw.text.length}/280
                               </span>
                             )}
 
                             {/* Image */}
                             {tw.image_url && (
-                              <div className="mt-3 relative rounded-2xl overflow-hidden border" style={{ borderColor: '#2f3336' }}>
-                                <img src={tw.image_url} alt="" className="w-full object-cover" style={{ maxHeight: 280, borderRadius: 16 }} />
+                              <div className="mt-3 relative overflow-hidden" style={{ borderRadius: 16, border: '1px solid #2f3336' }}>
+                                <img src={tw.image_url} alt="" className="w-full object-cover" style={{ maxHeight: 510 }} />
                                 <button
                                   onClick={() => updateTweet(tw.id, { image_url: '' })}
-                                  className="absolute top-2 right-2 p-1.5 rounded-full transition-colors"
-                                  style={{ background: 'rgba(15,20,25,0.75)', color: '#e7e9ea' }}
+                                  className="absolute top-1.5 right-1.5 p-1.5 rounded-full transition-colors"
+                                  style={{ background: 'rgba(15,20,25,0.75)', color: '#e7e9ea', backdropFilter: 'blur(4px)' }}
+                                  onMouseEnter={e => (e.currentTarget.style.background = 'rgba(15,20,25,0.9)')}
+                                  onMouseLeave={e => (e.currentTarget.style.background = 'rgba(15,20,25,0.75)')}
                                 ><Trash2 size={14} /></button>
                               </div>
                             )}
 
                             {/* Engagement bar */}
-                            <div className="flex items-center justify-between mt-3 max-w-[420px]">
-                              <button className="flex items-center gap-1.5 group/eng transition-colors" style={{ color: '#71767b' }}
-                                onMouseEnter={e => (e.currentTarget.style.color = '#1d9bf0')}
-                                onMouseLeave={e => (e.currentTarget.style.color = '#71767b')}
+                            <div className="flex items-center justify-between mt-1.5 -ml-2 pb-1" style={{ maxWidth: 425 }}>
+                              <button className="flex items-center gap-1 p-2 rounded-full transition-colors group/r" style={{ color: '#71767b' }}
+                                onMouseEnter={e => { e.currentTarget.style.color = '#1d9bf0'; }}
+                                onMouseLeave={e => { e.currentTarget.style.color = '#71767b'; }}
                               >
-                                <ReplyIcon /><span className="text-[13px]">{fmtNum(tw.replies)}</span>
+                                <div className="p-0 rounded-full group-hover/r:bg-[rgba(29,155,240,0.1)]"><ReplyIcon /></div>
+                                <span className="text-[13px] min-w-[24px]">{fmtNum(tw.replies)}</span>
                               </button>
-                              <button className="flex items-center gap-1.5 transition-colors" style={{ color: '#71767b' }}
-                                onMouseEnter={e => (e.currentTarget.style.color = '#00ba7c')}
-                                onMouseLeave={e => (e.currentTarget.style.color = '#71767b')}
+                              <button className="flex items-center gap-1 p-2 rounded-full transition-colors group/rt" style={{ color: '#71767b' }}
+                                onMouseEnter={e => { e.currentTarget.style.color = '#00ba7c'; }}
+                                onMouseLeave={e => { e.currentTarget.style.color = '#71767b'; }}
                               >
-                                <RetweetIcon /><span className="text-[13px]">{fmtNum(tw.retweets)}</span>
+                                <div className="p-0 rounded-full group-hover/rt:bg-[rgba(0,186,124,0.1)]"><RetweetIcon /></div>
+                                <span className="text-[13px] min-w-[24px]">{fmtNum(tw.retweets)}</span>
                               </button>
-                              <button className="flex items-center gap-1.5 transition-colors" style={{ color: '#71767b' }}
-                                onMouseEnter={e => (e.currentTarget.style.color = '#f91880')}
-                                onMouseLeave={e => (e.currentTarget.style.color = '#71767b')}
+                              <button className="flex items-center gap-1 p-2 rounded-full transition-colors group/lk" style={{ color: '#71767b' }}
+                                onMouseEnter={e => { e.currentTarget.style.color = '#f91880'; }}
+                                onMouseLeave={e => { e.currentTarget.style.color = '#71767b'; }}
                               >
-                                <LikeIcon /><span className="text-[13px]">{fmtNum(tw.likes)}</span>
+                                <div className="p-0 rounded-full group-hover/lk:bg-[rgba(249,24,128,0.1)]"><LikeIcon /></div>
+                                <span className="text-[13px] min-w-[24px]">{fmtNum(tw.likes)}</span>
                               </button>
-                              <button className="flex items-center gap-1.5 transition-colors" style={{ color: '#71767b' }}
-                                onMouseEnter={e => (e.currentTarget.style.color = '#1d9bf0')}
-                                onMouseLeave={e => (e.currentTarget.style.color = '#71767b')}
+                              <button className="flex items-center gap-1 p-2 rounded-full transition-colors group/vw" style={{ color: '#71767b' }}
+                                onMouseEnter={e => { e.currentTarget.style.color = '#1d9bf0'; }}
+                                onMouseLeave={e => { e.currentTarget.style.color = '#71767b'; }}
                               >
-                                <ViewIcon /><span className="text-[13px]">{fmtNum(tw.views)}</span>
+                                <div className="p-0 rounded-full group-hover/vw:bg-[rgba(29,155,240,0.1)]"><ViewIcon /></div>
+                                <span className="text-[13px] min-w-[24px]">{fmtNum(tw.views)}</span>
                               </button>
-                              {/* Image upload + share */}
-                              <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-0">
                                 {!tw.image_url && (
                                   <button
                                     onClick={() => {
@@ -1105,16 +1124,20 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
                                       inp.onchange = (ev: any) => { const f = ev.target.files?.[0]; if (f) uploadTweetImage(tw.id, f); };
                                       inp.click();
                                     }}
-                                    className="transition-colors p-1 rounded-full"
+                                    className="p-2 rounded-full transition-colors"
                                     style={{ color: '#71767b' }}
-                                    onMouseEnter={e => (e.currentTarget.style.color = '#1d9bf0')}
-                                    onMouseLeave={e => (e.currentTarget.style.color = '#71767b')}
+                                    onMouseEnter={e => { e.currentTarget.style.color = '#1d9bf0'; e.currentTarget.style.background = 'rgba(29,155,240,0.1)'; }}
+                                    onMouseLeave={e => { e.currentTarget.style.color = '#71767b'; e.currentTarget.style.background = 'transparent'; }}
                                     title="Add image"
-                                  ><ImageIcon size={15} /></button>
+                                  ><ImageIcon size={18} /></button>
                                 )}
-                                <button className="transition-colors" style={{ color: '#71767b' }}
-                                  onMouseEnter={e => (e.currentTarget.style.color = '#1d9bf0')}
-                                  onMouseLeave={e => (e.currentTarget.style.color = '#71767b')}
+                                <button className="p-2 rounded-full transition-colors" style={{ color: '#71767b' }}
+                                  onMouseEnter={e => { e.currentTarget.style.color = '#1d9bf0'; e.currentTarget.style.background = 'rgba(29,155,240,0.1)'; }}
+                                  onMouseLeave={e => { e.currentTarget.style.color = '#71767b'; e.currentTarget.style.background = 'transparent'; }}
+                                ><BookmarkIcon /></button>
+                                <button className="p-2 rounded-full transition-colors" style={{ color: '#71767b' }}
+                                  onMouseEnter={e => { e.currentTarget.style.color = '#1d9bf0'; e.currentTarget.style.background = 'rgba(29,155,240,0.1)'; }}
+                                  onMouseLeave={e => { e.currentTarget.style.color = '#71767b'; e.currentTarget.style.background = 'transparent'; }}
                                 ><ShareIcon /></button>
                               </div>
                             </div>
