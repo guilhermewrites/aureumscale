@@ -100,57 +100,58 @@ const App: React.FC = () => {
     load();
   }, [storagePrefix]);
 
-  // Load billing invoices for projected revenue
-  const [billingInvoices, setBillingInvoices] = useState<{ amount: number; status: string; date_due: string; date_paid: string }[]>([]);
+  // Load billing invoices for projected revenue — refreshes every time you switch to Dashboard
+  const [billingInvoices, setBillingInvoices] = useState<{ amount: number; status: string; date_due: string; date_paid: string; date_sent: string }[]>([]);
 
   useEffect(() => {
     if (!supabase) return;
     (async () => {
       const { data } = await supabase
         .from('billing_history')
-        .select('amount, status, date_due, date_paid')
+        .select('amount, status, date_due, date_paid, date_sent')
         .eq('user_id', storagePrefix);
       if (data) setBillingInvoices(data);
     })();
-  }, [storagePrefix]);
+  }, [storagePrefix, activeNav]);
 
-  // Projected revenue this month = sum of unpaid invoices due this month + already paid this month
-  const projectedMonthlyRevenue = useMemo(() => {
+  const isThisMonth = (dateStr: string) => {
+    if (!dateStr) return false;
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return false;
     const now = new Date();
-    const currentMonth = now.getMonth();
-    const currentYear = now.getFullYear();
+    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+  };
 
-    return billingInvoices.reduce((sum, inv) => {
-      // Already paid this month
-      if (inv.status === 'Paid' && inv.date_paid) {
-        const paid = new Date(inv.date_paid);
-        if (paid.getMonth() === currentMonth && paid.getFullYear() === currentYear) {
-          return sum + (inv.amount || 0);
-        }
-      }
-      // Due this month but not yet paid
-      if (inv.status !== 'Paid' && inv.status !== 'Cancelled' && inv.date_due) {
-        const due = new Date(inv.date_due);
-        if (due.getMonth() === currentMonth && due.getFullYear() === currentYear) {
-          return sum + (inv.amount || 0);
-        }
-      }
-      return sum;
-    }, 0);
+  // Paid this month — invoices with status 'Paid'
+  const paidThisMonth = useMemo(() => {
+    return billingInvoices
+      .filter(inv => inv.status === 'Paid')
+      .filter(inv => isThisMonth(inv.date_paid) || isThisMonth(inv.date_due) || isThisMonth(inv.date_sent))
+      .reduce((sum, inv) => sum + (inv.amount || 0), 0);
   }, [billingInvoices]);
 
-  const paidThisMonth = useMemo(() => {
-    const now = new Date();
-    const currentMonth = now.getMonth();
-    const currentYear = now.getFullYear();
+  // Pending this month — invoices due this month that are NOT Paid and NOT Cancelled
+  const pendingThisMonth = useMemo(() => {
     return billingInvoices
+      .filter(inv => inv.status !== 'Paid' && inv.status !== 'Cancelled')
+      .filter(inv => isThisMonth(inv.date_due) || (!inv.date_due && isThisMonth(inv.date_sent)))
+      .reduce((sum, inv) => sum + (inv.amount || 0), 0);
+  }, [billingInvoices]);
+
+  // Overdue — past due date and not paid
+  const overdueAmount = useMemo(() => {
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+    return billingInvoices
+      .filter(inv => inv.status !== 'Paid' && inv.status !== 'Cancelled' && inv.date_due)
       .filter(inv => {
-        if (inv.status !== 'Paid' || !inv.date_paid) return false;
-        const d = new Date(inv.date_paid);
-        return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+        const due = new Date(inv.date_due);
+        return !isNaN(due.getTime()) && due < now;
       })
       .reduce((sum, inv) => sum + (inv.amount || 0), 0);
   }, [billingInvoices]);
+
+  const projectedMonthlyRevenue = paidThisMonth + pendingThisMonth;
 
   // Content chart: multi-select platforms (empty = all)
   const [contentChartSelectedPlatforms, setContentChartSelectedPlatforms] = useState<Platform[]>([]);
@@ -426,9 +427,10 @@ const App: React.FC = () => {
                <div className="bg-[#2f2f2f] border border-[#3a3a3a] p-6 rounded-xl">
                   <p className="text-[#9B9B9B] text-sm font-medium mb-2">Projected Revenue</p>
                   <h3 className="text-3xl font-bold text-emerald-400 mb-1">${projectedMonthlyRevenue.toLocaleString()}</h3>
-                  <div className="flex items-center gap-2 text-xs">
+                  <div className="flex items-center gap-2 text-xs flex-wrap">
                      <span className="text-emerald-400 font-medium">${paidThisMonth.toLocaleString()} collected</span>
-                     <span className="text-[#666666]">· ${(projectedMonthlyRevenue - paidThisMonth).toLocaleString()} pending</span>
+                     {pendingThisMonth > 0 && <span className="text-[#666666]">· ${pendingThisMonth.toLocaleString()} pending</span>}
+                     {overdueAmount > 0 && <span className="text-red-400">· ${overdueAmount.toLocaleString()} overdue</span>}
                   </div>
                </div>
 

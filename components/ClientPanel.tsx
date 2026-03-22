@@ -338,14 +338,15 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
 
   const addInvoice = useCallback(async () => {
     if (!supabase || !client) return;
+    const todayStr = new Date().toISOString().split('T')[0];
     const inv: BillingInvoice = {
       id: crypto.randomUUID(),
       invoice_number: `INV-${String(invoices.length + 1).padStart(3, '0')}`,
-      amount: client.amount ?? 0,
+      amount: 0,
       service: client.service ?? '',
       status: 'Draft',
       date_due: '',
-      date_sent: '',
+      date_sent: todayStr,
       date_paid: '',
       notes: '',
     };
@@ -356,23 +357,35 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
   }, [client, storagePrefix, invoices.length]);
 
   const updateInvoice = useCallback((id: string, patch: Partial<BillingInvoice>) => {
-    setInvoices(prev => prev.map(inv => inv.id === id ? { ...inv, ...patch } : inv));
+    const todayStr = new Date().toISOString().split('T')[0];
+    // Smart auto-fill: when marking Paid, auto-set date_paid; when Sent, auto-set date_sent
+    const enriched = { ...patch };
+    if (enriched.status === 'Paid') {
+      const current = invoices.find(i => i.id === id);
+      if (current && !current.date_paid) enriched.date_paid = todayStr;
+    }
+    if (enriched.status === 'Sent') {
+      const current = invoices.find(i => i.id === id);
+      if (current && !current.date_sent) enriched.date_sent = todayStr;
+    }
+
+    setInvoices(prev => prev.map(inv => inv.id === id ? { ...inv, ...enriched } : inv));
     // Debounce the save
     if (invoiceDebounceRef.current[id]) clearTimeout(invoiceDebounceRef.current[id]);
     invoiceDebounceRef.current[id] = setTimeout(async () => {
       if (!supabase) return;
       const dbPatch: Record<string, any> = {};
-      if ('invoice_number' in patch) dbPatch.invoice_number = patch.invoice_number;
-      if ('amount' in patch) dbPatch.amount = patch.amount;
-      if ('service' in patch) dbPatch.service = patch.service;
-      if ('status' in patch) dbPatch.status = patch.status;
-      if ('date_due' in patch) dbPatch.date_due = patch.date_due;
-      if ('date_sent' in patch) dbPatch.date_sent = patch.date_sent;
-      if ('date_paid' in patch) dbPatch.date_paid = patch.date_paid;
-      if ('notes' in patch) dbPatch.notes = patch.notes;
+      if ('invoice_number' in enriched) dbPatch.invoice_number = enriched.invoice_number;
+      if ('amount' in enriched) dbPatch.amount = enriched.amount;
+      if ('service' in enriched) dbPatch.service = enriched.service;
+      if ('status' in enriched) dbPatch.status = enriched.status;
+      if ('date_due' in enriched) dbPatch.date_due = enriched.date_due;
+      if ('date_sent' in enriched) dbPatch.date_sent = enriched.date_sent;
+      if ('date_paid' in enriched) dbPatch.date_paid = enriched.date_paid;
+      if ('notes' in enriched) dbPatch.notes = enriched.notes;
       await supabase.from('billing_history').update(dbPatch).eq('id', id);
     }, 600);
-  }, []);
+  }, [invoices]);
 
   const deleteInvoice = useCallback(async (id: string) => {
     setInvoices(prev => prev.filter(inv => inv.id !== id));
