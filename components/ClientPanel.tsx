@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import {
   ExternalLink, Plus, Trash2, Loader2,
   BarChart2, Share2, GitBranch, FileText, StickyNote, LayoutDashboard, Camera,
@@ -975,29 +976,38 @@ function CardPaymentSelect({ value, onChange }: { value: string; onChange: (v: s
 
 function InvoiceStatusSelect({ value, onChange }: { value: BillingInvoice['status']; onChange: (v: BillingInvoice['status']) => void }) {
   const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
+  const [coords, setCoords] = useState({ top: 0, left: 0 });
+  const btnRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     if (!open) return;
-    const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
+    const handler = () => setOpen(false);
+    window.addEventListener('click', handler);
+    return () => window.removeEventListener('click', handler);
   }, [open]);
 
+  const toggle = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!open && btnRef.current) {
+      const r = btnRef.current.getBoundingClientRect();
+      setCoords({ top: r.bottom + 4, left: r.left });
+    }
+    setOpen(o => !o);
+  };
+
   return (
-    <div ref={ref} className="relative">
-      <button onClick={() => setOpen(o => !o)}
+    <>
+      <button ref={btnRef} onClick={toggle}
         className="text-xs font-medium flex items-center gap-1.5 cursor-pointer"
         style={{ color: invoiceStatusColors[value] ?? '#ECECEC' }}
       >
         <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: invoiceStatusColors[value] ?? '#ECECEC' }} />
         {value}
       </button>
-      {open && (
-        <div className="absolute left-0 top-full mt-1 z-50 py-1 min-w-[120px] shadow-xl"
-          style={{ background: '#222', borderRadius: 10 }}>
+      {open && createPortal(
+        <div onClick={e => e.stopPropagation()}
+          className="fixed z-[9999] py-1 min-w-[120px] shadow-2xl border"
+          style={{ top: coords.top, left: coords.left, background: '#1c1c1c', borderColor: '#2f2f2f', borderRadius: 10 }}>
           {INVOICE_STATUSES.map(s => (
             <button key={s} onClick={() => { onChange(s); setOpen(false); }}
               className={`flex items-center gap-2 w-full text-left text-xs px-3 py-2 transition-colors hover:bg-[#2a2a2a] ${s === value ? 'font-semibold' : ''}`}
@@ -1007,9 +1017,10 @@ function InvoiceStatusSelect({ value, onChange }: { value: BillingInvoice['statu
               {s}
             </button>
           ))}
-        </div>
+        </div>,
+        document.body
       )}
-    </div>
+    </>
   );
 }
 
