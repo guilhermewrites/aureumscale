@@ -106,6 +106,11 @@ ALTER TABLE client_details ADD COLUMN IF NOT EXISTS ad_performance_notes TEXT NO
 ALTER TABLE client_details ADD COLUMN IF NOT EXISTS contact_email TEXT NOT NULL DEFAULT '';
 ALTER TABLE client_details ADD COLUMN IF NOT EXISTS client_since TEXT NOT NULL DEFAULT '';
 ALTER TABLE client_details ADD COLUMN IF NOT EXISTS funnel_url TEXT NOT NULL DEFAULT '';
+ALTER TABLE client_details ADD COLUMN IF NOT EXISTS twitter_banner_url TEXT NOT NULL DEFAULT '';
+ALTER TABLE client_details ADD COLUMN IF NOT EXISTS twitter_handle TEXT NOT NULL DEFAULT '';
+ALTER TABLE client_details ADD COLUMN IF NOT EXISTS twitter_bio TEXT NOT NULL DEFAULT '';
+ALTER TABLE client_details ADD COLUMN IF NOT EXISTS twitter_followers INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE client_details ADD COLUMN IF NOT EXISTS twitter_following INTEGER NOT NULL DEFAULT 0;
 
 -- Add amount and client_type columns to clients table:
 ALTER TABLE clients ADD COLUMN IF NOT EXISTS amount NUMERIC NOT NULL DEFAULT 0;

@@ -41,6 +41,11 @@ interface ClientDetails {
   ad_performance_notes: string;
   contact_email: string;
   client_since: string;
+  twitter_banner_url: string;
+  twitter_handle: string;
+  twitter_bio: string;
+  twitter_followers: number;
+  twitter_following: number;
 }
 
 const EMPTY_ADS: AdsPerformance = { roas: '', spend: '', impressions: '', ctr: '', conversions: '', revenue: '' };
@@ -50,6 +55,8 @@ const DEFAULT_DETAILS: ClientDetails = {
   strategy_overview: '', google_drive_url: '',
   funnel_notes: '', funnel_url: '',
   scripted_ads: [], notes: '', ad_performance_notes: '',
+  twitter_banner_url: '', twitter_handle: '', twitter_bio: '',
+  twitter_followers: 0, twitter_following: 0,
   contact_email: '', client_since: new Date().toISOString().slice(0, 10),
 };
 
@@ -235,6 +242,11 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
             ad_performance_notes: data.ad_performance_notes ?? '',
             contact_email:        data.contact_email        ?? '',
             client_since:         data.client_since         ?? new Date().toISOString().slice(0, 10),
+            twitter_banner_url:   data.twitter_banner_url   ?? '',
+            twitter_handle:       data.twitter_handle       ?? '',
+            twitter_bio:          data.twitter_bio          ?? '',
+            twitter_followers:    data.twitter_followers    ?? 0,
+            twitter_following:    data.twitter_following    ?? 0,
           });
           setLoading(false);
         }
@@ -789,28 +801,54 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
               const ShareIcon = () => <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 2.59l5.7 5.7-1.41 1.42L13 6.41V16h-2V6.41l-3.3 3.3-1.41-1.42L12 2.59zM21 15l-.02 3.51c0 1.38-1.12 2.49-2.5 2.49H5.5C4.11 21 3 19.88 3 18.5V15h2v3.5c0 .28.22.5.5.5h12.98c.28 0 .5-.22.5-.5L19 15h2z"/></svg>;
               const VerifiedIcon = () => <svg viewBox="0 0 22 22" width="16" height="16" fill="#1d9bf0"><path d="M20.396 11c-.018-.646-.215-1.275-.57-1.816-.354-.54-.852-.972-1.438-1.246.223-.607.27-1.264.14-1.897-.131-.634-.437-1.218-.882-1.687-.47-.445-1.053-.75-1.687-.882-.633-.13-1.29-.083-1.897.14-.273-.587-.704-1.086-1.245-1.44S11.647 1.62 11 1.604c-.646.017-1.273.213-1.813.568s-.969.855-1.24 1.44c-.608-.223-1.267-.272-1.902-.14-.635.13-1.22.436-1.69.882-.445.47-.749 1.055-.878 1.69-.13.633-.08 1.29.144 1.896-.587.274-1.087.705-1.443 1.245-.356.54-.555 1.17-.574 1.817.02.647.218 1.276.574 1.817.356.54.856.972 1.443 1.245-.224.606-.274 1.263-.144 1.896.13.636.433 1.221.878 1.69.47.446 1.055.752 1.69.883.635.13 1.294.083 1.902-.143.271.586.702 1.084 1.24 1.438.54.354 1.167.551 1.813.569.647-.016 1.276-.213 1.817-.567s.972-.854 1.245-1.44c.604.225 1.261.272 1.894.143.634-.131 1.218-.434 1.69-.88.445-.47.75-1.055.88-1.69.13-.634.085-1.29-.138-1.898.586-.272 1.084-.703 1.438-1.244.354-.54.551-1.17.569-1.816zM9.662 14.85l-3.429-3.428 1.293-1.302 2.072 2.072 4.4-4.794 1.347 1.246z"/></svg>;
 
-              // Random follower/following counts (stable per client)
-              const seed = client.id.charCodeAt(0) + client.id.charCodeAt(1);
-              const followers = Math.floor(seed * 47 + 1200);
-              const following = Math.floor(seed * 3 + 180);
-              const bio = details.strategy_overview
-                ? details.strategy_overview.split('\n')[0].slice(0, 120)
-                : 'No bio yet — add one in the Overview tab.';
+              const tHandle = details.twitter_handle || handle;
+              const tBio = details.twitter_bio || '';
+              const tFollowers = details.twitter_followers || 0;
+              const tFollowing = details.twitter_following || 0;
+              const tBanner = details.twitter_banner_url || '';
+
+              const [xTab, setXTab] = React.useState<'posts'|'replies'|'media'|'likes'>('posts');
+
+              const uploadBanner = () => {
+                const inp = document.createElement('input');
+                inp.type = 'file'; inp.accept = 'image/*';
+                inp.onchange = async (ev: any) => {
+                  const file = ev.target.files?.[0];
+                  if (!file || !supabase) return;
+                  const path = `twitter-banners/${client.id}_${Date.now()}.${file.name.split('.').pop() || 'jpg'}`;
+                  const { error } = await supabase.storage.from('funnel-media').upload(path, file, { upsert: true, contentType: file.type });
+                  if (error) { console.error('Banner upload error:', error); return; }
+                  const { data: urlData } = supabase.storage.from('funnel-media').getPublicUrl(path);
+                  if (urlData?.publicUrl) setField('twitter_banner_url', urlData.publicUrl + '?t=' + Date.now());
+                };
+                inp.click();
+              };
 
               return (
               <div className="rounded-2xl overflow-hidden" style={{ background: '#000', border: '1px solid #2f3336' }}>
                 {/* ── Twitter Profile Header ── */}
                 <div>
-                  {/* Banner */}
-                  <div style={{ height: 120, background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)' }} />
+                  {/* Banner — click to change */}
+                  <div
+                    onClick={uploadBanner}
+                    className="relative cursor-pointer group/banner"
+                    style={{
+                      height: 140,
+                      background: tBanner ? `url(${tBanner}) center/cover no-repeat` : 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)',
+                    }}
+                  >
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover/banner:bg-black/40 transition-colors">
+                      <Camera size={24} className="text-white opacity-0 group-hover/banner:opacity-80 transition-opacity" />
+                    </div>
+                  </div>
 
-                  {/* Avatar + Follow */}
+                  {/* Avatar + Post button */}
                   <div className="px-4" style={{ marginTop: -40 }}>
                     <div className="flex items-end justify-between">
                       {avatar ? (
-                        <img src={avatar} alt="" className="rounded-full object-cover" style={{ width: 76, height: 76, border: '4px solid #000' }} />
+                        <img src={avatar} alt="" className="rounded-full object-cover" style={{ width: 80, height: 80, border: '4px solid #000' }} />
                       ) : (
-                        <div className="rounded-full flex items-center justify-center text-2xl font-bold" style={{ width: 76, height: 76, border: '4px solid #000', background: '#333', color: '#ECECEC' }}>
+                        <div className="rounded-full flex items-center justify-center text-2xl font-bold" style={{ width: 80, height: 80, border: '4px solid #000', background: '#333', color: '#ECECEC' }}>
                           {displayName.charAt(0).toUpperCase()}
                         </div>
                       )}
@@ -819,45 +857,86 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
                         style={{ background: '#1d9bf0', color: '#fff' }}
                         onMouseEnter={e => (e.currentTarget.style.background = '#1a8cd8')}
                         onMouseLeave={e => (e.currentTarget.style.background = '#1d9bf0')}
-                  ><Plus size={14} /> Post</button>
+                      ><Plus size={14} /> Post</button>
                     </div>
 
-                    {/* Name + handle */}
+                    {/* Name + handle (editable) */}
                     <div className="mt-3">
                       <div className="flex items-center gap-1">
                         <span className="text-xl font-extrabold" style={{ color: '#e7e9ea' }}>{displayName}</span>
                         <VerifiedIcon />
                       </div>
-                      <span className="text-[15px]" style={{ color: '#71767b' }}>{handle}</span>
+                      <input
+                        value={tHandle}
+                        onChange={e => setField('twitter_handle', e.target.value)}
+                        className="bg-transparent text-[15px] focus:outline-none w-full"
+                        style={{ color: '#71767b' }}
+                        placeholder="@handle"
+                      />
                     </div>
 
-                    {/* Bio */}
-                    <p className="text-[15px] mt-2" style={{ color: '#e7e9ea', lineHeight: '20px' }}>{bio}</p>
+                    {/* Bio (editable) */}
+                    <textarea
+                      value={tBio}
+                      onChange={e => setField('twitter_bio', e.target.value)}
+                      className="w-full bg-transparent text-[15px] focus:outline-none resize-none mt-2 placeholder-[#3e4144]"
+                      style={{ color: '#e7e9ea', lineHeight: '20px' }}
+                      placeholder="Write a bio…"
+                      rows={Math.max(1, tBio.split('\n').length)}
+                    />
 
-                    {/* Followers / Following */}
-                    <div className="flex items-center gap-4 mt-3 mb-3">
-                      <span className="text-sm">
-                        <span className="font-bold" style={{ color: '#e7e9ea' }}>{following.toLocaleString()}</span>
-                        <span style={{ color: '#71767b' }}> Following</span>
+                    {/* Followers / Following (editable) */}
+                    <div className="flex items-center gap-4 mt-2 mb-3">
+                      <span className="text-sm flex items-center gap-1">
+                        <input
+                          type="text"
+                          value={tFollowing || ''}
+                          onChange={e => setField('twitter_following', parseInt(e.target.value.replace(/[^0-9]/g, '')) || 0)}
+                          className="bg-transparent font-bold focus:outline-none w-[50px] text-right"
+                          style={{ color: '#e7e9ea' }}
+                          placeholder="0"
+                        />
+                        <span style={{ color: '#71767b' }}>Following</span>
                       </span>
-                      <span className="text-sm">
-                        <span className="font-bold" style={{ color: '#e7e9ea' }}>{followers.toLocaleString()}</span>
-                        <span style={{ color: '#71767b' }}> Followers</span>
+                      <span className="text-sm flex items-center gap-1">
+                        <input
+                          type="text"
+                          value={tFollowers || ''}
+                          onChange={e => setField('twitter_followers', parseInt(e.target.value.replace(/[^0-9]/g, '')) || 0)}
+                          className="bg-transparent font-bold focus:outline-none w-[60px] text-right"
+                          style={{ color: '#e7e9ea' }}
+                          placeholder="0"
+                        />
+                        <span style={{ color: '#71767b' }}>Followers</span>
                       </span>
                     </div>
                   </div>
 
                   {/* Tab bar */}
                   <div className="flex" style={{ borderBottom: '1px solid #2f3336' }}>
-                    <div className="flex-1 text-center py-3 text-sm font-bold" style={{ color: '#e7e9ea', borderBottom: '4px solid #1d9bf0' }}>Posts</div>
-                    <div className="flex-1 text-center py-3 text-sm font-bold" style={{ color: '#71767b' }}>Replies</div>
-                    <div className="flex-1 text-center py-3 text-sm font-bold" style={{ color: '#71767b' }}>Media</div>
-                    <div className="flex-1 text-center py-3 text-sm font-bold" style={{ color: '#71767b' }}>Likes</div>
+                    {(['posts', 'replies', 'media', 'likes'] as const).map(tab => (
+                      <button
+                        key={tab}
+                        onClick={() => setXTab(tab)}
+                        className="flex-1 text-center py-3 text-sm font-bold transition-colors"
+                        style={{
+                          color: xTab === tab ? '#e7e9ea' : '#71767b',
+                          borderBottom: xTab === tab ? '4px solid #1d9bf0' : '4px solid transparent',
+                        }}
+                      >
+                        {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                      </button>
+                    ))}
                   </div>
                 </div>
 
                 {/* ── Tweet Feed ── */}
-                {tweetsLoading ? (
+                {xTab !== 'posts' ? (
+                  <div className="flex flex-col items-center justify-center py-16 gap-1" style={{ color: '#71767b' }}>
+                    <span className="text-[15px] font-bold" style={{ color: '#e7e9ea' }}>{xTab === 'replies' ? 'No replies yet' : xTab === 'media' ? 'No media yet' : 'No likes yet'}</span>
+                    <span className="text-[13px]">{xTab === 'media' ? 'Photos and videos will appear here.' : xTab === 'likes' ? 'Liked posts will appear here.' : 'Replies will appear here.'}</span>
+                  </div>
+                ) : tweetsLoading ? (
                   <div className="flex items-center justify-center py-12 gap-2" style={{ color: '#444' }}>
                     <Loader2 size={16} className="animate-spin" />
                     <span className="text-sm">Loading posts…</span>
