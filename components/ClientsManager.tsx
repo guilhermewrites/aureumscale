@@ -194,8 +194,7 @@ function SelectCell({ value, options, onChange, colorMap, onAddOption, onEditOpt
         ref={btnRef}
         type="button"
         onClick={toggle}
-        className={`flex items-center justify-between text-xs font-medium px-3 py-1.5 rounded-lg cursor-pointer whitespace-nowrap w-[120px] ${textColor}`}
-        style={{ background: '#2a2a2a' }}
+        className={`flex items-center gap-1 text-xs font-medium cursor-pointer whitespace-nowrap ${textColor}`}
       >
         <span className="truncate">{value}</span>
         <ChevronDown size={10} className="flex-shrink-0 opacity-40" />
