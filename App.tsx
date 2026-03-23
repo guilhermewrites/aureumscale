@@ -914,7 +914,7 @@ const AuthenticatedApp: React.FC<{ user: User; signOut: () => Promise<void> }> =
             />
           } />
           <Route path="/branding" element={<BrandingManager storagePrefix={storagePrefix} />} />
-          <Route path="/general-room" element={<GeneralRoom storagePrefix={storagePrefix} billingInvoices={billingInvoices} />} />
+          <Route path="/general-room" element={<GeneralRoom storagePrefix={storagePrefix} projectedRevenue={projectedMonthlyRevenue} avgRevenue={avgMonthlyRevenue} />} />
           <Route path="/contracts" element={
             <div className="h-96 flex flex-col items-center justify-center text-[#666666] border-2 border-dashed border-[#3a3a3a] rounded-xl">
               <p className="text-lg font-medium mb-2">Work in Progress</p>

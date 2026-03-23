@@ -118,24 +118,13 @@ const DEFAULT_CHANNELS: Channel[] = [
   },
 ];
 
-interface BillingInvoice {
-  id: string;
-  amount: number;
-  status: string;
-  date_due: string;
-  date_paid: string;
-  date_sent: string;
-  client_id: string;
-  service: string;
-  invoice_number: string;
-}
-
 interface GeneralRoomProps {
   storagePrefix: string;
-  billingInvoices?: BillingInvoice[];
+  projectedRevenue?: number;
+  avgRevenue?: number;
 }
 
-const GeneralRoom: React.FC<GeneralRoomProps> = ({ storagePrefix, billingInvoices = [] }) => {
+const GeneralRoom: React.FC<GeneralRoomProps> = ({ storagePrefix, projectedRevenue = 0, avgRevenue = 0 }) => {
   const [channels, setChannels] = useState<Channel[]>([]);
   const [milestones, setMilestones] = useState<Milestone[]>(DEFAULT_MILESTONES);
   const [weeklyLogs, setWeeklyLogs] = useState<WeeklyLog[]>([]);
@@ -237,41 +226,13 @@ const GeneralRoom: React.FC<GeneralRoomProps> = ({ storagePrefix, billingInvoice
     persistData(channels, milestones, weeklyLogs, text);
   }, [channels, milestones, weeklyLogs, persistData]);
 
-  // --- Revenue from billing_history (source of truth) ---
-  const actualMonthlyRevenue = useMemo(() => {
-    if (!billingInvoices.length) return 0;
-    const now = new Date();
-    const thisMonth = now.getMonth();
-    const thisYear = now.getFullYear();
-    // Paid this month
-    const paidThisMonth = billingInvoices
-      .filter(inv => inv.status === 'Paid')
-      .filter(inv => {
-        const d = new Date(inv.date_paid);
-        return !isNaN(d.getTime()) && d.getMonth() === thisMonth && d.getFullYear() === thisYear;
-      })
-      .reduce((sum, inv) => sum + (inv.amount || 0), 0);
-    // Pending this month (not paid/cancelled, due this month)
-    const pendingThisMonth = billingInvoices
-      .filter(inv => inv.status !== 'Paid' && inv.status !== 'Cancelled')
-      .filter(inv => {
-        const due = new Date(inv.date_due);
-        const sent = new Date(inv.date_sent);
-        const dueMatch = !isNaN(due.getTime()) && due.getMonth() === thisMonth && due.getFullYear() === thisYear;
-        const sentMatch = !inv.date_due && !isNaN(sent.getTime()) && sent.getMonth() === thisMonth && sent.getFullYear() === thisYear;
-        return dueMatch || sentMatch;
-      })
-      .reduce((sum, inv) => sum + (inv.amount || 0), 0);
-    return paidThisMonth + pendingThisMonth;
-  }, [billingInvoices]);
-
-  // Use actual revenue from billing if available, otherwise fall back to manual channel totals
-  const hasRealRevenue = billingInvoices.length > 0;
-
+  // Use projected revenue from dashboard billing if available, otherwise fall back to manual channel totals
   // --- Computed ---
   const totalCurrent = useMemo(() => channels.reduce((sum, ch) => sum + ch.current, 0), [channels]);
   const totalTarget = useMemo(() => channels.reduce((sum, ch) => sum + ch.target, 0), [channels]);
-  const displayRevenue = hasRealRevenue ? actualMonthlyRevenue : totalCurrent;
+  // Pick the best available revenue figure: projected this month > avg monthly > manual channel totals
+  const displayRevenue = projectedRevenue > 0 ? projectedRevenue : avgRevenue > 0 ? avgRevenue : totalCurrent;
+  const revenueSource = projectedRevenue > 0 ? 'projected' : avgRevenue > 0 ? 'avg' : 'manual';
   const progressPercent = goalAmount > 0 ? Math.min((displayRevenue / goalAmount) * 100, 100) : 0;
 
   const totalStrategies = useMemo(() => channels.reduce((sum, ch) => sum + ch.strategies.length, 0), [channels]);
@@ -434,7 +395,11 @@ const GeneralRoom: React.FC<GeneralRoomProps> = ({ storagePrefix, billingInvoice
             </div>
             <div className="text-right">
               <div className="text-3xl font-bold text-emerald-400">{formatCurrency(displayRevenue)}</div>
-              <div className="text-xs text-[#666]">of {formatCurrency(goalAmount)} goal{hasRealRevenue && ' · projected this month'}</div>
+              <div className="text-xs text-[#666]">
+                of {formatCurrency(goalAmount)} goal
+                {revenueSource === 'projected' && ' · this month'}
+                {revenueSource === 'avg' && ' · monthly avg'}
+              </div>
             </div>
           </div>
 
