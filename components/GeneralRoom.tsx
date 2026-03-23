@@ -133,12 +133,16 @@ const GeneralRoom: React.FC<GeneralRoomProps> = ({ storagePrefix }) => {
   const [newStrategyText, setNewStrategyText] = useState('');
   const [showLogForm, setShowLogForm] = useState(false);
   const [activeTab, setActiveTab] = useState<'blueprint' | 'pipeline' | 'log'>('blueprint');
+  const [gameplan, setGameplan] = useState('');
+  const [editingGameplan, setEditingGameplan] = useState(false);
+  const gameplanRef = useRef<HTMLTextAreaElement>(null);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // --- Persistence ---
   const STORAGE_KEY = `aureum_general_room_${storagePrefix}`;
   const MILESTONES_KEY = `aureum_milestones_${storagePrefix}`;
   const LOGS_KEY = `aureum_weekly_logs_${storagePrefix}`;
+  const GAMEPLAN_KEY = `aureum_gameplan_${storagePrefix}`;
 
   // Load
   useEffect(() => {
@@ -159,6 +163,9 @@ const GeneralRoom: React.FC<GeneralRoomProps> = ({ storagePrefix }) => {
       try { setWeeklyLogs(JSON.parse(savedLogs)); } catch { setWeeklyLogs([]); }
     }
 
+    const savedGameplan = localStorage.getItem(GAMEPLAN_KEY);
+    if (savedGameplan) setGameplan(savedGameplan);
+
     // Also try Supabase
     if (supabase) {
       supabase.from('general_room').select('*').eq('user_id', storagePrefix).single()
@@ -167,27 +174,31 @@ const GeneralRoom: React.FC<GeneralRoomProps> = ({ storagePrefix }) => {
             if (data.channels) { try { setChannels(JSON.parse(data.channels)); } catch {} }
             if (data.milestones) { try { setMilestones(JSON.parse(data.milestones)); } catch {} }
             if (data.weekly_logs) { try { setWeeklyLogs(JSON.parse(data.weekly_logs)); } catch {} }
+            if (data.gameplan) setGameplan(data.gameplan);
           }
         });
     }
   }, [storagePrefix]);
 
   // Save
-  const persistData = useCallback((ch: Channel[], ms: Milestone[], logs: WeeklyLog[]) => {
+  const persistData = useCallback((ch: Channel[], ms: Milestone[], logs: WeeklyLog[], gp?: string) => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(ch));
     localStorage.setItem(MILESTONES_KEY, JSON.stringify(ms));
     localStorage.setItem(LOGS_KEY, JSON.stringify(logs));
+    if (gp !== undefined) localStorage.setItem(GAMEPLAN_KEY, gp);
 
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     saveTimerRef.current = setTimeout(() => {
       if (supabase) {
-        supabase.from('general_room').upsert({
+        const payload: any = {
           user_id: storagePrefix,
           channels: JSON.stringify(ch),
           milestones: JSON.stringify(ms),
           weekly_logs: JSON.stringify(logs),
           updated_at: new Date().toISOString(),
-        }, { onConflict: 'user_id' });
+        };
+        if (gp !== undefined) payload.gameplan = gp;
+        supabase.from('general_room').upsert(payload, { onConflict: 'user_id' });
       }
     }, 1000);
   }, [storagePrefix]);
@@ -206,6 +217,12 @@ const GeneralRoom: React.FC<GeneralRoomProps> = ({ storagePrefix }) => {
     setWeeklyLogs(next);
     persistData(channels, milestones, next);
   }, [channels, milestones, persistData]);
+
+  const saveGameplan = useCallback((text: string) => {
+    setGameplan(text);
+    localStorage.setItem(GAMEPLAN_KEY, text);
+    persistData(channels, milestones, weeklyLogs, text);
+  }, [channels, milestones, weeklyLogs, persistData]);
 
   // --- Computed ---
   const totalCurrent = useMemo(() => channels.reduce((sum, ch) => sum + ch.current, 0), [channels]);
@@ -415,14 +432,61 @@ const GeneralRoom: React.FC<GeneralRoomProps> = ({ storagePrefix }) => {
         </div>
       </div>
 
+      {/* --- Gameplan Note --- */}
+      <div className="bg-[#1c1c1c] rounded-2xl border border-[#2a2a2a] p-5">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <Edit3 size={14} className="text-[#666]" />
+            <span className="text-xs font-semibold text-[#ECECEC]">The Gameplan</span>
+          </div>
+          {!editingGameplan && (
+            <button
+              onClick={() => { setEditingGameplan(true); setTimeout(() => gameplanRef.current?.focus(), 50); }}
+              className="text-[10px] text-[#555] hover:text-[#999] transition-none"
+            >
+              {gameplan ? 'Edit' : 'Write your mission'}
+            </button>
+          )}
+        </div>
+        {editingGameplan ? (
+          <div>
+            <textarea
+              ref={gameplanRef}
+              value={gameplan}
+              onChange={e => setGameplan(e.target.value)}
+              placeholder="Write your mission, your gameplan, the strategy to hit $100K/mo...&#10;&#10;Example:&#10;→ Build audience on X + YouTube to drive inbound leads&#10;→ Launch cold outreach system doing 100 DMs/day&#10;→ Run Meta Ads to VSL funnel once offer is validated&#10;→ Close 10 clients at $10K/mo average"
+              rows={6}
+              className="w-full bg-[#161616] border border-[#2a2a2a] rounded-xl px-4 py-3 text-sm text-[#ccc] placeholder-[#444] focus:outline-none focus:ring-1 focus:ring-[#3a3a3a] resize-none leading-relaxed"
+            />
+            <div className="flex justify-end gap-2 mt-2">
+              <button
+                onClick={() => { setEditingGameplan(false); saveGameplan(gameplan); }}
+                className="px-3 py-1.5 bg-[#2a2a2a] text-[#ECECEC] rounded-lg text-xs font-medium hover:bg-[#333] transition-none"
+              >
+                Save
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div
+            onClick={() => { setEditingGameplan(true); setTimeout(() => gameplanRef.current?.focus(), 50); }}
+            className="cursor-pointer"
+          >
+            {gameplan ? (
+              <p className="text-sm text-[#999] whitespace-pre-wrap leading-relaxed">{gameplan}</p>
+            ) : (
+              <p className="text-sm text-[#444] italic">Click to write your mission and gameplan...</p>
+            )}
+          </div>
+        )}
+      </div>
+
       {/* --- Stat Cards --- */}
       <div className="grid grid-cols-4 gap-4">
         <div className="bg-[#1c1c1c] rounded-2xl border border-[#2a2a2a] p-5">
           <div className="flex items-center justify-between mb-3">
             <span className="text-[10px] uppercase tracking-wider text-[#666] font-semibold">CHANNELS ACTIVE</span>
-            <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center">
-              <BarChart3 size={16} className="text-emerald-400" />
-            </div>
+            <BarChart3 size={16} className="text-[#555]" />
           </div>
           <div className="text-2xl font-bold text-[#ECECEC]">{channels.length}</div>
           <div className="text-xs text-[#666] mt-1">Revenue channels</div>
@@ -431,9 +495,7 @@ const GeneralRoom: React.FC<GeneralRoomProps> = ({ storagePrefix }) => {
         <div className="bg-[#1c1c1c] rounded-2xl border border-[#2a2a2a] p-5">
           <div className="flex items-center justify-between mb-3">
             <span className="text-[10px] uppercase tracking-wider text-[#666] font-semibold">STRATEGIES</span>
-            <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center">
-              <Target size={16} className="text-blue-400" />
-            </div>
+            <Target size={16} className="text-[#555]" />
           </div>
           <div className="text-2xl font-bold text-[#ECECEC]">{completedStrategies}<span className="text-sm text-[#666] font-normal">/{totalStrategies}</span></div>
           <div className="text-xs text-[#666] mt-1">{inProgressStrategies} in progress</div>
@@ -442,9 +504,7 @@ const GeneralRoom: React.FC<GeneralRoomProps> = ({ storagePrefix }) => {
         <div className="bg-[#1c1c1c] rounded-2xl border border-[#2a2a2a] p-5">
           <div className="flex items-center justify-between mb-3">
             <span className="text-[10px] uppercase tracking-wider text-[#666] font-semibold">TARGET TOTAL</span>
-            <div className="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center">
-              <DollarSign size={16} className="text-amber-400" />
-            </div>
+            <DollarSign size={16} className="text-[#555]" />
           </div>
           <div className="text-2xl font-bold text-[#ECECEC]">{formatCurrency(totalTarget)}</div>
           <div className="text-xs text-[#666] mt-1">Across all channels</div>
@@ -453,9 +513,7 @@ const GeneralRoom: React.FC<GeneralRoomProps> = ({ storagePrefix }) => {
         <div className="bg-[#1c1c1c] rounded-2xl border border-[#2a2a2a] p-5">
           <div className="flex items-center justify-between mb-3">
             <span className="text-[10px] uppercase tracking-wider text-[#666] font-semibold">WEEKLY LOGS</span>
-            <div className="w-8 h-8 rounded-lg bg-purple-500/10 flex items-center justify-center">
-              <FileLogIcon size={16} />
-            </div>
+            <FileLogIcon size={16} />
           </div>
           <div className="text-2xl font-bold text-[#ECECEC]">{weeklyLogs.length}</div>
           <div className="text-xs text-[#666] mt-1">Weeks tracked</div>
@@ -495,9 +553,7 @@ const GeneralRoom: React.FC<GeneralRoomProps> = ({ storagePrefix }) => {
                   onClick={() => toggleChannel(ch.id)}
                   className="w-full flex items-center gap-4 p-5 hover:bg-[rgba(255,255,255,0.02)] transition-none"
                 >
-                  <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: cfg.gradient }}>
-                    <span style={{ color: cfg.color }}>{cfg.icon}</span>
-                  </div>
+                  <span style={{ color: cfg.color }}>{cfg.icon}</span>
                   <div className="flex-1 text-left">
                     <div className="flex items-center gap-3">
                       <span className="text-sm font-semibold text-[#ECECEC]">{ch.name}</span>
