@@ -755,7 +755,7 @@ const AuthenticatedApp: React.FC<{ user: User; signOut: () => Promise<void> }> =
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" stroke="#252525" vertical={false} />
                     <XAxis dataKey="name" tick={{ fill: '#555', fontSize: 11 }} axisLine={false} tickLine={false} />
-                    <YAxis tick={{ fill: '#555', fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={(v: number) => v >= 1000 ? `$${(v / 1000).toFixed(0)}k` : `$${v}`} />
+                    <YAxis domain={[0, 100000]} tick={{ fill: '#555', fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={(v: number) => v >= 1000 ? `$${(v / 1000).toFixed(0)}k` : `$${v}`} ticks={[0, 25000, 50000, 75000, 100000]} />
                     <Tooltip
                       contentStyle={{ background: '#1c1c1c', border: '1px solid #252525', borderRadius: 12, fontSize: 12, color: '#ECECEC' }}
                       formatter={(value: number) => [`$${value.toLocaleString()}`, 'Revenue']}
