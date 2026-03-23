@@ -4,9 +4,8 @@ import {
   Plus, Trash2, Edit3, Check, X, ChevronDown, ChevronRight,
   DollarSign, Users, Megaphone, Globe, Phone, Mail, Zap,
   GripVertical, MoreHorizontal, Flag, Clock, CheckCircle2,
-  AlertCircle, ArrowRight, Layers, BarChart3, Eye
+  AlertCircle, ArrowRight, Layers, BarChart3
 } from 'lucide-react';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { supabase } from '../services/supabaseClient';
 
 // --- Types ---
@@ -124,6 +123,19 @@ interface GeneralRoomProps {
   avgRevenue?: number;
 }
 
+// Map client acquisition values to channel types
+const ACQUISITION_TO_CHANNEL: Record<string, ChannelType> = {
+  'Inbound — DMs': 'inbound',
+  'Inbound — Organic': 'inbound',
+  'Inbound — Funnel': 'inbound',
+  'Outbound — DMs': 'outbound',
+  'Outbound — Cold Email': 'outbound',
+  'Paid Traffic — Ads': 'paid_traffic',
+  'Social Media': 'social_media',
+  'Referral': 'referrals',
+  'Partnership': 'partnerships',
+};
+
 const GeneralRoom: React.FC<GeneralRoomProps> = ({ storagePrefix, projectedRevenue = 0, avgRevenue = 0 }) => {
   const [channels, setChannels] = useState<Channel[]>([]);
   const [milestones, setMilestones] = useState<Milestone[]>(DEFAULT_MILESTONES);
@@ -133,12 +145,13 @@ const GeneralRoom: React.FC<GeneralRoomProps> = ({ storagePrefix, projectedReven
   const [editStrategyText, setEditStrategyText] = useState('');
   const [addingToChannel, setAddingToChannel] = useState<string | null>(null);
   const [newStrategyText, setNewStrategyText] = useState('');
-  const [showLogForm, setShowLogForm] = useState(false);
-  const [activeTab, setActiveTab] = useState<'blueprint' | 'pipeline' | 'log'>('blueprint');
   const [gameplan, setGameplan] = useState('');
   const [editingGameplan, setEditingGameplan] = useState(false);
   const gameplanRef = useRef<HTMLTextAreaElement>(null);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [channelRevenue, setChannelRevenue] = useState<Record<ChannelType, number>>({
+    inbound: 0, outbound: 0, paid_traffic: 0, social_media: 0, referrals: 0, partnerships: 0,
+  });
 
   // --- Persistence ---
   const STORAGE_KEY = `aureum_general_room_${storagePrefix}`;
@@ -180,6 +193,26 @@ const GeneralRoom: React.FC<GeneralRoomProps> = ({ storagePrefix, projectedReven
           }
         });
     }
+  }, [storagePrefix]);
+
+  // Fetch client acquisition data → compute channel revenue from real clients
+  useEffect(() => {
+    if (!supabase) return;
+    supabase.from('clients').select('amount, acquisition, active')
+      .eq('user_id', storagePrefix)
+      .then(({ data }) => {
+        if (!data) return;
+        const sums: Record<ChannelType, number> = {
+          inbound: 0, outbound: 0, paid_traffic: 0, social_media: 0, referrals: 0, partnerships: 0,
+        };
+        data.filter(c => c.active !== false).forEach(c => {
+          const channelType = ACQUISITION_TO_CHANNEL[c.acquisition];
+          if (channelType) {
+            sums[channelType] += (c.amount || 0);
+          }
+        });
+        setChannelRevenue(sums);
+      });
   }, [storagePrefix]);
 
   // Save
@@ -226,39 +259,22 @@ const GeneralRoom: React.FC<GeneralRoomProps> = ({ storagePrefix, projectedReven
     persistData(channels, milestones, weeklyLogs, text);
   }, [channels, milestones, weeklyLogs, persistData]);
 
-  // Use projected revenue from dashboard billing if available, otherwise fall back to manual channel totals
   // --- Computed ---
-  const totalCurrent = useMemo(() => channels.reduce((sum, ch) => sum + ch.current, 0), [channels]);
+  // Total revenue from client acquisitions (sum of all channel revenue from real clients)
+  const totalFromClients = useMemo(() => (Object.values(channelRevenue) as number[]).reduce((sum, v) => sum + v, 0), [channelRevenue]);
   const totalTarget = useMemo(() => channels.reduce((sum, ch) => sum + ch.target, 0), [channels]);
-  // Pick the best available revenue figure: projected this month > avg monthly > manual channel totals
-  const displayRevenue = projectedRevenue > 0 ? projectedRevenue : avgRevenue > 0 ? avgRevenue : totalCurrent;
-  const revenueSource = projectedRevenue > 0 ? 'projected' : avgRevenue > 0 ? 'avg' : 'manual';
+  // Use client acquisition revenue as primary, fall back to projected/avg from dashboard
+  const displayRevenue = totalFromClients > 0 ? totalFromClients : projectedRevenue > 0 ? projectedRevenue : avgRevenue;
+  const revenueSource = totalFromClients > 0 ? 'clients' : projectedRevenue > 0 ? 'projected' : avgRevenue > 0 ? 'avg' : 'manual';
   const progressPercent = goalAmount > 0 ? Math.min((displayRevenue / goalAmount) * 100, 100) : 0;
+
+  // Get channel current from real client data
+  const getChannelCurrent = (type: ChannelType) => channelRevenue[type] || 0;
 
   const totalStrategies = useMemo(() => channels.reduce((sum, ch) => sum + ch.strategies.length, 0), [channels]);
   const completedStrategies = useMemo(() => channels.reduce((sum, ch) => sum + ch.strategies.filter(s => s.status === 'done').length, 0), [channels]);
   const inProgressStrategies = useMemo(() => channels.reduce((sum, ch) => sum + ch.strategies.filter(s => s.status === 'in_progress').length, 0), [channels]);
 
-  // Pipeline chart data
-  const pipelineData = useMemo(() => {
-    return channels.map(ch => ({
-      name: CHANNEL_CONFIG[ch.type].label,
-      target: ch.target,
-      current: ch.current,
-      color: CHANNEL_CONFIG[ch.type].color,
-    }));
-  }, [channels]);
-
-  // Weekly trend data
-  const trendData = useMemo(() => {
-    return [...weeklyLogs].sort((a, b) => a.week_start.localeCompare(b.week_start)).map(log => ({
-      week: new Date(log.week_start).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-      revenue: log.revenue,
-      leads: log.leads,
-      calls: log.calls_booked,
-      deals: log.deals_closed,
-    }));
-  }, [weeklyLogs]);
 
   // --- Actions ---
   const toggleChannel = (channelId: string) => {
@@ -269,9 +285,6 @@ const GeneralRoom: React.FC<GeneralRoomProps> = ({ storagePrefix, projectedReven
     updateChannels(channels.map(ch => ch.id === channelId ? { ...ch, target } : ch));
   };
 
-  const updateChannelCurrent = (channelId: string, current: number) => {
-    updateChannels(channels.map(ch => ch.id === channelId ? { ...ch, current } : ch));
-  };
 
   const cycleStatus = (channelId: string, strategyId: string) => {
     const order: TaskStatus[] = ['todo', 'in_progress', 'done'];
@@ -340,15 +353,6 @@ const GeneralRoom: React.FC<GeneralRoomProps> = ({ storagePrefix, projectedReven
     setEditStrategyText('');
   };
 
-  const addWeeklyLog = (log: Omit<WeeklyLog, 'id'>) => {
-    const newLog: WeeklyLog = { ...log, id: `log-${Date.now()}` };
-    updateLogs([...weeklyLogs, newLog]);
-    setShowLogForm(false);
-  };
-
-  const deleteLog = (logId: string) => {
-    updateLogs(weeklyLogs.filter(l => l.id !== logId));
-  };
 
   // --- Status helpers ---
   const statusIcon = (status: TaskStatus) => {
@@ -397,6 +401,7 @@ const GeneralRoom: React.FC<GeneralRoomProps> = ({ storagePrefix, projectedReven
               <div className="text-3xl font-bold text-emerald-400">{formatCurrency(displayRevenue)}</div>
               <div className="text-xs text-[#666]">
                 of {formatCurrency(goalAmount)} goal
+                {revenueSource === 'clients' && ' · from clients'}
                 {revenueSource === 'projected' && ' · this month'}
                 {revenueSource === 'avg' && ' · monthly avg'}
               </div>
@@ -531,33 +536,16 @@ const GeneralRoom: React.FC<GeneralRoomProps> = ({ storagePrefix, projectedReven
 
         <div className="bg-[#1c1c1c] rounded-2xl border border-[#2a2a2a] p-5">
           <div className="flex items-center justify-between mb-3">
-            <span className="text-[10px] uppercase tracking-wider text-[#666] font-semibold">WEEKLY LOGS</span>
-            <FileLogIcon size={16} />
+            <span className="text-[10px] uppercase tracking-wider text-[#666] font-semibold">FROM CLIENTS</span>
+            <DollarSign size={16} className="text-[#555]" />
           </div>
-          <div className="text-2xl font-bold text-[#ECECEC]">{weeklyLogs.length}</div>
-          <div className="text-xs text-[#666] mt-1">Weeks tracked</div>
+          <div className="text-2xl font-bold text-emerald-400">{formatCurrency(totalFromClients)}</div>
+          <div className="text-xs text-[#666] mt-1">Monthly revenue</div>
         </div>
       </div>
 
-      {/* --- Tabs --- */}
-      <div className="flex gap-1 bg-[#1c1c1c] rounded-xl p-1 border border-[#2a2a2a] w-fit">
-        {(['blueprint', 'pipeline', 'log'] as const).map(tab => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            className={`px-5 py-2 rounded-lg text-xs font-semibold transition-none ${
-              activeTab === tab
-                ? 'bg-[#2a2a2a] text-[#ECECEC]'
-                : 'text-[#666] hover:text-[#999]'
-            }`}
-          >
-            {tab === 'blueprint' ? '🗺️ Blueprint' : tab === 'pipeline' ? '📊 Pipeline' : '📋 Weekly Log'}
-          </button>
-        ))}
-      </div>
-
-      {/* === BLUEPRINT TAB === */}
-      {activeTab === 'blueprint' && (
+      {/* === Channels & Strategies === */}
+      {(
         <div className="space-y-3">
           {channels.map(ch => {
             const cfg = CHANNEL_CONFIG[ch.type];
@@ -582,21 +570,16 @@ const GeneralRoom: React.FC<GeneralRoomProps> = ({ storagePrefix, projectedReven
                     </div>
                     <div className="flex items-center gap-3 mt-1.5">
                       <div className="flex-1 max-w-[200px] h-1.5 bg-[#2a2a2a] rounded-full overflow-hidden">
-                        <div className="h-full rounded-full transition-all bg-emerald-500/60" style={{ width: `${channelProgress}%` }} />
+                        <div className="h-full rounded-full transition-all bg-emerald-500/60" style={{ width: `${ch.target > 0 ? Math.min((getChannelCurrent(ch.type) / ch.target) * 100, 100) : 0}%` }} />
                       </div>
-                      <span className="text-[10px] text-[#666]">{formatCurrency(ch.current)} / {formatCurrency(ch.target)}</span>
+                      <span className="text-[10px] text-[#666]">
+                        <span className="text-emerald-400">{formatCurrency(getChannelCurrent(ch.type))}</span> / {formatCurrency(ch.target)}
+                      </span>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="flex items-center gap-1">
-                      <input
-                        type="number"
-                        value={ch.current}
-                        onClick={e => e.stopPropagation()}
-                        onChange={e => { e.stopPropagation(); updateChannelCurrent(ch.id, Number(e.target.value) || 0); }}
-                        className="w-20 bg-[#2a2a2a] border border-[#333] rounded-lg px-2 py-1 text-xs text-emerald-400 text-right focus:outline-none focus:ring-1 focus:ring-emerald-500/30"
-                        placeholder="Current $"
-                      />
+                      <span className="text-xs text-emerald-400 font-medium w-16 text-right">{formatCurrency(getChannelCurrent(ch.type))}</span>
                       <span className="text-[10px] text-[#555]">/</span>
                       <input
                         type="number"
@@ -695,244 +678,8 @@ const GeneralRoom: React.FC<GeneralRoomProps> = ({ storagePrefix, projectedReven
           })}
         </div>
       )}
-
-      {/* === PIPELINE TAB === */}
-      {activeTab === 'pipeline' && (
-        <div className="space-y-6">
-          {/* Channel breakdown bars */}
-          <div className="bg-[#1c1c1c] rounded-2xl border border-[#2a2a2a] p-6">
-            <h3 className="text-sm font-semibold text-[#ECECEC] mb-4">Revenue by Channel</h3>
-            <div className="space-y-4">
-              {channels.map(ch => {
-                const cfg = CHANNEL_CONFIG[ch.type];
-                const pct = ch.target > 0 ? Math.min((ch.current / ch.target) * 100, 100) : 0;
-                return (
-                  <div key={ch.id}>
-                    <div className="flex items-center justify-between mb-1.5">
-                      <div className="flex items-center gap-2">
-                        <span className="text-[#888]">{cfg.icon}</span>
-                        <span className="text-xs font-medium text-[#ccc]">{ch.name}</span>
-                      </div>
-                      <span className="text-xs text-[#666]">
-                        <span className="text-[#ECECEC]">{formatCurrency(ch.current)}</span> / {formatCurrency(ch.target)}
-                      </span>
-                    </div>
-                    <div className="h-2 bg-[#2a2a2a] rounded-full overflow-hidden">
-                      <div className="h-full rounded-full transition-all duration-500 bg-emerald-500/60" style={{ width: `${pct}%` }} />
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* Total */}
-            <div className="mt-6 pt-4 border-t border-[#2a2a2a]">
-              <div className="flex items-center justify-between mb-1.5">
-                <span className="text-xs font-semibold text-[#ECECEC]">Total</span>
-                <span className="text-xs font-semibold">
-                  <span className="text-emerald-400">{formatCurrency(totalCurrent)}</span>
-                  <span className="text-[#666]"> / {formatCurrency(totalTarget)}</span>
-                </span>
-              </div>
-              <div className="h-3 bg-[#2a2a2a] rounded-full overflow-hidden">
-                <div
-                  className="h-full rounded-full bg-gradient-to-r from-emerald-600 to-emerald-400 transition-all duration-500"
-                  style={{ width: `${progressPercent}%` }}
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Weekly trend chart */}
-          {trendData.length > 0 && (
-            <div className="bg-[#1c1c1c] rounded-2xl border border-[#2a2a2a] p-6">
-              <h3 className="text-sm font-semibold text-[#ECECEC] mb-4">Weekly Revenue Trend</h3>
-              <div className="h-[250px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={trendData}>
-                    <defs>
-                      <linearGradient id="trendGradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#10b981" stopOpacity={0.25} />
-                        <stop offset="100%" stopColor="#10b981" stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#2a2a2a" />
-                    <XAxis dataKey="week" tick={{ fill: '#666', fontSize: 10 }} axisLine={false} tickLine={false} />
-                    <YAxis
-                      tick={{ fill: '#666', fontSize: 10 }}
-                      axisLine={false}
-                      tickLine={false}
-                      tickFormatter={(v: number) => `$${(v / 1000).toFixed(0)}K`}
-                    />
-                    <Tooltip
-                      contentStyle={{ background: '#1c1c1c', border: '1px solid #2a2a2a', borderRadius: 12, fontSize: 11 }}
-                      labelStyle={{ color: '#999' }}
-                      formatter={(value: number) => [`$${value.toLocaleString()}`, 'Revenue']}
-                    />
-                    <Area type="monotone" dataKey="revenue" stroke="#10b981" strokeWidth={2} fill="url(#trendGradient)" dot={{ r: 3, fill: '#10b981' }} />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* === WEEKLY LOG TAB === */}
-      {activeTab === 'log' && (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-[#ECECEC]">Weekly Performance Log</h3>
-            <button
-              onClick={() => setShowLogForm(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-emerald-500/10 text-emerald-400 rounded-xl text-xs font-semibold hover:bg-emerald-500/20 transition-none"
-            >
-              <Plus size={14} /> Log This Week
-            </button>
-          </div>
-
-          {/* Log form */}
-          {showLogForm && <WeeklyLogForm onSave={addWeeklyLog} onCancel={() => setShowLogForm(false)} />}
-
-          {/* Log entries */}
-          {weeklyLogs.length === 0 && !showLogForm ? (
-            <div className="bg-[#1c1c1c] rounded-2xl border border-[#2a2a2a] p-12 text-center">
-              <div className="text-[#444] mb-2"><BarChart3 size={32} className="mx-auto" /></div>
-              <p className="text-sm text-[#666]">No weekly logs yet</p>
-              <p className="text-xs text-[#555] mt-1">Start tracking your weekly performance to see trends</p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {[...weeklyLogs].sort((a, b) => b.week_start.localeCompare(a.week_start)).map(log => (
-                <div key={log.id} className="bg-[#1c1c1c] rounded-2xl border border-[#2a2a2a] p-5">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-3">
-                      <span className="text-xs font-semibold text-[#ECECEC]">
-                        Week of {new Date(log.week_start).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                      </span>
-                      <span className="text-lg font-bold text-emerald-400">{formatCurrency(log.revenue)}</span>
-                    </div>
-                    <button onClick={() => deleteLog(log.id)} className="text-[#555] hover:text-red-400 transition-none">
-                      <Trash2 size={14} />
-                    </button>
-                  </div>
-                  <div className="grid grid-cols-4 gap-4">
-                    <div>
-                      <div className="text-[10px] text-[#666] uppercase tracking-wider">Leads</div>
-                      <div className="text-sm font-semibold text-[#ccc]">{log.leads}</div>
-                    </div>
-                    <div>
-                      <div className="text-[10px] text-[#666] uppercase tracking-wider">Calls Booked</div>
-                      <div className="text-sm font-semibold text-[#ccc]">{log.calls_booked}</div>
-                    </div>
-                    <div>
-                      <div className="text-[10px] text-[#666] uppercase tracking-wider">Calls Showed</div>
-                      <div className="text-sm font-semibold text-[#ccc]">{log.calls_showed}</div>
-                    </div>
-                    <div>
-                      <div className="text-[10px] text-[#666] uppercase tracking-wider">Deals Closed</div>
-                      <div className="text-sm font-semibold text-[#ccc]">{log.deals_closed}</div>
-                    </div>
-                  </div>
-                  {log.notes && (
-                    <div className="mt-3 pt-3 border-t border-[#2a2a2a]">
-                      <p className="text-xs text-[#888]">{log.notes}</p>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
     </div>
   );
 };
-
-// --- Weekly Log Form ---
-const WeeklyLogForm: React.FC<{ onSave: (log: Omit<WeeklyLog, 'id'>) => void; onCancel: () => void }> = ({ onSave, onCancel }) => {
-  const [weekStart, setWeekStart] = useState(() => {
-    const d = new Date();
-    d.setDate(d.getDate() - d.getDay() + 1); // Monday
-    return d.toISOString().slice(0, 10);
-  });
-  const [revenue, setRevenue] = useState(0);
-  const [leads, setLeads] = useState(0);
-  const [callsBooked, setCallsBooked] = useState(0);
-  const [callsShowed, setCallsShowed] = useState(0);
-  const [dealsClosed, setDealsClosed] = useState(0);
-  const [notes, setNotes] = useState('');
-
-  const handleSubmit = () => {
-    onSave({
-      week_start: weekStart,
-      revenue,
-      leads,
-      calls_booked: callsBooked,
-      calls_showed: callsShowed,
-      deals_closed: dealsClosed,
-      notes,
-    });
-  };
-
-  const inputClass = "w-full bg-[#2a2a2a] border border-[#333] rounded-lg px-3 py-2 text-xs text-[#ECECEC] focus:outline-none focus:ring-1 focus:ring-emerald-500/30";
-
-  return (
-    <div className="bg-[#1c1c1c] rounded-2xl border border-[#2a2a2a] p-5">
-      <h4 className="text-xs font-semibold text-[#ECECEC] mb-4">Log Weekly Performance</h4>
-      <div className="grid grid-cols-3 gap-4 mb-4">
-        <div>
-          <label className="text-[10px] uppercase tracking-wider text-[#666] font-medium block mb-1">Week Starting</label>
-          <input type="date" value={weekStart} onChange={e => setWeekStart(e.target.value)} className={inputClass} />
-        </div>
-        <div>
-          <label className="text-[10px] uppercase tracking-wider text-[#666] font-medium block mb-1">Revenue ($)</label>
-          <input type="number" value={revenue || ''} onChange={e => setRevenue(Number(e.target.value))} placeholder="0" className={inputClass} />
-        </div>
-        <div>
-          <label className="text-[10px] uppercase tracking-wider text-[#666] font-medium block mb-1">Leads Generated</label>
-          <input type="number" value={leads || ''} onChange={e => setLeads(Number(e.target.value))} placeholder="0" className={inputClass} />
-        </div>
-        <div>
-          <label className="text-[10px] uppercase tracking-wider text-[#666] font-medium block mb-1">Calls Booked</label>
-          <input type="number" value={callsBooked || ''} onChange={e => setCallsBooked(Number(e.target.value))} placeholder="0" className={inputClass} />
-        </div>
-        <div>
-          <label className="text-[10px] uppercase tracking-wider text-[#666] font-medium block mb-1">Calls Showed</label>
-          <input type="number" value={callsShowed || ''} onChange={e => setCallsShowed(Number(e.target.value))} placeholder="0" className={inputClass} />
-        </div>
-        <div>
-          <label className="text-[10px] uppercase tracking-wider text-[#666] font-medium block mb-1">Deals Closed</label>
-          <input type="number" value={dealsClosed || ''} onChange={e => setDealsClosed(Number(e.target.value))} placeholder="0" className={inputClass} />
-        </div>
-      </div>
-      <div className="mb-4">
-        <label className="text-[10px] uppercase tracking-wider text-[#666] font-medium block mb-1">Notes</label>
-        <textarea
-          value={notes}
-          onChange={e => setNotes(e.target.value)}
-          rows={2}
-          placeholder="What happened this week..."
-          className={`${inputClass} resize-none`}
-        />
-      </div>
-      <div className="flex justify-end gap-3">
-        <button onClick={onCancel} className="px-4 py-2 bg-[#2a2a2a] text-[#999] rounded-lg text-xs font-medium hover:bg-[#333] transition-none">Cancel</button>
-        <button onClick={handleSubmit} className="px-4 py-2 bg-emerald-500/10 text-emerald-400 rounded-lg text-xs font-semibold hover:bg-emerald-500/20 transition-none">Save Log</button>
-      </div>
-    </div>
-  );
-};
-
-// Small icon helper
-const FileLogIcon: React.FC<{ size: number }> = ({ size }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="#a855f6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-    <path d="M14 2v6h6" />
-    <path d="M16 13H8" />
-    <path d="M16 17H8" />
-    <path d="M10 9H8" />
-  </svg>
-);
 
 export default GeneralRoom;
