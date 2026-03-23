@@ -670,146 +670,130 @@ const AuthenticatedApp: React.FC<{ user: User; signOut: () => Promise<void> }> =
           <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
 
             {/* ── Top Stat Cards ── */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                {/* Monthly Revenue */}
-               <div className="bg-[#1c1c1c] p-7 rounded-2xl border border-white/[0.04] relative overflow-hidden">
-                  <p className="text-[10px] font-semibold text-[#555] uppercase tracking-[0.15em] mb-4">This Month</p>
-                  <div className="flex items-baseline gap-3">
-                    <h3 className="text-3xl font-extrabold text-[#ECECEC] tracking-tight">${projectedMonthlyRevenue.toLocaleString()}</h3>
-                    {paidThisMonth > 0 && <span className="text-xs font-semibold text-emerald-400/80 flex items-center gap-0.5"><ArrowUpRight size={12} />active</span>}
+               <div className="bg-[#1c1c1c] p-5 rounded-2xl">
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-[#666] text-xs font-medium uppercase tracking-wider">This Month</p>
+                    <div className="p-1.5 rounded-lg" style={{ background: 'rgba(16,185,129,0.1)' }}><DollarSign size={14} className="text-emerald-400" /></div>
                   </div>
-                  <div className="flex items-center gap-2 text-xs mt-2">
-                     <span className="text-[#555]">${paidThisMonth.toLocaleString()} collected</span>
-                     {pendingThisMonth > 0 && <span className="text-[#444]">· ${pendingThisMonth.toLocaleString()} pending</span>}
+                  <h3 className="text-2xl font-bold text-[#ECECEC] mb-1">${projectedMonthlyRevenue.toLocaleString()}</h3>
+                  <div className="flex items-center gap-2 text-xs">
+                     <span className="text-emerald-400 font-medium">${paidThisMonth.toLocaleString()} collected</span>
+                     {pendingThisMonth > 0 && <span className="text-[#555]">· ${pendingThisMonth.toLocaleString()} pending</span>}
                   </div>
                </div>
 
                {/* Total Revenue */}
-               <div className="bg-[#1c1c1c] p-7 rounded-2xl border border-white/[0.04] relative overflow-hidden">
-                  <p className="text-[10px] font-semibold text-[#555] uppercase tracking-[0.15em] mb-4">Total Revenue</p>
-                  <div className="flex items-baseline gap-3">
-                    <h3 className="text-3xl font-extrabold text-[#ECECEC] tracking-tight">${totalRevenue.toLocaleString()}</h3>
+               <div className="bg-[#1c1c1c] p-5 rounded-2xl">
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-[#666] text-xs font-medium uppercase tracking-wider">Total Revenue</p>
+                    <div className="p-1.5 rounded-lg" style={{ background: 'rgba(16,185,129,0.1)' }}><TrendingUp size={14} className="text-emerald-400" /></div>
+                  </div>
+                  <h3 className="text-2xl font-bold text-[#ECECEC] mb-1">${totalRevenue.toLocaleString()}</h3>
+                  <div className="flex items-center gap-1.5 text-xs">
                     {momGrowth !== 0 && (
-                      <span className={`text-xs font-semibold flex items-center gap-0.5 ${momGrowth > 0 ? 'text-emerald-400/80' : 'text-red-400/70'}`}>
+                      <span className={`flex items-center gap-0.5 font-medium ${momGrowth > 0 ? 'text-emerald-400' : 'text-red-400'}`}>
                         {momGrowth > 0 ? <ArrowUpRight size={12} /> : <ArrowDownRight size={12} />}
                         {Math.abs(momGrowth)}%
                       </span>
                     )}
+                    <span className="text-[#555]">vs last month</span>
                   </div>
-                  <p className="text-xs text-[#444] mt-2">vs last month</p>
                </div>
 
                {/* Outstanding */}
-               <div className="bg-[#1c1c1c] p-7 rounded-2xl border border-white/[0.04] relative overflow-hidden">
-                  <p className="text-[10px] font-semibold text-[#555] uppercase tracking-[0.15em] mb-4">Outstanding</p>
-                  <div className="flex items-baseline gap-3">
-                    <h3 className="text-3xl font-extrabold text-[#ECECEC] tracking-tight">${outstandingAmount.toLocaleString()}</h3>
-                    {overdueAmount > 0 && <span className="text-xs font-semibold text-[#e0a870]/80 flex items-center gap-0.5"><ArrowUpRight size={12} />overdue</span>}
+               <div className="bg-[#1c1c1c] p-5 rounded-2xl">
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-[#666] text-xs font-medium uppercase tracking-wider">Outstanding</p>
+                    <div className="p-1.5 rounded-lg" style={{ background: outstandingAmount > 0 ? 'rgba(239,68,68,0.1)' : 'rgba(255,255,255,0.04)' }}>
+                      <DollarSign size={14} className={outstandingAmount > 0 ? 'text-red-400' : 'text-[#555]'} />
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2 text-xs mt-2">
-                    {overdueAmount > 0 && <span className="text-[#555]">${overdueAmount.toLocaleString()} past due</span>}
+                  <h3 className={`text-2xl font-bold mb-1 ${outstandingAmount > 0 ? 'text-red-400' : 'text-[#ECECEC]'}`}>${outstandingAmount.toLocaleString()}</h3>
+                  <div className="flex items-center gap-2 text-xs">
+                    {overdueAmount > 0 && <span className="text-red-400 font-medium">${overdueAmount.toLocaleString()} overdue</span>}
                     {overdueAmount === 0 && outstandingAmount > 0 && <span className="text-[#555]">All within due dates</span>}
-                    {outstandingAmount === 0 && <span className="text-emerald-400/70">All clear</span>}
+                    {outstandingAmount === 0 && <span className="text-emerald-400 font-medium">All paid</span>}
                   </div>
                </div>
 
                {/* Active Clients */}
-               <div className="bg-[#1c1c1c] p-7 rounded-2xl border border-white/[0.04] relative overflow-hidden">
-                  <p className="text-[10px] font-semibold text-[#555] uppercase tracking-[0.15em] mb-4">Active Clients</p>
-                  <div className="flex items-baseline gap-3">
-                    <h3 className="text-3xl font-extrabold text-[#ECECEC] tracking-tight">{activeClients}</h3>
+               <div className="bg-[#1c1c1c] p-5 rounded-2xl">
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-[#666] text-xs font-medium uppercase tracking-wider">Clients</p>
+                    <div className="p-1.5 rounded-lg" style={{ background: 'rgba(255,255,255,0.04)' }}><Users size={14} className="text-[#888]" /></div>
                   </div>
-                  <p className="text-xs text-[#444] mt-2">Avg/mo: ${avgMonthlyRevenue.toLocaleString()}</p>
+                  <h3 className="text-2xl font-bold text-[#ECECEC] mb-1">{activeClients}</h3>
+                  <div className="flex items-center gap-2 text-xs">
+                    <span className="text-[#555]">Avg/mo: ${avgMonthlyRevenue.toLocaleString()}</span>
+                  </div>
                </div>
             </div>
 
-            {/* ── Revenue Growth Chart + Projection Card ── */}
-            <div className="grid grid-cols-1 xl:grid-cols-12 gap-5">
-              {/* Chart */}
-              <div className="xl:col-span-8 bg-[#1c1c1c] rounded-2xl p-8 border border-white/[0.04]">
-                <div className="flex flex-col sm:flex-row justify-between items-start gap-4 mb-8">
-                  <div>
-                    <h2 className="text-lg font-bold text-[#ECECEC] tracking-tight">Revenue Growth</h2>
-                    <p className="text-sm text-[#555] mt-1">
-                      {dashView === 'today' ? "Today's revenue" : dashView === 'week' ? 'This week' : dashView === 'month' ? 'This month' : new Date().getFullYear() + ' progress'}
-                    </p>
-                  </div>
-                  <div className="flex bg-[#161616] rounded-lg p-0.5 border border-[#252525]">
-                    {(['today', 'week', 'month', 'year'] as const).map(v => (
-                      <button key={v} onClick={() => setDashView(v)} className={`px-3 py-1.5 rounded-md text-[10px] font-semibold uppercase tracking-wide transition-colors ${dashView === v ? 'bg-[#252525] text-[#ECECEC]' : 'text-[#555] hover:text-[#888]'}`}>
-                        {v === 'today' ? 'Today' : v === 'week' ? 'Week' : v === 'month' ? 'Month' : 'Year'}
-                      </button>
-                    ))}
-                  </div>
+            {/* ── Revenue Growth Chart ── */}
+            <div className="bg-[#1c1c1c] rounded-2xl p-6">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h2 className="text-sm font-bold text-[#ECECEC]">Revenue Growth</h2>
+                  <p className="text-[11px] text-[#555] mt-0.5">
+                    {dashView === 'today' ? "Today's revenue" : dashView === 'week' ? 'This week' : dashView === 'month' ? 'This month' : new Date().getFullYear() + ' progress'}
+                  </p>
                 </div>
-                <div style={{ height: 300 }}>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={chartData}>
-                      <defs>
-                        <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="#10b981" stopOpacity={0.2} />
-                          <stop offset="100%" stopColor="#10b981" stopOpacity={0} />
-                        </linearGradient>
-                      </defs>
-                      <CartesianGrid strokeDasharray="4 4" stroke="rgba(255,255,255,0.03)" vertical={false} />
-                      <XAxis dataKey="name" tick={{ fill: '#444', fontSize: 10, fontWeight: 600 }} axisLine={false} tickLine={false} />
-                      <YAxis domain={[0, 100000]} tick={{ fill: '#444', fontSize: 10, fontWeight: 600 }} axisLine={false} tickLine={false} tickFormatter={(v: number) => v >= 1000 ? `$${(v / 1000).toFixed(0)}k` : `$${v}`} ticks={[0, 25000, 50000, 75000, 100000]} />
-                      <Tooltip
-                        contentStyle={{ background: '#1c1c1c', border: '1px solid #252525', borderRadius: 12, fontSize: 12, color: '#ECECEC' }}
-                        formatter={(value: number) => [`$${value.toLocaleString()}`, 'Revenue']}
-                        labelStyle={{ color: '#888' }}
-                      />
-                      <Area
-                        type="monotone"
-                        dataKey="revenue"
-                        stroke="#10b981"
-                        strokeWidth={2}
-                        fill="url(#revenueGradient)"
-                        dot={false}
-                        activeDot={{ r: 3, fill: '#10b981', stroke: '#1c1c1c', strokeWidth: 1.5 }}
-                      />
-                    </AreaChart>
-                  </ResponsiveContainer>
+                <div className="flex bg-[#161616] rounded-lg p-0.5 border border-[#252525]">
+                  {(['today', 'week', 'month', 'year'] as const).map(v => (
+                    <button key={v} onClick={() => setDashView(v)} className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${dashView === v ? 'bg-[#252525] text-[#ECECEC]' : 'text-[#555] hover:text-[#888]'}`}>
+                      {v === 'today' ? 'Today' : v === 'week' ? 'Week' : v === 'month' ? 'Month' : 'Year'}
+                    </button>
+                  ))}
                 </div>
               </div>
-
-              {/* Projection Side Card */}
-              <div className="xl:col-span-4 bg-gradient-to-br from-[#1e1e1e] to-[#1a1a1a] rounded-2xl p-8 border border-white/[0.04] flex flex-col justify-between">
-                <div>
-                  <div className="w-12 h-12 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-400 mb-6">
-                    <DollarSign size={22} />
-                  </div>
-                  <h3 className="text-2xl font-extrabold text-[#ECECEC] leading-tight tracking-tight">Monthly<br/>Projection</h3>
-                  <p className="text-[#555] text-sm mt-4 leading-relaxed">Based on current client contracts, billing cycles, and active pipelines.</p>
-                </div>
-                <div className="mt-8">
-                  <div className="flex justify-between items-end mb-3">
-                    <span className="text-[#555] text-[10px] font-semibold uppercase tracking-[0.15em]">Goal Progress</span>
-                    <span className="text-white text-xl font-extrabold tracking-tight">{projectedMonthlyRevenue > 0 ? Math.min(Math.round((projectedMonthlyRevenue / 100000) * 100), 100) : 0}%</span>
-                  </div>
-                  <div className="w-full h-2 bg-[#161616] rounded-full overflow-hidden border border-white/[0.04]">
-                    <div className="h-full rounded-full bg-emerald-500" style={{ width: `${projectedMonthlyRevenue > 0 ? Math.min((projectedMonthlyRevenue / 100000) * 100, 100) : 0}%`, boxShadow: '0 0 12px rgba(16,185,129,0.3)' }} />
-                  </div>
-                  <p className="text-[10px] text-[#444] mt-2 text-right">${projectedMonthlyRevenue.toLocaleString()} of $100K target</p>
-                </div>
+              <div style={{ height: 300 }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={chartData}>
+                    <defs>
+                      <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#10b981" stopOpacity={0.25} />
+                        <stop offset="100%" stopColor="#10b981" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#252525" vertical={false} />
+                    <XAxis dataKey="name" tick={{ fill: '#555', fontSize: 11 }} axisLine={false} tickLine={false} />
+                    <YAxis domain={[0, 100000]} tick={{ fill: '#555', fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={(v: number) => v >= 1000 ? `$${(v / 1000).toFixed(0)}k` : `$${v}`} ticks={[0, 25000, 50000, 75000, 100000]} />
+                    <Tooltip
+                      contentStyle={{ background: '#1c1c1c', border: '1px solid #252525', borderRadius: 12, fontSize: 12, color: '#ECECEC' }}
+                      formatter={(value: number) => [`$${value.toLocaleString()}`, 'Revenue']}
+                      labelStyle={{ color: '#888' }}
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="revenue"
+                      stroke="#10b981"
+                      strokeWidth={1.5}
+                      fill="url(#revenueGradient)"
+                      dot={false}
+                      activeDot={{ r: 3, fill: '#10b981', stroke: '#1c1c1c', strokeWidth: 1.5 }}
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
               </div>
             </div>
 
             {/* ── Billing History ── */}
-            <div className="bg-[#1c1c1c] rounded-2xl overflow-hidden border border-white/[0.04]">
-              <div className="px-8 py-6 border-b border-white/[0.04] flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div className="bg-[#1c1c1c] rounded-2xl p-6">
+              <div className="flex items-center justify-between mb-4">
                 <div>
-                  <h2 className="text-lg font-bold text-[#ECECEC] tracking-tight">Billing History</h2>
-                  <p className="text-sm text-[#555] mt-1">Individual invoices across all clients</p>
+                  <h2 className="text-sm font-bold text-[#ECECEC]">Billing History</h2>
+                  <p className="text-[11px] text-[#555] mt-0.5">Individual invoices across all clients</p>
                 </div>
-                <span className="text-xs text-[#444] font-medium">{billingInvoices.length} invoices</span>
+                <span className="text-[11px] text-[#555]">{billingInvoices.length} invoices</span>
               </div>
               {billingInvoices.length === 0 ? (
-                <p className="text-center text-[#444] text-sm py-12">No invoices yet. Create invoices in client billing tabs.</p>
+                <p className="text-center text-[#444] text-sm py-8">No invoices yet. Create invoices in client billing tabs.</p>
               ) : (
-                <div>
+                <div className="space-y-1">
                   {/* Header */}
-                  <div className="grid grid-cols-12 gap-3 px-8 py-4 text-[10px] font-semibold uppercase tracking-[0.15em] text-[#444] border-b border-white/[0.04]">
+                  <div className="grid grid-cols-12 gap-3 px-3 py-2 text-[10px] font-medium uppercase tracking-wider text-[#555]">
                     <div className="col-span-3">Client</div>
                     <div className="col-span-2">Service</div>
                     <div className="col-span-2 text-right">Amount</div>
@@ -822,43 +806,40 @@ const AuthenticatedApp: React.FC<{ user: User; signOut: () => Promise<void> }> =
                     return db.getTime() - da.getTime();
                   }).map(inv => {
                     const cl = dashClients.find(c => c.id === inv.client_id);
-                    // Pastel status system — balanced, low-key dark-mode palette
-                    const statusColor = inv.status === 'Paid' ? 'text-[#7dd8a8]' : inv.status === 'Cancelled' ? 'text-[#666]' : inv.status === 'Overdue' ? 'text-[#e0a870]' : 'text-[#8bb0d0]';
-                    const statusBg = inv.status === 'Paid' ? 'rgba(125,216,168,0.06)' : inv.status === 'Cancelled' ? 'rgba(255,255,255,0.03)' : inv.status === 'Overdue' ? 'rgba(224,168,112,0.06)' : 'rgba(139,176,208,0.06)';
-                    const statusBorder = inv.status === 'Paid' ? 'rgba(125,216,168,0.15)' : inv.status === 'Cancelled' ? 'rgba(255,255,255,0.06)' : inv.status === 'Overdue' ? 'rgba(224,168,112,0.15)' : 'rgba(139,176,208,0.15)';
+                    const isOverdue = inv.status === 'Overdue';
+                    const statusColor = inv.status === 'Paid' ? 'text-[#7dd8a8]' : inv.status === 'Cancelled' ? 'text-[#555]' : isOverdue ? 'text-[#e0a870]' : 'text-[#8bb0d0]';
+                    const statusBg = inv.status === 'Paid' ? 'rgba(125,216,168,0.08)' : inv.status === 'Cancelled' ? 'rgba(255,255,255,0.04)' : isOverdue ? 'rgba(224,168,112,0.08)' : 'rgba(139,176,208,0.08)';
                     const dateStr = inv.date_paid || inv.date_due || inv.date_sent || '';
-                    const formattedDate = dateStr ? new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
+                    const formattedDate = dateStr ? new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' }) : '—';
                     return (
-                      <div key={inv.id} className="grid grid-cols-12 gap-3 items-center px-8 py-4 border-t border-white/[0.03] hover:bg-white/[0.015] transition-colors">
-                        <div className="col-span-3 flex items-center gap-3 min-w-0">
+                      <div key={inv.id} className="grid grid-cols-12 gap-3 items-center px-3 py-2.5 rounded-xl hover:bg-[rgba(255,255,255,0.03)] transition-colors">
+                        <div className="col-span-3 flex items-center gap-2.5 min-w-0">
                           {cl?.photo_url ? (
-                            <div className="w-9 h-9 rounded-lg overflow-hidden bg-[#252525] p-0.5 border border-white/[0.06] flex-shrink-0">
-                              <img src={cl.photo_url} alt="" className="w-full h-full rounded-md object-cover" />
-                            </div>
+                            <img src={cl.photo_url} alt="" className="w-7 h-7 rounded-full object-cover flex-shrink-0" />
                           ) : (
-                            <div className="w-9 h-9 rounded-lg bg-[#252525] flex items-center justify-center flex-shrink-0 text-[10px] font-bold text-[#666] border border-white/[0.06]">{cl?.name?.charAt(0) || '?'}</div>
+                            <div className="w-7 h-7 rounded-full bg-[#252525] flex items-center justify-center flex-shrink-0 text-[10px] font-bold text-[#888]">{cl?.name?.charAt(0) || '?'}</div>
                           )}
                           <div className="min-w-0">
-                            <p className="text-[13px] font-semibold text-[#ECECEC] truncate tracking-tight">{cl?.name || 'Unknown'}</p>
-                            {inv.invoice_number && <p className="text-[10px] text-[#444] font-mono truncate">#{inv.invoice_number}</p>}
+                            <p className="text-[13px] font-medium text-[#ECECEC] truncate">{cl?.name || 'Unknown'}</p>
+                            {inv.invoice_number && <p className="text-[10px] text-[#444] truncate">#{inv.invoice_number}</p>}
                           </div>
                         </div>
-                        <div className="col-span-2 text-[12px] text-[#666] truncate">{inv.service || cl?.service || '—'}</div>
-                        <div className="col-span-2 text-right text-[13px] font-bold text-[#ECECEC]">${(inv.amount || 0).toLocaleString()}</div>
+                        <div className="col-span-2 text-[12px] text-[#888] truncate">{inv.service || cl?.service || '—'}</div>
+                        <div className="col-span-2 text-right text-[13px] font-semibold text-[#ECECEC]">${(inv.amount || 0).toLocaleString()}</div>
                         <div className="col-span-2 text-center">
-                          <span className={`text-[10px] font-semibold uppercase px-2.5 py-1 rounded-md ${statusColor}`} style={{ background: statusBg, border: `1px solid ${statusBorder}` }}>{inv.status}</span>
+                          <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full ${statusColor}`} style={{ background: statusBg }}>{inv.status}</span>
                         </div>
-                        <div className="col-span-3 text-right text-[12px] text-[#555]">{formattedDate}</div>
+                        <div className="col-span-3 text-right text-[12px] text-[#666]">{formattedDate}</div>
                       </div>
                     );
                   })}
                   {/* Totals row */}
-                  <div className="grid grid-cols-12 gap-3 px-8 py-4 border-t border-white/[0.06]">
-                    <div className="col-span-5 text-[12px] font-semibold text-[#666]">Total</div>
+                  <div className="grid grid-cols-12 gap-3 px-3 py-2.5 mt-1" style={{ borderTop: '1px solid #252525' }}>
+                    <div className="col-span-5 text-[12px] font-semibold text-[#888]">Total</div>
                     <div className="col-span-2 text-right text-[13px] font-bold text-[#ECECEC]">
                       ${billingInvoices.filter(i => i.status !== 'Cancelled').reduce((s, i) => s + (i.amount || 0), 0).toLocaleString()}
                     </div>
-                    <div className="col-span-2 text-center text-[10px] font-semibold text-[#444] uppercase">
+                    <div className="col-span-2 text-center text-[11px] text-[#555]">
                       {billingInvoices.filter(i => i.status === 'Paid').length} paid
                     </div>
                     <div className="col-span-3" />
@@ -868,23 +849,23 @@ const AuthenticatedApp: React.FC<{ user: User; signOut: () => Promise<void> }> =
             </div>
 
             {/* ── Growth & Client Status Summary ── */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               {/* Payment Status Breakdown */}
-              <div className="bg-[#1c1c1c] rounded-2xl p-8 border border-white/[0.04]">
-                <h2 className="text-base font-bold text-[#ECECEC] mb-5 tracking-tight">Payment Status</h2>
-                <div className="space-y-4">
+              <div className="bg-[#1c1c1c] rounded-2xl p-6">
+                <h2 className="text-sm font-bold text-[#ECECEC] mb-4">Payment Status</h2>
+                <div className="space-y-3">
                   {(['Paid', 'Pending', 'Late', 'Missing Invoice'] as const).map(status => {
                     const count = dashClients.filter(c => c.active !== false && c.payment_status === status).length;
                     const pct = activeClients > 0 ? Math.round((count / activeClients) * 100) : 0;
-                    const color = status === 'Paid' ? '#7dd8a8' : status === 'Pending' ? '#8bb0d0' : status === 'Late' ? '#e0a870' : '#555';
+                    const color = status === 'Paid' ? '#10b981' : status === 'Pending' ? '#eab308' : status === 'Late' ? '#ef4444' : '#666';
                     return (
                       <div key={status}>
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-xs font-medium text-[#ECECEC]">{status}</span>
-                          <span className="text-[10px] font-semibold text-[#555] uppercase tracking-wider">{count} · {pct}%</span>
+                        <div className="flex items-center justify-between mb-1.5">
+                          <span className="text-xs text-[#ECECEC]">{status}</span>
+                          <span className="text-xs text-[#666]">{count} clients · {pct}%</span>
                         </div>
-                        <div className="h-1.5 rounded-full bg-[#161616] overflow-hidden border border-white/[0.03]">
-                          <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: color, opacity: 0.7 }} />
+                        <div className="h-1.5 rounded-full bg-[#161616] overflow-hidden">
+                          <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: color }} />
                         </div>
                       </div>
                     );
@@ -893,21 +874,21 @@ const AuthenticatedApp: React.FC<{ user: User; signOut: () => Promise<void> }> =
               </div>
 
               {/* Client Satisfaction */}
-              <div className="bg-[#1c1c1c] rounded-2xl p-8 border border-white/[0.04]">
-                <h2 className="text-base font-bold text-[#ECECEC] mb-5 tracking-tight">Client Satisfaction</h2>
-                <div className="space-y-4">
+              <div className="bg-[#1c1c1c] rounded-2xl p-6">
+                <h2 className="text-sm font-bold text-[#ECECEC] mb-4">Client Satisfaction</h2>
+                <div className="space-y-3">
                   {(['Happy', 'Moderate', 'Frustrated'] as const).map(status => {
                     const count = dashClients.filter(c => c.active !== false && c.status === status).length;
                     const pct = activeClients > 0 ? Math.round((count / activeClients) * 100) : 0;
-                    const color = status === 'Happy' ? '#7dd8a8' : status === 'Moderate' ? '#8bb0d0' : '#e0a870';
+                    const color = status === 'Happy' ? '#10b981' : status === 'Moderate' ? '#eab308' : '#ef4444';
                     return (
                       <div key={status}>
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-xs font-medium text-[#ECECEC]">{status}</span>
-                          <span className="text-[10px] font-semibold text-[#555] uppercase tracking-wider">{count} · {pct}%</span>
+                        <div className="flex items-center justify-between mb-1.5">
+                          <span className="text-xs text-[#ECECEC]">{status}</span>
+                          <span className="text-xs text-[#666]">{count} clients · {pct}%</span>
                         </div>
-                        <div className="h-1.5 rounded-full bg-[#161616] overflow-hidden border border-white/[0.03]">
-                          <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: color, opacity: 0.7 }} />
+                        <div className="h-1.5 rounded-full bg-[#161616] overflow-hidden">
+                          <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: color }} />
                         </div>
                       </div>
                     );
