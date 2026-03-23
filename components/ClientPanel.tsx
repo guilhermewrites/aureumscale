@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import {
   ExternalLink, Plus, Trash2, Loader2,
   BarChart2, Share2, GitBranch, FileText, StickyNote, LayoutDashboard, Camera,
-  Receipt, DollarSign, Pen, Image as ImageIcon, Calendar, Brain, ChevronDown, ChevronRight, X, Check,
+  Receipt, DollarSign, Pen, Image as ImageIcon, Calendar, Brain, ChevronDown, ChevronRight, X, Check, GripVertical,
 } from 'lucide-react';
 import { supabase } from '../services/supabaseClient';
 
@@ -371,7 +371,7 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
         .select('*')
         .eq('client_id', client.id)
         .eq('user_id', storagePrefix)
-        .order('date_sent', { ascending: false });
+        .order('order_num', { ascending: true });
       if (cancelled) return;
       if (!error && data) {
         setInvoices(data.map((r: any) => ({
@@ -534,7 +534,11 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
     };
     setInvoices(prev => [inv, ...prev]);
     await supabase.from('billing_history').insert({
-      ...inv, client_id: client.id, user_id: storagePrefix,
+      ...inv, client_id: client.id, user_id: storagePrefix, order_num: 0,
+    });
+    // Bump order_num for existing invoices
+    invoices.forEach((existing, i) => {
+      supabase.from('billing_history').update({ order_num: i + 1 }).eq('id', existing.id);
     });
   }, [client, storagePrefix, invoices.length]);
 
@@ -572,6 +576,30 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
   const deleteInvoice = useCallback(async (id: string) => {
     setInvoices(prev => prev.filter(inv => inv.id !== id));
     if (supabase) await supabase.from('billing_history').delete().eq('id', id);
+  }, []);
+
+  // Drag-to-reorder invoices
+  const dragInvRef = useRef<number | null>(null);
+  const dragOverInvRef = useRef<number | null>(null);
+
+  const handleInvoiceDragEnd = useCallback(() => {
+    const from = dragInvRef.current;
+    const to = dragOverInvRef.current;
+    dragInvRef.current = null;
+    dragOverInvRef.current = null;
+    if (from === null || to === null || from === to) return;
+    setInvoices(prev => {
+      const next = [...prev];
+      const [moved] = next.splice(from, 1);
+      next.splice(to, 0, moved);
+      // Persist order to Supabase
+      if (supabase) {
+        next.forEach((inv, i) => {
+          supabase.from('billing_history').update({ order_num: i }).eq('id', inv.id);
+        });
+      }
+      return next;
+    });
   }, []);
 
   useEffect(() => () => {
@@ -766,7 +794,8 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
                 ) : (
                   <div className="rounded-2xl overflow-hidden" style={{ background: '#161616' }}>
                     {/* Header */}
-                    <div className="grid grid-cols-[1fr_80px_1fr_85px_90px_90px_90px_70px_36px] gap-2 px-5 py-3 text-[10px] font-semibold uppercase tracking-widest" style={{ color: '#444', borderBottom: '1px solid #222' }}>
+                    <div className="grid grid-cols-[24px_1fr_80px_1fr_85px_90px_90px_90px_70px_36px] gap-2 px-5 py-3 text-[10px] font-semibold uppercase tracking-widest" style={{ color: '#444', borderBottom: '1px solid #222' }}>
+                      <span></span>
                       <span>Invoice #</span>
                       <span>Amount</span>
                       <span>Service</span>
@@ -778,7 +807,7 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
                       <span></span>
                     </div>
                     {/* Rows */}
-                    {invoices.map(inv => {
+                    {invoices.map((inv, idx) => {
                       // Calculate payment speed
                       let speedLabel = '—';
                       let speedColor = '#444';
@@ -791,11 +820,19 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
                         else { speedLabel = 'Slow'; speedColor = '#f87171'; }
                       }
                       return (
-                      <div key={inv.id} className="grid grid-cols-[1fr_80px_1fr_85px_90px_90px_90px_70px_36px] gap-2 px-5 py-3 items-center transition-colors"
+                      <div key={inv.id}
+                        draggable
+                        onDragStart={() => { dragInvRef.current = idx; }}
+                        onDragOver={e => { e.preventDefault(); dragOverInvRef.current = idx; }}
+                        onDragEnd={handleInvoiceDragEnd}
+                        className="grid grid-cols-[24px_1fr_80px_1fr_85px_90px_90px_90px_70px_36px] gap-2 px-5 py-3 items-center transition-colors"
                         style={{ borderBottom: '1px solid #222' }}
                         onMouseEnter={e => (e.currentTarget.style.background = '#1a1a1a')}
                         onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
                       >
+                        <div className="cursor-grab active:cursor-grabbing text-[#333] hover:text-[#666] transition-colors">
+                          <GripVertical size={14} />
+                        </div>
                         <input
                           value={inv.invoice_number}
                           onChange={e => updateInvoice(inv.id, { invoice_number: e.target.value })}
