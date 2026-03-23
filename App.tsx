@@ -796,7 +796,11 @@ const AuthenticatedApp: React.FC<{ user: User; signOut: () => Promise<void> }> =
                     <div className="col-span-2 text-center">Status</div>
                     <div className="col-span-3 text-right">Date</div>
                   </div>
-                  {billingInvoices.map(inv => {
+                  {[...billingInvoices].sort((a, b) => {
+                    const da = new Date(a.date_paid || a.date_due || a.date_sent || '');
+                    const db = new Date(b.date_paid || b.date_due || b.date_sent || '');
+                    return db.getTime() - da.getTime();
+                  }).map(inv => {
                     const cl = dashClients.find(c => c.id === inv.client_id);
                     const statusColor = inv.status === 'Paid' ? 'text-emerald-400' : inv.status === 'Cancelled' ? 'text-[#555]' : 'text-yellow-400';
                     const statusBg = inv.status === 'Paid' ? 'rgba(16,185,129,0.1)' : inv.status === 'Cancelled' ? 'rgba(255,255,255,0.04)' : 'rgba(234,179,8,0.1)';
