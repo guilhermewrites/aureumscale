@@ -544,140 +544,133 @@ const GeneralRoom: React.FC<GeneralRoomProps> = ({ storagePrefix, projectedReven
         </div>
       </div>
 
-      {/* === Channels & Strategies === */}
-      {(
-        <div className="space-y-3">
-          {channels.map(ch => {
-            const cfg = CHANNEL_CONFIG[ch.type];
-            const doneCount = ch.strategies.filter(s => s.status === 'done').length;
-            const totalCount = ch.strategies.length;
-            const channelProgress = totalCount > 0 ? (doneCount / totalCount) * 100 : 0;
+      {/* === Channel Cards === */}
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+        {channels.map(ch => {
+          const cfg = CHANNEL_CONFIG[ch.type];
+          const current = getChannelCurrent(ch.type);
+          const doneCount = ch.strategies.filter(s => s.status === 'done').length;
+          const totalCount = ch.strategies.length;
+          const pct = ch.target > 0 ? Math.min((current / ch.target) * 100, 100) : 0;
 
-            return (
-              <div key={ch.id} className="bg-[#1c1c1c] rounded-2xl border border-[#2a2a2a] overflow-hidden">
-                {/* Channel header */}
-                <button
-                  onClick={() => toggleChannel(ch.id)}
-                  className="w-full flex items-center gap-4 p-5 hover:bg-[rgba(255,255,255,0.02)] transition-none"
-                >
-                  <span className="text-[#888]">{cfg.icon}</span>
-                  <div className="flex-1 text-left">
-                    <div className="flex items-center gap-3">
-                      <span className="text-sm font-semibold text-[#ECECEC]">{ch.name}</span>
-                      <span className="text-[10px] text-[#666] bg-[#2a2a2a] px-2 py-0.5 rounded-full">
-                        {doneCount}/{totalCount} done
-                      </span>
+          return (
+            <div key={ch.id} className="bg-[#1c1c1c] rounded-2xl border border-[#2a2a2a] overflow-hidden flex flex-col">
+              {/* Card top */}
+              <div
+                className="p-5 cursor-pointer hover:bg-[rgba(255,255,255,0.02)] transition-none"
+                onClick={() => toggleChannel(ch.id)}
+              >
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-lg bg-[#2a2a2a] flex items-center justify-center text-[#888]">
+                      {cfg.icon}
                     </div>
-                    <div className="flex items-center gap-3 mt-1.5">
-                      <div className="flex-1 max-w-[200px] h-1.5 bg-[#2a2a2a] rounded-full overflow-hidden">
-                        <div className="h-full rounded-full transition-all bg-emerald-500/60" style={{ width: `${ch.target > 0 ? Math.min((getChannelCurrent(ch.type) / ch.target) * 100, 100) : 0}%` }} />
-                      </div>
-                      <span className="text-[10px] text-[#666]">
-                        <span className="text-emerald-400">{formatCurrency(getChannelCurrent(ch.type))}</span> / {formatCurrency(ch.target)}
-                      </span>
+                    <div>
+                      <span className="text-sm font-semibold text-[#ECECEC] block leading-tight">{ch.name}</span>
+                      <span className="text-[10px] text-[#555]">{doneCount}/{totalCount} strategies done</span>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <div className="flex items-center gap-1">
-                      <span className="text-xs text-emerald-400 font-medium w-16 text-right">{formatCurrency(getChannelCurrent(ch.type))}</span>
-                      <span className="text-[10px] text-[#555]">/</span>
-                      <input
-                        type="number"
-                        value={ch.target}
-                        onClick={e => e.stopPropagation()}
-                        onChange={e => { e.stopPropagation(); updateChannelTarget(ch.id, Number(e.target.value) || 0); }}
-                        className="w-20 bg-[#2a2a2a] border border-[#333] rounded-lg px-2 py-1 text-xs text-[#999] text-right focus:outline-none focus:ring-1 focus:ring-[#555]"
-                        placeholder="Target $"
-                      />
-                    </div>
-                    {ch.expanded ? <ChevronDown size={16} className="text-[#666]" /> : <ChevronRight size={16} className="text-[#666]" />}
+                  {ch.expanded ? <ChevronDown size={14} className="text-[#555]" /> : <ChevronRight size={14} className="text-[#555]" />}
+                </div>
+
+                {/* Revenue */}
+                <div className="mb-3">
+                  <div className="text-2xl font-bold text-[#ECECEC] tracking-tight">{formatCurrency(current)}</div>
+                  <div className="flex items-center gap-1 mt-0.5">
+                    <span className="text-[10px] text-[#555]">of</span>
+                    <input
+                      type="number"
+                      value={ch.target}
+                      onClick={e => e.stopPropagation()}
+                      onChange={e => { e.stopPropagation(); updateChannelTarget(ch.id, Number(e.target.value) || 0); }}
+                      className="w-16 bg-transparent text-[10px] text-[#666] font-medium focus:outline-none focus:text-[#999] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      placeholder="target"
+                    />
+                    <span className="text-[10px] text-[#555]">target</span>
                   </div>
-                </button>
+                </div>
 
-                {/* Strategies */}
-                {ch.expanded && (
-                  <div className="border-t border-[#2a2a2a] px-5 pb-4">
-                    {ch.strategies.map((s, i) => (
-                      <div key={s.id} className="flex items-center gap-3 py-3 border-b border-[#222] last:border-0 group">
-                        {/* Status toggle */}
-                        <button onClick={() => cycleStatus(ch.id, s.id)} title={statusLabel(s.status)} className="flex-shrink-0">
-                          {statusIcon(s.status)}
-                        </button>
-
-                        {/* Title */}
-                        {editingStrategy === s.id ? (
-                          <div className="flex-1 flex items-center gap-2">
-                            <input
-                              autoFocus
-                              value={editStrategyText}
-                              onChange={e => setEditStrategyText(e.target.value)}
-                              onKeyDown={e => { if (e.key === 'Enter') saveStrategyEdit(ch.id, s.id); if (e.key === 'Escape') setEditingStrategy(null); }}
-                              className="flex-1 bg-[#2a2a2a] border border-[#444] rounded-lg px-3 py-1.5 text-xs text-[#ECECEC] focus:outline-none focus:ring-1 focus:ring-emerald-500/30"
-                            />
-                            <button onClick={() => saveStrategyEdit(ch.id, s.id)} className="text-emerald-400 hover:text-emerald-300"><Check size={14} /></button>
-                            <button onClick={() => setEditingStrategy(null)} className="text-[#666] hover:text-[#999]"><X size={14} /></button>
-                          </div>
-                        ) : (
-                          <span
-                            className={`flex-1 text-xs ${s.status === 'done' ? 'text-[#666] line-through' : 'text-[#ccc]'}`}
-                          >
-                            {s.title}
-                          </span>
-                        )}
-
-                        {/* Priority */}
-                        <button
-                          onClick={() => cyclePriority(ch.id, s.id)}
-                          title={`Priority: ${s.priority}`}
-                          className={`text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded ${priorityColor(s.priority)} opacity-60 hover:opacity-100`}
-                        >
-                          {s.priority}
-                        </button>
-
-                        {/* Actions */}
-                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button
-                            onClick={() => { setEditingStrategy(s.id); setEditStrategyText(s.title); }}
-                            className="text-[#666] hover:text-[#ccc]"
-                          >
-                            <Edit3 size={12} />
-                          </button>
-                          <button onClick={() => deleteStrategy(ch.id, s.id)} className="text-[#666] hover:text-red-400">
-                            <Trash2 size={12} />
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-
-                    {/* Add strategy */}
-                    {addingToChannel === ch.id ? (
-                      <div className="flex items-center gap-2 mt-3">
-                        <input
-                          autoFocus
-                          value={newStrategyText}
-                          onChange={e => setNewStrategyText(e.target.value)}
-                          onKeyDown={e => { if (e.key === 'Enter') addStrategy(ch.id); if (e.key === 'Escape') { setAddingToChannel(null); setNewStrategyText(''); } }}
-                          placeholder="New strategy..."
-                          className="flex-1 bg-[#2a2a2a] border border-[#333] rounded-lg px-3 py-2 text-xs text-[#ECECEC] focus:outline-none focus:ring-1 focus:ring-emerald-500/30"
-                        />
-                        <button onClick={() => addStrategy(ch.id)} className="px-3 py-2 bg-emerald-500/10 text-emerald-400 rounded-lg text-xs font-medium hover:bg-emerald-500/20">Add</button>
-                        <button onClick={() => { setAddingToChannel(null); setNewStrategyText(''); }} className="text-[#666] hover:text-[#999]"><X size={14} /></button>
-                      </div>
-                    ) : (
-                      <button
-                        onClick={() => setAddingToChannel(ch.id)}
-                        className="flex items-center gap-2 mt-3 text-xs text-[#555] hover:text-[#999] transition-none"
-                      >
-                        <Plus size={14} /> Add strategy
-                      </button>
-                    )}
-                  </div>
-                )}
+                {/* Progress bar */}
+                <div className="h-1.5 bg-[#2a2a2a] rounded-full overflow-hidden">
+                  <div
+                    className="h-full rounded-full bg-emerald-500/60 transition-all duration-500"
+                    style={{ width: `${pct}%` }}
+                  />
+                </div>
+                <div className="text-right mt-1">
+                  <span className="text-[9px] text-[#555] font-medium">{Math.round(pct)}%</span>
+                </div>
               </div>
-            );
-          })}
-        </div>
-      )}
+
+              {/* Strategies (expanded) */}
+              {ch.expanded && (
+                <div className="border-t border-[#2a2a2a] px-5 pb-4 flex-1">
+                  {ch.strategies.map(s => (
+                    <div key={s.id} className="flex items-center gap-2.5 py-2.5 border-b border-[#222] last:border-0 group">
+                      <button onClick={() => cycleStatus(ch.id, s.id)} title={statusLabel(s.status)} className="flex-shrink-0">
+                        {statusIcon(s.status)}
+                      </button>
+
+                      {editingStrategy === s.id ? (
+                        <div className="flex-1 flex items-center gap-2">
+                          <input
+                            autoFocus
+                            value={editStrategyText}
+                            onChange={e => setEditStrategyText(e.target.value)}
+                            onKeyDown={e => { if (e.key === 'Enter') saveStrategyEdit(ch.id, s.id); if (e.key === 'Escape') setEditingStrategy(null); }}
+                            className="flex-1 bg-[#2a2a2a] border border-[#444] rounded-lg px-2 py-1 text-[11px] text-[#ECECEC] focus:outline-none focus:ring-1 focus:ring-emerald-500/30"
+                          />
+                          <button onClick={() => saveStrategyEdit(ch.id, s.id)} className="text-emerald-400 hover:text-emerald-300"><Check size={12} /></button>
+                          <button onClick={() => setEditingStrategy(null)} className="text-[#666] hover:text-[#999]"><X size={12} /></button>
+                        </div>
+                      ) : (
+                        <span className={`flex-1 text-[11px] leading-snug ${s.status === 'done' ? 'text-[#555] line-through' : 'text-[#bbb]'}`}>
+                          {s.title}
+                        </span>
+                      )}
+
+                      <button
+                        onClick={() => cyclePriority(ch.id, s.id)}
+                        title={`Priority: ${s.priority}`}
+                        className={`text-[8px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ${priorityColor(s.priority)} opacity-50 hover:opacity-100`}
+                      >
+                        {s.priority}
+                      </button>
+
+                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button onClick={() => { setEditingStrategy(s.id); setEditStrategyText(s.title); }} className="text-[#555] hover:text-[#ccc]"><Edit3 size={11} /></button>
+                        <button onClick={() => deleteStrategy(ch.id, s.id)} className="text-[#555] hover:text-red-400"><Trash2 size={11} /></button>
+                      </div>
+                    </div>
+                  ))}
+
+                  {addingToChannel === ch.id ? (
+                    <div className="flex items-center gap-2 mt-2.5">
+                      <input
+                        autoFocus
+                        value={newStrategyText}
+                        onChange={e => setNewStrategyText(e.target.value)}
+                        onKeyDown={e => { if (e.key === 'Enter') addStrategy(ch.id); if (e.key === 'Escape') { setAddingToChannel(null); setNewStrategyText(''); } }}
+                        placeholder="New strategy..."
+                        className="flex-1 bg-[#2a2a2a] border border-[#333] rounded-lg px-2.5 py-1.5 text-[11px] text-[#ECECEC] focus:outline-none focus:ring-1 focus:ring-emerald-500/30"
+                      />
+                      <button onClick={() => addStrategy(ch.id)} className="px-2.5 py-1.5 bg-emerald-500/10 text-emerald-400 rounded-lg text-[11px] font-medium hover:bg-emerald-500/20">Add</button>
+                      <button onClick={() => { setAddingToChannel(null); setNewStrategyText(''); }} className="text-[#555] hover:text-[#999]"><X size={12} /></button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => setAddingToChannel(ch.id)}
+                      className="flex items-center gap-1.5 mt-2.5 text-[11px] text-[#444] hover:text-[#888] transition-none"
+                    >
+                      <Plus size={12} /> Add strategy
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 };
