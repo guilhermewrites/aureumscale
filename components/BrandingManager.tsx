@@ -238,52 +238,52 @@ const BrandingManager: React.FC<BrandingManagerProps> = ({ storagePrefix }) => {
       {/* ── Overview Cards ── */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Total Audience */}
-        <div className="bg-[#181818] p-5 rounded-2xl">
+        <div className="bg-[#1c1c1c] p-5 rounded-2xl">
           <div className="flex items-center justify-between mb-3">
             <p className="text-[#666] text-xs font-medium uppercase tracking-wider">Total Audience</p>
             <div className="p-1.5 rounded-lg" style={{ background: 'rgba(16,185,129,0.1)' }}>
               <Users size={14} className="text-emerald-400" />
             </div>
           </div>
-          <h3 className="text-2xl font-medium text-[#e0e0e0] mb-1">{fmt(totalFollowers)}</h3>
+          <h3 className="text-2xl font-bold text-[#ECECEC] mb-1">{fmt(totalFollowers)}</h3>
           <p className="text-[11px] text-[#555]">Across all platforms</p>
         </div>
 
         {/* Total Views */}
-        <div className="bg-[#181818] p-5 rounded-2xl">
+        <div className="bg-[#1c1c1c] p-5 rounded-2xl">
           <div className="flex items-center justify-between mb-3">
             <p className="text-[#666] text-xs font-medium uppercase tracking-wider">Total Views</p>
             <div className="p-1.5 rounded-lg" style={{ background: 'rgba(16,185,129,0.1)' }}>
               <Eye size={14} className="text-emerald-400" />
             </div>
           </div>
-          <h3 className="text-2xl font-medium text-[#e0e0e0] mb-1">{fmt(totalViews)}</h3>
+          <h3 className="text-2xl font-bold text-[#ECECEC] mb-1">{fmt(totalViews)}</h3>
           <p className="text-[11px] text-[#555]">Lifetime impressions</p>
         </div>
 
         {/* Total Posts */}
-        <div className="bg-[#181818] p-5 rounded-2xl">
+        <div className="bg-[#1c1c1c] p-5 rounded-2xl">
           <div className="flex items-center justify-between mb-3">
             <p className="text-[#666] text-xs font-medium uppercase tracking-wider">Total Posts</p>
             <div className="p-1.5 rounded-lg" style={{ background: 'rgba(255,255,255,0.04)' }}>
               <FileText size={14} className="text-[#888]" />
             </div>
           </div>
-          <h3 className="text-2xl font-medium text-[#e0e0e0] mb-1">
+          <h3 className="text-2xl font-bold text-[#ECECEC] mb-1">
             {fmt((['x', 'instagram', 'youtube'] as PlatformType[]).reduce((sum, p) => sum + (latestByPlatform[p]?.total_posts || 0), 0))}
           </h3>
           <p className="text-[11px] text-[#555]">Across all platforms</p>
         </div>
 
         {/* Platforms Connected */}
-        <div className="bg-[#181818] p-5 rounded-2xl">
+        <div className="bg-[#1c1c1c] p-5 rounded-2xl">
           <div className="flex items-center justify-between mb-3">
             <p className="text-[#666] text-xs font-medium uppercase tracking-wider">Platforms</p>
             <div className="p-1.5 rounded-lg" style={{ background: 'rgba(255,255,255,0.04)' }}>
               <TrendingUp size={14} className="text-[#888]" />
             </div>
           </div>
-          <h3 className="text-2xl font-medium text-[#e0e0e0] mb-1">{accounts.filter(a => a.connected).length}/3</h3>
+          <h3 className="text-2xl font-bold text-[#ECECEC] mb-1">{accounts.filter(a => a.connected).length}/3</h3>
           <p className="text-[11px] text-[#555]">Connected</p>
         </div>
       </div>
@@ -300,7 +300,7 @@ const BrandingManager: React.FC<BrandingManagerProps> = ({ storagePrefix }) => {
           const prevFollowerCount = prev ? (p.id === 'youtube' ? prev.subscribers : prev.followers) : undefined;
 
           return (
-            <div key={p.id} className="bg-[#181818] rounded-2xl p-5 border border-[#252525] hover:border-[#333] transition-colors">
+            <div key={p.id} className="bg-[#1c1c1c] rounded-2xl p-5 border border-[#252525] hover:border-[#333] transition-colors">
               {/* Platform Header */}
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3">
@@ -308,7 +308,7 @@ const BrandingManager: React.FC<BrandingManagerProps> = ({ storagePrefix }) => {
                     {p.icon}
                   </div>
                   <div>
-                    <h3 className="text-sm font-medium text-[#e0e0e0]">{p.label}</h3>
+                    <h3 className="text-sm font-bold text-[#ECECEC]">{p.label}</h3>
                     {account ? (
                       <p className="text-[11px] text-[#555]">@{account.username}</p>
                     ) : (
@@ -320,7 +320,7 @@ const BrandingManager: React.FC<BrandingManagerProps> = ({ storagePrefix }) => {
                   {account && (
                     <button
                       onClick={() => setAddSnapshotModal(p.id)}
-                      className="p-1.5 rounded-lg text-[#555] hover:text-[#e0e0e0] hover:bg-[rgba(255,255,255,0.05)] transition-colors"
+                      className="p-1.5 rounded-lg text-[#555] hover:text-[#ECECEC] hover:bg-[rgba(255,255,255,0.05)] transition-colors"
                       title="Add snapshot"
                     >
                       <Plus size={14} />
@@ -335,7 +335,7 @@ const BrandingManager: React.FC<BrandingManagerProps> = ({ storagePrefix }) => {
                         setUsernameInput(account?.username || '');
                       }
                     }}
-                    className="p-1.5 rounded-lg text-[#555] hover:text-[#e0e0e0] hover:bg-[rgba(255,255,255,0.05)] transition-colors"
+                    className="p-1.5 rounded-lg text-[#555] hover:text-[#ECECEC] hover:bg-[rgba(255,255,255,0.05)] transition-colors"
                     title={account ? 'Edit username' : 'Connect account'}
                   >
                     <Edit3 size={14} />
@@ -351,7 +351,7 @@ const BrandingManager: React.FC<BrandingManagerProps> = ({ storagePrefix }) => {
                     value={usernameInput}
                     onChange={e => setUsernameInput(e.target.value)}
                     placeholder="username"
-                    className="flex-1 bg-transparent text-sm text-[#e0e0e0] outline-none placeholder-[#444]"
+                    className="flex-1 bg-transparent text-sm text-[#ECECEC] outline-none placeholder-[#444]"
                     autoFocus
                     onKeyDown={e => e.key === 'Enter' && usernameInput.trim() && saveAccount(p.id, usernameInput.trim())}
                   />
@@ -378,7 +378,7 @@ const BrandingManager: React.FC<BrandingManagerProps> = ({ storagePrefix }) => {
                   <div className="flex items-center justify-between">
                     <span className="text-[11px] text-[#555] uppercase tracking-wider">{followerLabel}</span>
                     <div className="flex items-center gap-2">
-                      <span className="text-lg font-medium text-[#e0e0e0]">{fmt(followerCount)}</span>
+                      <span className="text-lg font-bold text-[#ECECEC]">{fmt(followerCount)}</span>
                     </div>
                   </div>
                   {growthBadge(followerCount, prevFollowerCount) && (
@@ -388,24 +388,24 @@ const BrandingManager: React.FC<BrandingManagerProps> = ({ storagePrefix }) => {
                   <div className="grid grid-cols-2 gap-3 pt-2" style={{ borderTop: '1px solid #252525' }}>
                     <div>
                       <p className="text-[10px] text-[#555] uppercase tracking-wider mb-0.5">Views</p>
-                      <p className="text-sm font-medium text-[#e0e0e0]">{fmt(latest.total_views)}</p>
+                      <p className="text-sm font-semibold text-[#ECECEC]">{fmt(latest.total_views)}</p>
                       {growthBadge(latest.total_views, prev?.total_views)}
                     </div>
                     <div>
                       <p className="text-[10px] text-[#555] uppercase tracking-wider mb-0.5">Posts</p>
-                      <p className="text-sm font-medium text-[#e0e0e0]">{fmt(latest.total_posts)}</p>
+                      <p className="text-sm font-semibold text-[#ECECEC]">{fmt(latest.total_posts)}</p>
                       {growthBadge(latest.total_posts, prev?.total_posts)}
                     </div>
                     {p.id !== 'youtube' && (
                       <div>
                         <p className="text-[10px] text-[#555] uppercase tracking-wider mb-0.5">Following</p>
-                        <p className="text-sm font-medium text-[#e0e0e0]">{fmt(latest.following)}</p>
+                        <p className="text-sm font-semibold text-[#ECECEC]">{fmt(latest.following)}</p>
                       </div>
                     )}
                     {p.id === 'youtube' && (
                       <div>
                         <p className="text-[10px] text-[#555] uppercase tracking-wider mb-0.5">Videos</p>
-                        <p className="text-sm font-medium text-[#e0e0e0]">{fmt(latest.total_posts)}</p>
+                        <p className="text-sm font-semibold text-[#ECECEC]">{fmt(latest.total_posts)}</p>
                       </div>
                     )}
                   </div>
@@ -431,10 +431,10 @@ const BrandingManager: React.FC<BrandingManagerProps> = ({ storagePrefix }) => {
       </div>
 
       {/* ── Audience Growth Chart ── */}
-      <div className="bg-[#181818] rounded-2xl p-6">
+      <div className="bg-[#1c1c1c] rounded-2xl p-6">
         <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
           <div>
-            <h2 className="text-sm font-medium text-[#e0e0e0]">Audience Growth</h2>
+            <h2 className="text-sm font-bold text-[#ECECEC]">Audience Growth</h2>
             <p className="text-[11px] text-[#555] mt-0.5">
               {chartMetric === 'followers' ? 'Follower / subscriber count over time' : 'Total views / impressions over time'}
             </p>
@@ -444,7 +444,7 @@ const BrandingManager: React.FC<BrandingManagerProps> = ({ storagePrefix }) => {
             <div className="flex bg-[#161616] rounded-lg p-0.5 border border-[#252525]">
               {(['followers', 'views'] as const).map(m => (
                 <button key={m} onClick={() => setChartMetric(m)}
-                  className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${chartMetric === m ? 'bg-[#252525] text-[#e0e0e0]' : 'text-[#555] hover:text-[#888]'}`}>
+                  className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${chartMetric === m ? 'bg-[#252525] text-[#ECECEC]' : 'text-[#555] hover:text-[#888]'}`}>
                   {m === 'followers' ? 'Followers' : 'Views'}
                 </button>
               ))}
@@ -453,7 +453,7 @@ const BrandingManager: React.FC<BrandingManagerProps> = ({ storagePrefix }) => {
             {/* Platform filter */}
             <div className="flex bg-[#161616] rounded-lg p-0.5 border border-[#252525]">
               <button onClick={() => setChartPlatform('all')}
-                className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${chartPlatform === 'all' ? 'bg-[#252525] text-[#e0e0e0]' : 'text-[#555] hover:text-[#888]'}`}>
+                className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${chartPlatform === 'all' ? 'bg-[#252525] text-[#ECECEC]' : 'text-[#555] hover:text-[#888]'}`}>
                 All
               </button>
               {PLATFORMS.map(p => (
@@ -468,7 +468,7 @@ const BrandingManager: React.FC<BrandingManagerProps> = ({ storagePrefix }) => {
             <div className="flex bg-[#161616] rounded-lg p-0.5 border border-[#252525]">
               {(['week', 'month', '3months', 'year', 'all'] as const).map(v => (
                 <button key={v} onClick={() => setChartView(v)}
-                  className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${chartView === v ? 'bg-[#252525] text-[#e0e0e0]' : 'text-[#555] hover:text-[#888]'}`}>
+                  className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${chartView === v ? 'bg-[#252525] text-[#ECECEC]' : 'text-[#555] hover:text-[#888]'}`}>
                   {v === 'week' ? '1W' : v === 'month' ? '1M' : v === '3months' ? '3M' : v === 'year' ? '1Y' : 'All'}
                 </button>
               ))}
@@ -521,10 +521,10 @@ const BrandingManager: React.FC<BrandingManagerProps> = ({ storagePrefix }) => {
       </div>
 
       {/* ── Snapshot History ── */}
-      <div className="bg-[#181818] rounded-2xl p-6">
+      <div className="bg-[#1c1c1c] rounded-2xl p-6">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="text-sm font-medium text-[#e0e0e0]">Snapshot History</h2>
+            <h2 className="text-sm font-bold text-[#ECECEC]">Snapshot History</h2>
             <p className="text-[11px] text-[#555] mt-0.5">Daily metrics log — add a snapshot whenever you check your stats</p>
           </div>
           <span className="text-[11px] text-[#555]">{snapshots.length} snapshots</span>
@@ -552,9 +552,9 @@ const BrandingManager: React.FC<BrandingManagerProps> = ({ storagePrefix }) => {
                   </div>
                   <div className="col-span-2 flex items-center gap-2">
                     <span className="text-sm">{pConfig?.icon}</span>
-                    <span className="text-[12px] text-[#e0e0e0]">{pConfig?.label}</span>
+                    <span className="text-[12px] text-[#ECECEC]">{pConfig?.label}</span>
                   </div>
-                  <div className="col-span-2 text-right text-[13px] font-medium text-[#e0e0e0]">
+                  <div className="col-span-2 text-right text-[13px] font-semibold text-[#ECECEC]">
                     {fmt(snap.platform === 'youtube' ? snap.subscribers : snap.followers)}
                   </div>
                   <div className="col-span-2 text-right text-[12px] text-[#888]">{fmt(snap.total_views)}</div>
@@ -579,9 +579,9 @@ const BrandingManager: React.FC<BrandingManagerProps> = ({ storagePrefix }) => {
       {/* ── Add Snapshot Modal ── */}
       {addSnapshotModal && (
         <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-          <div className="bg-[#181818] border border-[#252525] rounded-2xl w-full max-w-md overflow-hidden">
+          <div className="bg-[#1c1c1c] border border-[#252525] rounded-2xl w-full max-w-md overflow-hidden">
             <div className="p-5 border-b border-[#252525]">
-              <h3 className="text-sm font-medium text-[#e0e0e0]">
+              <h3 className="text-sm font-semibold text-[#ECECEC]">
                 Add Snapshot — {PLATFORMS.find(p => p.id === addSnapshotModal)?.label}
               </h3>
               <p className="text-xs text-[#555] mt-1">Enter your current stats from the platform</p>
@@ -594,7 +594,7 @@ const BrandingManager: React.FC<BrandingManagerProps> = ({ storagePrefix }) => {
                   type="date"
                   value={snapshotForm.snapshot_date}
                   onChange={e => setSnapshotForm(prev => ({ ...prev, snapshot_date: e.target.value }))}
-                  className="w-full mt-1 bg-[#161616] border border-[#252525] rounded-xl px-3 py-2.5 text-sm text-[#e0e0e0] focus:outline-none focus:ring-1 focus:ring-[#555]"
+                  className="w-full mt-1 bg-[#161616] border border-[#252525] rounded-xl px-3 py-2.5 text-sm text-[#ECECEC] focus:outline-none focus:ring-1 focus:ring-[#555]"
                 />
               </div>
 
@@ -611,7 +611,7 @@ const BrandingManager: React.FC<BrandingManagerProps> = ({ storagePrefix }) => {
                       [addSnapshotModal === 'youtube' ? 'subscribers' : 'followers']: e.target.value
                     }))}
                     placeholder="0"
-                    className="w-full mt-1 bg-[#161616] border border-[#252525] rounded-xl px-3 py-2.5 text-sm text-[#e0e0e0] focus:outline-none focus:ring-1 focus:ring-[#555] placeholder-[#444]"
+                    className="w-full mt-1 bg-[#161616] border border-[#252525] rounded-xl px-3 py-2.5 text-sm text-[#ECECEC] focus:outline-none focus:ring-1 focus:ring-[#555] placeholder-[#444]"
                   />
                 </div>
                 {addSnapshotModal !== 'youtube' && (
@@ -622,7 +622,7 @@ const BrandingManager: React.FC<BrandingManagerProps> = ({ storagePrefix }) => {
                       value={snapshotForm.following}
                       onChange={e => setSnapshotForm(prev => ({ ...prev, following: e.target.value }))}
                       placeholder="0"
-                      className="w-full mt-1 bg-[#161616] border border-[#252525] rounded-xl px-3 py-2.5 text-sm text-[#e0e0e0] focus:outline-none focus:ring-1 focus:ring-[#555] placeholder-[#444]"
+                      className="w-full mt-1 bg-[#161616] border border-[#252525] rounded-xl px-3 py-2.5 text-sm text-[#ECECEC] focus:outline-none focus:ring-1 focus:ring-[#555] placeholder-[#444]"
                     />
                   </div>
                 )}
@@ -633,7 +633,7 @@ const BrandingManager: React.FC<BrandingManagerProps> = ({ storagePrefix }) => {
                     value={snapshotForm.total_views}
                     onChange={e => setSnapshotForm(prev => ({ ...prev, total_views: e.target.value }))}
                     placeholder="0"
-                    className="w-full mt-1 bg-[#161616] border border-[#252525] rounded-xl px-3 py-2.5 text-sm text-[#e0e0e0] focus:outline-none focus:ring-1 focus:ring-[#555] placeholder-[#444]"
+                    className="w-full mt-1 bg-[#161616] border border-[#252525] rounded-xl px-3 py-2.5 text-sm text-[#ECECEC] focus:outline-none focus:ring-1 focus:ring-[#555] placeholder-[#444]"
                   />
                 </div>
                 <div>
@@ -645,7 +645,7 @@ const BrandingManager: React.FC<BrandingManagerProps> = ({ storagePrefix }) => {
                     value={snapshotForm.total_posts}
                     onChange={e => setSnapshotForm(prev => ({ ...prev, total_posts: e.target.value }))}
                     placeholder="0"
-                    className="w-full mt-1 bg-[#161616] border border-[#252525] rounded-xl px-3 py-2.5 text-sm text-[#e0e0e0] focus:outline-none focus:ring-1 focus:ring-[#555] placeholder-[#444]"
+                    className="w-full mt-1 bg-[#161616] border border-[#252525] rounded-xl px-3 py-2.5 text-sm text-[#ECECEC] focus:outline-none focus:ring-1 focus:ring-[#555] placeholder-[#444]"
                   />
                 </div>
               </div>
@@ -653,7 +653,7 @@ const BrandingManager: React.FC<BrandingManagerProps> = ({ storagePrefix }) => {
             <div className="flex justify-end gap-3 p-4 border-t border-[#252525]">
               <button
                 onClick={() => { setAddSnapshotModal(null); setSnapshotForm({ followers: '', following: '', total_views: '', total_posts: '', subscribers: '', snapshot_date: new Date().toISOString().split('T')[0] }); }}
-                className="px-4 py-2 bg-[#252525] hover:bg-[#333] text-[#e0e0e0] rounded-xl text-sm font-medium transition-colors"
+                className="px-4 py-2 bg-[#252525] hover:bg-[#333] text-[#ECECEC] rounded-xl text-sm font-medium transition-colors"
               >
                 Cancel
               </button>

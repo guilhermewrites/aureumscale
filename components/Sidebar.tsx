@@ -127,6 +127,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeUserId, onUserChange, collapsed
   const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    // Compress to save localStorage space
     const img = new window.Image();
     const url = URL.createObjectURL(file);
     img.onload = () => {
@@ -154,8 +155,8 @@ const Sidebar: React.FC<SidebarProps> = ({ activeUserId, onUserChange, collapsed
   ];
 
   return (
-    <aside className={`fixed left-0 top-0 h-full ${collapsed ? 'w-16' : 'w-60'} bg-[#141414] flex flex-col z-20 transition-none`}>
-      <div className={`px-4 py-5 flex items-center ${collapsed ? 'justify-center' : 'gap-3'} relative`}>
+    <aside className={`fixed left-0 top-0 h-full ${collapsed ? 'w-16' : 'w-64'} bg-[#171717] border-r border-[#2f2f2f] flex flex-col z-20 transition-none`}>
+      <div className={`p-4 flex items-center ${collapsed ? 'justify-center' : 'gap-3'} relative`}>
         <label className="cursor-pointer group relative flex-shrink-0">
           <input
             ref={logoInputRef}
@@ -165,25 +166,33 @@ const Sidebar: React.FC<SidebarProps> = ({ activeUserId, onUserChange, collapsed
             onChange={handleLogoUpload}
           />
           {customLogo ? (
-            <img src={customLogo} alt="Logo" className="w-7 h-7 object-contain rounded" />
+            <img
+              src={customLogo}
+              alt="Logo"
+              className="w-8 h-8 object-contain rounded"
+            />
           ) : (
-            <img src="/aureum-logo.svg" alt="Aureum Logo" className="w-7 h-7 object-contain" />
+            <img
+              src="/aureum-logo.svg"
+              alt="Aureum Logo"
+              className="w-8 h-8 object-contain"
+            />
           )}
           <div className="absolute inset-0 bg-black/50 rounded opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-            <Camera size={10} className="text-white" />
+            <Camera size={12} className="text-white" />
           </div>
         </label>
-        {!collapsed && <span className="text-lg tracking-wide text-[#e0e0e0] flex-1 min-w-0 truncate" style={{ fontFamily: "'Cormorant Garamond', serif", fontStyle: 'italic', fontWeight: 700 }}>Aureum</span>}
+        {!collapsed && <span className="text-xl tracking-wide text-[#ECECEC] flex-1 min-w-0 truncate" style={{ fontFamily: "'Cormorant Garamond', serif", fontStyle: 'italic', fontWeight: 700 }}>Aureum</span>}
         <button
           onClick={onToggleCollapse}
-          className={`${collapsed ? 'absolute -right-3 top-5' : ''} w-5 h-5 rounded-full bg-[#252525] flex items-center justify-center text-[#666] hover:text-[#aaa] flex-shrink-0`}
+          className={`${collapsed ? 'absolute -right-3 top-5' : ''} w-6 h-6 rounded-full bg-[#2f2f2f] border border-[#3a3a3a] flex items-center justify-center text-[#9B9B9B] hover:text-[#ECECEC] hover:bg-[#3a3a3a] flex-shrink-0`}
           title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         >
-          {collapsed ? <ChevronRight size={11} /> : <ChevronLeft size={11} />}
+          {collapsed ? <ChevronRight size={12} /> : <ChevronLeft size={12} />}
         </button>
       </div>
 
-      <nav className="flex-1 px-3 py-2 space-y-0.5 overflow-y-auto custom-scrollbar">
+      <nav className="flex-1 px-2 py-4 space-y-1 overflow-y-auto custom-scrollbar">
         {menuItems.map((item) => {
           const isActive = activeItem === item.id;
           return (
@@ -191,34 +200,33 @@ const Sidebar: React.FC<SidebarProps> = ({ activeUserId, onUserChange, collapsed
               key={item.id}
               onClick={() => navigate(navToRoute[item.id] || '/dashboard')}
               title={collapsed ? item.label : undefined}
-              className={`w-full flex items-center ${collapsed ? 'justify-center px-2' : 'gap-3 px-3'} py-2.5 rounded-xl transition-none group ${
+              className={`w-full flex items-center ${collapsed ? 'justify-center px-2' : 'gap-3 px-4'} py-3 rounded-lg transition-none group ${
                 isActive
-                  ? 'bg-[rgba(255,255,255,0.07)] text-[#e0e0e0]'
-                  : 'text-[#777] hover:text-[#bbb] hover:bg-[rgba(255,255,255,0.03)]'
+                  ? 'bg-[rgba(255,255,255,0.1)] text-[#ECECEC]'
+                  : 'text-[#9B9B9B] hover:text-[#ECECEC] hover:bg-[rgba(255,255,255,0.05)]'
               }`}
             >
               <item.icon
-                size={18}
-                strokeWidth={1.5}
-                className={isActive ? 'text-[#e0e0e0]' : 'text-[#666] group-hover:text-[#bbb]'}
+                size={20}
+                className={isActive ? 'text-[#ECECEC]' : 'text-[#9B9B9B] group-hover:text-[#ECECEC]'}
               />
-              {!collapsed && <span className="text-[13px] font-normal">{item.label}</span>}
+              {!collapsed && <span className="font-medium text-sm">{item.label}</span>}
             </button>
           );
         })}
       </nav>
 
       {/* User Switcher */}
-      <div className="px-3 py-3 relative">
+      <div className="p-2 border-t border-[#2f2f2f] relative">
         <button
           onClick={() => setUserDropdownOpen(!userDropdownOpen)}
           title={collapsed ? activeUser.name : undefined}
-          className={`w-full flex items-center ${collapsed ? 'justify-center px-1 py-2' : 'gap-3 px-3 py-2.5'} rounded-xl bg-[#1a1a1a] hover:bg-[#1f1f1f] transition-none`}
+          className={`w-full flex items-center ${collapsed ? 'justify-center px-1 py-2' : 'gap-3 px-3 py-2'} rounded-lg bg-[#2f2f2f] border border-[#3a3a3a] hover:bg-[#3a3a3a] transition-none`}
         >
            {activeUser.photoUrl ? (
              <img src={activeUser.photoUrl} alt={activeUser.name} className="w-8 h-8 rounded-full object-cover flex-shrink-0" />
            ) : (
-             <div className={`w-8 h-8 rounded-full ${activeUser.color} flex items-center justify-center text-xs font-semibold text-white flex-shrink-0`}>
+             <div className={`w-8 h-8 rounded-full ${activeUser.color} flex items-center justify-center text-xs font-bold text-white flex-shrink-0`}>
                {activeUser.initials}
              </div>
            )}
@@ -226,44 +234,44 @@ const Sidebar: React.FC<SidebarProps> = ({ activeUserId, onUserChange, collapsed
              <>
                <div className="flex flex-col text-left flex-1 min-w-0">
                  <div className="flex items-center gap-2">
-                   <span className="text-xs font-medium text-[#ccc] truncate">{activeUser.name}</span>
+                   <span className="text-xs font-semibold text-[#ECECEC] truncate">{activeUser.name}</span>
                    <button
                      onClick={(e) => { e.stopPropagation(); openProfileEditor(); }}
-                     className="p-0.5 text-[#555] hover:text-[#aaa] transition-none"
+                     className="p-0.5 text-[#9B9B9B] hover:text-[#ECECEC] transition-none"
                      title="Edit profile"
                    >
-                     <Settings size={11} strokeWidth={1.5} />
+                     <Settings size={12} />
                    </button>
                  </div>
-                 <span className="text-[10px] text-[#555]">Switch workspace</span>
+                 <span className="text-[10px] text-[#666666]">Switch workspace</span>
                </div>
-               <ChevronDown size={13} strokeWidth={1.5} className={`text-[#555] transition-transform ${userDropdownOpen ? 'rotate-180' : ''}`} />
+               <ChevronDown size={14} className={`text-[#9B9B9B] transition-transform ${userDropdownOpen ? 'rotate-180' : ''}`} />
              </>
            )}
         </button>
 
         {userDropdownOpen && (
-          <div className="absolute bottom-full left-3 right-3 mb-2 bg-[#1c1c1c] rounded-xl shadow-2xl overflow-hidden z-50">
-            <div className="px-3 py-2.5">
-              <p className="text-[10px] uppercase tracking-wider text-[#555] font-medium">Workspace</p>
+          <div className="absolute bottom-full left-4 right-4 mb-2 bg-[#2f2f2f] border border-[#3a3a3a] rounded-xl shadow-2xl overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-200 z-50">
+            <div className="px-3 py-2 border-b border-[#3a3a3a]">
+              <p className="text-[10px] uppercase tracking-wider text-[#9B9B9B] font-medium">Workspace</p>
             </div>
             {users.map(user => (
               <button
                 key={user.id}
                 onClick={() => { onUserChange(user.id); setUserDropdownOpen(false); }}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 hover:bg-[rgba(255,255,255,0.04)] transition-none ${
-                  user.id === activeUserId ? 'bg-[rgba(255,255,255,0.05)]' : ''
+                className={`w-full flex items-center gap-3 px-3 py-2.5 hover:bg-[rgba(255,255,255,0.05)] transition-none ${
+                  user.id === activeUserId ? 'bg-[rgba(255,255,255,0.08)]' : ''
                 }`}
               >
                 {user.photoUrl ? (
                   <img src={user.photoUrl} alt={user.name} className="w-7 h-7 rounded-full object-cover" />
                 ) : (
-                  <div className={`w-7 h-7 rounded-full ${user.color} flex items-center justify-center text-[10px] font-semibold text-white`}>
+                  <div className={`w-7 h-7 rounded-full ${user.color} flex items-center justify-center text-[10px] font-bold text-white`}>
                     {user.initials}
                   </div>
                 )}
-                <span className="text-xs font-normal text-[#ccc] flex-1 text-left">{user.name}</span>
-                {user.id === activeUserId && <Check size={14} strokeWidth={1.5} className="text-[#888]" />}
+                <span className="text-xs font-medium text-[#ECECEC] flex-1 text-left">{user.name}</span>
+                {user.id === activeUserId && <Check size={14} className="text-[#ECECEC]" />}
               </button>
             ))}
           </div>
@@ -271,47 +279,52 @@ const Sidebar: React.FC<SidebarProps> = ({ activeUserId, onUserChange, collapsed
       </div>
 
       {isProfileOpen && (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 p-4">
-          <div className="bg-[#1c1c1c] rounded-2xl w-full max-w-md overflow-hidden shadow-2xl">
-            <div className="p-6 pb-4">
-              <h3 className="text-sm font-medium text-[#e0e0e0]">Edit profile</h3>
-              <p className="text-xs text-[#666] mt-1">Update your name and photo.</p>
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+          <div className="bg-[#2f2f2f] border border-[#3a3a3a] rounded-xl w-full max-w-md overflow-hidden">
+            <div className="p-5 border-b border-[#3a3a3a]">
+              <h3 className="text-sm font-semibold text-[#ECECEC]">Edit profile</h3>
+              <p className="text-xs text-[#9B9B9B] mt-1">Update your name and photo.</p>
             </div>
-            <div className="px-6 pb-4 space-y-4">
+            <div className="p-5 space-y-4">
               <div className="flex items-center gap-4">
                 <button
                   onClick={() => photoInputRef.current?.click()}
-                  className="w-14 h-14 rounded-full overflow-hidden bg-[#252525] flex items-center justify-center text-[#666]"
+                  className="w-16 h-16 rounded-full overflow-hidden bg-[#3a3a3a] border border-[#4a4a4a] flex items-center justify-center text-[#9B9B9B]"
                 >
                   {profilePhotoUrl ? (
                     <img src={profilePhotoUrl} alt="Profile" className="w-full h-full object-cover" />
                   ) : (
-                    <Camera size={16} strokeWidth={1.5} />
+                    <Camera size={18} />
                   )}
                 </button>
                 <div>
-                  <p className="text-xs text-[#666]">Profile photo</p>
-                  <button onClick={() => photoInputRef.current?.click()} className="text-xs text-[#ccc] hover:text-white">Upload photo</button>
+                  <p className="text-xs text-[#9B9B9B]">Profile photo</p>
+                  <button
+                    onClick={() => photoInputRef.current?.click()}
+                    className="text-xs text-[#ECECEC] hover:text-white"
+                  >
+                    Upload photo
+                  </button>
                 </div>
                 <input ref={photoInputRef} type="file" accept="image/*" className="hidden" onChange={handlePhotoChange} />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-[10px] uppercase tracking-wider text-[#555] font-medium">First name</label>
+                  <label className="text-[10px] uppercase tracking-wider text-[#9B9B9B] font-medium">First name</label>
                   <input value={profileFirstName} onChange={e => setProfileFirstName(e.target.value)}
-                    className="w-full mt-1.5 bg-[#1a1a1a] rounded-xl px-3 py-2.5 text-sm text-[#e0e0e0] focus:outline-none focus:ring-1 focus:ring-[#333] placeholder-[#444]" />
+                    className="w-full mt-1 bg-[#3a3a3a] border border-[#4a4a4a] rounded-lg px-3 py-2 text-sm text-[#ECECEC] focus:outline-none focus:ring-1 focus:ring-[#555555]" />
                 </div>
                 <div>
-                  <label className="text-[10px] uppercase tracking-wider text-[#555] font-medium">Last name</label>
+                  <label className="text-[10px] uppercase tracking-wider text-[#9B9B9B] font-medium">Last name</label>
                   <input value={profileLastName} onChange={e => setProfileLastName(e.target.value)}
-                    className="w-full mt-1.5 bg-[#1a1a1a] rounded-xl px-3 py-2.5 text-sm text-[#e0e0e0] focus:outline-none focus:ring-1 focus:ring-[#333] placeholder-[#444]" />
+                    className="w-full mt-1 bg-[#3a3a3a] border border-[#4a4a4a] rounded-lg px-3 py-2 text-sm text-[#ECECEC] focus:outline-none focus:ring-1 focus:ring-[#555555]" />
                 </div>
               </div>
             </div>
-            <div className="flex justify-end gap-3 px-6 py-4">
-              <button onClick={() => setIsProfileOpen(false)} className="px-4 py-2 bg-[#252525] hover:bg-[#2a2a2a] text-[#ccc] rounded-xl text-sm font-normal transition-none">Cancel</button>
-              <button onClick={saveProfile} className="px-4 py-2 bg-white hover:bg-[#e5e5e5] text-[#111] rounded-xl text-sm font-medium transition-none">Save</button>
+            <div className="flex justify-end gap-3 p-4 border-t border-[#3a3a3a]">
+              <button onClick={() => setIsProfileOpen(false)} className="px-4 py-2 bg-[#3a3a3a] hover:bg-[#4a4a4a] text-[#ECECEC] rounded-lg text-sm font-medium transition-none">Cancel</button>
+              <button onClick={saveProfile} className="px-4 py-2 bg-white hover:bg-[#e5e5e5] text-[#212121] rounded-lg text-sm font-medium transition-none">Save</button>
             </div>
           </div>
         </div>
@@ -319,17 +332,17 @@ const Sidebar: React.FC<SidebarProps> = ({ activeUserId, onUserChange, collapsed
 
       {/* Sign Out Button */}
       {onSignOut && (
-        <div className="px-3 pb-3">
+        <div className={`px-2 pb-2 ${collapsed ? '' : ''}`}>
           <button
             onClick={onSignOut}
             title={collapsed ? 'Sign out' : undefined}
-            className={`w-full flex items-center ${collapsed ? 'justify-center px-1 py-2' : 'gap-3 px-3 py-2.5'} rounded-xl text-[#555] hover:text-[#999] hover:bg-[rgba(255,255,255,0.03)] transition-none`}
+            className={`w-full flex items-center ${collapsed ? 'justify-center px-1 py-2' : 'gap-3 px-3 py-2'} rounded-lg text-[#9B9B9B] hover:text-[#ECECEC] hover:bg-[rgba(255,255,255,0.05)] transition-none`}
           >
-            <LogOut size={16} strokeWidth={1.5} />
+            <LogOut size={16} />
             {!collapsed && (
               <div className="flex flex-col text-left flex-1 min-w-0">
-                <span className="text-xs font-normal">Sign out</span>
-                {userEmail && <span className="text-[10px] text-[#444] truncate">{userEmail}</span>}
+                <span className="text-xs font-medium">Sign out</span>
+                {userEmail && <span className="text-[10px] text-[#555] truncate">{userEmail}</span>}
               </div>
             )}
           </button>

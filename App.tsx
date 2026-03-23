@@ -44,7 +44,7 @@ const App: React.FC = () => {
     return (
       <div style={{
         minHeight: '100vh',
-        background: '#111111',
+        background: '#131313',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -602,7 +602,7 @@ const AuthenticatedApp: React.FC<{ user: User; signOut: () => Promise<void> }> =
   }, [storagePrefix]);
 
   return (
-    <div className="flex min-h-screen bg-[#111111] text-[#e0e0e0] font-sans selection:bg-[#333]">
+    <div className="flex min-h-screen bg-[#212121] text-[#ECECEC] font-sans selection:bg-[#444444]">
       <Sidebar
         activeUserId={user.id}
         onUserChange={() => {}}
@@ -612,37 +612,37 @@ const AuthenticatedApp: React.FC<{ user: User; signOut: () => Promise<void> }> =
         userEmail={user.email}
       />
 
-      <main key={user.id} className={`flex-1 ${sidebarCollapsed ? 'ml-16' : 'ml-60'} p-8 overflow-y-auto`}>
+      <main key={user.id} className={`flex-1 ${sidebarCollapsed ? 'ml-16' : 'ml-64'} p-8 overflow-y-auto`}>
         {/* Header */}
         <header className="flex justify-between items-center mb-10">
           <div>
-            <h1 className="text-2xl font-semibold text-[#e0e0e0] mb-1">{activeNav}</h1>
-            <p className="text-[#666] text-sm flex items-center gap-2">
-               <Calendar size={14} strokeWidth={1.5} /> {today}
+            <h1 className="text-2xl font-bold text-[#ECECEC] mb-1">{activeNav}</h1>
+            <p className="text-[#9B9B9B] text-sm flex items-center gap-2">
+               <Calendar size={14} /> {today}
             </p>
           </div>
 
-          <div className="relative flex items-center gap-3">
+          <div className="relative flex items-center gap-4">
             <div className="relative hidden md:block">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[#555]" size={15} strokeWidth={1.5} />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[#666666]" size={16} />
               <input
                 type="text"
                 placeholder="Search analytics..."
-                className="bg-[#1a1a1a] rounded-xl pl-10 pr-4 py-2.5 text-sm text-[#e0e0e0] focus:outline-none focus:ring-1 focus:ring-[#333] w-60 placeholder-[#444]"
+                className="bg-[#2f2f2f] border border-[#3a3a3a] rounded-full pl-10 pr-4 py-2 text-sm text-[#ECECEC] focus:outline-none focus:ring-1 focus:ring-[#555555] w-64 placeholder-[#666666]"
               />
             </div>
             <button
               onClick={handleSyncToCloud}
               disabled={isSyncing}
-              className="flex items-center gap-2 px-3 py-2 text-sm font-normal text-[#666] hover:text-[#bbb] transition-none rounded-xl hover:bg-[rgba(255,255,255,0.04)] disabled:opacity-50"
+              className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-[#9B9B9B] hover:text-[#ECECEC] transition-none rounded-lg hover:bg-[rgba(255,255,255,0.05)] disabled:opacity-50"
               title="Save data to cloud"
             >
               {isSyncing ? (
-                <Loader2 size={15} className="animate-spin" strokeWidth={1.5} />
+                <Loader2 size={16} className="animate-spin" />
               ) : syncResult?.success ? (
-                <Check size={15} className="text-emerald-400" strokeWidth={1.5} />
+                <Check size={16} className="text-emerald-400" />
               ) : (
-                <Save size={15} strokeWidth={1.5} />
+                <Save size={16} />
               )}
               <span className="hidden lg:inline">
                 {isSyncing ? 'Saving...' : syncResult?.success ? 'Saved!' : 'Save'}
@@ -650,16 +650,16 @@ const AuthenticatedApp: React.FC<{ user: User; signOut: () => Promise<void> }> =
             </button>
             {/* Save notification toast */}
             {syncResult && (
-              <div className={`absolute top-full right-0 mt-2 px-4 py-2 rounded-xl text-sm font-normal shadow-2xl whitespace-nowrap z-50 ${
+              <div className={`absolute top-full right-0 mt-2 px-4 py-2 rounded-lg text-sm font-medium shadow-lg border whitespace-nowrap z-50 ${
                 syncResult.success
-                  ? 'bg-[#1c1c1c] text-emerald-400'
-                  : 'bg-[#1c1c1c] text-rose-400'
+                  ? 'bg-[#2f2f2f] border-emerald-500/30 text-emerald-400'
+                  : 'bg-[#2f2f2f] border-rose-500/30 text-rose-400'
               }`}>
                 {syncResult.success ? 'Saved successfully!' : syncResult.message}
               </div>
             )}
-            <button className="relative p-2 text-[#555] hover:text-[#bbb] transition-none rounded-xl hover:bg-[rgba(255,255,255,0.04)]">
-              <Bell size={18} strokeWidth={1.5} />
+            <button className="relative p-2 text-[#9B9B9B] hover:text-[#ECECEC] transition-none rounded-full hover:bg-[rgba(255,255,255,0.05)]">
+              <Bell size={20} />
             </button>
           </div>
         </header>
@@ -670,79 +670,79 @@ const AuthenticatedApp: React.FC<{ user: User; signOut: () => Promise<void> }> =
           <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
 
             {/* ── Top Stat Cards ── */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                {/* Monthly Revenue */}
-               <div className="bg-[#181818] p-5 rounded-2xl">
+               <div className="bg-[#1c1c1c] p-5 rounded-2xl">
                   <div className="flex items-center justify-between mb-3">
-                    <p className="text-[#555] text-[10px] font-medium uppercase tracking-wider">This Month</p>
-                    <div className="p-1.5 rounded-lg" style={{ background: 'rgba(16,185,129,0.08)' }}><DollarSign size={14} strokeWidth={1.5} className="text-emerald-400" /></div>
+                    <p className="text-[#666] text-xs font-medium uppercase tracking-wider">This Month</p>
+                    <div className="p-1.5 rounded-lg" style={{ background: 'rgba(16,185,129,0.1)' }}><DollarSign size={14} className="text-emerald-400" /></div>
                   </div>
-                  <h3 className="text-2xl font-semibold text-[#e0e0e0] mb-1">${projectedMonthlyRevenue.toLocaleString()}</h3>
+                  <h3 className="text-2xl font-bold text-[#ECECEC] mb-1">${projectedMonthlyRevenue.toLocaleString()}</h3>
                   <div className="flex items-center gap-2 text-xs">
-                     <span className="text-emerald-400/80 font-normal">${paidThisMonth.toLocaleString()} collected</span>
-                     {pendingThisMonth > 0 && <span className="text-[#444]">· ${pendingThisMonth.toLocaleString()} pending</span>}
+                     <span className="text-emerald-400 font-medium">${paidThisMonth.toLocaleString()} collected</span>
+                     {pendingThisMonth > 0 && <span className="text-[#555]">· ${pendingThisMonth.toLocaleString()} pending</span>}
                   </div>
                </div>
 
                {/* Total Revenue */}
-               <div className="bg-[#181818] p-5 rounded-2xl">
+               <div className="bg-[#1c1c1c] p-5 rounded-2xl">
                   <div className="flex items-center justify-between mb-3">
-                    <p className="text-[#555] text-[10px] font-medium uppercase tracking-wider">Total Revenue</p>
-                    <div className="p-1.5 rounded-lg" style={{ background: 'rgba(16,185,129,0.08)' }}><TrendingUp size={14} strokeWidth={1.5} className="text-emerald-400" /></div>
+                    <p className="text-[#666] text-xs font-medium uppercase tracking-wider">Total Revenue</p>
+                    <div className="p-1.5 rounded-lg" style={{ background: 'rgba(16,185,129,0.1)' }}><TrendingUp size={14} className="text-emerald-400" /></div>
                   </div>
-                  <h3 className="text-2xl font-semibold text-[#e0e0e0] mb-1">${totalRevenue.toLocaleString()}</h3>
+                  <h3 className="text-2xl font-bold text-[#ECECEC] mb-1">${totalRevenue.toLocaleString()}</h3>
                   <div className="flex items-center gap-1.5 text-xs">
                     {momGrowth !== 0 && (
-                      <span className={`flex items-center gap-0.5 font-normal ${momGrowth > 0 ? 'text-emerald-400/80' : 'text-red-400/80'}`}>
-                        {momGrowth > 0 ? <ArrowUpRight size={12} strokeWidth={1.5} /> : <ArrowDownRight size={12} strokeWidth={1.5} />}
+                      <span className={`flex items-center gap-0.5 font-medium ${momGrowth > 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                        {momGrowth > 0 ? <ArrowUpRight size={12} /> : <ArrowDownRight size={12} />}
                         {Math.abs(momGrowth)}%
                       </span>
                     )}
-                    <span className="text-[#444]">vs last month</span>
+                    <span className="text-[#555]">vs last month</span>
                   </div>
                </div>
 
                {/* Outstanding */}
-               <div className="bg-[#181818] p-5 rounded-2xl">
+               <div className="bg-[#1c1c1c] p-5 rounded-2xl">
                   <div className="flex items-center justify-between mb-3">
-                    <p className="text-[#555] text-[10px] font-medium uppercase tracking-wider">Outstanding</p>
-                    <div className="p-1.5 rounded-lg" style={{ background: outstandingAmount > 0 ? 'rgba(239,68,68,0.08)' : 'rgba(255,255,255,0.03)' }}>
-                      <DollarSign size={14} strokeWidth={1.5} className={outstandingAmount > 0 ? 'text-red-400' : 'text-[#444]'} />
+                    <p className="text-[#666] text-xs font-medium uppercase tracking-wider">Outstanding</p>
+                    <div className="p-1.5 rounded-lg" style={{ background: outstandingAmount > 0 ? 'rgba(239,68,68,0.1)' : 'rgba(255,255,255,0.04)' }}>
+                      <DollarSign size={14} className={outstandingAmount > 0 ? 'text-red-400' : 'text-[#555]'} />
                     </div>
                   </div>
-                  <h3 className={`text-2xl font-semibold mb-1 ${outstandingAmount > 0 ? 'text-red-400' : 'text-[#e0e0e0]'}`}>${outstandingAmount.toLocaleString()}</h3>
+                  <h3 className={`text-2xl font-bold mb-1 ${outstandingAmount > 0 ? 'text-red-400' : 'text-[#ECECEC]'}`}>${outstandingAmount.toLocaleString()}</h3>
                   <div className="flex items-center gap-2 text-xs">
-                    {overdueAmount > 0 && <span className="text-red-400/80 font-normal">${overdueAmount.toLocaleString()} overdue</span>}
-                    {overdueAmount === 0 && outstandingAmount > 0 && <span className="text-[#444]">All within due dates</span>}
-                    {outstandingAmount === 0 && <span className="text-emerald-400/80 font-normal">All paid</span>}
+                    {overdueAmount > 0 && <span className="text-red-400 font-medium">${overdueAmount.toLocaleString()} overdue</span>}
+                    {overdueAmount === 0 && outstandingAmount > 0 && <span className="text-[#555]">All within due dates</span>}
+                    {outstandingAmount === 0 && <span className="text-emerald-400 font-medium">All paid</span>}
                   </div>
                </div>
 
                {/* Active Clients */}
-               <div className="bg-[#181818] p-5 rounded-2xl">
+               <div className="bg-[#1c1c1c] p-5 rounded-2xl">
                   <div className="flex items-center justify-between mb-3">
-                    <p className="text-[#555] text-[10px] font-medium uppercase tracking-wider">Clients</p>
-                    <div className="p-1.5 rounded-lg" style={{ background: 'rgba(255,255,255,0.03)' }}><Users size={14} strokeWidth={1.5} className="text-[#666]" /></div>
+                    <p className="text-[#666] text-xs font-medium uppercase tracking-wider">Clients</p>
+                    <div className="p-1.5 rounded-lg" style={{ background: 'rgba(255,255,255,0.04)' }}><Users size={14} className="text-[#888]" /></div>
                   </div>
-                  <h3 className="text-2xl font-semibold text-[#e0e0e0] mb-1">{activeClients}</h3>
+                  <h3 className="text-2xl font-bold text-[#ECECEC] mb-1">{activeClients}</h3>
                   <div className="flex items-center gap-2 text-xs">
-                    <span className="text-[#444]">Avg/mo: ${avgMonthlyRevenue.toLocaleString()}</span>
+                    <span className="text-[#555]">Avg/mo: ${avgMonthlyRevenue.toLocaleString()}</span>
                   </div>
                </div>
             </div>
 
             {/* ── Revenue Growth Chart ── */}
-            <div className="bg-[#181818] rounded-2xl p-6">
+            <div className="bg-[#1c1c1c] rounded-2xl p-6">
               <div className="flex items-center justify-between mb-6">
                 <div>
-                  <h2 className="text-sm font-medium text-[#e0e0e0]">Revenue Growth</h2>
-                  <p className="text-[11px] text-[#444] mt-0.5">
+                  <h2 className="text-sm font-bold text-[#ECECEC]">Revenue Growth</h2>
+                  <p className="text-[11px] text-[#555] mt-0.5">
                     {dashView === 'today' ? "Today's revenue" : dashView === 'week' ? 'This week' : dashView === 'month' ? 'This month' : new Date().getFullYear() + ' progress'}
                   </p>
                 </div>
-                <div className="flex bg-[#141414] rounded-xl p-0.5">
+                <div className="flex bg-[#161616] rounded-lg p-0.5 border border-[#252525]">
                   {(['today', 'week', 'month', 'year'] as const).map(v => (
-                    <button key={v} onClick={() => setDashView(v)} className={`px-3 py-1.5 rounded-lg text-xs font-normal transition-none ${dashView === v ? 'bg-[#222] text-[#ccc]' : 'text-[#555] hover:text-[#888]'}`}>
+                    <button key={v} onClick={() => setDashView(v)} className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${dashView === v ? 'bg-[#252525] text-[#ECECEC]' : 'text-[#555] hover:text-[#888]'}`}>
                       {v === 'today' ? 'Today' : v === 'week' ? 'Week' : v === 'month' ? 'Month' : 'Year'}
                     </button>
                   ))}
@@ -753,26 +753,26 @@ const AuthenticatedApp: React.FC<{ user: User; signOut: () => Promise<void> }> =
                   <AreaChart data={chartData}>
                     <defs>
                       <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#10b981" stopOpacity={0.2} />
+                        <stop offset="0%" stopColor="#10b981" stopOpacity={0.25} />
                         <stop offset="100%" stopColor="#10b981" stopOpacity={0} />
                       </linearGradient>
                     </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#1f1f1f" vertical={false} />
-                    <XAxis dataKey="name" tick={{ fill: '#444', fontSize: 11 }} axisLine={false} tickLine={false} />
-                    <YAxis domain={[0, 100000]} tick={{ fill: '#444', fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={(v: number) => v >= 1000 ? `$${(v / 1000).toFixed(0)}k` : `$${v}`} ticks={[0, 25000, 50000, 75000, 100000]} />
+                    <CartesianGrid strokeDasharray="3 3" stroke="#252525" vertical={false} />
+                    <XAxis dataKey="name" tick={{ fill: '#555', fontSize: 11 }} axisLine={false} tickLine={false} />
+                    <YAxis domain={[0, 100000]} tick={{ fill: '#555', fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={(v: number) => v >= 1000 ? `$${(v / 1000).toFixed(0)}k` : `$${v}`} ticks={[0, 25000, 50000, 75000, 100000]} />
                     <Tooltip
-                      contentStyle={{ background: '#1c1c1c', border: 'none', borderRadius: 12, fontSize: 12, color: '#ccc', boxShadow: '0 8px 32px rgba(0,0,0,0.4)' }}
+                      contentStyle={{ background: '#1c1c1c', border: '1px solid #252525', borderRadius: 12, fontSize: 12, color: '#ECECEC' }}
                       formatter={(value: number) => [`$${value.toLocaleString()}`, 'Revenue']}
-                      labelStyle={{ color: '#666' }}
+                      labelStyle={{ color: '#888' }}
                     />
                     <Area
                       type="monotone"
                       dataKey="revenue"
                       stroke="#10b981"
-                      strokeWidth={2}
+                      strokeWidth={2.5}
                       fill="url(#revenueGradient)"
-                      dot={{ r: 3, fill: '#10b981', stroke: '#181818', strokeWidth: 2 }}
-                      activeDot={{ r: 5, fill: '#10b981', stroke: '#181818', strokeWidth: 2 }}
+                      dot={{ r: 4, fill: '#10b981', stroke: '#1c1c1c', strokeWidth: 2 }}
+                      activeDot={{ r: 6, fill: '#10b981', stroke: '#1c1c1c', strokeWidth: 2 }}
                     />
                   </AreaChart>
                 </ResponsiveContainer>
@@ -780,20 +780,20 @@ const AuthenticatedApp: React.FC<{ user: User; signOut: () => Promise<void> }> =
             </div>
 
             {/* ── Billing History ── */}
-            <div className="bg-[#181818] rounded-2xl p-6">
+            <div className="bg-[#1c1c1c] rounded-2xl p-6">
               <div className="flex items-center justify-between mb-4">
                 <div>
-                  <h2 className="text-sm font-medium text-[#e0e0e0]">Billing History</h2>
-                  <p className="text-[11px] text-[#444] mt-0.5">Individual invoices across all clients</p>
+                  <h2 className="text-sm font-bold text-[#ECECEC]">Billing History</h2>
+                  <p className="text-[11px] text-[#555] mt-0.5">Individual invoices across all clients</p>
                 </div>
-                <span className="text-[11px] text-[#444]">{billingInvoices.length} invoices</span>
+                <span className="text-[11px] text-[#555]">{billingInvoices.length} invoices</span>
               </div>
               {billingInvoices.length === 0 ? (
-                <p className="text-center text-[#333] text-sm py-8">No invoices yet. Create invoices in client billing tabs.</p>
+                <p className="text-center text-[#444] text-sm py-8">No invoices yet. Create invoices in client billing tabs.</p>
               ) : (
                 <div className="space-y-1">
                   {/* Header */}
-                  <div className="grid grid-cols-12 gap-3 px-3 py-2 text-[10px] font-medium uppercase tracking-wider text-[#444]">
+                  <div className="grid grid-cols-12 gap-3 px-3 py-2 text-[10px] font-medium uppercase tracking-wider text-[#555]">
                     <div className="col-span-3">Client</div>
                     <div className="col-span-2">Service</div>
                     <div className="col-span-2 text-right">Amount</div>
@@ -806,25 +806,25 @@ const AuthenticatedApp: React.FC<{ user: User; signOut: () => Promise<void> }> =
                     return db.getTime() - da.getTime();
                   }).map(inv => {
                     const cl = dashClients.find(c => c.id === inv.client_id);
-                    const statusColor = inv.status === 'Paid' ? 'text-emerald-400/80' : inv.status === 'Cancelled' ? 'text-[#444]' : 'text-yellow-400/80';
-                    const statusBg = inv.status === 'Paid' ? 'rgba(16,185,129,0.08)' : inv.status === 'Cancelled' ? 'rgba(255,255,255,0.03)' : 'rgba(234,179,8,0.08)';
+                    const statusColor = inv.status === 'Paid' ? 'text-emerald-400' : inv.status === 'Cancelled' ? 'text-[#555]' : 'text-yellow-400';
+                    const statusBg = inv.status === 'Paid' ? 'rgba(16,185,129,0.1)' : inv.status === 'Cancelled' ? 'rgba(255,255,255,0.04)' : 'rgba(234,179,8,0.1)';
                     const dateStr = inv.date_paid || inv.date_due || inv.date_sent || '';
                     const formattedDate = dateStr ? new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' }) : '—';
                     return (
-                      <div key={inv.id} className="grid grid-cols-12 gap-3 items-center px-3 py-2.5 rounded-xl hover:bg-[rgba(255,255,255,0.02)] transition-none">
+                      <div key={inv.id} className="grid grid-cols-12 gap-3 items-center px-3 py-2.5 rounded-xl hover:bg-[rgba(255,255,255,0.03)] transition-colors">
                         <div className="col-span-3 flex items-center gap-2.5 min-w-0">
                           {cl?.photo_url ? (
                             <img src={cl.photo_url} alt="" className="w-7 h-7 rounded-full object-cover flex-shrink-0" />
                           ) : (
-                            <div className="w-7 h-7 rounded-full bg-[#222] flex items-center justify-center flex-shrink-0 text-[10px] font-medium text-[#666]">{cl?.name?.charAt(0) || '?'}</div>
+                            <div className="w-7 h-7 rounded-full bg-[#252525] flex items-center justify-center flex-shrink-0 text-[10px] font-bold text-[#888]">{cl?.name?.charAt(0) || '?'}</div>
                           )}
                           <div className="min-w-0">
-                            <p className="text-[13px] font-normal text-[#ccc] truncate">{cl?.name || 'Unknown'}</p>
-                            {inv.invoice_number && <p className="text-[10px] text-[#333] truncate">#{inv.invoice_number}</p>}
+                            <p className="text-[13px] font-medium text-[#ECECEC] truncate">{cl?.name || 'Unknown'}</p>
+                            {inv.invoice_number && <p className="text-[10px] text-[#444] truncate">#{inv.invoice_number}</p>}
                           </div>
                         </div>
-                        <div className="col-span-2 text-[12px] text-[#666] truncate">{inv.service || cl?.service || '—'}</div>
-                        <div className="col-span-2 text-right text-[13px] font-medium text-[#ccc]">${(inv.amount || 0).toLocaleString()}</div>
+                        <div className="col-span-2 text-[12px] text-[#888] truncate">{inv.service || cl?.service || '—'}</div>
+                        <div className="col-span-2 text-right text-[13px] font-semibold text-[#ECECEC]">${(inv.amount || 0).toLocaleString()}</div>
                         <div className="col-span-2 text-center">
                           <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full ${statusColor}`} style={{ background: statusBg }}>{inv.status}</span>
                         </div>
@@ -833,9 +833,9 @@ const AuthenticatedApp: React.FC<{ user: User; signOut: () => Promise<void> }> =
                     );
                   })}
                   {/* Totals row */}
-                  <div className="grid grid-cols-12 gap-3 px-3 py-2.5 mt-1" style={{ borderTop: '1px solid #1f1f1f' }}>
-                    <div className="col-span-5 text-[12px] font-medium text-[#666]">Total</div>
-                    <div className="col-span-2 text-right text-[13px] font-semibold text-[#ccc]">
+                  <div className="grid grid-cols-12 gap-3 px-3 py-2.5 mt-1" style={{ borderTop: '1px solid #252525' }}>
+                    <div className="col-span-5 text-[12px] font-semibold text-[#888]">Total</div>
+                    <div className="col-span-2 text-right text-[13px] font-bold text-[#ECECEC]">
                       ${billingInvoices.filter(i => i.status !== 'Cancelled').reduce((s, i) => s + (i.amount || 0), 0).toLocaleString()}
                     </div>
                     <div className="col-span-2 text-center text-[11px] text-[#555]">
@@ -848,22 +848,22 @@ const AuthenticatedApp: React.FC<{ user: User; signOut: () => Promise<void> }> =
             </div>
 
             {/* ── Growth & Client Status Summary ── */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               {/* Payment Status Breakdown */}
-              <div className="bg-[#181818] rounded-2xl p-6">
-                <h2 className="text-sm font-medium text-[#e0e0e0] mb-4">Payment Status</h2>
+              <div className="bg-[#1c1c1c] rounded-2xl p-6">
+                <h2 className="text-sm font-bold text-[#ECECEC] mb-4">Payment Status</h2>
                 <div className="space-y-3">
                   {(['Paid', 'Pending', 'Late', 'Missing Invoice'] as const).map(status => {
                     const count = dashClients.filter(c => c.active !== false && c.payment_status === status).length;
                     const pct = activeClients > 0 ? Math.round((count / activeClients) * 100) : 0;
-                    const color = status === 'Paid' ? '#10b981' : status === 'Pending' ? '#eab308' : status === 'Late' ? '#ef4444' : '#555';
+                    const color = status === 'Paid' ? '#10b981' : status === 'Pending' ? '#eab308' : status === 'Late' ? '#ef4444' : '#666';
                     return (
                       <div key={status}>
                         <div className="flex items-center justify-between mb-1.5">
-                          <span className="text-xs text-[#ccc]">{status}</span>
-                          <span className="text-xs text-[#555]">{count} clients · {pct}%</span>
+                          <span className="text-xs text-[#ECECEC]">{status}</span>
+                          <span className="text-xs text-[#666]">{count} clients · {pct}%</span>
                         </div>
-                        <div className="h-1.5 rounded-full bg-[#141414] overflow-hidden">
+                        <div className="h-1.5 rounded-full bg-[#161616] overflow-hidden">
                           <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: color }} />
                         </div>
                       </div>
@@ -873,8 +873,8 @@ const AuthenticatedApp: React.FC<{ user: User; signOut: () => Promise<void> }> =
               </div>
 
               {/* Client Satisfaction */}
-              <div className="bg-[#181818] rounded-2xl p-6">
-                <h2 className="text-sm font-medium text-[#e0e0e0] mb-4">Client Satisfaction</h2>
+              <div className="bg-[#1c1c1c] rounded-2xl p-6">
+                <h2 className="text-sm font-bold text-[#ECECEC] mb-4">Client Satisfaction</h2>
                 <div className="space-y-3">
                   {(['Happy', 'Moderate', 'Frustrated'] as const).map(status => {
                     const count = dashClients.filter(c => c.active !== false && c.status === status).length;
@@ -883,10 +883,10 @@ const AuthenticatedApp: React.FC<{ user: User; signOut: () => Promise<void> }> =
                     return (
                       <div key={status}>
                         <div className="flex items-center justify-between mb-1.5">
-                          <span className="text-xs text-[#ccc]">{status}</span>
-                          <span className="text-xs text-[#555]">{count} clients · {pct}%</span>
+                          <span className="text-xs text-[#ECECEC]">{status}</span>
+                          <span className="text-xs text-[#666]">{count} clients · {pct}%</span>
                         </div>
-                        <div className="h-1.5 rounded-full bg-[#141414] overflow-hidden">
+                        <div className="h-1.5 rounded-full bg-[#161616] overflow-hidden">
                           <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: color }} />
                         </div>
                       </div>
