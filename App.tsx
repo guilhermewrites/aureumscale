@@ -256,8 +256,8 @@ const AuthenticatedApp: React.FC<{ user: User; signOut: () => Promise<void> }> =
 
   const projectedMonthlyRevenue = paidThisMonth + pendingThisMonth;
 
-  // Dashboard view toggle: monthly vs weekly
-  const [dashView, setDashView] = useState<'monthly' | 'weekly'>('monthly');
+  // Dashboard view toggle
+  const [dashView, setDashView] = useState<'today' | 'week' | 'month' | 'year'>('month');
 
   // Active clients count
   const activeClients = useMemo(() => dashClients.filter(c => c.active !== false).length, [dashClients]);
@@ -288,86 +288,110 @@ const AuthenticatedApp: React.FC<{ user: User; signOut: () => Promise<void> }> =
       .reduce((sum, inv) => sum + (inv.amount || 0), 0);
   }, [billingInvoices]);
 
-  // Revenue by month for chart (last 6 months)
-  const revenueByMonth = useMemo(() => {
-    const now = new Date();
-    const months: { label: string; month: number; year: number; paid: number; pending: number }[] = [];
-    for (let i = 5; i >= 0; i--) {
-      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      months.push({ label: d.toLocaleDateString('en-US', { month: 'short', year: '2-digit' }), month: d.getMonth(), year: d.getFullYear(), paid: 0, pending: 0 });
-    }
-    billingInvoices.forEach(inv => {
-      const dateStr = inv.date_paid || inv.date_due || inv.date_sent;
-      if (!dateStr) return;
-      const d = new Date(dateStr);
-      if (isNaN(d.getTime())) return;
-      const entry = months.find(m => m.month === d.getMonth() && m.year === d.getFullYear());
-      if (!entry) return;
-      if (inv.status === 'Paid') entry.paid += inv.amount || 0;
-      else if (inv.status !== 'Cancelled') entry.pending += inv.amount || 0;
-    });
-    // Make cumulative
-    let cumPaid = 0;
-    return months.map(m => {
-      cumPaid += m.paid;
-      return { name: m.label, revenue: cumPaid, monthly: m.paid };
-    });
-  }, [billingInvoices]);
+  // Helper: get invoice date
+  const getInvDate = (inv: { date_paid: string; date_due: string; date_sent: string }) => {
+    const dateStr = inv.date_paid || inv.date_due || inv.date_sent;
+    if (!dateStr) return null;
+    const d = new Date(dateStr);
+    return isNaN(d.getTime()) ? null : d;
+  };
 
-  // Revenue by week for chart (last 8 weeks)
-  const revenueByWeek = useMemo(() => {
+  // Chart data for each view
+  const chartData = useMemo(() => {
     const now = new Date();
-    const weeks: { label: string; start: Date; end: Date; paid: number; pending: number }[] = [];
-    for (let i = 7; i >= 0; i--) {
-      const end = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i * 7);
-      const start = new Date(end.getFullYear(), end.getMonth(), end.getDate() - 6);
-      weeks.push({
-        label: `${start.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`,
-        start, end, paid: 0, pending: 0
-      });
-    }
-    billingInvoices.forEach(inv => {
-      const dateStr = inv.date_paid || inv.date_due || inv.date_sent;
-      if (!dateStr) return;
-      const d = new Date(dateStr);
-      if (isNaN(d.getTime())) return;
-      const entry = weeks.find(w => d >= w.start && d <= w.end);
-      if (!entry) return;
-      if (inv.status === 'Paid') entry.paid += inv.amount || 0;
-      else if (inv.status !== 'Cancelled') entry.pending += inv.amount || 0;
-    });
-    // Make cumulative
-    let cumPaid = 0;
-    return weeks.map(w => {
-      cumPaid += w.paid;
-      return { name: w.label, revenue: cumPaid, weekly: w.paid };
-    });
-  }, [billingInvoices]);
 
-  // Client revenue breakdown — aggregated from billing history
-  const clientRevenue = useMemo(() => {
-    const map: Record<string, { name: string; photo: string; service: string; paid: number; pending: number; invoiceCount: number }> = {};
-    billingInvoices.forEach(inv => {
-      if (!inv.client_id) return;
-      if (!map[inv.client_id]) {
-        const cl = dashClients.find(c => c.id === inv.client_id);
-        map[inv.client_id] = { name: cl?.name || 'Unknown', photo: cl?.photo_url || '', service: cl?.service || '', paid: 0, pending: 0, invoiceCount: 0 };
+    if (dashView === 'today') {
+      // Hourly buckets for today (group by hour, show cumulative)
+      const buckets: { label: string; paid: number }[] = [];
+      for (let h = 0; h <= now.getHours(); h++) {
+        buckets.push({ label: `${h}:00`, paid: 0 });
       }
-      map[inv.client_id].invoiceCount++;
-      if (inv.status === 'Paid') map[inv.client_id].paid += inv.amount || 0;
-      else if (inv.status !== 'Cancelled') map[inv.client_id].pending += inv.amount || 0;
-    });
-    return Object.values(map).sort((a, b) => (b.paid + b.pending) - (a.paid + a.pending));
-  }, [billingInvoices, dashClients]);
+      billingInvoices.forEach(inv => {
+        if (inv.status !== 'Paid') return;
+        const d = getInvDate(inv);
+        if (!d) return;
+        if (d.toDateString() === now.toDateString()) {
+          const h = d.getHours();
+          if (buckets[h]) buckets[h].paid += inv.amount || 0;
+        }
+      });
+      let cum = 0;
+      return buckets.map(b => { cum += b.paid; return { name: b.label, revenue: cum }; });
+    }
 
-  // Month-over-month growth (based on monthly paid amounts, not cumulative)
+    if (dashView === 'week') {
+      // Daily buckets for this week (Mon-Sun)
+      const dayOfWeek = now.getDay() || 7; // 1=Mon...7=Sun
+      const monday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - dayOfWeek + 1);
+      const days: { label: string; date: Date; paid: number }[] = [];
+      for (let i = 0; i < 7; i++) {
+        const d = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + i);
+        days.push({ label: d.toLocaleDateString('en-US', { weekday: 'short' }), date: d, paid: 0 });
+      }
+      billingInvoices.forEach(inv => {
+        if (inv.status !== 'Paid') return;
+        const d = getInvDate(inv);
+        if (!d) return;
+        const entry = days.find(day => d.toDateString() === day.date.toDateString());
+        if (entry) entry.paid += inv.amount || 0;
+      });
+      let cum = 0;
+      return days.map(d => { cum += d.paid; return { name: d.label, revenue: cum }; });
+    }
+
+    if (dashView === 'month') {
+      // Daily buckets for this month
+      const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+      const days: { label: string; day: number; paid: number }[] = [];
+      for (let i = 1; i <= daysInMonth; i++) {
+        days.push({ label: `${i}`, day: i, paid: 0 });
+      }
+      billingInvoices.forEach(inv => {
+        if (inv.status !== 'Paid') return;
+        const d = getInvDate(inv);
+        if (!d) return;
+        if (d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()) {
+          const entry = days[d.getDate() - 1];
+          if (entry) entry.paid += inv.amount || 0;
+        }
+      });
+      let cum = 0;
+      return days.map(d => { cum += d.paid; return { name: d.label, revenue: cum }; });
+    }
+
+    // year — monthly buckets Jan-Dec
+    const months: { label: string; month: number; paid: number }[] = [];
+    for (let i = 0; i < 12; i++) {
+      const d = new Date(now.getFullYear(), i, 1);
+      months.push({ label: d.toLocaleDateString('en-US', { month: 'short' }), month: i, paid: 0 });
+    }
+    billingInvoices.forEach(inv => {
+      if (inv.status !== 'Paid') return;
+      const d = getInvDate(inv);
+      if (!d) return;
+      if (d.getFullYear() === now.getFullYear()) {
+        months[d.getMonth()].paid += inv.amount || 0;
+      }
+    });
+    let cum = 0;
+    return months.map(m => { cum += m.paid; return { name: m.label, revenue: cum }; });
+  }, [billingInvoices, dashView]);
+
+  // Month-over-month growth
   const momGrowth = useMemo(() => {
-    if (revenueByMonth.length < 2) return 0;
-    const curr = revenueByMonth[revenueByMonth.length - 1].monthly;
-    const prev = revenueByMonth[revenueByMonth.length - 2].monthly;
-    if (prev === 0) return curr > 0 ? 100 : 0;
-    return Math.round(((curr - prev) / prev) * 100);
-  }, [revenueByMonth]);
+    const now = new Date();
+    const thisMonthPaid = billingInvoices
+      .filter(inv => inv.status === 'Paid')
+      .filter(inv => { const d = getInvDate(inv); return d && d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear(); })
+      .reduce((sum, inv) => sum + (inv.amount || 0), 0);
+    const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const lastMonthPaid = billingInvoices
+      .filter(inv => inv.status === 'Paid')
+      .filter(inv => { const d = getInvDate(inv); return d && d.getMonth() === lastMonth.getMonth() && d.getFullYear() === lastMonth.getFullYear(); })
+      .reduce((sum, inv) => sum + (inv.amount || 0), 0);
+    if (lastMonthPaid === 0) return thisMonthPaid > 0 ? 100 : 0;
+    return Math.round(((thisMonthPaid - lastMonthPaid) / lastMonthPaid) * 100);
+  }, [billingInvoices]);
 
   // Content chart: multi-select platforms (empty = all)
   const [contentChartSelectedPlatforms, setContentChartSelectedPlatforms] = useState<Platform[]>([]);
@@ -708,16 +732,21 @@ const AuthenticatedApp: React.FC<{ user: User; signOut: () => Promise<void> }> =
               <div className="flex items-center justify-between mb-6">
                 <div>
                   <h2 className="text-sm font-bold text-[#ECECEC]">Revenue Growth</h2>
-                  <p className="text-[11px] text-[#555] mt-0.5">Cumulative revenue over time</p>
+                  <p className="text-[11px] text-[#555] mt-0.5">
+                    {dashView === 'today' ? "Today's revenue" : dashView === 'week' ? 'This week' : dashView === 'month' ? 'This month' : new Date().getFullYear() + ' progress'}
+                  </p>
                 </div>
                 <div className="flex bg-[#161616] rounded-lg p-0.5 border border-[#252525]">
-                  <button onClick={() => setDashView('monthly')} className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${dashView === 'monthly' ? 'bg-[#252525] text-[#ECECEC]' : 'text-[#555] hover:text-[#888]'}`}>Monthly</button>
-                  <button onClick={() => setDashView('weekly')} className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${dashView === 'weekly' ? 'bg-[#252525] text-[#ECECEC]' : 'text-[#555] hover:text-[#888]'}`}>Weekly</button>
+                  {(['today', 'week', 'month', 'year'] as const).map(v => (
+                    <button key={v} onClick={() => setDashView(v)} className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${dashView === v ? 'bg-[#252525] text-[#ECECEC]' : 'text-[#555] hover:text-[#888]'}`}>
+                      {v === 'today' ? 'Today' : v === 'week' ? 'Week' : v === 'month' ? 'Month' : 'Year'}
+                    </button>
+                  ))}
                 </div>
               </div>
               <div style={{ height: 300 }}>
                 <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={dashView === 'monthly' ? revenueByMonth : revenueByWeek}>
+                  <AreaChart data={chartData}>
                     <defs>
                       <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="0%" stopColor="#10b981" stopOpacity={0.25} />
@@ -729,7 +758,7 @@ const AuthenticatedApp: React.FC<{ user: User; signOut: () => Promise<void> }> =
                     <YAxis tick={{ fill: '#555', fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={(v: number) => v >= 1000 ? `$${(v / 1000).toFixed(0)}k` : `$${v}`} />
                     <Tooltip
                       contentStyle={{ background: '#1c1c1c', border: '1px solid #252525', borderRadius: 12, fontSize: 12, color: '#ECECEC' }}
-                      formatter={(value: number, name: string) => [`$${value.toLocaleString()}`, name === 'revenue' ? 'Total Revenue' : dashView === 'monthly' ? 'This Month' : 'This Week']}
+                      formatter={(value: number) => [`$${value.toLocaleString()}`, 'Revenue']}
                       labelStyle={{ color: '#888' }}
                     />
                     <Area
