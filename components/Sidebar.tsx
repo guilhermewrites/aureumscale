@@ -151,13 +151,13 @@ const Sidebar: React.FC<SidebarProps> = ({ activeUserId, onUserChange, collapsed
 
   const menuItems = [
     { id: NavigationItem.DASHBOARD, icon: LayoutDashboard, label: 'Dashboard' },
+    { id: NavigationItem.GENERAL_ROOM, icon: Crosshair, label: 'General Room' },
     { id: NavigationItem.CLIENTS, icon: Briefcase, label: 'Clients' },
     { id: NavigationItem.SWIPEFILE, icon: Library, label: 'Swipe File' },
     { id: NavigationItem.TEAM, icon: Users, label: 'Team' },
     { id: NavigationItem.CONTRACTS, icon: ScrollText, label: 'Contracts' },
     { id: NavigationItem.FINANCE, icon: DollarSign, label: 'Finance' },
     { id: NavigationItem.BRANDING, icon: Megaphone, label: 'Branding' },
-    { id: NavigationItem.GENERAL_ROOM, icon: Crosshair, label: 'General Room' },
   ];
 
   return (

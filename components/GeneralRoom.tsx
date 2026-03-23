@@ -53,12 +53,12 @@ interface WeeklyLog {
 
 // --- Channel config ---
 const CHANNEL_CONFIG: Record<ChannelType, { label: string; icon: React.ReactNode; color: string; gradient: string }> = {
-  inbound: { label: 'Inbound', icon: <Megaphone size={18} />, color: '#10b981', gradient: 'rgba(16,185,129,0.12)' },
-  outbound: { label: 'Outbound', icon: <Phone size={18} />, color: '#3b82f6', gradient: 'rgba(59,130,246,0.12)' },
-  paid_traffic: { label: 'Paid Traffic', icon: <Zap size={18} />, color: '#f59e0b', gradient: 'rgba(245,158,11,0.12)' },
-  social_media: { label: 'Social Media', icon: <Globe size={18} />, color: '#8b5cf6', gradient: 'rgba(139,92,246,0.12)' },
-  referrals: { label: 'Referrals', icon: <Users size={18} />, color: '#ec4899', gradient: 'rgba(236,72,153,0.12)' },
-  partnerships: { label: 'Partnerships', icon: <Layers size={18} />, color: '#06b6d4', gradient: 'rgba(6,182,212,0.12)' },
+  inbound: { label: 'Inbound', icon: <Megaphone size={16} strokeWidth={1.75} />, color: '#999', gradient: 'transparent' },
+  outbound: { label: 'Outbound', icon: <Phone size={16} strokeWidth={1.75} />, color: '#999', gradient: 'transparent' },
+  paid_traffic: { label: 'Paid Traffic', icon: <Zap size={16} strokeWidth={1.75} />, color: '#999', gradient: 'transparent' },
+  social_media: { label: 'Social Media', icon: <Globe size={16} strokeWidth={1.75} />, color: '#999', gradient: 'transparent' },
+  referrals: { label: 'Referrals', icon: <Users size={16} strokeWidth={1.75} />, color: '#999', gradient: 'transparent' },
+  partnerships: { label: 'Partnerships', icon: <Layers size={16} strokeWidth={1.75} />, color: '#999', gradient: 'transparent' },
 };
 
 const DEFAULT_MILESTONES: Milestone[] = [
@@ -363,9 +363,9 @@ const GeneralRoom: React.FC<GeneralRoomProps> = ({ storagePrefix }) => {
 
   const priorityColor = (p: string) => {
     switch (p) {
-      case 'high': return 'text-red-400';
-      case 'medium': return 'text-amber-400';
-      default: return 'text-[#666]';
+      case 'high': return 'text-[#ccc]';
+      case 'medium': return 'text-[#777]';
+      default: return 'text-[#555]';
     }
   };
 
@@ -553,7 +553,7 @@ const GeneralRoom: React.FC<GeneralRoomProps> = ({ storagePrefix }) => {
                   onClick={() => toggleChannel(ch.id)}
                   className="w-full flex items-center gap-4 p-5 hover:bg-[rgba(255,255,255,0.02)] transition-none"
                 >
-                  <span style={{ color: cfg.color }}>{cfg.icon}</span>
+                  <span className="text-[#888]">{cfg.icon}</span>
                   <div className="flex-1 text-left">
                     <div className="flex items-center gap-3">
                       <span className="text-sm font-semibold text-[#ECECEC]">{ch.name}</span>
@@ -563,7 +563,7 @@ const GeneralRoom: React.FC<GeneralRoomProps> = ({ storagePrefix }) => {
                     </div>
                     <div className="flex items-center gap-3 mt-1.5">
                       <div className="flex-1 max-w-[200px] h-1.5 bg-[#2a2a2a] rounded-full overflow-hidden">
-                        <div className="h-full rounded-full transition-all" style={{ width: `${channelProgress}%`, background: cfg.color }} />
+                        <div className="h-full rounded-full transition-all bg-emerald-500/60" style={{ width: `${channelProgress}%` }} />
                       </div>
                       <span className="text-[10px] text-[#666]">{formatCurrency(ch.current)} / {formatCurrency(ch.target)}</span>
                     </div>
@@ -691,15 +691,15 @@ const GeneralRoom: React.FC<GeneralRoomProps> = ({ storagePrefix }) => {
                   <div key={ch.id}>
                     <div className="flex items-center justify-between mb-1.5">
                       <div className="flex items-center gap-2">
-                        <span style={{ color: cfg.color }}>{cfg.icon}</span>
+                        <span className="text-[#888]">{cfg.icon}</span>
                         <span className="text-xs font-medium text-[#ccc]">{ch.name}</span>
                       </div>
                       <span className="text-xs text-[#666]">
-                        <span style={{ color: cfg.color }}>{formatCurrency(ch.current)}</span> / {formatCurrency(ch.target)}
+                        <span className="text-[#ECECEC]">{formatCurrency(ch.current)}</span> / {formatCurrency(ch.target)}
                       </span>
                     </div>
                     <div className="h-2 bg-[#2a2a2a] rounded-full overflow-hidden">
-                      <div className="h-full rounded-full transition-all duration-500" style={{ width: `${pct}%`, background: cfg.color }} />
+                      <div className="h-full rounded-full transition-all duration-500 bg-emerald-500/60" style={{ width: `${pct}%` }} />
                     </div>
                   </div>
                 );
