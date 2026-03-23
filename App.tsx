@@ -190,15 +190,16 @@ const AuthenticatedApp: React.FC<{ user: User; signOut: () => Promise<void> }> =
   }, [storagePrefix]);
 
   // Load billing invoices for projected revenue — refreshes every time you switch to Dashboard
-  const [billingInvoices, setBillingInvoices] = useState<{ amount: number; status: string; date_due: string; date_paid: string; date_sent: string; client_id: string; service: string }[]>([]);
+  const [billingInvoices, setBillingInvoices] = useState<{ id: string; amount: number; status: string; date_due: string; date_paid: string; date_sent: string; client_id: string; service: string; invoice_number: string }[]>([]);
 
   useEffect(() => {
     if (!supabase) return;
     (async () => {
       const { data } = await supabase
         .from('billing_history')
-        .select('amount, status, date_due, date_paid, date_sent, client_id, service')
-        .eq('user_id', storagePrefix);
+        .select('id, amount, status, date_due, date_paid, date_sent, client_id, service, invoice_number')
+        .eq('user_id', storagePrefix)
+        .order('created_at', { ascending: false });
       if (data) setBillingInvoices(data);
     })();
   }, [storagePrefix, activeNav]);
@@ -359,11 +360,11 @@ const AuthenticatedApp: React.FC<{ user: User; signOut: () => Promise<void> }> =
     return Object.values(map).sort((a, b) => (b.paid + b.pending) - (a.paid + a.pending));
   }, [billingInvoices, dashClients]);
 
-  // Month-over-month growth
+  // Month-over-month growth (based on monthly paid amounts, not cumulative)
   const momGrowth = useMemo(() => {
     if (revenueByMonth.length < 2) return 0;
-    const curr = revenueByMonth[revenueByMonth.length - 1].total;
-    const prev = revenueByMonth[revenueByMonth.length - 2].total;
+    const curr = revenueByMonth[revenueByMonth.length - 1].monthly;
+    const prev = revenueByMonth[revenueByMonth.length - 2].monthly;
     if (prev === 0) return curr > 0 ? 100 : 0;
     return Math.round(((curr - prev) / prev) * 100);
   }, [revenueByMonth]);
@@ -535,9 +536,9 @@ const AuthenticatedApp: React.FC<{ user: User; signOut: () => Promise<void> }> =
     return data;
   }, [financeItems]);
 
-  const totalRevenue = financeItems
-    .filter(i => i.status === InvoiceStatus.PAID)
-    .reduce((acc, curr) => acc + curr.amount, 0);
+  const totalRevenue = billingInvoices
+    .filter(inv => inv.status === 'Paid')
+    .reduce((sum, inv) => sum + (inv.amount || 0), 0);
 
   // --- Finance Handlers ---
   const handleAddFinanceItem = useCallback(async (item: FinanceItem) => {
@@ -745,53 +746,65 @@ const AuthenticatedApp: React.FC<{ user: User; signOut: () => Promise<void> }> =
               </div>
             </div>
 
-            {/* ── Client Revenue Breakdown ── */}
+            {/* ── Billing History ── */}
             <div className="bg-[#1c1c1c] rounded-2xl p-6">
               <div className="flex items-center justify-between mb-4">
                 <div>
-                  <h2 className="text-sm font-bold text-[#ECECEC]">Client Revenue</h2>
-                  <p className="text-[11px] text-[#555] mt-0.5">Revenue breakdown by client from invoices</p>
+                  <h2 className="text-sm font-bold text-[#ECECEC]">Billing History</h2>
+                  <p className="text-[11px] text-[#555] mt-0.5">Individual invoices across all clients</p>
                 </div>
-                <span className="text-[11px] text-[#555]">{clientRevenue.length} clients with invoices</span>
+                <span className="text-[11px] text-[#555]">{billingInvoices.length} invoices</span>
               </div>
-              {clientRevenue.length === 0 ? (
-                <p className="text-center text-[#444] text-sm py-8">No invoice data yet. Create invoices in client billing tabs.</p>
+              {billingInvoices.length === 0 ? (
+                <p className="text-center text-[#444] text-sm py-8">No invoices yet. Create invoices in client billing tabs.</p>
               ) : (
                 <div className="space-y-1">
                   {/* Header */}
                   <div className="grid grid-cols-12 gap-3 px-3 py-2 text-[10px] font-medium uppercase tracking-wider text-[#555]">
-                    <div className="col-span-4">Client</div>
-                    <div className="col-span-2 text-right">Collected</div>
-                    <div className="col-span-2 text-right">Pending</div>
-                    <div className="col-span-2 text-right">Total</div>
-                    <div className="col-span-2 text-right">Invoices</div>
+                    <div className="col-span-3">Client</div>
+                    <div className="col-span-2">Service</div>
+                    <div className="col-span-2 text-right">Amount</div>
+                    <div className="col-span-2 text-center">Status</div>
+                    <div className="col-span-3 text-right">Date</div>
                   </div>
-                  {clientRevenue.map((cr, i) => (
-                    <div key={i} className="grid grid-cols-12 gap-3 items-center px-3 py-2.5 rounded-xl hover:bg-[rgba(255,255,255,0.03)] transition-colors">
-                      <div className="col-span-4 flex items-center gap-2.5 min-w-0">
-                        {cr.photo ? (
-                          <img src={cr.photo} alt="" className="w-7 h-7 rounded-full object-cover flex-shrink-0" />
-                        ) : (
-                          <div className="w-7 h-7 rounded-full bg-[#252525] flex items-center justify-center flex-shrink-0 text-[10px] font-bold text-[#888]">{cr.name.charAt(0)}</div>
-                        )}
-                        <div className="min-w-0">
-                          <p className="text-[13px] font-medium text-[#ECECEC] truncate">{cr.name}</p>
-                          <p className="text-[10px] text-[#555] truncate">{cr.service}</p>
+                  {billingInvoices.map(inv => {
+                    const cl = dashClients.find(c => c.id === inv.client_id);
+                    const statusColor = inv.status === 'Paid' ? 'text-emerald-400' : inv.status === 'Cancelled' ? 'text-[#555]' : 'text-yellow-400';
+                    const statusBg = inv.status === 'Paid' ? 'rgba(16,185,129,0.1)' : inv.status === 'Cancelled' ? 'rgba(255,255,255,0.04)' : 'rgba(234,179,8,0.1)';
+                    const dateStr = inv.date_paid || inv.date_due || inv.date_sent || '';
+                    const formattedDate = dateStr ? new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' }) : '—';
+                    return (
+                      <div key={inv.id} className="grid grid-cols-12 gap-3 items-center px-3 py-2.5 rounded-xl hover:bg-[rgba(255,255,255,0.03)] transition-colors">
+                        <div className="col-span-3 flex items-center gap-2.5 min-w-0">
+                          {cl?.photo_url ? (
+                            <img src={cl.photo_url} alt="" className="w-7 h-7 rounded-full object-cover flex-shrink-0" />
+                          ) : (
+                            <div className="w-7 h-7 rounded-full bg-[#252525] flex items-center justify-center flex-shrink-0 text-[10px] font-bold text-[#888]">{cl?.name?.charAt(0) || '?'}</div>
+                          )}
+                          <div className="min-w-0">
+                            <p className="text-[13px] font-medium text-[#ECECEC] truncate">{cl?.name || 'Unknown'}</p>
+                            {inv.invoice_number && <p className="text-[10px] text-[#444] truncate">#{inv.invoice_number}</p>}
+                          </div>
                         </div>
+                        <div className="col-span-2 text-[12px] text-[#888] truncate">{inv.service || cl?.service || '—'}</div>
+                        <div className="col-span-2 text-right text-[13px] font-semibold text-[#ECECEC]">${(inv.amount || 0).toLocaleString()}</div>
+                        <div className="col-span-2 text-center">
+                          <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full ${statusColor}`} style={{ background: statusBg }}>{inv.status}</span>
+                        </div>
+                        <div className="col-span-3 text-right text-[12px] text-[#666]">{formattedDate}</div>
                       </div>
-                      <div className="col-span-2 text-right text-[13px] font-medium text-emerald-400">${cr.paid.toLocaleString()}</div>
-                      <div className="col-span-2 text-right text-[13px] font-medium text-[#666]">${cr.pending.toLocaleString()}</div>
-                      <div className="col-span-2 text-right text-[13px] font-bold text-[#ECECEC]">${(cr.paid + cr.pending).toLocaleString()}</div>
-                      <div className="col-span-2 text-right text-[13px] text-[#666]">{cr.invoiceCount}</div>
-                    </div>
-                  ))}
+                    );
+                  })}
                   {/* Totals row */}
                   <div className="grid grid-cols-12 gap-3 px-3 py-2.5 mt-1" style={{ borderTop: '1px solid #252525' }}>
-                    <div className="col-span-4 text-[12px] font-semibold text-[#888]">Total</div>
-                    <div className="col-span-2 text-right text-[13px] font-bold text-emerald-400">${clientRevenue.reduce((s, c) => s + c.paid, 0).toLocaleString()}</div>
-                    <div className="col-span-2 text-right text-[13px] font-bold text-[#666]">${clientRevenue.reduce((s, c) => s + c.pending, 0).toLocaleString()}</div>
-                    <div className="col-span-2 text-right text-[13px] font-bold text-[#ECECEC]">${clientRevenue.reduce((s, c) => s + c.paid + c.pending, 0).toLocaleString()}</div>
-                    <div className="col-span-2 text-right text-[13px] font-bold text-[#666]">{clientRevenue.reduce((s, c) => s + c.invoiceCount, 0)}</div>
+                    <div className="col-span-5 text-[12px] font-semibold text-[#888]">Total</div>
+                    <div className="col-span-2 text-right text-[13px] font-bold text-[#ECECEC]">
+                      ${billingInvoices.filter(i => i.status !== 'Cancelled').reduce((s, i) => s + (i.amount || 0), 0).toLocaleString()}
+                    </div>
+                    <div className="col-span-2 text-center text-[11px] text-[#555]">
+                      {billingInvoices.filter(i => i.status === 'Paid').length} paid
+                    </div>
+                    <div className="col-span-3" />
                   </div>
                 </div>
               )}
