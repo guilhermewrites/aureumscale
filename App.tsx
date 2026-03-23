@@ -807,8 +807,8 @@ const AuthenticatedApp: React.FC<{ user: User; signOut: () => Promise<void> }> =
                   }).map(inv => {
                     const cl = dashClients.find(c => c.id === inv.client_id);
                     const isOverdue = inv.status === 'Overdue';
-                    const statusColor = inv.status === 'Paid' ? 'text-emerald-400' : inv.status === 'Cancelled' ? 'text-[#555]' : isOverdue ? 'text-[#c9a050]' : 'text-[#999]';
-                    const statusBg = inv.status === 'Paid' ? 'rgba(16,185,129,0.08)' : inv.status === 'Cancelled' ? 'rgba(255,255,255,0.04)' : isOverdue ? 'rgba(201,160,80,0.08)' : 'rgba(255,255,255,0.05)';
+                    const statusColor = inv.status === 'Paid' ? 'text-emerald-400' : inv.status === 'Cancelled' ? 'text-[#555]' : isOverdue ? 'text-[#e8a838]' : 'text-[#b0b0b0]';
+                    const statusBg = inv.status === 'Paid' ? 'rgba(16,185,129,0.1)' : inv.status === 'Cancelled' ? 'rgba(255,255,255,0.04)' : isOverdue ? 'rgba(232,168,56,0.1)' : 'rgba(255,255,255,0.06)';
                     const dateStr = inv.date_paid || inv.date_due || inv.date_sent || '';
                     const formattedDate = dateStr ? new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' }) : '—';
                     return (
