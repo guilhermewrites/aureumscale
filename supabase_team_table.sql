@@ -14,7 +14,10 @@ CREATE TABLE IF NOT EXISTS team_members (
   PRIMARY KEY (id, user_id)
 );
 
--- Optional: enable RLS and allow all for now
+-- Enable RLS with proper read+write policies
 ALTER TABLE team_members ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Allow all team_members" ON team_members;
-CREATE POLICY "Allow all team_members" ON team_members FOR ALL USING (true);
+CREATE POLICY "Allow all team_members" ON team_members
+  FOR ALL
+  USING (true)
+  WITH CHECK (true);

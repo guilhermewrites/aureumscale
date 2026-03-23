@@ -14,29 +14,49 @@ const TeamManager: React.FC<TeamManagerProps> = ({ storagePrefix }) => {
   const [members, setMembers] = useState<TeamMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const hasLoadedRef = useRef(false);
+  const persistQueueRef = useRef<Promise<void>>(Promise.resolve());
 
   const persistToSupabase = useCallback(async (list: TeamMember[]) => {
     if (!supabase) return;
-    try {
-      await supabase.from('team_members').delete().eq('user_id', storagePrefix);
-      if (list.length > 0) {
-        const rows = list.map((m, i) => ({
-          id: m.id,
-          user_id: storagePrefix,
-          name: m.name,
-          role: m.role,
-          description: m.description ?? null,
-          initials: m.initials,
-          color: m.color,
-          photo_url: m.photoUrl ?? null,
-          order_num: i,
-        }));
-        await supabase.from('team_members').insert(rows);
+    // Queue persists so they never overlap
+    persistQueueRef.current = persistQueueRef.current.then(async () => {
+      setSaveError(null);
+      try {
+        // Delete all existing rows for this user
+        const { error: delErr } = await supabase.from('team_members').delete().eq('user_id', storagePrefix);
+        if (delErr) {
+          console.error('Team delete error:', delErr);
+          setSaveError('Failed to save team. Please try again.');
+          return;
+        }
+        // Insert current list
+        if (list.length > 0) {
+          const rows = list.map((m, i) => ({
+            id: m.id,
+            user_id: storagePrefix,
+            name: m.name,
+            role: m.role,
+            description: m.description ?? null,
+            initials: m.initials,
+            color: m.color,
+            photo_url: m.photoUrl ?? null,
+            order_num: i,
+          }));
+          const { error: insErr } = await supabase.from('team_members').insert(rows);
+          if (insErr) {
+            console.error('Team insert error:', insErr);
+            setSaveError('Failed to save team. Please try again.');
+            return;
+          }
+        }
+      } catch (err) {
+        console.error('Supabase team save error:', err);
+        setSaveError('Failed to save team. Please try again.');
       }
-    } catch (err) {
-      console.error('Supabase team save error:', err);
-    }
+    });
+    return persistQueueRef.current;
   }, [storagePrefix]);
 
   useEffect(() => {
@@ -227,6 +247,11 @@ const TeamManager: React.FC<TeamManagerProps> = ({ storagePrefix }) => {
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      {saveError && (
+        <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-sm px-4 py-2.5 rounded-xl">
+          {saveError}
+        </div>
+      )}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex flex-col gap-1">
           <h2 className="text-xl font-bold text-[#ECECEC]">Team Members</h2>
