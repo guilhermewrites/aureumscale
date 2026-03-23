@@ -23,7 +23,7 @@ interface Client {
 }
 
 const DEFAULT_PAYMENT_STATUSES = ['Missing Invoice', 'Pending', 'Paid', 'Late'];
-const DEFAULT_CADENCES = ['Weekly', 'Bi-weekly', '1x/month', '2x/month', '3x/month', 'On-demand'];
+const DEFAULT_CADENCES = ['Weekly', 'Bi-weekly', '1x/month', '2x/month', '3x/month', 'On-demand', 'One-time-only'];
 const DEFAULT_SERVICES = ['Full-on-marketing', 'Ghostwriting', 'Social Media Management', 'Webinar', 'Design', 'Video-Editing'];
 const DEFAULT_LEADERS = ['Guilherme Writes', 'Jhacson Mossman'];
 const DEFAULT_CLIENT_STATUSES = ['Happy', 'Moderate', 'Frustrated'];
@@ -634,7 +634,12 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
         .eq('user_id', storagePrefix);
       if (updateError) throw updateError;
     } catch (err: any) {
-      showError('Failed to save change to Supabase.');
+      const msg = err?.message || '';
+      if (msg.includes('cadence') || msg.includes('column')) {
+        showError('Missing column in Supabase. Run the latest SQL migration (supabase_all_tables.sql).');
+      } else {
+        showError('Failed to save change to Supabase.');
+      }
       console.error('ClientsManager update error:', err);
     }
   }, [storagePrefix, showError]);

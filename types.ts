@@ -47,6 +47,7 @@ export enum NavigationItem {
   TEAM = 'Team',
   CONTRACTS = 'Contracts',
   FINANCE = 'Finance',
+  BRANDING = 'Branding',
   // Legacy (kept to avoid breaking existing data)
   PLANNER = 'Planner',
   CONTENT = 'Content',

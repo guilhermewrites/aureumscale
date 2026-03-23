@@ -7,6 +7,7 @@ import {
   Users,
   ScrollText,
   DollarSign,
+  Megaphone,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
@@ -30,6 +31,7 @@ const navToRoute: Record<string, string> = {
   [NavigationItem.TEAM]: '/team',
   [NavigationItem.CONTRACTS]: '/contracts',
   [NavigationItem.FINANCE]: '/finance',
+  [NavigationItem.BRANDING]: '/branding',
 };
 
 const routeToNavItem: Record<string, NavigationItem> = {
@@ -39,6 +41,7 @@ const routeToNavItem: Record<string, NavigationItem> = {
   '/team': NavigationItem.TEAM,
   '/contracts': NavigationItem.CONTRACTS,
   '/finance': NavigationItem.FINANCE,
+  '/branding': NavigationItem.BRANDING,
 };
 
 interface SidebarProps {
@@ -144,6 +147,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeUserId, onUserChange, collapsed
     { id: NavigationItem.TEAM, icon: Users, label: 'Team' },
     { id: NavigationItem.CONTRACTS, icon: ScrollText, label: 'Contracts' },
     { id: NavigationItem.FINANCE, icon: DollarSign, label: 'Finance' },
+    { id: NavigationItem.BRANDING, icon: Megaphone, label: 'Branding' },
   ];
 
   return (
