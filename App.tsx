@@ -305,7 +305,12 @@ const AuthenticatedApp: React.FC<{ user: User; signOut: () => Promise<void> }> =
       if (inv.status === 'Paid') entry.paid += inv.amount || 0;
       else if (inv.status !== 'Cancelled') entry.pending += inv.amount || 0;
     });
-    return months.map(m => ({ name: m.label, paid: m.paid, pending: m.pending, total: m.paid + m.pending }));
+    // Make cumulative
+    let cumPaid = 0;
+    return months.map(m => {
+      cumPaid += m.paid;
+      return { name: m.label, revenue: cumPaid, monthly: m.paid };
+    });
   }, [billingInvoices]);
 
   // Revenue by week for chart (last 8 weeks)
@@ -330,7 +335,12 @@ const AuthenticatedApp: React.FC<{ user: User; signOut: () => Promise<void> }> =
       if (inv.status === 'Paid') entry.paid += inv.amount || 0;
       else if (inv.status !== 'Cancelled') entry.pending += inv.amount || 0;
     });
-    return weeks.map(w => ({ name: w.label, paid: w.paid, pending: w.pending, total: w.paid + w.pending }));
+    // Make cumulative
+    let cumPaid = 0;
+    return weeks.map(w => {
+      cumPaid += w.paid;
+      return { name: w.label, revenue: cumPaid, weekly: w.paid };
+    });
   }, [billingInvoices]);
 
   // Client revenue breakdown — aggregated from billing history
@@ -692,12 +702,12 @@ const AuthenticatedApp: React.FC<{ user: User; signOut: () => Promise<void> }> =
                </div>
             </div>
 
-            {/* ── Revenue Chart ── */}
+            {/* ── Revenue Growth Chart ── */}
             <div className="bg-[#1c1c1c] rounded-2xl p-6">
               <div className="flex items-center justify-between mb-6">
                 <div>
-                  <h2 className="text-sm font-bold text-[#ECECEC]">Revenue Overview</h2>
-                  <p className="text-[11px] text-[#555] mt-0.5">Paid vs pending revenue over time</p>
+                  <h2 className="text-sm font-bold text-[#ECECEC]">Revenue Growth</h2>
+                  <p className="text-[11px] text-[#555] mt-0.5">Cumulative revenue over time</p>
                 </div>
                 <div className="flex bg-[#161616] rounded-lg p-0.5 border border-[#252525]">
                   <button onClick={() => setDashView('monthly')} className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${dashView === 'monthly' ? 'bg-[#252525] text-[#ECECEC]' : 'text-[#555] hover:text-[#888]'}`}>Monthly</button>
@@ -706,24 +716,32 @@ const AuthenticatedApp: React.FC<{ user: User; signOut: () => Promise<void> }> =
               </div>
               <div style={{ height: 300 }}>
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={dashView === 'monthly' ? revenueByMonth : revenueByWeek} barCategoryGap="20%">
+                  <AreaChart data={dashView === 'monthly' ? revenueByMonth : revenueByWeek}>
+                    <defs>
+                      <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#10b981" stopOpacity={0.25} />
+                        <stop offset="100%" stopColor="#10b981" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
                     <CartesianGrid strokeDasharray="3 3" stroke="#252525" vertical={false} />
                     <XAxis dataKey="name" tick={{ fill: '#555', fontSize: 11 }} axisLine={false} tickLine={false} />
-                    <YAxis tick={{ fill: '#555', fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={v => `$${(v / 1000).toFixed(0)}k`} />
+                    <YAxis tick={{ fill: '#555', fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={(v: number) => v >= 1000 ? `$${(v / 1000).toFixed(0)}k` : `$${v}`} />
                     <Tooltip
                       contentStyle={{ background: '#1c1c1c', border: '1px solid #252525', borderRadius: 12, fontSize: 12, color: '#ECECEC' }}
-                      formatter={(value: number, name: string) => [`$${value.toLocaleString()}`, name === 'paid' ? 'Collected' : 'Pending']}
+                      formatter={(value: number, name: string) => [`$${value.toLocaleString()}`, name === 'revenue' ? 'Total Revenue' : dashView === 'monthly' ? 'This Month' : 'This Week']}
                       labelStyle={{ color: '#888' }}
-                      cursor={{ fill: 'rgba(255,255,255,0.03)' }}
                     />
-                    <Bar dataKey="paid" fill="#10b981" radius={[4, 4, 0, 0]} name="paid" />
-                    <Bar dataKey="pending" fill="#334155" radius={[4, 4, 0, 0]} name="pending" />
-                  </BarChart>
+                    <Area
+                      type="monotone"
+                      dataKey="revenue"
+                      stroke="#10b981"
+                      strokeWidth={2.5}
+                      fill="url(#revenueGradient)"
+                      dot={{ r: 4, fill: '#10b981', stroke: '#1c1c1c', strokeWidth: 2 }}
+                      activeDot={{ r: 6, fill: '#10b981', stroke: '#1c1c1c', strokeWidth: 2 }}
+                    />
+                  </AreaChart>
                 </ResponsiveContainer>
-              </div>
-              <div className="flex items-center gap-5 mt-4 pt-3" style={{ borderTop: '1px solid #222' }}>
-                <div className="flex items-center gap-2 text-xs text-[#888]"><span className="w-2.5 h-2.5 rounded-sm bg-emerald-500" /> Collected</div>
-                <div className="flex items-center gap-2 text-xs text-[#888]"><span className="w-2.5 h-2.5 rounded-sm" style={{ background: '#334155' }} /> Pending</div>
               </div>
             </div>
 
