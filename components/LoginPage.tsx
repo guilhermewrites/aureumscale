@@ -74,7 +74,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onSignIn, onSignUp }) => {
     <div
       style={{
         minHeight: '100vh',
-        background: '#131313',
+        background: '#111111',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',

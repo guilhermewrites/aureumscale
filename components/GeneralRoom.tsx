@@ -360,12 +360,12 @@ const GeneralRoom: React.FC<GeneralRoomProps> = ({ storagePrefix }) => {
   return (
     <div className="space-y-6">
       {/* --- HERO: $100K Goal Progress --- */}
-      <div className="bg-[#1c1c1c] rounded-2xl border border-[#2a2a2a] p-6 relative overflow-hidden">
+      <div className="bg-[#181818] rounded-2xl  p-6 relative overflow-hidden">
         <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-emerald-500/5 to-transparent rounded-full -translate-y-1/2 translate-x-1/2" />
         <div className="relative">
           <div className="flex items-center justify-between mb-1">
             <div>
-              <h2 className="text-2xl font-bold text-[#ECECEC]" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+              <h2 className="text-2xl font-medium text-[#e0e0e0]" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
                 Road to $100K<span className="text-[#555] text-lg font-normal">/mo</span>
               </h2>
               <p className="text-xs text-[#666] mt-1">Your command center for scaling revenue</p>
@@ -417,60 +417,60 @@ const GeneralRoom: React.FC<GeneralRoomProps> = ({ storagePrefix }) => {
 
       {/* --- Stat Cards --- */}
       <div className="grid grid-cols-4 gap-4">
-        <div className="bg-[#1c1c1c] rounded-2xl border border-[#2a2a2a] p-5">
+        <div className="bg-[#181818] rounded-2xl  p-5">
           <div className="flex items-center justify-between mb-3">
             <span className="text-[10px] uppercase tracking-wider text-[#666] font-semibold">CHANNELS ACTIVE</span>
             <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center">
               <BarChart3 size={16} className="text-emerald-400" />
             </div>
           </div>
-          <div className="text-2xl font-bold text-[#ECECEC]">{channels.length}</div>
+          <div className="text-2xl font-medium text-[#e0e0e0]">{channels.length}</div>
           <div className="text-xs text-[#666] mt-1">Revenue channels</div>
         </div>
 
-        <div className="bg-[#1c1c1c] rounded-2xl border border-[#2a2a2a] p-5">
+        <div className="bg-[#181818] rounded-2xl  p-5">
           <div className="flex items-center justify-between mb-3">
             <span className="text-[10px] uppercase tracking-wider text-[#666] font-semibold">STRATEGIES</span>
             <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center">
               <Target size={16} className="text-blue-400" />
             </div>
           </div>
-          <div className="text-2xl font-bold text-[#ECECEC]">{completedStrategies}<span className="text-sm text-[#666] font-normal">/{totalStrategies}</span></div>
+          <div className="text-2xl font-medium text-[#e0e0e0]">{completedStrategies}<span className="text-sm text-[#666] font-normal">/{totalStrategies}</span></div>
           <div className="text-xs text-[#666] mt-1">{inProgressStrategies} in progress</div>
         </div>
 
-        <div className="bg-[#1c1c1c] rounded-2xl border border-[#2a2a2a] p-5">
+        <div className="bg-[#181818] rounded-2xl  p-5">
           <div className="flex items-center justify-between mb-3">
             <span className="text-[10px] uppercase tracking-wider text-[#666] font-semibold">TARGET TOTAL</span>
             <div className="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center">
               <DollarSign size={16} className="text-amber-400" />
             </div>
           </div>
-          <div className="text-2xl font-bold text-[#ECECEC]">{formatCurrency(totalTarget)}</div>
+          <div className="text-2xl font-medium text-[#e0e0e0]">{formatCurrency(totalTarget)}</div>
           <div className="text-xs text-[#666] mt-1">Across all channels</div>
         </div>
 
-        <div className="bg-[#1c1c1c] rounded-2xl border border-[#2a2a2a] p-5">
+        <div className="bg-[#181818] rounded-2xl  p-5">
           <div className="flex items-center justify-between mb-3">
             <span className="text-[10px] uppercase tracking-wider text-[#666] font-semibold">WEEKLY LOGS</span>
             <div className="w-8 h-8 rounded-lg bg-purple-500/10 flex items-center justify-center">
               <FileLogIcon size={16} />
             </div>
           </div>
-          <div className="text-2xl font-bold text-[#ECECEC]">{weeklyLogs.length}</div>
+          <div className="text-2xl font-medium text-[#e0e0e0]">{weeklyLogs.length}</div>
           <div className="text-xs text-[#666] mt-1">Weeks tracked</div>
         </div>
       </div>
 
       {/* --- Tabs --- */}
-      <div className="flex gap-1 bg-[#1c1c1c] rounded-xl p-1 border border-[#2a2a2a] w-fit">
+      <div className="flex gap-1 bg-[#181818] rounded-xl p-1  w-fit">
         {(['blueprint', 'pipeline', 'log'] as const).map(tab => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
             className={`px-5 py-2 rounded-lg text-xs font-semibold transition-none ${
               activeTab === tab
-                ? 'bg-[#2a2a2a] text-[#ECECEC]'
+                ? 'bg-[#2a2a2a] text-[#e0e0e0]'
                 : 'text-[#666] hover:text-[#999]'
             }`}
           >
@@ -489,7 +489,7 @@ const GeneralRoom: React.FC<GeneralRoomProps> = ({ storagePrefix }) => {
             const channelProgress = totalCount > 0 ? (doneCount / totalCount) * 100 : 0;
 
             return (
-              <div key={ch.id} className="bg-[#1c1c1c] rounded-2xl border border-[#2a2a2a] overflow-hidden">
+              <div key={ch.id} className="bg-[#181818] rounded-2xl  overflow-hidden">
                 {/* Channel header */}
                 <button
                   onClick={() => toggleChannel(ch.id)}
@@ -500,7 +500,7 @@ const GeneralRoom: React.FC<GeneralRoomProps> = ({ storagePrefix }) => {
                   </div>
                   <div className="flex-1 text-left">
                     <div className="flex items-center gap-3">
-                      <span className="text-sm font-semibold text-[#ECECEC]">{ch.name}</span>
+                      <span className="text-sm font-medium text-[#e0e0e0]">{ch.name}</span>
                       <span className="text-[10px] text-[#666] bg-[#2a2a2a] px-2 py-0.5 rounded-full">
                         {doneCount}/{totalCount} done
                       </span>
@@ -538,7 +538,7 @@ const GeneralRoom: React.FC<GeneralRoomProps> = ({ storagePrefix }) => {
 
                 {/* Strategies */}
                 {ch.expanded && (
-                  <div className="border-t border-[#2a2a2a] px-5 pb-4">
+                  <div className="border-t border-[#1f1f1f] px-5 pb-4">
                     {ch.strategies.map((s, i) => (
                       <div key={s.id} className="flex items-center gap-3 py-3 border-b border-[#222] last:border-0 group">
                         {/* Status toggle */}
@@ -554,7 +554,7 @@ const GeneralRoom: React.FC<GeneralRoomProps> = ({ storagePrefix }) => {
                               value={editStrategyText}
                               onChange={e => setEditStrategyText(e.target.value)}
                               onKeyDown={e => { if (e.key === 'Enter') saveStrategyEdit(ch.id, s.id); if (e.key === 'Escape') setEditingStrategy(null); }}
-                              className="flex-1 bg-[#2a2a2a] border border-[#444] rounded-lg px-3 py-1.5 text-xs text-[#ECECEC] focus:outline-none focus:ring-1 focus:ring-emerald-500/30"
+                              className="flex-1 bg-[#2a2a2a] border border-[#444] rounded-lg px-3 py-1.5 text-xs text-[#e0e0e0] focus:outline-none focus:ring-1 focus:ring-emerald-500/30"
                             />
                             <button onClick={() => saveStrategyEdit(ch.id, s.id)} className="text-emerald-400 hover:text-emerald-300"><Check size={14} /></button>
                             <button onClick={() => setEditingStrategy(null)} className="text-[#666] hover:text-[#999]"><X size={14} /></button>
@@ -600,7 +600,7 @@ const GeneralRoom: React.FC<GeneralRoomProps> = ({ storagePrefix }) => {
                           onChange={e => setNewStrategyText(e.target.value)}
                           onKeyDown={e => { if (e.key === 'Enter') addStrategy(ch.id); if (e.key === 'Escape') { setAddingToChannel(null); setNewStrategyText(''); } }}
                           placeholder="New strategy..."
-                          className="flex-1 bg-[#2a2a2a] border border-[#333] rounded-lg px-3 py-2 text-xs text-[#ECECEC] focus:outline-none focus:ring-1 focus:ring-emerald-500/30"
+                          className="flex-1 bg-[#2a2a2a] border border-[#333] rounded-lg px-3 py-2 text-xs text-[#e0e0e0] focus:outline-none focus:ring-1 focus:ring-emerald-500/30"
                         />
                         <button onClick={() => addStrategy(ch.id)} className="px-3 py-2 bg-emerald-500/10 text-emerald-400 rounded-lg text-xs font-medium hover:bg-emerald-500/20">Add</button>
                         <button onClick={() => { setAddingToChannel(null); setNewStrategyText(''); }} className="text-[#666] hover:text-[#999]"><X size={14} /></button>
@@ -625,8 +625,8 @@ const GeneralRoom: React.FC<GeneralRoomProps> = ({ storagePrefix }) => {
       {activeTab === 'pipeline' && (
         <div className="space-y-6">
           {/* Channel breakdown bars */}
-          <div className="bg-[#1c1c1c] rounded-2xl border border-[#2a2a2a] p-6">
-            <h3 className="text-sm font-semibold text-[#ECECEC] mb-4">Revenue by Channel</h3>
+          <div className="bg-[#181818] rounded-2xl  p-6">
+            <h3 className="text-sm font-medium text-[#e0e0e0] mb-4">Revenue by Channel</h3>
             <div className="space-y-4">
               {channels.map(ch => {
                 const cfg = CHANNEL_CONFIG[ch.type];
@@ -651,9 +651,9 @@ const GeneralRoom: React.FC<GeneralRoomProps> = ({ storagePrefix }) => {
             </div>
 
             {/* Total */}
-            <div className="mt-6 pt-4 border-t border-[#2a2a2a]">
+            <div className="mt-6 pt-4 border-t border-[#1f1f1f]">
               <div className="flex items-center justify-between mb-1.5">
-                <span className="text-xs font-semibold text-[#ECECEC]">Total</span>
+                <span className="text-xs font-medium text-[#e0e0e0]">Total</span>
                 <span className="text-xs font-semibold">
                   <span className="text-emerald-400">{formatCurrency(totalCurrent)}</span>
                   <span className="text-[#666]"> / {formatCurrency(totalTarget)}</span>
@@ -670,8 +670,8 @@ const GeneralRoom: React.FC<GeneralRoomProps> = ({ storagePrefix }) => {
 
           {/* Weekly trend chart */}
           {trendData.length > 0 && (
-            <div className="bg-[#1c1c1c] rounded-2xl border border-[#2a2a2a] p-6">
-              <h3 className="text-sm font-semibold text-[#ECECEC] mb-4">Weekly Revenue Trend</h3>
+            <div className="bg-[#181818] rounded-2xl  p-6">
+              <h3 className="text-sm font-medium text-[#e0e0e0] mb-4">Weekly Revenue Trend</h3>
               <div className="h-[250px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={trendData}>
@@ -707,7 +707,7 @@ const GeneralRoom: React.FC<GeneralRoomProps> = ({ storagePrefix }) => {
       {activeTab === 'log' && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-[#ECECEC]">Weekly Performance Log</h3>
+            <h3 className="text-sm font-medium text-[#e0e0e0]">Weekly Performance Log</h3>
             <button
               onClick={() => setShowLogForm(true)}
               className="flex items-center gap-2 px-4 py-2 bg-emerald-500/10 text-emerald-400 rounded-xl text-xs font-semibold hover:bg-emerald-500/20 transition-none"
@@ -721,7 +721,7 @@ const GeneralRoom: React.FC<GeneralRoomProps> = ({ storagePrefix }) => {
 
           {/* Log entries */}
           {weeklyLogs.length === 0 && !showLogForm ? (
-            <div className="bg-[#1c1c1c] rounded-2xl border border-[#2a2a2a] p-12 text-center">
+            <div className="bg-[#181818] rounded-2xl  p-12 text-center">
               <div className="text-[#444] mb-2"><BarChart3 size={32} className="mx-auto" /></div>
               <p className="text-sm text-[#666]">No weekly logs yet</p>
               <p className="text-xs text-[#555] mt-1">Start tracking your weekly performance to see trends</p>
@@ -729,10 +729,10 @@ const GeneralRoom: React.FC<GeneralRoomProps> = ({ storagePrefix }) => {
           ) : (
             <div className="space-y-3">
               {[...weeklyLogs].sort((a, b) => b.week_start.localeCompare(a.week_start)).map(log => (
-                <div key={log.id} className="bg-[#1c1c1c] rounded-2xl border border-[#2a2a2a] p-5">
+                <div key={log.id} className="bg-[#181818] rounded-2xl  p-5">
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-3">
-                      <span className="text-xs font-semibold text-[#ECECEC]">
+                      <span className="text-xs font-medium text-[#e0e0e0]">
                         Week of {new Date(log.week_start).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                       </span>
                       <span className="text-lg font-bold text-emerald-400">{formatCurrency(log.revenue)}</span>
@@ -760,7 +760,7 @@ const GeneralRoom: React.FC<GeneralRoomProps> = ({ storagePrefix }) => {
                     </div>
                   </div>
                   {log.notes && (
-                    <div className="mt-3 pt-3 border-t border-[#2a2a2a]">
+                    <div className="mt-3 pt-3 border-t border-[#1f1f1f]">
                       <p className="text-xs text-[#888]">{log.notes}</p>
                     </div>
                   )}
@@ -800,11 +800,11 @@ const WeeklyLogForm: React.FC<{ onSave: (log: Omit<WeeklyLog, 'id'>) => void; on
     });
   };
 
-  const inputClass = "w-full bg-[#2a2a2a] border border-[#333] rounded-lg px-3 py-2 text-xs text-[#ECECEC] focus:outline-none focus:ring-1 focus:ring-emerald-500/30";
+  const inputClass = "w-full bg-[#2a2a2a] border border-[#333] rounded-lg px-3 py-2 text-xs text-[#e0e0e0] focus:outline-none focus:ring-1 focus:ring-emerald-500/30";
 
   return (
-    <div className="bg-[#1c1c1c] rounded-2xl border border-[#2a2a2a] p-5">
-      <h4 className="text-xs font-semibold text-[#ECECEC] mb-4">Log Weekly Performance</h4>
+    <div className="bg-[#181818] rounded-2xl  p-5">
+      <h4 className="text-xs font-medium text-[#e0e0e0] mb-4">Log Weekly Performance</h4>
       <div className="grid grid-cols-3 gap-4 mb-4">
         <div>
           <label className="text-[10px] uppercase tracking-wider text-[#666] font-medium block mb-1">Week Starting</label>
