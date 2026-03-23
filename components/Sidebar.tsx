@@ -173,15 +173,15 @@ const Sidebar: React.FC<SidebarProps> = ({ activeUserId, onUserChange, collapsed
             onChange={handleLogoUpload}
           />
           {customLogo ? (
-            <img src={customLogo} alt="Logo" className="w-8 h-8 object-contain rounded" />
+            <img src={customLogo} alt="Logo" className="w-6 h-6 object-contain rounded" />
           ) : (
-            <img src="/aureum-logo.svg" alt="Aureum Logo" className="w-8 h-8 object-contain" />
+            <img src="/aureum-logo.svg" alt="Aureum Logo" className="w-6 h-6 object-contain" />
           )}
           <div className="absolute inset-0 bg-black/50 rounded opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-            <Camera size={12} className="text-white" />
+            <Camera size={10} className="text-white" />
           </div>
         </label>
-        {!collapsed && <span className="text-xl tracking-wide text-[#ECECEC] flex-1 min-w-0 truncate" style={{ fontFamily: "'Cormorant Garamond', serif", fontStyle: 'italic', fontWeight: 700 }}>Aureum</span>}
+        {!collapsed && <span className="text-[15px] font-semibold tracking-wide text-[#ECECEC] flex-1 min-w-0 truncate" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>Aureum</span>}
         <button
           onClick={onToggleCollapse}
           className={`${collapsed ? 'absolute -right-3 top-5' : ''} w-6 h-6 rounded-full bg-[#2a2a2a] border border-[#333] flex items-center justify-center text-[#666] hover:text-[#ECECEC] hover:bg-[#333] flex-shrink-0`}

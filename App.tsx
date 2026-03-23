@@ -769,10 +769,10 @@ const AuthenticatedApp: React.FC<{ user: User; signOut: () => Promise<void> }> =
                       type="monotone"
                       dataKey="revenue"
                       stroke="#10b981"
-                      strokeWidth={2.5}
+                      strokeWidth={1.5}
                       fill="url(#revenueGradient)"
-                      dot={{ r: 4, fill: '#10b981', stroke: '#1c1c1c', strokeWidth: 2 }}
-                      activeDot={{ r: 6, fill: '#10b981', stroke: '#1c1c1c', strokeWidth: 2 }}
+                      dot={false}
+                      activeDot={{ r: 3, fill: '#10b981', stroke: '#1c1c1c', strokeWidth: 1.5 }}
                     />
                   </AreaChart>
                 </ResponsiveContainer>
@@ -806,8 +806,9 @@ const AuthenticatedApp: React.FC<{ user: User; signOut: () => Promise<void> }> =
                     return db.getTime() - da.getTime();
                   }).map(inv => {
                     const cl = dashClients.find(c => c.id === inv.client_id);
-                    const statusColor = inv.status === 'Paid' ? 'text-emerald-400' : inv.status === 'Cancelled' ? 'text-[#555]' : 'text-yellow-400';
-                    const statusBg = inv.status === 'Paid' ? 'rgba(16,185,129,0.1)' : inv.status === 'Cancelled' ? 'rgba(255,255,255,0.04)' : 'rgba(234,179,8,0.1)';
+                    const isOverdue = inv.status === 'Overdue';
+                    const statusColor = inv.status === 'Paid' ? 'text-emerald-400' : inv.status === 'Cancelled' ? 'text-[#555]' : isOverdue ? 'text-[#c9a050]' : 'text-[#999]';
+                    const statusBg = inv.status === 'Paid' ? 'rgba(16,185,129,0.08)' : inv.status === 'Cancelled' ? 'rgba(255,255,255,0.04)' : isOverdue ? 'rgba(201,160,80,0.08)' : 'rgba(255,255,255,0.05)';
                     const dateStr = inv.date_paid || inv.date_due || inv.date_sent || '';
                     const formattedDate = dateStr ? new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' }) : '—';
                     return (
