@@ -18,8 +18,9 @@ CREATE TABLE IF NOT EXISTS clients (
   created_at   TIMESTAMPTZ DEFAULT NOW()
 );
 
--- If the table already exists, add the active column:
+-- If the table already exists, add missing columns:
 ALTER TABLE clients ADD COLUMN IF NOT EXISTS active BOOLEAN NOT NULL DEFAULT true;
+ALTER TABLE clients ADD COLUMN IF NOT EXISTS acquisition TEXT NOT NULL DEFAULT 'Inbound — DMs';
 
 ALTER TABLE clients ENABLE ROW LEVEL SECURITY;
 

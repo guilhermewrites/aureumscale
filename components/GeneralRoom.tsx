@@ -118,11 +118,24 @@ const DEFAULT_CHANNELS: Channel[] = [
   },
 ];
 
-interface GeneralRoomProps {
-  storagePrefix: string;
+interface BillingInvoice {
+  id: string;
+  amount: number;
+  status: string;
+  date_due: string;
+  date_paid: string;
+  date_sent: string;
+  client_id: string;
+  service: string;
+  invoice_number: string;
 }
 
-const GeneralRoom: React.FC<GeneralRoomProps> = ({ storagePrefix }) => {
+interface GeneralRoomProps {
+  storagePrefix: string;
+  billingInvoices?: BillingInvoice[];
+}
+
+const GeneralRoom: React.FC<GeneralRoomProps> = ({ storagePrefix, billingInvoices = [] }) => {
   const [channels, setChannels] = useState<Channel[]>([]);
   const [milestones, setMilestones] = useState<Milestone[]>(DEFAULT_MILESTONES);
   const [weeklyLogs, setWeeklyLogs] = useState<WeeklyLog[]>([]);
@@ -224,10 +237,42 @@ const GeneralRoom: React.FC<GeneralRoomProps> = ({ storagePrefix }) => {
     persistData(channels, milestones, weeklyLogs, text);
   }, [channels, milestones, weeklyLogs, persistData]);
 
+  // --- Revenue from billing_history (source of truth) ---
+  const actualMonthlyRevenue = useMemo(() => {
+    if (!billingInvoices.length) return 0;
+    const now = new Date();
+    const thisMonth = now.getMonth();
+    const thisYear = now.getFullYear();
+    // Paid this month
+    const paidThisMonth = billingInvoices
+      .filter(inv => inv.status === 'Paid')
+      .filter(inv => {
+        const d = new Date(inv.date_paid);
+        return !isNaN(d.getTime()) && d.getMonth() === thisMonth && d.getFullYear() === thisYear;
+      })
+      .reduce((sum, inv) => sum + (inv.amount || 0), 0);
+    // Pending this month (not paid/cancelled, due this month)
+    const pendingThisMonth = billingInvoices
+      .filter(inv => inv.status !== 'Paid' && inv.status !== 'Cancelled')
+      .filter(inv => {
+        const due = new Date(inv.date_due);
+        const sent = new Date(inv.date_sent);
+        const dueMatch = !isNaN(due.getTime()) && due.getMonth() === thisMonth && due.getFullYear() === thisYear;
+        const sentMatch = !inv.date_due && !isNaN(sent.getTime()) && sent.getMonth() === thisMonth && sent.getFullYear() === thisYear;
+        return dueMatch || sentMatch;
+      })
+      .reduce((sum, inv) => sum + (inv.amount || 0), 0);
+    return paidThisMonth + pendingThisMonth;
+  }, [billingInvoices]);
+
+  // Use actual revenue from billing if available, otherwise fall back to manual channel totals
+  const hasRealRevenue = billingInvoices.length > 0;
+
   // --- Computed ---
   const totalCurrent = useMemo(() => channels.reduce((sum, ch) => sum + ch.current, 0), [channels]);
   const totalTarget = useMemo(() => channels.reduce((sum, ch) => sum + ch.target, 0), [channels]);
-  const progressPercent = goalAmount > 0 ? Math.min((totalCurrent / goalAmount) * 100, 100) : 0;
+  const displayRevenue = hasRealRevenue ? actualMonthlyRevenue : totalCurrent;
+  const progressPercent = goalAmount > 0 ? Math.min((displayRevenue / goalAmount) * 100, 100) : 0;
 
   const totalStrategies = useMemo(() => channels.reduce((sum, ch) => sum + ch.strategies.length, 0), [channels]);
   const completedStrategies = useMemo(() => channels.reduce((sum, ch) => sum + ch.strategies.filter(s => s.status === 'done').length, 0), [channels]);
@@ -388,8 +433,8 @@ const GeneralRoom: React.FC<GeneralRoomProps> = ({ storagePrefix }) => {
               <p className="text-xs text-[#666] mt-1">Your command center for scaling revenue</p>
             </div>
             <div className="text-right">
-              <div className="text-3xl font-bold text-emerald-400">{formatCurrency(totalCurrent)}</div>
-              <div className="text-xs text-[#666]">of {formatCurrency(goalAmount)} goal</div>
+              <div className="text-3xl font-bold text-emerald-400">{formatCurrency(displayRevenue)}</div>
+              <div className="text-xs text-[#666]">of {formatCurrency(goalAmount)} goal{hasRealRevenue && ' · projected this month'}</div>
             </div>
           </div>
 
@@ -415,18 +460,27 @@ const GeneralRoom: React.FC<GeneralRoomProps> = ({ storagePrefix }) => {
             </div>
             {/* Milestone labels */}
             <div className="relative h-5 mt-1">
-              {milestones.map(ms => (
-                <div
-                  key={ms.id}
-                  className="absolute text-[9px] font-medium -translate-x-1/2"
-                  style={{
-                    left: `${(ms.amount / goalAmount) * 100}%`,
-                    color: ms.status === 'reached' ? '#10b981' : ms.status === 'current' ? '#ECECEC' : '#555',
-                  }}
-                >
-                  {ms.label}
-                </div>
-              ))}
+              {milestones.map((ms, idx) => {
+                const pct = (ms.amount / goalAmount) * 100;
+                const isLast = idx === milestones.length - 1;
+                const isFirst = idx === 0;
+                return (
+                  <div
+                    key={ms.id}
+                    className={`absolute text-[9px] font-medium ${isLast ? '' : isFirst ? '' : '-translate-x-1/2'}`}
+                    style={{
+                      ...(isLast
+                        ? { right: 0 }
+                        : isFirst
+                          ? { left: 0 }
+                          : { left: `${pct}%` }),
+                      color: ms.status === 'reached' ? '#10b981' : ms.status === 'current' ? '#ECECEC' : '#555',
+                    }}
+                  >
+                    {ms.label}
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>

@@ -807,8 +807,8 @@ const AuthenticatedApp: React.FC<{ user: User; signOut: () => Promise<void> }> =
                   }).map(inv => {
                     const cl = dashClients.find(c => c.id === inv.client_id);
                     const isOverdue = inv.status === 'Overdue';
-                    const statusColor = inv.status === 'Paid' ? 'text-emerald-400' : inv.status === 'Cancelled' ? 'text-[#555]' : isOverdue ? 'text-[#e8a838]' : 'text-[#b0b0b0]';
-                    const statusBg = inv.status === 'Paid' ? 'rgba(16,185,129,0.1)' : inv.status === 'Cancelled' ? 'rgba(255,255,255,0.04)' : isOverdue ? 'rgba(232,168,56,0.1)' : 'rgba(255,255,255,0.06)';
+                    const statusColor = inv.status === 'Paid' ? 'text-[#7dd8a8]' : inv.status === 'Cancelled' ? 'text-[#555]' : isOverdue ? 'text-[#e0a870]' : 'text-[#8bb0d0]';
+                    const statusBg = inv.status === 'Paid' ? 'rgba(125,216,168,0.08)' : inv.status === 'Cancelled' ? 'rgba(255,255,255,0.04)' : isOverdue ? 'rgba(224,168,112,0.08)' : 'rgba(139,176,208,0.08)';
                     const dateStr = inv.date_paid || inv.date_due || inv.date_sent || '';
                     const formattedDate = dateStr ? new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' }) : '—';
                     return (
@@ -914,7 +914,7 @@ const AuthenticatedApp: React.FC<{ user: User; signOut: () => Promise<void> }> =
             />
           } />
           <Route path="/branding" element={<BrandingManager storagePrefix={storagePrefix} />} />
-          <Route path="/general-room" element={<GeneralRoom storagePrefix={storagePrefix} />} />
+          <Route path="/general-room" element={<GeneralRoom storagePrefix={storagePrefix} billingInvoices={billingInvoices} />} />
           <Route path="/contracts" element={
             <div className="h-96 flex flex-col items-center justify-center text-[#666666] border-2 border-dashed border-[#3a3a3a] rounded-xl">
               <p className="text-lg font-medium mb-2">Work in Progress</p>

@@ -17,6 +17,7 @@ interface Client {
   service: string;
   leader: string;
   status: string;
+  acquisition: string;
   clientType: ClientType;
   orderNum: number;
   active: boolean;
@@ -27,6 +28,7 @@ const DEFAULT_CADENCES = ['Weekly', 'Bi-weekly', '1x/month', '2x/month', '3x/mon
 const DEFAULT_SERVICES = ['Full-on-marketing', 'Ghostwriting', 'Social Media Management', 'Webinar', 'Design', 'Video-Editing'];
 const DEFAULT_LEADERS = ['Guilherme Writes', 'Jhacson Mossman'];
 const DEFAULT_CLIENT_STATUSES = ['Happy', 'Moderate', 'Frustrated'];
+const DEFAULT_ACQUISITIONS = ['Inbound — DMs', 'Inbound — Organic', 'Inbound — Funnel', 'Outbound — DMs', 'Outbound — Cold Email', 'Paid Traffic — Ads', 'Social Media', 'Referral', 'Partnership'];
 
 const paymentColors: Record<string, string> = {
   'Missing Invoice': 'text-red-400',
@@ -39,6 +41,18 @@ const statusColors: Record<string, string> = {
   'Happy': 'text-emerald-400',
   'Moderate': 'text-[#9B9B9B]',
   'Frustrated': 'text-red-400',
+};
+
+const acquisitionColors: Record<string, string> = {
+  'Inbound — DMs': 'text-[#8bb0d0]',
+  'Inbound — Organic': 'text-[#8bb0d0]',
+  'Inbound — Funnel': 'text-[#8bb0d0]',
+  'Outbound — DMs': 'text-[#c0a0d8]',
+  'Outbound — Cold Email': 'text-[#c0a0d8]',
+  'Paid Traffic — Ads': 'text-[#e0a870]',
+  'Social Media': 'text-[#7dd8a8]',
+  'Referral': 'text-[#d4b896]',
+  'Partnership': 'text-[#d4b896]',
 };
 
 function getInitials(name: string) {
@@ -56,6 +70,7 @@ function newClient(orderNum: number, clientType: ClientType = 'recurring'): Clie
     service: 'Ghostwriting',
     leader: 'Guilherme Writes',
     status: 'Happy',
+    acquisition: 'Inbound — DMs',
     clientType,
     orderNum,
     active: true,
@@ -74,6 +89,7 @@ function toDbRow(client: Client, userId: string) {
     service: client.service,
     leader: client.leader,
     status: client.status,
+    acquisition: client.acquisition ?? 'Inbound — DMs',
     client_type: client.clientType,
     order_num: client.orderNum,
     active: client.active,
@@ -91,6 +107,7 @@ function fromDbRow(row: any): Client {
     service: row.service ?? 'Ghostwriting',
     leader: row.leader ?? 'Guilherme Writes',
     status: row.status ?? 'Happy',
+    acquisition: row.acquisition ?? 'Inbound — DMs',
     clientType: row.client_type ?? 'recurring',
     orderNum: row.order_num ?? 0,
     active: row.active ?? true,
@@ -377,8 +394,8 @@ function Avatar({ name, photoUrl, onPhotoChange, size = 36 }: AvatarProps) {
   );
 }
 
-type ColumnId = 'payment' | 'amount' | 'cadence' | 'service' | 'leader' | 'status';
-const DEFAULT_COLUMNS: ColumnId[] = ['payment', 'amount', 'cadence', 'service', 'leader', 'status'];
+type ColumnId = 'payment' | 'amount' | 'cadence' | 'service' | 'leader' | 'status' | 'acquisition';
+const DEFAULT_COLUMNS: ColumnId[] = ['status', 'payment', 'amount', 'cadence', 'service', 'leader', 'acquisition'];
 
 const COLUMN_LABELS: Record<ColumnId, string> = {
   payment: 'Payment',
@@ -387,15 +404,17 @@ const COLUMN_LABELS: Record<ColumnId, string> = {
   service: 'Service',
   leader: 'Leader',
   status: 'Status',
+  acquisition: 'Acquired Via',
 };
 
 const COLUMN_WIDTHS: Record<ColumnId, string> = {
-  payment: '12%',
-  amount: '11%',
-  cadence: '11%',
-  service: '14%',
-  leader: '13%',
-  status: '12%',
+  payment: '10%',
+  amount: '9%',
+  cadence: '10%',
+  service: '12%',
+  leader: '11%',
+  status: '10%',
+  acquisition: '13%',
 };
 
 interface ClientsManagerProps {
@@ -409,6 +428,7 @@ type ColumnOptionsMap = {
   service: string[];
   leader: string[];
   status: string[];
+  acquisition: string[];
 };
 
 const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
@@ -436,6 +456,7 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
     service: DEFAULT_SERVICES,
     leader: DEFAULT_LEADERS,
     status: DEFAULT_CLIENT_STATUSES,
+    acquisition: DEFAULT_ACQUISITIONS,
   });
 
   // Load custom options from Supabase
@@ -459,6 +480,7 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
           service: map.service && map.service.length > 0 ? map.service : DEFAULT_SERVICES,
           leader: map.leader && map.leader.length > 0 ? map.leader : DEFAULT_LEADERS,
           status: map.status && map.status.length > 0 ? map.status : DEFAULT_CLIENT_STATUSES,
+          acquisition: map.acquisition && map.acquisition.length > 0 ? map.acquisition : DEFAULT_ACQUISITIONS,
         });
       }
     })();
@@ -504,6 +526,7 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
       if (col === 'service' && c.service === oldVal) patch.service = newVal;
       if (col === 'leader' && c.leader === oldVal) patch.leader = newVal;
       if (col === 'status' && c.status === oldVal) patch.status = newVal;
+      if (col === 'acquisition' && c.acquisition === oldVal) patch.acquisition = newVal;
       if (Object.keys(patch).length === 0) return c;
       // Persist the rename to Supabase too
       if (supabase) {
@@ -512,6 +535,7 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
         if (patch.service) dbPatch.service = patch.service;
         if (patch.leader) dbPatch.leader = patch.leader;
         if (patch.status) dbPatch.status = patch.status;
+        if (patch.acquisition) dbPatch.acquisition = patch.acquisition;
         supabase.from('clients').update(dbPatch).eq('id', c.id).eq('user_id', storagePrefix);
       }
       return { ...c, ...patch };
@@ -624,6 +648,7 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
     if ('service' in patch) dbPatch.service = patch.service;
     if ('leader' in patch) dbPatch.leader = patch.leader;
     if ('status' in patch) dbPatch.status = patch.status;
+    if ('acquisition' in patch) dbPatch.acquisition = patch.acquisition;
     if ('clientType' in patch) dbPatch.client_type = patch.clientType;
 
     try {
@@ -847,6 +872,17 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
         onDeleteOption={v => deleteColumnOption('status', v)}
       />
     ),
+    acquisition: (
+      <SelectCell
+        value={client.acquisition}
+        options={columnOptions.acquisition}
+        onChange={v => updateClient(client.id, { acquisition: v })}
+        colorMap={acquisitionColors}
+        onAddOption={v => addColumnOption('acquisition', v)}
+        onEditOption={(o, n) => editColumnOption('acquisition', o, n)}
+        onDeleteOption={v => deleteColumnOption('acquisition', v)}
+      />
+    ),
   });
 
   // ── Shared table renderer ─────────────────────────────────────────────────
@@ -854,7 +890,7 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
     <div className="rounded-xl border border-[#2f2f2f] overflow-visible">
       <table className="w-full text-sm" style={{ borderCollapse: 'separate', borderSpacing: 0, tableLayout: 'fixed' }}>
         <colgroup>
-          <col style={{ width: '24%' }} />
+          <col style={{ width: '19%' }} />
           {columnOrder.map(col => (
             <col key={col} style={{ width: COLUMN_WIDTHS[col] }} />
           ))}
@@ -961,6 +997,7 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
                     <SelectCell value={draft.service} options={columnOptions.service} onChange={v => setDraft(d => ({ ...d, service: v }))} />
                     <SelectCell value={draft.leader} options={columnOptions.leader} onChange={v => setDraft(d => ({ ...d, leader: v }))} />
                     <SelectCell value={draft.status} options={columnOptions.status} onChange={v => setDraft(d => ({ ...d, status: v }))} colorMap={statusColors} />
+                    <SelectCell value={draft.acquisition} options={columnOptions.acquisition} onChange={v => setDraft(d => ({ ...d, acquisition: v }))} colorMap={acquisitionColors} />
                   </div>
                   <div className="flex items-center gap-2 flex-shrink-0">
                     <button onClick={handleAddSave} className="text-xs text-emerald-400 hover:text-emerald-300 font-semibold px-3 py-1.5 rounded-lg transition-colors" style={{ background: '#2a2a2a' }}>Save</button>
