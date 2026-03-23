@@ -13,6 +13,7 @@ interface Client {
   photoUrl?: string;
   paymentStatus: string;
   amount: number;
+  cadence: string;
   service: string;
   leader: string;
   status: string;
@@ -22,6 +23,7 @@ interface Client {
 }
 
 const DEFAULT_PAYMENT_STATUSES = ['Missing Invoice', 'Pending', 'Paid', 'Late'];
+const DEFAULT_CADENCES = ['Weekly', 'Bi-weekly', '1x/month', '2x/month', '3x/month', 'On-demand'];
 const DEFAULT_SERVICES = ['Full-on-marketing', 'Ghostwriting', 'Social Media Management', 'Webinar', 'Design', 'Video-Editing'];
 const DEFAULT_LEADERS = ['Guilherme Writes', 'Jhacson Mossman'];
 const DEFAULT_CLIENT_STATUSES = ['Happy', 'Moderate', 'Frustrated'];
@@ -50,6 +52,7 @@ function newClient(orderNum: number, clientType: ClientType = 'recurring'): Clie
     photoUrl: undefined,
     paymentStatus: 'Pending',
     amount: 0,
+    cadence: '1x/month',
     service: 'Ghostwriting',
     leader: 'Guilherme Writes',
     status: 'Happy',
@@ -67,6 +70,7 @@ function toDbRow(client: Client, userId: string) {
     photo_url: client.photoUrl ?? null,
     payment_status: client.paymentStatus,
     amount: client.amount,
+    cadence: client.cadence ?? '1x/month',
     service: client.service,
     leader: client.leader,
     status: client.status,
@@ -83,6 +87,7 @@ function fromDbRow(row: any): Client {
     photoUrl: row.photo_url ?? undefined,
     paymentStatus: row.payment_status ?? 'Pending',
     amount: row.amount ?? 0,
+    cadence: row.cadence ?? '1x/month',
     service: row.service ?? 'Ghostwriting',
     leader: row.leader ?? 'Guilherme Writes',
     status: row.status ?? 'Happy',
@@ -373,23 +378,25 @@ function Avatar({ name, photoUrl, onPhotoChange, size = 36 }: AvatarProps) {
   );
 }
 
-type ColumnId = 'payment' | 'amount' | 'service' | 'leader' | 'status';
-const DEFAULT_COLUMNS: ColumnId[] = ['payment', 'amount', 'service', 'leader', 'status'];
+type ColumnId = 'payment' | 'amount' | 'cadence' | 'service' | 'leader' | 'status';
+const DEFAULT_COLUMNS: ColumnId[] = ['payment', 'amount', 'cadence', 'service', 'leader', 'status'];
 
 const COLUMN_LABELS: Record<ColumnId, string> = {
   payment: 'Payment',
   amount: 'Amount',
+  cadence: 'Cadence',
   service: 'Service',
   leader: 'Leader',
   status: 'Status',
 };
 
 const COLUMN_WIDTHS: Record<ColumnId, string> = {
-  payment: '14%',
-  amount: '13%',
-  service: '15%',
-  leader: '14%',
-  status: '14%',
+  payment: '12%',
+  amount: '11%',
+  cadence: '11%',
+  service: '14%',
+  leader: '13%',
+  status: '12%',
 };
 
 interface ClientsManagerProps {
@@ -399,6 +406,7 @@ interface ClientsManagerProps {
 // Column options type
 type ColumnOptionsMap = {
   payment: string[];
+  cadence: string[];
   service: string[];
   leader: string[];
   status: string[];
@@ -425,6 +433,7 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
   // Custom column options — merged with defaults
   const [columnOptions, setColumnOptions] = useState<ColumnOptionsMap>({
     payment: DEFAULT_PAYMENT_STATUSES,
+    cadence: DEFAULT_CADENCES,
     service: DEFAULT_SERVICES,
     leader: DEFAULT_LEADERS,
     status: DEFAULT_CLIENT_STATUSES,
@@ -447,6 +456,7 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
         }
         setColumnOptions({
           payment: map.payment && map.payment.length > 0 ? map.payment : DEFAULT_PAYMENT_STATUSES,
+          cadence: map.cadence && map.cadence.length > 0 ? map.cadence : DEFAULT_CADENCES,
           service: map.service && map.service.length > 0 ? map.service : DEFAULT_SERVICES,
           leader: map.leader && map.leader.length > 0 ? map.leader : DEFAULT_LEADERS,
           status: map.status && map.status.length > 0 ? map.status : DEFAULT_CLIENT_STATUSES,
@@ -491,6 +501,7 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
     setClients(prev => prev.map(c => {
       const patch: Partial<Client> = {};
       if (col === 'payment' && c.paymentStatus === oldVal) patch.paymentStatus = newVal;
+      if (col === 'cadence' && c.cadence === oldVal) patch.cadence = newVal;
       if (col === 'service' && c.service === oldVal) patch.service = newVal;
       if (col === 'leader' && c.leader === oldVal) patch.leader = newVal;
       if (col === 'status' && c.status === oldVal) patch.status = newVal;
@@ -610,6 +621,7 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
     if ('photoUrl' in patch) dbPatch.photo_url = patch.photoUrl ?? null;
     if ('paymentStatus' in patch) dbPatch.payment_status = patch.paymentStatus;
     if ('amount' in patch) dbPatch.amount = patch.amount;
+    if ('cadence' in patch) dbPatch.cadence = patch.cadence;
     if ('service' in patch) dbPatch.service = patch.service;
     if ('leader' in patch) dbPatch.leader = patch.leader;
     if ('status' in patch) dbPatch.status = patch.status;
@@ -790,6 +802,16 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
         />
       </div>
     ),
+    cadence: (
+      <SelectCell
+        value={client.cadence}
+        options={columnOptions.cadence}
+        onChange={v => updateClient(client.id, { cadence: v })}
+        onAddOption={v => addColumnOption('cadence', v)}
+        onEditOption={(o, n) => editColumnOption('cadence', o, n)}
+        onDeleteOption={v => deleteColumnOption('cadence', v)}
+      />
+    ),
     service: (
       <SelectCell
         value={client.service}
@@ -931,6 +953,7 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
                   />
                   <div className="flex items-center gap-2 flex-shrink-0">
                     <SelectCell value={draft.paymentStatus} options={columnOptions.payment} onChange={v => setDraft(d => ({ ...d, paymentStatus: v }))} colorMap={paymentColors} />
+                    <SelectCell value={draft.cadence} options={columnOptions.cadence} onChange={v => setDraft(d => ({ ...d, cadence: v }))} />
                     <SelectCell value={draft.service} options={columnOptions.service} onChange={v => setDraft(d => ({ ...d, service: v }))} />
                     <SelectCell value={draft.leader} options={columnOptions.leader} onChange={v => setDraft(d => ({ ...d, leader: v }))} />
                     <SelectCell value={draft.status} options={columnOptions.status} onChange={v => setDraft(d => ({ ...d, status: v }))} colorMap={statusColors} />

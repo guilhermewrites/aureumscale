@@ -112,9 +112,10 @@ ALTER TABLE client_details ADD COLUMN IF NOT EXISTS twitter_bio TEXT NOT NULL DE
 ALTER TABLE client_details ADD COLUMN IF NOT EXISTS twitter_followers INTEGER NOT NULL DEFAULT 0;
 ALTER TABLE client_details ADD COLUMN IF NOT EXISTS twitter_following INTEGER NOT NULL DEFAULT 0;
 
--- Add amount and client_type columns to clients table:
+-- Add amount, client_type, and cadence columns to clients table:
 ALTER TABLE clients ADD COLUMN IF NOT EXISTS amount NUMERIC NOT NULL DEFAULT 0;
 ALTER TABLE clients ADD COLUMN IF NOT EXISTS client_type TEXT NOT NULL DEFAULT 'recurring';
+ALTER TABLE clients ADD COLUMN IF NOT EXISTS cadence TEXT NOT NULL DEFAULT '1x/month';
 
 -- ============================================================
 -- 5. BILLING_HISTORY TABLE

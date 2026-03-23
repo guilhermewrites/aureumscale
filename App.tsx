@@ -261,8 +261,24 @@ const AuthenticatedApp: React.FC<{ user: User; signOut: () => Promise<void> }> =
   // Active clients count
   const activeClients = useMemo(() => dashClients.filter(c => c.active !== false).length, [dashClients]);
 
-  // MRR (Monthly Recurring Revenue) = sum of all active client amounts
-  const mrr = useMemo(() => dashClients.filter(c => c.active !== false).reduce((sum, c) => sum + (c.amount || 0), 0), [dashClients]);
+  // Average monthly revenue from billing (last 3 months of paid invoices)
+  const avgMonthlyRevenue = useMemo(() => {
+    const now = new Date();
+    let total = 0;
+    let monthsWithData = 0;
+    for (let i = 0; i < 3; i++) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const monthPaid = billingInvoices
+        .filter(inv => inv.status === 'Paid')
+        .filter(inv => {
+          const pd = new Date(inv.date_paid);
+          return !isNaN(pd.getTime()) && pd.getMonth() === d.getMonth() && pd.getFullYear() === d.getFullYear();
+        })
+        .reduce((sum, inv) => sum + (inv.amount || 0), 0);
+      if (monthPaid > 0) { total += monthPaid; monthsWithData++; }
+    }
+    return monthsWithData > 0 ? Math.round(total / monthsWithData) : 0;
+  }, [billingInvoices]);
 
   // Outstanding (unpaid/pending invoices total)
   const outstandingAmount = useMemo(() => {
@@ -663,7 +679,7 @@ const AuthenticatedApp: React.FC<{ user: User; signOut: () => Promise<void> }> =
                   </div>
                </div>
 
-               {/* Active Clients + MRR */}
+               {/* Active Clients */}
                <div className="bg-[#1c1c1c] p-5 rounded-2xl">
                   <div className="flex items-center justify-between mb-3">
                     <p className="text-[#666] text-xs font-medium uppercase tracking-wider">Clients</p>
@@ -671,7 +687,7 @@ const AuthenticatedApp: React.FC<{ user: User; signOut: () => Promise<void> }> =
                   </div>
                   <h3 className="text-2xl font-bold text-[#ECECEC] mb-1">{activeClients}</h3>
                   <div className="flex items-center gap-2 text-xs">
-                    <span className="text-[#555]">MRR: ${mrr.toLocaleString()}</span>
+                    <span className="text-[#555]">Avg/mo: ${avgMonthlyRevenue.toLocaleString()}</span>
                   </div>
                </div>
             </div>
