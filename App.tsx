@@ -14,6 +14,7 @@ import AdsManager from './components/AdsManager';
 import PlannerManager from './components/PlannerManager';
 import ClientsManager from './components/ClientsManager';
 import BrandingManager from './components/BrandingManager';
+import GeneralRoom from './components/GeneralRoom';
 import AIBubble from './components/AIBubble';
 import { ChartViewType, NavigationItem, FinanceItem, InvoiceStatus, RevenueDataPoint, ContentDataPoint, ContentItem, AdMetric, ContentStatus, Platform } from './types';
 import { AD_METRICS } from './constants';
@@ -33,6 +34,7 @@ const routeToNav: Record<string, NavigationItem> = {
   '/contracts': NavigationItem.CONTRACTS,
   '/finance': NavigationItem.FINANCE,
   '/branding': NavigationItem.BRANDING,
+  '/general-room': NavigationItem.GENERAL_ROOM,
 };
 
 const App: React.FC = () => {
@@ -911,6 +913,7 @@ const AuthenticatedApp: React.FC<{ user: User; signOut: () => Promise<void> }> =
             />
           } />
           <Route path="/branding" element={<BrandingManager storagePrefix={storagePrefix} />} />
+          <Route path="/general-room" element={<GeneralRoom storagePrefix={storagePrefix} />} />
           <Route path="/contracts" element={
             <div className="h-96 flex flex-col items-center justify-center text-[#666666] border-2 border-dashed border-[#3a3a3a] rounded-xl">
               <p className="text-lg font-medium mb-2">Work in Progress</p>

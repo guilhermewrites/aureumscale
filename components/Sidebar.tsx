@@ -8,6 +8,7 @@ import {
   ScrollText,
   DollarSign,
   Megaphone,
+  Crosshair,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
@@ -32,6 +33,7 @@ const navToRoute: Record<string, string> = {
   [NavigationItem.CONTRACTS]: '/contracts',
   [NavigationItem.FINANCE]: '/finance',
   [NavigationItem.BRANDING]: '/branding',
+  [NavigationItem.GENERAL_ROOM]: '/general-room',
 };
 
 const routeToNavItem: Record<string, NavigationItem> = {
@@ -42,6 +44,7 @@ const routeToNavItem: Record<string, NavigationItem> = {
   '/contracts': NavigationItem.CONTRACTS,
   '/finance': NavigationItem.FINANCE,
   '/branding': NavigationItem.BRANDING,
+  '/general-room': NavigationItem.GENERAL_ROOM,
 };
 
 interface SidebarProps {
@@ -148,6 +151,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeUserId, onUserChange, collapsed
     { id: NavigationItem.CONTRACTS, icon: ScrollText, label: 'Contracts' },
     { id: NavigationItem.FINANCE, icon: DollarSign, label: 'Finance' },
     { id: NavigationItem.BRANDING, icon: Megaphone, label: 'Branding' },
+    { id: NavigationItem.GENERAL_ROOM, icon: Crosshair, label: 'General Room' },
   ];
 
   return (
