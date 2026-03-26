@@ -16,6 +16,7 @@ import ClientsManager from './components/ClientsManager';
 import BrandingManager from './components/BrandingManager';
 import GeneralRoom from './components/GeneralRoom';
 import ArnasGintalasFunnel from './components/ArnasGintalasFunnel';
+import CalendarManager from './components/CalendarManager';
 import AIBubble from './components/AIBubble';
 import { ChartViewType, NavigationItem, FinanceItem, InvoiceStatus, RevenueDataPoint, ContentDataPoint, ContentItem, AdMetric, ContentStatus, Platform } from './types';
 import { AD_METRICS } from './constants';
@@ -37,6 +38,7 @@ const routeToNav: Record<string, NavigationItem> = {
   '/branding': NavigationItem.BRANDING,
   '/general-room': NavigationItem.GENERAL_ROOM,
   '/arnas-gintalas': NavigationItem.ARNAS_GINTALAS,
+  '/calendar': NavigationItem.CALENDAR,
 };
 
 const App: React.FC = () => {
@@ -926,6 +928,7 @@ const AuthenticatedApp: React.FC<{ user: User; signOut: () => Promise<void> }> =
             </div>
           } />
           <Route path="/arnas-gintalas" element={<ArnasGintalasFunnel />} />
+          <Route path="/calendar" element={<CalendarManager storagePrefix={storagePrefix} />} />
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
       </main>
