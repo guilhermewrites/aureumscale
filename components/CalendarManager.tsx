@@ -191,10 +191,14 @@ const CalendarManager: React.FC<CalendarManagerProps> = ({ storagePrefix }) => {
     setDragPreviewEnd(mins + 30);
   }, [yToMinutes]);
 
+  // Track whether a drag actually moved (to distinguish click vs drag)
+  const didDragMove = useRef(false);
+
   // ── Drag: Move or Resize existing event ──
   const handleEventDragStart = useCallback((e: React.MouseEvent, ev: CalendarEvent, mode: DragMode) => {
     e.preventDefault();
     e.stopPropagation();
+    didDragMove.current = false;
     setDragMode(mode);
     setDragEventId(ev.id);
     setDragDate(ev.date);
@@ -211,6 +215,7 @@ const CalendarManager: React.FC<CalendarManagerProps> = ({ storagePrefix }) => {
 
     const handleMove = (e: MouseEvent) => {
       const deltaY = e.clientY - dragStartY;
+      if (Math.abs(deltaY) > 3) didDragMove.current = true;
       const deltaMin = snapTo15(Math.round((deltaY / HOUR_HEIGHT) * 60));
 
       if (dragMode === 'create') {
@@ -409,54 +414,48 @@ const CalendarManager: React.FC<CalendarManagerProps> = ({ storagePrefix }) => {
                 if (isInlineEditing || isConfirmingDelete) return;
                 handleEventDragStart(e, ev, 'move');
               }}
-              onClick={(e) => {
+              onDoubleClick={(e) => {
                 e.stopPropagation();
-                if (!isInlineEditing && !dragMode && !isConfirmingDelete) openEditEvent(ev);
+                if (!isInlineEditing && !isConfirmingDelete) openEditEvent(ev);
               }}
             >
               {/* Resize handle: top — invisible, just changes cursor */}
               <div
-                className="absolute top-0 left-0 right-0 h-1.5 cursor-row-resize z-30"
+                className="absolute top-0 left-0 right-0 h-1.5 cursor-n-resize z-30"
                 onMouseDown={(e) => { e.stopPropagation(); handleEventDragStart(e, ev, 'resize-top'); }}
               />
 
-              {/* Delete X button — top right */}
-              {!isInlineEditing && !isDraggingThis && isPanel && (
+              {/* Delete X button — top right corner */}
+              {!isInlineEditing && !isDraggingThis && isPanel && !isConfirmingDelete && (
                 <button
-                  className="absolute top-1 right-1 w-5 h-5 rounded flex items-center justify-center text-[#666] hover:text-[#ECECEC] hover:bg-[rgba(255,255,255,0.1)] opacity-0 group-hover:opacity-100 transition-opacity z-40"
+                  className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-[#2a2a2a] border border-[#3a3a3a] flex items-center justify-center text-[#666] hover:text-[#ECECEC] hover:bg-[#333] opacity-0 group-hover:opacity-100 transition-opacity z-40"
                   onMouseDown={(e) => e.stopPropagation()}
                   onClick={(e) => {
                     e.stopPropagation();
-                    if (isConfirmingDelete) {
-                      setEvents(prev => prev.filter(ev2 => ev2.id !== ev.id));
-                      setConfirmDeleteId(null);
-                    } else {
-                      setConfirmDeleteId(ev.id);
-                    }
+                    setConfirmDeleteId(ev.id);
                   }}
                 >
-                  <X size={12} />
+                  <X size={10} />
                 </button>
               )}
 
-              {/* Delete confirmation overlay */}
+              {/* Delete confirmation — replaces content */}
               {isConfirmingDelete && (
-                <div className="absolute inset-0 rounded-lg bg-[#1e1e1e]/95 z-40 flex items-center justify-center gap-2"
+                <div className="absolute inset-0 rounded-lg bg-[#1e1e1e] z-40 flex items-center justify-center gap-3"
                   onMouseDown={(e) => e.stopPropagation()}
-                  onClick={(e) => e.stopPropagation()}
                 >
-                  <span className="text-[10px] text-[#9B9B9B]">Delete?</span>
+                  <span className="text-[11px] text-[#9B9B9B]">Delete this event?</span>
                   <button
                     onClick={(e) => { e.stopPropagation(); setEvents(prev => prev.filter(ev2 => ev2.id !== ev.id)); setConfirmDeleteId(null); }}
-                    className="px-2 py-0.5 rounded text-[10px] font-medium bg-rose-500/20 text-rose-400 hover:bg-rose-500/30 transition-none"
+                    className="px-2.5 py-1 rounded-md text-[11px] font-medium bg-rose-500/20 text-rose-400 hover:bg-rose-500/30 transition-none"
                   >
-                    Yes
+                    Delete
                   </button>
                   <button
                     onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(null); }}
-                    className="px-2 py-0.5 rounded text-[10px] font-medium bg-[rgba(255,255,255,0.08)] text-[#9B9B9B] hover:bg-[rgba(255,255,255,0.12)] transition-none"
+                    className="px-2.5 py-1 rounded-md text-[11px] font-medium bg-[rgba(255,255,255,0.08)] text-[#9B9B9B] hover:bg-[rgba(255,255,255,0.12)] transition-none"
                   >
-                    No
+                    Cancel
                   </button>
                 </div>
               )}
@@ -498,7 +497,7 @@ const CalendarManager: React.FC<CalendarManagerProps> = ({ storagePrefix }) => {
 
               {/* Resize handle: bottom — invisible, just changes cursor */}
               <div
-                className="absolute bottom-0 left-0 right-0 h-1.5 cursor-row-resize z-30"
+                className="absolute bottom-0 left-0 right-0 h-1.5 cursor-n-resize z-30"
                 onMouseDown={(e) => { e.stopPropagation(); handleEventDragStart(e, ev, 'resize-bottom'); }}
               />
             </div>
