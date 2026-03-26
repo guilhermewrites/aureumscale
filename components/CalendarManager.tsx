@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef, useEffect } from 'react';
+import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import {
   ChevronLeft,
   ChevronRight,
@@ -6,8 +6,6 @@ import {
   X,
   Clock,
   Trash2,
-  Edit3,
-  GripVertical,
 } from 'lucide-react';
 import useLocalStorage from '../hooks/useLocalStorage';
 
@@ -34,7 +32,8 @@ const EVENT_COLORS = [
 const getColorClasses = (color: string) => EVENT_COLORS.find(c => c.value === color) || EVENT_COLORS[0];
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-const HOURS = Array.from({ length: 16 }, (_, i) => i + 6); // 6 AM to 9 PM
+const HOURS = Array.from({ length: 18 }, (_, i) => i + 6); // 6 AM to 11 PM
+const HOUR_HEIGHT = 64;
 
 const formatTime12 = (time: string) => {
   const [h, m] = time.split(':').map(Number);
@@ -43,12 +42,23 @@ const formatTime12 = (time: string) => {
   return `${hour}:${m.toString().padStart(2, '0')} ${ampm}`;
 };
 
+const minutesToTime = (totalMinutes: number): string => {
+  const h = Math.floor(totalMinutes / 60);
+  const m = totalMinutes % 60;
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+};
+
+const timeToMinutes = (time: string): number => {
+  const [h, m] = time.split(':').map(Number);
+  return h * 60 + m;
+};
+
+const snapTo15 = (minutes: number) => Math.round(minutes / 15) * 15;
+
 const getToday = () => {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 };
-
-const isSameDay = (a: string, b: string) => a === b;
 
 interface CalendarManagerProps {
   storagePrefix: string;
@@ -71,12 +81,34 @@ const CalendarManager: React.FC<CalendarManagerProps> = ({ storagePrefix }) => {
   const [formColor, setFormColor] = useState('emerald');
   const [formDesc, setFormDesc] = useState('');
 
-  // Scroll to 8 AM on mount
+  // Drag-to-create state
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState<number | null>(null);
+  const [dragEnd, setDragEnd] = useState<number | null>(null);
+  const [dragDate, setDragDate] = useState<string | null>(null);
+  const timelineRef = useRef<HTMLDivElement>(null);
+  const titleInputRef = useRef<HTMLInputElement>(null);
+
+  // Inline edit for newly created drag events
+  const [inlineEditId, setInlineEditId] = useState<string | null>(null);
+  const [inlineTitle, setInlineTitle] = useState('');
+  const inlineInputRef = useRef<HTMLInputElement>(null);
+
+  // Scroll to current time on mount
   useEffect(() => {
     if (scheduleRef.current) {
-      scheduleRef.current.scrollTop = 2 * 64; // 2 rows down (6,7 -> 8AM visible)
+      const now = new Date();
+      const scrollTo = Math.max(0, ((now.getHours() - 7) * HOUR_HEIGHT));
+      scheduleRef.current.scrollTop = scrollTo;
     }
   }, [selectedDate]);
+
+  // Focus inline input when editing
+  useEffect(() => {
+    if (inlineEditId && inlineInputRef.current) {
+      inlineInputRef.current.focus();
+    }
+  }, [inlineEditId]);
 
   // ── Month calendar logic ──
   const year = currentDate.getFullYear();
@@ -85,32 +117,29 @@ const CalendarManager: React.FC<CalendarManagerProps> = ({ storagePrefix }) => {
 
   const calendarDays = useMemo(() => {
     const firstDay = new Date(year, month, 1);
-    let startDow = firstDay.getDay() - 1; // Mon=0
+    let startDow = firstDay.getDay() - 1;
     if (startDow < 0) startDow = 6;
     const daysInMonth = new Date(year, month + 1, 0).getDate();
     const daysInPrev = new Date(year, month, 0).getDate();
 
     const days: { date: string; day: number; isCurrentMonth: boolean }[] = [];
 
-    // Previous month fill
     for (let i = startDow - 1; i >= 0; i--) {
       const d = daysInPrev - i;
       const m = month === 0 ? 12 : month;
-      const y = month === 0 ? year - 1 : year;
-      days.push({ date: `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`, day: d, isCurrentMonth: false });
+      const y2 = month === 0 ? year - 1 : year;
+      days.push({ date: `${y2}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`, day: d, isCurrentMonth: false });
     }
 
-    // Current month
     for (let d = 1; d <= daysInMonth; d++) {
       days.push({ date: `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`, day: d, isCurrentMonth: true });
     }
 
-    // Next month fill
     const remaining = 42 - days.length;
     for (let d = 1; d <= remaining; d++) {
       const m = month + 2 > 12 ? 1 : month + 2;
-      const y = month + 2 > 12 ? year + 1 : year;
-      days.push({ date: `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`, day: d, isCurrentMonth: false });
+      const y2 = month + 2 > 12 ? year + 1 : year;
+      days.push({ date: `${y2}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`, day: d, isCurrentMonth: false });
     }
 
     return days;
@@ -123,7 +152,6 @@ const CalendarManager: React.FC<CalendarManagerProps> = ({ storagePrefix }) => {
     if (dow < 0) dow = 6;
     const monday = new Date(sel);
     monday.setDate(sel.getDate() - dow);
-
     return Array.from({ length: 7 }, (_, i) => {
       const d = new Date(monday);
       d.setDate(monday.getDate() + i);
@@ -135,7 +163,7 @@ const CalendarManager: React.FC<CalendarManagerProps> = ({ storagePrefix }) => {
     });
   }, [selectedDate]);
 
-  const eventsForDate = (date: string) => events.filter(e => isSameDay(e.date, date)).sort((a, b) => a.startTime.localeCompare(b.startTime));
+  const eventsForDate = (date: string) => events.filter(e => e.date === date).sort((a, b) => a.startTime.localeCompare(b.startTime));
 
   const today = getToday();
 
@@ -146,7 +174,89 @@ const CalendarManager: React.FC<CalendarManagerProps> = ({ storagePrefix }) => {
     setSelectedDate(getToday());
   };
 
-  // ── Event CRUD ──
+  // ── Drag-to-create on daily schedule ──
+  const getMinutesFromY = useCallback((clientY: number) => {
+    if (!timelineRef.current) return 0;
+    const rect = timelineRef.current.getBoundingClientRect();
+    const y = clientY - rect.top + (scheduleRef.current?.scrollTop || 0);
+    const minutes = (y / HOUR_HEIGHT) * 60 + 6 * 60; // offset by 6AM start
+    return snapTo15(Math.max(6 * 60, Math.min(24 * 60, minutes)));
+  }, []);
+
+  const handleTimelineMouseDown = useCallback((e: React.MouseEvent, date?: string) => {
+    // Only start drag on empty space (not on existing events)
+    if ((e.target as HTMLElement).closest('[data-event]')) return;
+    e.preventDefault();
+    const mins = getMinutesFromY(e.clientY);
+    setIsDragging(true);
+    setDragStart(mins);
+    setDragEnd(mins + 30); // minimum 30 min
+    setDragDate(date || selectedDate);
+  }, [getMinutesFromY, selectedDate]);
+
+  const handleTimelineMouseMove = useCallback((e: React.MouseEvent) => {
+    if (!isDragging || dragStart === null) return;
+    const mins = getMinutesFromY(e.clientY);
+    setDragEnd(Math.max(dragStart + 15, mins));
+  }, [isDragging, dragStart, getMinutesFromY]);
+
+  const handleTimelineMouseUp = useCallback(() => {
+    if (!isDragging || dragStart === null || dragEnd === null || !dragDate) {
+      setIsDragging(false);
+      return;
+    }
+
+    const startMin = Math.min(dragStart, dragEnd);
+    const endMin = Math.max(dragStart, dragEnd);
+    if (endMin - startMin < 15) {
+      setIsDragging(false);
+      setDragStart(null);
+      setDragEnd(null);
+      return;
+    }
+
+    // Create the event immediately and enter inline edit mode
+    const newId = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+    const newEv: CalendarEvent = {
+      id: newId,
+      title: '',
+      date: dragDate,
+      startTime: minutesToTime(startMin),
+      endTime: minutesToTime(endMin),
+      color: 'emerald',
+      description: undefined,
+    };
+    setEvents(prev => [...prev, newEv]);
+    setInlineEditId(newId);
+    setInlineTitle('');
+
+    setIsDragging(false);
+    setDragStart(null);
+    setDragEnd(null);
+    setDragDate(null);
+  }, [isDragging, dragStart, dragEnd, dragDate, setEvents]);
+
+  // Cancel drag if mouse leaves window
+  useEffect(() => {
+    if (!isDragging) return;
+    const handleUp = () => handleTimelineMouseUp();
+    window.addEventListener('mouseup', handleUp);
+    return () => window.removeEventListener('mouseup', handleUp);
+  }, [isDragging, handleTimelineMouseUp]);
+
+  const saveInlineTitle = useCallback(() => {
+    if (!inlineEditId) return;
+    if (inlineTitle.trim()) {
+      setEvents(prev => prev.map(e => e.id === inlineEditId ? { ...e, title: inlineTitle.trim() } : e));
+    } else {
+      // Remove if empty title
+      setEvents(prev => prev.filter(e => e.id !== inlineEditId));
+    }
+    setInlineEditId(null);
+    setInlineTitle('');
+  }, [inlineEditId, inlineTitle, setEvents]);
+
+  // ── Event CRUD (modal) ──
   const openNewEvent = (date?: string) => {
     setEditingEvent(null);
     setFormTitle('');
@@ -195,18 +305,136 @@ const CalendarManager: React.FC<CalendarManagerProps> = ({ storagePrefix }) => {
     setModalOpen(false);
   };
 
-  // ── Daily schedule events positioned by time ──
+  // ── Position helpers ──
   const getEventPosition = (ev: CalendarEvent) => {
-    const [sh, sm] = ev.startTime.split(':').map(Number);
-    const [eh, em] = ev.endTime.split(':').map(Number);
-    const startMin = (sh - 6) * 60 + sm;
-    const endMin = (eh - 6) * 60 + em;
-    const top = (startMin / 60) * 64;
-    const height = Math.max(((endMin - startMin) / 60) * 64, 24);
+    const startMin = timeToMinutes(ev.startTime) - 6 * 60;
+    const endMin = timeToMinutes(ev.endTime) - 6 * 60;
+    const top = (startMin / 60) * HOUR_HEIGHT;
+    const height = Math.max(((endMin - startMin) / 60) * HOUR_HEIGHT, 24);
     return { top, height };
   };
 
+  const getDragPreview = () => {
+    if (dragStart === null || dragEnd === null) return null;
+    const startMin = Math.min(dragStart, dragEnd) - 6 * 60;
+    const endMin = Math.max(dragStart, dragEnd) - 6 * 60;
+    const top = (startMin / 60) * HOUR_HEIGHT;
+    const height = Math.max(((endMin - startMin) / 60) * HOUR_HEIGHT, 16);
+    return { top, height, startTime: minutesToTime(Math.min(dragStart, dragEnd)), endTime: minutesToTime(Math.max(dragStart, dragEnd)) };
+  };
+
   const selectedDayEvents = eventsForDate(selectedDate);
+
+  // ── Render timeline (shared between daily panel and week columns) ──
+  const renderTimeline = (date: string, isPanel: boolean) => {
+    const dayEvents = eventsForDate(date);
+    const showDragPreview = isDragging && dragDate === date;
+    const preview = showDragPreview ? getDragPreview() : null;
+
+    return (
+      <div
+        ref={isPanel ? timelineRef : undefined}
+        className="relative select-none"
+        style={{ height: HOURS.length * HOUR_HEIGHT }}
+        onMouseDown={(e) => handleTimelineMouseDown(e, date)}
+        onMouseMove={handleTimelineMouseMove}
+        onMouseUp={handleTimelineMouseUp}
+      >
+        {/* Hour lines */}
+        {isPanel && HOURS.map(h => (
+          <div key={h} className="absolute w-full flex items-start" style={{ top: (h - 6) * HOUR_HEIGHT, height: HOUR_HEIGHT }}>
+            <span className="text-[10px] text-[#444] font-medium w-12 text-right pr-2 pt-0.5 flex-shrink-0">
+              {h > 12 ? h - 12 : h}{h >= 12 ? 'p' : 'a'}
+            </span>
+            <div className="flex-1 border-t border-[#2a2a2a] h-full" />
+          </div>
+        ))}
+        {!isPanel && HOURS.map(h => (
+          <div key={h} className="border-b border-[#2a2a2a]" style={{ height: HOUR_HEIGHT }} />
+        ))}
+
+        {/* Drag preview */}
+        {preview && (
+          <div
+            className={`absolute ${isPanel ? 'left-14 right-3' : 'left-1 right-1'} rounded-lg bg-emerald-500/20 border border-emerald-500/40 border-dashed px-3 py-1 z-20 pointer-events-none`}
+            style={{ top: preview.top, height: preview.height }}
+          >
+            <span className="text-[10px] text-emerald-400 font-medium">
+              {formatTime12(preview.startTime)} - {formatTime12(preview.endTime)}
+            </span>
+          </div>
+        )}
+
+        {/* Events */}
+        {dayEvents.map(ev => {
+          const pos = getEventPosition(ev);
+          const cc = getColorClasses(ev.color);
+          const isInlineEditing = inlineEditId === ev.id;
+
+          return (
+            <div
+              key={ev.id}
+              data-event
+              className={`absolute ${isPanel ? 'left-14 right-3' : 'left-1 right-1'} rounded-lg px-3 py-1.5 ${cc.bg} border ${cc.border} text-left transition-none z-10 ${
+                isInlineEditing ? '' : 'cursor-pointer hover:brightness-110'
+              }`}
+              style={{ top: pos.top, height: pos.height }}
+              onClick={(e) => {
+                e.stopPropagation();
+                if (!isInlineEditing) openEditEvent(ev);
+              }}
+            >
+              {isInlineEditing ? (
+                <input
+                  ref={inlineInputRef}
+                  value={inlineTitle}
+                  onChange={e => setInlineTitle(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') saveInlineTitle();
+                    if (e.key === 'Escape') {
+                      setEvents(prev => prev.filter(ev2 => ev2.id !== inlineEditId));
+                      setInlineEditId(null);
+                    }
+                  }}
+                  onBlur={saveInlineTitle}
+                  placeholder="Event name..."
+                  className={`w-full bg-transparent ${cc.text} text-xs font-semibold placeholder-[#666] focus:outline-none`}
+                />
+              ) : (
+                <>
+                  <div className={`text-xs font-semibold ${cc.text} truncate`}>
+                    {ev.title || 'Untitled'}
+                  </div>
+                  {pos.height > 36 && (
+                    <div className="text-[10px] text-[#9B9B9B] mt-0.5">
+                      {formatTime12(ev.startTime)} - {formatTime12(ev.endTime)}
+                    </div>
+                  )}
+                  {pos.height > 56 && ev.description && (
+                    <div className="text-[10px] text-[#666] mt-0.5 truncate">{ev.description}</div>
+                  )}
+                </>
+              )}
+            </div>
+          );
+        })}
+
+        {/* Current time indicator */}
+        {date === today && (() => {
+          const now = new Date();
+          const minutesSince6 = (now.getHours() - 6) * 60 + now.getMinutes();
+          if (minutesSince6 < 0 || minutesSince6 > HOURS.length * 60) return null;
+          const top = (minutesSince6 / 60) * HOUR_HEIGHT;
+          return (
+            <div className={`absolute ${isPanel ? 'left-12' : 'left-0'} right-0 flex items-center z-20 pointer-events-none`} style={{ top }}>
+              <div className="w-2 h-2 rounded-full bg-rose-500 flex-shrink-0" />
+              <div className="flex-1 h-[1.5px] bg-rose-500" />
+            </div>
+          );
+        })()}
+      </div>
+    );
+  };
 
   return (
     <div className="h-full flex flex-col space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -247,15 +475,11 @@ const CalendarManager: React.FC<CalendarManagerProps> = ({ storagePrefix }) => {
         <div className="flex-1 flex flex-col min-h-0">
           {view === 'month' ? (
             <div className="bg-[#1c1c1c] rounded-2xl border border-[#2a2a2a] flex-1 flex flex-col overflow-hidden">
-              {/* Day headers */}
               <div className="grid grid-cols-7 border-b border-[#2a2a2a]">
                 {DAYS.map(d => (
-                  <div key={d} className="px-2 py-2.5 text-center text-[10px] uppercase tracking-wider text-[#555] font-medium">
-                    {d}
-                  </div>
+                  <div key={d} className="px-2 py-2.5 text-center text-[10px] uppercase tracking-wider text-[#555] font-medium">{d}</div>
                 ))}
               </div>
-              {/* Day cells */}
               <div className="grid grid-cols-7 flex-1 auto-rows-fr">
                 {calendarDays.map((cd, i) => {
                   const dayEvents = eventsForDate(cd.date);
@@ -271,15 +495,13 @@ const CalendarManager: React.FC<CalendarManagerProps> = ({ storagePrefix }) => {
                     >
                       <span className={`text-xs font-medium w-6 h-6 flex items-center justify-center rounded-full ${
                         isToday ? 'bg-white text-[#212121]' : 'text-[#9B9B9B]'
-                      }`}>
-                        {cd.day}
-                      </span>
+                      }`}>{cd.day}</span>
                       <div className="mt-0.5 space-y-0.5 overflow-hidden flex-1">
                         {dayEvents.slice(0, 3).map(ev => {
                           const cc = getColorClasses(ev.color);
                           return (
                             <div key={ev.id} className={`text-[9px] leading-tight truncate px-1 py-0.5 rounded ${cc.bg} ${cc.text} font-medium`}>
-                              {ev.title}
+                              {ev.title || 'Untitled'}
                             </div>
                           );
                         })}
@@ -295,7 +517,6 @@ const CalendarManager: React.FC<CalendarManagerProps> = ({ storagePrefix }) => {
           ) : (
             /* ── Week View ── */
             <div className="bg-[#1c1c1c] rounded-2xl border border-[#2a2a2a] flex-1 flex flex-col overflow-hidden">
-              {/* Week day headers */}
               <div className="grid grid-cols-[60px_repeat(7,1fr)] border-b border-[#2a2a2a]">
                 <div />
                 {weekDays.map(wd => {
@@ -310,44 +531,21 @@ const CalendarManager: React.FC<CalendarManagerProps> = ({ storagePrefix }) => {
                       <div className="text-[10px] uppercase tracking-wider text-[#555] font-medium">{wd.dayName}</div>
                       <div className={`text-sm font-semibold mt-0.5 w-7 h-7 mx-auto flex items-center justify-center rounded-full ${
                         isToday2 ? 'bg-white text-[#212121]' : 'text-[#ECECEC]'
-                      }`}>
-                        {wd.day}
-                      </div>
+                      }`}>{wd.day}</div>
                     </button>
                   );
                 })}
               </div>
-              {/* Time grid */}
               <div className="flex-1 overflow-y-auto custom-scrollbar">
-                <div className="grid grid-cols-[60px_repeat(7,1fr)] relative" style={{ height: HOURS.length * 64 }}>
-                  {/* Hour labels */}
+                <div className="grid grid-cols-[60px_repeat(7,1fr)] relative" style={{ height: HOURS.length * HOUR_HEIGHT }}>
                   {HOURS.map(h => (
-                    <div key={h} className="col-start-1 border-b border-[#2a2a2a] flex items-start justify-end pr-2 pt-1" style={{ gridRow: `${h - 5}`, height: 64 }}>
+                    <div key={h} className="col-start-1 border-b border-[#2a2a2a] flex items-start justify-end pr-2 pt-1" style={{ gridRow: `${h - 5}`, height: HOUR_HEIGHT }}>
                       <span className="text-[10px] text-[#555] font-medium">{h > 12 ? h - 12 : h}{h >= 12 ? 'PM' : 'AM'}</span>
                     </div>
                   ))}
-                  {/* Day columns */}
                   {weekDays.map((wd, di) => (
                     <div key={wd.date} className="relative border-l border-[#2a2a2a]" style={{ gridColumn: di + 2, gridRow: '1 / -1' }}>
-                      {HOURS.map(h => (
-                        <div key={h} className="border-b border-[#2a2a2a]" style={{ height: 64 }} />
-                      ))}
-                      {/* Events */}
-                      {eventsForDate(wd.date).map(ev => {
-                        const pos = getEventPosition(ev);
-                        const cc = getColorClasses(ev.color);
-                        return (
-                          <button
-                            key={ev.id}
-                            onClick={(e) => { e.stopPropagation(); openEditEvent(ev); }}
-                            className={`absolute left-1 right-1 rounded-lg px-2 py-1 ${cc.bg} border ${cc.border} ${cc.text} text-left overflow-hidden transition-none hover:brightness-110`}
-                            style={{ top: pos.top, height: pos.height }}
-                          >
-                            <div className="text-[10px] font-semibold truncate">{ev.title}</div>
-                            {pos.height > 32 && <div className="text-[9px] opacity-70">{formatTime12(ev.startTime)}</div>}
-                          </button>
-                        );
-                      })}
+                      {renderTimeline(wd.date, false)}
                     </div>
                   ))}
                 </div>
@@ -356,16 +554,17 @@ const CalendarManager: React.FC<CalendarManagerProps> = ({ storagePrefix }) => {
           )}
         </div>
 
-        {/* ── Right: Daily Schedule ── */}
+        {/* ── Right: Daily Schedule Panel ── */}
         <div className="w-80 flex-shrink-0 flex flex-col min-h-0">
           <div className="bg-[#1c1c1c] rounded-2xl border border-[#2a2a2a] flex-1 flex flex-col overflow-hidden">
-            {/* Day header */}
             <div className="px-4 py-3 border-b border-[#2a2a2a] flex items-center justify-between">
               <div>
                 <h2 className="text-sm font-semibold text-[#ECECEC]">
                   {new Date(selectedDate + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
                 </h2>
-                <p className="text-[10px] text-[#555] mt-0.5">{selectedDayEvents.length} event{selectedDayEvents.length !== 1 ? 's' : ''}</p>
+                <p className="text-[10px] text-[#555] mt-0.5">
+                  {selectedDayEvents.length} event{selectedDayEvents.length !== 1 ? 's' : ''} · drag to create
+                </p>
               </div>
               <button
                 onClick={() => openNewEvent(selectedDate)}
@@ -376,71 +575,16 @@ const CalendarManager: React.FC<CalendarManagerProps> = ({ storagePrefix }) => {
               </button>
             </div>
 
-            {/* Timeline */}
             <div ref={scheduleRef} className="flex-1 overflow-y-auto custom-scrollbar relative" style={{ minHeight: 0 }}>
-              <div className="relative" style={{ height: HOURS.length * 64 }}>
-                {/* Hour lines */}
-                {HOURS.map(h => (
-                  <div key={h} className="absolute w-full flex items-start" style={{ top: (h - 6) * 64, height: 64 }}>
-                    <span className="text-[10px] text-[#444] font-medium w-12 text-right pr-2 pt-0.5 flex-shrink-0">
-                      {h > 12 ? h - 12 : h}{h >= 12 ? 'p' : 'a'}
-                    </span>
-                    <div className="flex-1 border-t border-[#2a2a2a] h-full" />
-                  </div>
-                ))}
-
-                {/* Events positioned on timeline */}
-                {selectedDayEvents.map(ev => {
-                  const pos = getEventPosition(ev);
-                  const cc = getColorClasses(ev.color);
-                  return (
-                    <button
-                      key={ev.id}
-                      onClick={() => openEditEvent(ev)}
-                      className={`absolute left-14 right-3 rounded-lg px-3 py-2 ${cc.bg} border ${cc.border} text-left transition-none hover:brightness-110 z-10`}
-                      style={{ top: pos.top, height: pos.height }}
-                    >
-                      <div className={`text-xs font-semibold ${cc.text} truncate`}>{ev.title}</div>
-                      {pos.height > 36 && (
-                        <div className="text-[10px] text-[#9B9B9B] mt-0.5">
-                          {formatTime12(ev.startTime)} - {formatTime12(ev.endTime)}
-                        </div>
-                      )}
-                      {pos.height > 56 && ev.description && (
-                        <div className="text-[10px] text-[#666] mt-0.5 truncate">{ev.description}</div>
-                      )}
-                    </button>
-                  );
-                })}
-
-                {/* Current time indicator */}
-                {selectedDate === today && (() => {
-                  const now = new Date();
-                  const minutesSince6 = (now.getHours() - 6) * 60 + now.getMinutes();
-                  if (minutesSince6 < 0 || minutesSince6 > HOURS.length * 60) return null;
-                  const top = (minutesSince6 / 60) * 64;
-                  return (
-                    <div className="absolute left-12 right-0 flex items-center z-20 pointer-events-none" style={{ top }}>
-                      <div className="w-2 h-2 rounded-full bg-rose-500 flex-shrink-0" />
-                      <div className="flex-1 h-[1.5px] bg-rose-500" />
-                    </div>
-                  );
-                })()}
-              </div>
+              {renderTimeline(selectedDate, true)}
             </div>
           </div>
 
-          {/* Upcoming events list */}
-          {selectedDayEvents.length === 0 && (
+          {selectedDayEvents.length === 0 && !isDragging && (
             <div className="mt-3 bg-[#1c1c1c] rounded-2xl border border-[#2a2a2a] p-6 flex flex-col items-center justify-center text-center">
               <Clock size={24} className="text-[#444] mb-2" />
               <p className="text-xs text-[#555]">No events scheduled</p>
-              <button
-                onClick={() => openNewEvent(selectedDate)}
-                className="mt-3 text-xs font-medium text-[#ECECEC] hover:text-white transition-none"
-              >
-                + Add an event
-              </button>
+              <p className="text-[10px] text-[#444] mt-1">Click and drag on the timeline to create</p>
             </div>
           )}
         </div>
@@ -459,10 +603,10 @@ const CalendarManager: React.FC<CalendarManagerProps> = ({ storagePrefix }) => {
               </button>
             </div>
             <div className="p-5 space-y-4">
-              {/* Title */}
               <div>
                 <label className="text-[10px] uppercase tracking-wider text-[#555] font-medium">Event name</label>
                 <input
+                  ref={titleInputRef}
                   value={formTitle}
                   onChange={e => setFormTitle(e.target.value)}
                   placeholder="e.g. Client call, Team standup..."
@@ -470,8 +614,6 @@ const CalendarManager: React.FC<CalendarManagerProps> = ({ storagePrefix }) => {
                   autoFocus
                 />
               </div>
-
-              {/* Date */}
               <div>
                 <label className="text-[10px] uppercase tracking-wider text-[#555] font-medium">Date</label>
                 <input
@@ -481,8 +623,6 @@ const CalendarManager: React.FC<CalendarManagerProps> = ({ storagePrefix }) => {
                   className="w-full mt-1 bg-[#2a2a2a] border border-[#3a3a3a] rounded-lg px-3 py-2.5 text-sm text-[#ECECEC] focus:outline-none focus:ring-1 focus:ring-[#555] [color-scheme:dark]"
                 />
               </div>
-
-              {/* Time */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-[10px] uppercase tracking-wider text-[#555] font-medium">Start</label>
@@ -503,8 +643,6 @@ const CalendarManager: React.FC<CalendarManagerProps> = ({ storagePrefix }) => {
                   />
                 </div>
               </div>
-
-              {/* Color */}
               <div>
                 <label className="text-[10px] uppercase tracking-wider text-[#555] font-medium">Color</label>
                 <div className="flex gap-2 mt-2">
@@ -517,8 +655,6 @@ const CalendarManager: React.FC<CalendarManagerProps> = ({ storagePrefix }) => {
                   ))}
                 </div>
               </div>
-
-              {/* Description */}
               <div>
                 <label className="text-[10px] uppercase tracking-wider text-[#555] font-medium">Notes (optional)</label>
                 <textarea
@@ -530,8 +666,6 @@ const CalendarManager: React.FC<CalendarManagerProps> = ({ storagePrefix }) => {
                 />
               </div>
             </div>
-
-            {/* Footer */}
             <div className="flex items-center justify-between p-4 border-t border-[#2a2a2a]">
               <div>
                 {editingEvent && (

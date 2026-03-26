@@ -209,6 +209,9 @@ const Sidebar: React.FC<SidebarProps> = ({ activeUserId, onUserChange, collapsed
     { id: NavigationItem.FINANCE, icon: DollarSign, label: 'Finance' },
     { id: NavigationItem.BRANDING, icon: Megaphone, label: 'Branding' },
     { id: NavigationItem.CALENDAR, icon: CalendarDays, label: 'Calendar' },
+  ];
+
+  const funnelItems = [
     { id: NavigationItem.ARNAS_GINTALAS, icon: Globe, label: 'Arnas Gintalas' },
   ];
 
@@ -269,6 +272,53 @@ const Sidebar: React.FC<SidebarProps> = ({ activeUserId, onUserChange, collapsed
             );
           })}
         </div>
+
+        {/* Funnels section */}
+        {!collapsed && (
+          <div className="mt-6 pt-5 border-t border-[#2a2a2a]">
+            <p className="px-3 mb-3 text-[11px] uppercase tracking-[0.08em] text-[#555] font-medium">Funnels</p>
+            <div className="space-y-0">
+              {funnelItems.map((item) => {
+                const isActive = activeItem === item.id;
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => navigate(navToRoute[item.id] || '/dashboard')}
+                    className={`w-full flex items-center gap-4 px-3 py-3 rounded-lg transition-none group ${
+                      isActive ? 'text-[#ECECEC]' : 'text-[#888] hover:text-[#ECECEC]'
+                    }`}
+                  >
+                    <item.icon
+                      size={18}
+                      strokeWidth={1.75}
+                      className={isActive ? 'text-[#ECECEC]' : 'text-[#888] group-hover:text-[#ECECEC]'}
+                    />
+                    <span className="text-[15px] font-normal tracking-[-0.01em]">{item.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+        {collapsed && (
+          <div className="mt-4 pt-4 border-t border-[#2a2a2a] space-y-0">
+            {funnelItems.map((item) => {
+              const isActive = activeItem === item.id;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => navigate(navToRoute[item.id] || '/dashboard')}
+                  title={item.label}
+                  className={`w-full flex items-center justify-center px-2 py-3 rounded-lg transition-none ${
+                    isActive ? 'text-[#ECECEC]' : 'text-[#888] hover:text-[#ECECEC]'
+                  }`}
+                >
+                  <item.icon size={18} strokeWidth={1.75} />
+                </button>
+              );
+            })}
+          </div>
+        )}
 
         {/* Resources section */}
         {!collapsed && (
