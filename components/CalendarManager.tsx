@@ -7,7 +7,7 @@ import {
   Clock,
   Trash2,
 } from 'lucide-react';
-import useLocalStorage from '../hooks/useLocalStorage';
+import { supabase } from '../services/supabaseClient';
 
 // ── Types ──
 interface CalendarEvent {
@@ -65,7 +65,7 @@ interface CalendarManagerProps {
 }
 
 const CalendarManager: React.FC<CalendarManagerProps> = ({ storagePrefix }) => {
-  const [events, setEvents] = useLocalStorage<CalendarEvent[]>(`${storagePrefix}_calendar_events`, []);
+  const [events, setEventsState] = useState<CalendarEvent[]>([]);
   const [currentDate, setCurrentDate] = useState(() => new Date());
   const [selectedDate, setSelectedDate] = useState(getToday());
   const [modalOpen, setModalOpen] = useState(false);
@@ -79,6 +79,69 @@ const CalendarManager: React.FC<CalendarManagerProps> = ({ storagePrefix }) => {
   const [formStart, setFormStart] = useState('09:00');
   const [formEnd, setFormEnd] = useState('10:00');
   const [formDesc, setFormDesc] = useState('');
+
+  // ── Supabase helpers ──
+  const toDbRow = (ev: CalendarEvent) => ({
+    id: ev.id,
+    user_id: storagePrefix,
+    title: ev.title,
+    date: ev.date,
+    start_time: ev.startTime,
+    end_time: ev.endTime,
+    description: ev.description || null,
+  });
+
+  const fromDbRow = (row: any): CalendarEvent => ({
+    id: row.id,
+    title: row.title || '',
+    date: row.date,
+    startTime: row.start_time,
+    endTime: row.end_time,
+    description: row.description || undefined,
+  });
+
+  // Load from Supabase on mount
+  useEffect(() => {
+    if (!supabase) return;
+    (async () => {
+      const { data, error } = await supabase
+        .from('calendar_events')
+        .select('*')
+        .eq('user_id', storagePrefix);
+      if (!error && data) {
+        setEventsState(data.map(fromDbRow));
+      }
+    })();
+  }, [storagePrefix]);
+
+  // Wrap setEvents to also persist to Supabase
+  const setEvents = useCallback((updater: CalendarEvent[] | ((prev: CalendarEvent[]) => CalendarEvent[])) => {
+    setEventsState(prev => {
+      const next = typeof updater === 'function' ? updater(prev) : updater;
+      // Determine what changed and sync to Supabase
+      if (supabase) {
+        const prevIds = new Set(prev.map(e => e.id));
+        const nextIds = new Set(next.map(e => e.id));
+
+        // Deleted events
+        const deleted = prev.filter(e => !nextIds.has(e.id));
+        for (const ev of deleted) {
+          supabase.from('calendar_events').delete().eq('id', ev.id).eq('user_id', storagePrefix).then(() => {});
+        }
+
+        // Upserted events (new or changed)
+        const toUpsert = next.filter(ev => {
+          const old = prev.find(e => e.id === ev.id);
+          if (!old) return true; // new
+          return old.title !== ev.title || old.date !== ev.date || old.startTime !== ev.startTime || old.endTime !== ev.endTime || old.description !== ev.description;
+        });
+        if (toUpsert.length > 0) {
+          supabase.from('calendar_events').upsert(toUpsert.map(toDbRow), { onConflict: 'id' }).then(() => {});
+        }
+      }
+      return next;
+    });
+  }, [storagePrefix]);
 
   // Drag state (unified for create, move, resize)
   const [dragMode, setDragMode] = useState<DragMode | null>(null);
