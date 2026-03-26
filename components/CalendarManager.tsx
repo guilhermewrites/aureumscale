@@ -477,9 +477,9 @@ const CalendarManager: React.FC<CalendarManagerProps> = ({ storagePrefix }) => {
                 if (isInlineEditing || isConfirmingDelete) return;
                 handleEventDragStart(e, ev, 'move');
               }}
-              onDoubleClick={(e) => {
+              onClick={(e) => {
                 e.stopPropagation();
-                if (!isInlineEditing && !isConfirmingDelete) openEditEvent(ev);
+                if (!isInlineEditing && !isConfirmingDelete && !didDragMove.current) openEditEvent(ev);
               }}
             >
               {/* Resize handle: top — invisible, just changes cursor */}
