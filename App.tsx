@@ -15,6 +15,7 @@ import PlannerManager from './components/PlannerManager';
 import ClientsManager from './components/ClientsManager';
 import BrandingManager from './components/BrandingManager';
 import GeneralRoom from './components/GeneralRoom';
+import ArnasGintalasFunnel from './components/ArnasGintalasFunnel';
 import AIBubble from './components/AIBubble';
 import { ChartViewType, NavigationItem, FinanceItem, InvoiceStatus, RevenueDataPoint, ContentDataPoint, ContentItem, AdMetric, ContentStatus, Platform } from './types';
 import { AD_METRICS } from './constants';
@@ -35,6 +36,7 @@ const routeToNav: Record<string, NavigationItem> = {
   '/finance': NavigationItem.FINANCE,
   '/branding': NavigationItem.BRANDING,
   '/general-room': NavigationItem.GENERAL_ROOM,
+  '/arnas-gintalas': NavigationItem.ARNAS_GINTALAS,
 };
 
 const App: React.FC = () => {
@@ -923,6 +925,7 @@ const AuthenticatedApp: React.FC<{ user: User; signOut: () => Promise<void> }> =
               </p>
             </div>
           } />
+          <Route path="/arnas-gintalas" element={<ArnasGintalasFunnel />} />
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
       </main>

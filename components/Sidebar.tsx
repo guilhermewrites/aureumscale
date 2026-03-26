@@ -17,6 +17,7 @@ import {
   Settings,
   LogOut,
   ExternalLink,
+  Globe,
 } from 'lucide-react';
 import { NavigationItem, AppUser } from '../types';
 import useLocalStorage from '../hooks/useLocalStorage';
@@ -34,6 +35,7 @@ const navToRoute: Record<string, string> = {
   [NavigationItem.FINANCE]: '/finance',
   [NavigationItem.BRANDING]: '/branding',
   [NavigationItem.GENERAL_ROOM]: '/general-room',
+  [NavigationItem.ARNAS_GINTALAS]: '/arnas-gintalas',
 };
 
 const routeToNavItem: Record<string, NavigationItem> = {
@@ -45,6 +47,7 @@ const routeToNavItem: Record<string, NavigationItem> = {
   '/finance': NavigationItem.FINANCE,
   '/branding': NavigationItem.BRANDING,
   '/general-room': NavigationItem.GENERAL_ROOM,
+  '/arnas-gintalas': NavigationItem.ARNAS_GINTALAS,
 };
 
 // Brand SVG icons for resources
@@ -202,6 +205,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeUserId, onUserChange, collapsed
     { id: NavigationItem.CONTRACTS, icon: ScrollText, label: 'Contracts' },
     { id: NavigationItem.FINANCE, icon: DollarSign, label: 'Finance' },
     { id: NavigationItem.BRANDING, icon: Megaphone, label: 'Branding' },
+    { id: NavigationItem.ARNAS_GINTALAS, icon: Globe, label: 'Arnas Gintalas' },
   ];
 
   return (
