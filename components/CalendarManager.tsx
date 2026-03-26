@@ -16,20 +16,17 @@ interface CalendarEvent {
   date: string; // YYYY-MM-DD
   startTime: string; // HH:MM
   endTime: string; // HH:MM
-  color: string;
   description?: string;
 }
 
-const EVENT_COLORS = [
-  { value: 'emerald', bg: 'bg-emerald-500/15', border: 'border-emerald-500/30', text: 'text-emerald-400', dot: 'bg-emerald-400' },
-  { value: 'blue', bg: 'bg-blue-500/15', border: 'border-blue-500/30', text: 'text-blue-400', dot: 'bg-blue-400' },
-  { value: 'purple', bg: 'bg-purple-500/15', border: 'border-purple-500/30', text: 'text-purple-400', dot: 'bg-purple-400' },
-  { value: 'amber', bg: 'bg-amber-500/15', border: 'border-amber-500/30', text: 'text-amber-400', dot: 'bg-amber-400' },
-  { value: 'rose', bg: 'bg-rose-500/15', border: 'border-rose-500/30', text: 'text-rose-400', dot: 'bg-rose-400' },
-  { value: 'cyan', bg: 'bg-cyan-500/15', border: 'border-cyan-500/30', text: 'text-cyan-400', dot: 'bg-cyan-400' },
-];
-
-const getColorClasses = (color: string) => EVENT_COLORS.find(c => c.value === color) || EVENT_COLORS[0];
+// Neutral style matching the app design system
+const EVT = {
+  bg: 'bg-[rgba(255,255,255,0.06)]',
+  border: 'border-[#3a3a3a]',
+  text: 'text-[#ECECEC]',
+  sub: 'text-[#888]',
+  hoverBg: 'hover:bg-[rgba(255,255,255,0.09)]',
+};
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const HOURS = Array.from({ length: 18 }, (_, i) => i + 6); // 6 AM to 11 PM
@@ -43,8 +40,9 @@ const formatTime12 = (time: string) => {
 };
 
 const minutesToTime = (totalMinutes: number): string => {
-  const h = Math.floor(totalMinutes / 60);
-  const m = totalMinutes % 60;
+  const clamped = Math.max(0, Math.min(24 * 60, totalMinutes));
+  const h = Math.floor(clamped / 60);
+  const m = clamped % 60;
   return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
 };
 
@@ -59,6 +57,8 @@ const getToday = () => {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 };
+
+type DragMode = 'create' | 'move' | 'resize-top' | 'resize-bottom';
 
 interface CalendarManagerProps {
   storagePrefix: string;
@@ -78,18 +78,20 @@ const CalendarManager: React.FC<CalendarManagerProps> = ({ storagePrefix }) => {
   const [formDate, setFormDate] = useState('');
   const [formStart, setFormStart] = useState('09:00');
   const [formEnd, setFormEnd] = useState('10:00');
-  const [formColor, setFormColor] = useState('emerald');
   const [formDesc, setFormDesc] = useState('');
 
-  // Drag-to-create state
-  const [isDragging, setIsDragging] = useState(false);
-  const [dragStart, setDragStart] = useState<number | null>(null);
-  const [dragEnd, setDragEnd] = useState<number | null>(null);
+  // Drag state (unified for create, move, resize)
+  const [dragMode, setDragMode] = useState<DragMode | null>(null);
+  const [dragEventId, setDragEventId] = useState<string | null>(null);
   const [dragDate, setDragDate] = useState<string | null>(null);
+  const [dragStartY, setDragStartY] = useState<number>(0); // mouse Y at drag start
+  const [dragOrigStart, setDragOrigStart] = useState<number>(0); // original event start minutes
+  const [dragOrigEnd, setDragOrigEnd] = useState<number>(0); // original event end minutes
+  const [dragPreviewStart, setDragPreviewStart] = useState<number | null>(null);
+  const [dragPreviewEnd, setDragPreviewEnd] = useState<number | null>(null);
   const timelineRef = useRef<HTMLDivElement>(null);
-  const titleInputRef = useRef<HTMLInputElement>(null);
 
-  // Inline edit for newly created drag events
+  // Inline edit
   const [inlineEditId, setInlineEditId] = useState<string | null>(null);
   const [inlineTitle, setInlineTitle] = useState('');
   const inlineInputRef = useRef<HTMLInputElement>(null);
@@ -98,19 +100,17 @@ const CalendarManager: React.FC<CalendarManagerProps> = ({ storagePrefix }) => {
   useEffect(() => {
     if (scheduleRef.current) {
       const now = new Date();
-      const scrollTo = Math.max(0, ((now.getHours() - 7) * HOUR_HEIGHT));
-      scheduleRef.current.scrollTop = scrollTo;
+      scheduleRef.current.scrollTop = Math.max(0, (now.getHours() - 7) * HOUR_HEIGHT);
     }
   }, [selectedDate]);
 
-  // Focus inline input when editing
   useEffect(() => {
     if (inlineEditId && inlineInputRef.current) {
       inlineInputRef.current.focus();
     }
   }, [inlineEditId]);
 
-  // ── Month calendar logic ──
+  // ── Calendar logic ──
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
   const monthName = currentDate.toLocaleString('en-US', { month: 'long', year: 'numeric' });
@@ -121,7 +121,6 @@ const CalendarManager: React.FC<CalendarManagerProps> = ({ storagePrefix }) => {
     if (startDow < 0) startDow = 6;
     const daysInMonth = new Date(year, month + 1, 0).getDate();
     const daysInPrev = new Date(year, month, 0).getDate();
-
     const days: { date: string; day: number; isCurrentMonth: boolean }[] = [];
 
     for (let i = startDow - 1; i >= 0; i--) {
@@ -130,22 +129,18 @@ const CalendarManager: React.FC<CalendarManagerProps> = ({ storagePrefix }) => {
       const y2 = month === 0 ? year - 1 : year;
       days.push({ date: `${y2}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`, day: d, isCurrentMonth: false });
     }
-
     for (let d = 1; d <= daysInMonth; d++) {
       days.push({ date: `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`, day: d, isCurrentMonth: true });
     }
-
     const remaining = 42 - days.length;
     for (let d = 1; d <= remaining; d++) {
       const m = month + 2 > 12 ? 1 : month + 2;
       const y2 = month + 2 > 12 ? year + 1 : year;
       days.push({ date: `${y2}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`, day: d, isCurrentMonth: false });
     }
-
     return days;
   }, [year, month]);
 
-  // ── Week logic ──
   const weekDays = useMemo(() => {
     const sel = new Date(selectedDate + 'T12:00:00');
     let dow = sel.getDay() - 1;
@@ -164,117 +159,155 @@ const CalendarManager: React.FC<CalendarManagerProps> = ({ storagePrefix }) => {
   }, [selectedDate]);
 
   const eventsForDate = (date: string) => events.filter(e => e.date === date).sort((a, b) => a.startTime.localeCompare(b.startTime));
-
   const today = getToday();
-
   const prevMonth = () => setCurrentDate(new Date(year, month - 1, 1));
   const nextMonth = () => setCurrentDate(new Date(year, month + 1, 1));
-  const goToToday = () => {
-    setCurrentDate(new Date());
-    setSelectedDate(getToday());
-  };
+  const goToToday = () => { setCurrentDate(new Date()); setSelectedDate(getToday()); };
 
-  // ── Drag-to-create on daily schedule ──
-  const getMinutesFromY = useCallback((clientY: number) => {
-    if (!timelineRef.current) return 0;
-    const rect = timelineRef.current.getBoundingClientRect();
-    const y = clientY - rect.top + (scheduleRef.current?.scrollTop || 0);
-    const minutes = (y / HOUR_HEIGHT) * 60 + 6 * 60; // offset by 6AM start
-    return snapTo15(Math.max(6 * 60, Math.min(24 * 60, minutes)));
+  // ── Pixel <-> Minutes helpers ──
+  const yToMinutes = useCallback((clientY: number, refEl: HTMLElement | null) => {
+    if (!refEl) return 6 * 60;
+    const rect = refEl.getBoundingClientRect();
+    const scrollParent = refEl.closest('.custom-scrollbar') || refEl.parentElement;
+    const scrollTop = scrollParent?.scrollTop || 0;
+    const y = clientY - rect.top + scrollTop;
+    return snapTo15(Math.max(6 * 60, Math.min(24 * 60, (y / HOUR_HEIGHT) * 60 + 6 * 60)));
   }, []);
 
-  const handleTimelineMouseDown = useCallback((e: React.MouseEvent, date?: string) => {
-    // Only start drag on empty space (not on existing events)
+  // ── Drag: Create ──
+  const handleTimelineMouseDown = useCallback((e: React.MouseEvent, date: string, refEl: HTMLElement | null) => {
     if ((e.target as HTMLElement).closest('[data-event]')) return;
     e.preventDefault();
-    const mins = getMinutesFromY(e.clientY);
-    setIsDragging(true);
-    setDragStart(mins);
-    setDragEnd(mins + 30); // minimum 30 min
-    setDragDate(date || selectedDate);
-  }, [getMinutesFromY, selectedDate]);
+    const mins = yToMinutes(e.clientY, refEl);
+    setDragMode('create');
+    setDragDate(date);
+    setDragStartY(e.clientY);
+    setDragOrigStart(mins);
+    setDragOrigEnd(mins + 30);
+    setDragPreviewStart(mins);
+    setDragPreviewEnd(mins + 30);
+  }, [yToMinutes]);
 
-  const handleTimelineMouseMove = useCallback((e: React.MouseEvent) => {
-    if (!isDragging || dragStart === null) return;
-    const mins = getMinutesFromY(e.clientY);
-    setDragEnd(Math.max(dragStart + 15, mins));
-  }, [isDragging, dragStart, getMinutesFromY]);
+  // ── Drag: Move or Resize existing event ──
+  const handleEventDragStart = useCallback((e: React.MouseEvent, ev: CalendarEvent, mode: DragMode) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragMode(mode);
+    setDragEventId(ev.id);
+    setDragDate(ev.date);
+    setDragStartY(e.clientY);
+    setDragOrigStart(timeToMinutes(ev.startTime));
+    setDragOrigEnd(timeToMinutes(ev.endTime));
+    setDragPreviewStart(timeToMinutes(ev.startTime));
+    setDragPreviewEnd(timeToMinutes(ev.endTime));
+  }, []);
 
-  const handleTimelineMouseUp = useCallback(() => {
-    if (!isDragging || dragStart === null || dragEnd === null || !dragDate) {
-      setIsDragging(false);
-      return;
-    }
-
-    const startMin = Math.min(dragStart, dragEnd);
-    const endMin = Math.max(dragStart, dragEnd);
-    if (endMin - startMin < 15) {
-      setIsDragging(false);
-      setDragStart(null);
-      setDragEnd(null);
-      return;
-    }
-
-    // Create the event immediately and enter inline edit mode
-    const newId = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
-    const newEv: CalendarEvent = {
-      id: newId,
-      title: '',
-      date: dragDate,
-      startTime: minutesToTime(startMin),
-      endTime: minutesToTime(endMin),
-      color: 'emerald',
-      description: undefined,
-    };
-    setEvents(prev => [...prev, newEv]);
-    setInlineEditId(newId);
-    setInlineTitle('');
-
-    setIsDragging(false);
-    setDragStart(null);
-    setDragEnd(null);
-    setDragDate(null);
-  }, [isDragging, dragStart, dragEnd, dragDate, setEvents]);
-
-  // Cancel drag if mouse leaves window
+  // ── Global mouse move/up ──
   useEffect(() => {
-    if (!isDragging) return;
-    const handleUp = () => handleTimelineMouseUp();
+    if (!dragMode) return;
+
+    const handleMove = (e: MouseEvent) => {
+      const deltaY = e.clientY - dragStartY;
+      const deltaMin = snapTo15(Math.round((deltaY / HOUR_HEIGHT) * 60));
+
+      if (dragMode === 'create') {
+        const end = snapTo15(dragOrigStart + deltaMin + 30);
+        const actualEnd = Math.max(dragOrigStart + 15, end);
+        setDragPreviewStart(dragOrigStart);
+        setDragPreviewEnd(Math.min(24 * 60, actualEnd));
+      } else if (dragMode === 'move') {
+        const duration = dragOrigEnd - dragOrigStart;
+        let newStart = snapTo15(dragOrigStart + deltaMin);
+        newStart = Math.max(6 * 60, Math.min(24 * 60 - duration, newStart));
+        setDragPreviewStart(newStart);
+        setDragPreviewEnd(newStart + duration);
+      } else if (dragMode === 'resize-top') {
+        let newStart = snapTo15(dragOrigStart + deltaMin);
+        newStart = Math.max(6 * 60, Math.min(dragOrigEnd - 15, newStart));
+        setDragPreviewStart(newStart);
+        setDragPreviewEnd(dragOrigEnd);
+      } else if (dragMode === 'resize-bottom') {
+        let newEnd = snapTo15(dragOrigEnd + deltaMin);
+        newEnd = Math.max(dragOrigStart + 15, Math.min(24 * 60, newEnd));
+        setDragPreviewStart(dragOrigStart);
+        setDragPreviewEnd(newEnd);
+      }
+    };
+
+    const handleUp = () => {
+      if (dragPreviewStart === null || dragPreviewEnd === null) {
+        resetDrag();
+        return;
+      }
+
+      const startMin = Math.min(dragPreviewStart, dragPreviewEnd);
+      const endMin = Math.max(dragPreviewStart, dragPreviewEnd);
+
+      if (dragMode === 'create' && dragDate) {
+        if (endMin - startMin >= 15) {
+          const newId = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+          const newEv: CalendarEvent = {
+            id: newId,
+            title: '',
+            date: dragDate,
+            startTime: minutesToTime(startMin),
+            endTime: minutesToTime(endMin),
+            description: undefined,
+          };
+          setEvents(prev => [...prev, newEv]);
+          setInlineEditId(newId);
+          setInlineTitle('');
+        }
+      } else if (dragEventId && (dragMode === 'move' || dragMode === 'resize-top' || dragMode === 'resize-bottom')) {
+        setEvents(prev => prev.map(e => e.id === dragEventId ? {
+          ...e,
+          startTime: minutesToTime(startMin),
+          endTime: minutesToTime(endMin),
+        } : e));
+      }
+      resetDrag();
+    };
+
+    window.addEventListener('mousemove', handleMove);
     window.addEventListener('mouseup', handleUp);
-    return () => window.removeEventListener('mouseup', handleUp);
-  }, [isDragging, handleTimelineMouseUp]);
+    return () => {
+      window.removeEventListener('mousemove', handleMove);
+      window.removeEventListener('mouseup', handleUp);
+    };
+  }, [dragMode, dragStartY, dragOrigStart, dragOrigEnd, dragEventId, dragDate, dragPreviewStart, dragPreviewEnd, setEvents]);
+
+  const resetDrag = () => {
+    setDragMode(null);
+    setDragEventId(null);
+    setDragDate(null);
+    setDragPreviewStart(null);
+    setDragPreviewEnd(null);
+  };
 
   const saveInlineTitle = useCallback(() => {
     if (!inlineEditId) return;
     if (inlineTitle.trim()) {
       setEvents(prev => prev.map(e => e.id === inlineEditId ? { ...e, title: inlineTitle.trim() } : e));
     } else {
-      // Remove if empty title
       setEvents(prev => prev.filter(e => e.id !== inlineEditId));
     }
     setInlineEditId(null);
     setInlineTitle('');
   }, [inlineEditId, inlineTitle, setEvents]);
 
-  // ── Event CRUD (modal) ──
+  // ── Modal CRUD ──
   const openNewEvent = (date?: string) => {
     setEditingEvent(null);
-    setFormTitle('');
-    setFormDate(date || selectedDate);
-    setFormStart('09:00');
-    setFormEnd('10:00');
-    setFormColor('emerald');
-    setFormDesc('');
+    setFormTitle(''); setFormDate(date || selectedDate);
+    setFormStart('09:00'); setFormEnd('10:00'); setFormDesc('');
     setModalOpen(true);
   };
 
   const openEditEvent = (ev: CalendarEvent) => {
+    if (inlineEditId === ev.id) return;
     setEditingEvent(ev);
-    setFormTitle(ev.title);
-    setFormDate(ev.date);
-    setFormStart(ev.startTime);
-    setFormEnd(ev.endTime);
-    setFormColor(ev.color);
+    setFormTitle(ev.title); setFormDate(ev.date);
+    setFormStart(ev.startTime); setFormEnd(ev.endTime);
     setFormDesc(ev.description || '');
     setModalOpen(true);
   };
@@ -283,19 +316,14 @@ const CalendarManager: React.FC<CalendarManagerProps> = ({ storagePrefix }) => {
     if (!formTitle.trim()) return;
     if (editingEvent) {
       setEvents(prev => prev.map(e => e.id === editingEvent.id ? {
-        ...e, title: formTitle.trim(), date: formDate, startTime: formStart, endTime: formEnd, color: formColor, description: formDesc.trim()
+        ...e, title: formTitle.trim(), date: formDate, startTime: formStart, endTime: formEnd, description: formDesc.trim()
       } : e));
     } else {
-      const newEv: CalendarEvent = {
+      setEvents(prev => [...prev, {
         id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
-        title: formTitle.trim(),
-        date: formDate,
-        startTime: formStart,
-        endTime: formEnd,
-        color: formColor,
+        title: formTitle.trim(), date: formDate, startTime: formStart, endTime: formEnd,
         description: formDesc.trim() || undefined,
-      };
-      setEvents(prev => [...prev, newEv]);
+      }]);
     }
     setModalOpen(false);
   };
@@ -309,36 +337,27 @@ const CalendarManager: React.FC<CalendarManagerProps> = ({ storagePrefix }) => {
   const getEventPosition = (ev: CalendarEvent) => {
     const startMin = timeToMinutes(ev.startTime) - 6 * 60;
     const endMin = timeToMinutes(ev.endTime) - 6 * 60;
-    const top = (startMin / 60) * HOUR_HEIGHT;
-    const height = Math.max(((endMin - startMin) / 60) * HOUR_HEIGHT, 24);
-    return { top, height };
-  };
-
-  const getDragPreview = () => {
-    if (dragStart === null || dragEnd === null) return null;
-    const startMin = Math.min(dragStart, dragEnd) - 6 * 60;
-    const endMin = Math.max(dragStart, dragEnd) - 6 * 60;
-    const top = (startMin / 60) * HOUR_HEIGHT;
-    const height = Math.max(((endMin - startMin) / 60) * HOUR_HEIGHT, 16);
-    return { top, height, startTime: minutesToTime(Math.min(dragStart, dragEnd)), endTime: minutesToTime(Math.max(dragStart, dragEnd)) };
+    return { top: (startMin / 60) * HOUR_HEIGHT, height: Math.max(((endMin - startMin) / 60) * HOUR_HEIGHT, 24) };
   };
 
   const selectedDayEvents = eventsForDate(selectedDate);
 
-  // ── Render timeline (shared between daily panel and week columns) ──
+  // ── Render timeline ──
   const renderTimeline = (date: string, isPanel: boolean) => {
     const dayEvents = eventsForDate(date);
-    const showDragPreview = isDragging && dragDate === date;
-    const preview = showDragPreview ? getDragPreview() : null;
+    const tlRef = useRef<HTMLDivElement>(null);
+
+    // Drag preview for this date
+    const showPreview = dragMode === 'create' && dragDate === date && dragPreviewStart !== null && dragPreviewEnd !== null;
+    const previewTop = showPreview ? ((Math.min(dragPreviewStart!, dragPreviewEnd!) - 6 * 60) / 60) * HOUR_HEIGHT : 0;
+    const previewH = showPreview ? Math.max(((Math.abs(dragPreviewEnd! - dragPreviewStart!) / 60)) * HOUR_HEIGHT, 16) : 0;
 
     return (
       <div
-        ref={isPanel ? timelineRef : undefined}
+        ref={tlRef}
         className="relative select-none"
-        style={{ height: HOURS.length * HOUR_HEIGHT }}
-        onMouseDown={(e) => handleTimelineMouseDown(e, date)}
-        onMouseMove={handleTimelineMouseMove}
-        onMouseUp={handleTimelineMouseUp}
+        style={{ height: HOURS.length * HOUR_HEIGHT, cursor: dragMode ? (dragMode === 'move' ? 'grabbing' : 'ns-resize') : 'crosshair' }}
+        onMouseDown={(e) => handleTimelineMouseDown(e, date, tlRef.current)}
       >
         {/* Hour lines */}
         {isPanel && HOURS.map(h => (
@@ -353,68 +372,90 @@ const CalendarManager: React.FC<CalendarManagerProps> = ({ storagePrefix }) => {
           <div key={h} className="border-b border-[#2a2a2a]" style={{ height: HOUR_HEIGHT }} />
         ))}
 
-        {/* Drag preview */}
-        {preview && (
+        {/* Drag-create preview */}
+        {showPreview && (
           <div
-            className={`absolute ${isPanel ? 'left-14 right-3' : 'left-1 right-1'} rounded-lg bg-emerald-500/20 border border-emerald-500/40 border-dashed px-3 py-1 z-20 pointer-events-none`}
-            style={{ top: preview.top, height: preview.height }}
+            className={`absolute ${isPanel ? 'left-14 right-3' : 'left-1 right-1'} rounded-lg bg-[rgba(255,255,255,0.08)] border border-[#555] border-dashed px-3 py-1 z-20 pointer-events-none`}
+            style={{ top: previewTop, height: previewH }}
           >
-            <span className="text-[10px] text-emerald-400 font-medium">
-              {formatTime12(preview.startTime)} - {formatTime12(preview.endTime)}
+            <span className="text-[10px] text-[#9B9B9B] font-medium">
+              {formatTime12(minutesToTime(Math.min(dragPreviewStart!, dragPreviewEnd!)))} - {formatTime12(minutesToTime(Math.max(dragPreviewStart!, dragPreviewEnd!)))}
             </span>
           </div>
         )}
 
         {/* Events */}
         {dayEvents.map(ev => {
-          const pos = getEventPosition(ev);
-          const cc = getColorClasses(ev.color);
+          const isDraggingThis = dragEventId === ev.id && (dragMode === 'move' || dragMode === 'resize-top' || dragMode === 'resize-bottom');
+          const pos = isDraggingThis && dragPreviewStart !== null && dragPreviewEnd !== null
+            ? { top: ((Math.min(dragPreviewStart, dragPreviewEnd) - 6 * 60) / 60) * HOUR_HEIGHT, height: Math.max(((Math.abs(dragPreviewEnd - dragPreviewStart)) / 60) * HOUR_HEIGHT, 24) }
+            : getEventPosition(ev);
           const isInlineEditing = inlineEditId === ev.id;
 
           return (
             <div
               key={ev.id}
               data-event
-              className={`absolute ${isPanel ? 'left-14 right-3' : 'left-1 right-1'} rounded-lg px-3 py-1.5 ${cc.bg} border ${cc.border} text-left transition-none z-10 ${
-                isInlineEditing ? '' : 'cursor-pointer hover:brightness-110'
-              }`}
+              className={`absolute ${isPanel ? 'left-14 right-3' : 'left-1 right-1'} rounded-lg ${EVT.bg} border ${EVT.border} text-left z-10 group ${
+                isDraggingThis ? 'opacity-80 shadow-lg' : ''
+              } ${isInlineEditing ? '' : `cursor-grab ${EVT.hoverBg}`}`}
               style={{ top: pos.top, height: pos.height }}
+              onMouseDown={(e) => {
+                if (isInlineEditing) return;
+                // Middle of the event = move
+                handleEventDragStart(e, ev, 'move');
+              }}
               onClick={(e) => {
                 e.stopPropagation();
-                if (!isInlineEditing) openEditEvent(ev);
+                if (!isInlineEditing && !dragMode) openEditEvent(ev);
               }}
             >
-              {isInlineEditing ? (
-                <input
-                  ref={inlineInputRef}
-                  value={inlineTitle}
-                  onChange={e => setInlineTitle(e.target.value)}
-                  onKeyDown={e => {
-                    if (e.key === 'Enter') saveInlineTitle();
-                    if (e.key === 'Escape') {
-                      setEvents(prev => prev.filter(ev2 => ev2.id !== inlineEditId));
-                      setInlineEditId(null);
-                    }
-                  }}
-                  onBlur={saveInlineTitle}
-                  placeholder="Event name..."
-                  className={`w-full bg-transparent ${cc.text} text-xs font-semibold placeholder-[#666] focus:outline-none`}
-                />
-              ) : (
-                <>
-                  <div className={`text-xs font-semibold ${cc.text} truncate`}>
-                    {ev.title || 'Untitled'}
-                  </div>
-                  {pos.height > 36 && (
-                    <div className="text-[10px] text-[#9B9B9B] mt-0.5">
-                      {formatTime12(ev.startTime)} - {formatTime12(ev.endTime)}
+              {/* Resize handle: top */}
+              <div
+                className="absolute top-0 left-0 right-0 h-2 cursor-ns-resize z-30 hover:bg-[rgba(255,255,255,0.1)] rounded-t-lg"
+                onMouseDown={(e) => { e.stopPropagation(); handleEventDragStart(e, ev, 'resize-top'); }}
+              />
+
+              {/* Content */}
+              <div className="px-3 py-1.5 h-full overflow-hidden">
+                {isInlineEditing ? (
+                  <input
+                    ref={inlineInputRef}
+                    value={inlineTitle}
+                    onChange={e => setInlineTitle(e.target.value)}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter') saveInlineTitle();
+                      if (e.key === 'Escape') {
+                        setEvents(prev => prev.filter(ev2 => ev2.id !== inlineEditId));
+                        setInlineEditId(null);
+                      }
+                    }}
+                    onBlur={saveInlineTitle}
+                    placeholder="Event name..."
+                    className={`w-full bg-transparent ${EVT.text} text-xs font-semibold placeholder-[#666] focus:outline-none`}
+                  />
+                ) : (
+                  <>
+                    <div className={`text-xs font-semibold ${EVT.text} truncate`}>
+                      {ev.title || 'Untitled'}
                     </div>
-                  )}
-                  {pos.height > 56 && ev.description && (
-                    <div className="text-[10px] text-[#666] mt-0.5 truncate">{ev.description}</div>
-                  )}
-                </>
-              )}
+                    {pos.height > 36 && (
+                      <div className={`text-[10px] ${EVT.sub} mt-0.5`}>
+                        {formatTime12(ev.startTime)} - {formatTime12(ev.endTime)}
+                      </div>
+                    )}
+                    {pos.height > 56 && ev.description && (
+                      <div className="text-[10px] text-[#666] mt-0.5 truncate">{ev.description}</div>
+                    )}
+                  </>
+                )}
+              </div>
+
+              {/* Resize handle: bottom */}
+              <div
+                className="absolute bottom-0 left-0 right-0 h-2 cursor-ns-resize z-30 hover:bg-[rgba(255,255,255,0.1)] rounded-b-lg"
+                onMouseDown={(e) => { e.stopPropagation(); handleEventDragStart(e, ev, 'resize-bottom'); }}
+              />
             </div>
           );
         })}
@@ -443,16 +484,10 @@ const CalendarManager: React.FC<CalendarManagerProps> = ({ storagePrefix }) => {
         <div className="flex items-center gap-4">
           <h1 className="text-lg font-semibold text-[#ECECEC]">{monthName}</h1>
           <div className="flex items-center gap-1">
-            <button onClick={prevMonth} className="p-1.5 rounded-lg text-[#666] hover:text-[#ECECEC] hover:bg-[rgba(255,255,255,0.05)] transition-none">
-              <ChevronLeft size={16} />
-            </button>
-            <button onClick={nextMonth} className="p-1.5 rounded-lg text-[#666] hover:text-[#ECECEC] hover:bg-[rgba(255,255,255,0.05)] transition-none">
-              <ChevronRight size={16} />
-            </button>
+            <button onClick={prevMonth} className="p-1.5 rounded-lg text-[#666] hover:text-[#ECECEC] hover:bg-[rgba(255,255,255,0.05)] transition-none"><ChevronLeft size={16} /></button>
+            <button onClick={nextMonth} className="p-1.5 rounded-lg text-[#666] hover:text-[#ECECEC] hover:bg-[rgba(255,255,255,0.05)] transition-none"><ChevronRight size={16} /></button>
           </div>
-          <button onClick={goToToday} className="px-3 py-1 text-xs font-medium text-[#9B9B9B] hover:text-[#ECECEC] bg-[#2a2a2a] hover:bg-[#333] rounded-lg transition-none">
-            Today
-          </button>
+          <button onClick={goToToday} className="px-3 py-1 text-xs font-medium text-[#9B9B9B] hover:text-[#ECECEC] bg-[#2a2a2a] hover:bg-[#333] rounded-lg transition-none">Today</button>
         </div>
         <div className="flex items-center gap-3">
           <div className="flex bg-[#1c1c1c] rounded-lg p-0.5 border border-[#2a2a2a]">
@@ -463,15 +498,14 @@ const CalendarManager: React.FC<CalendarManagerProps> = ({ storagePrefix }) => {
             ))}
           </div>
           <button onClick={() => openNewEvent()} className="flex items-center gap-2 px-3 py-1.5 bg-white text-[#212121] hover:bg-[#e5e5e5] rounded-lg text-xs font-medium transition-none">
-            <Plus size={14} />
-            New Event
+            <Plus size={14} /> New Event
           </button>
         </div>
       </div>
 
       {/* ── Main Layout ── */}
       <div className="flex-1 flex gap-4 min-h-0">
-        {/* ── Left: Calendar Grid ── */}
+        {/* Left: Calendar Grid */}
         <div className="flex-1 flex flex-col min-h-0">
           {view === 'month' ? (
             <div className="bg-[#1c1c1c] rounded-2xl border border-[#2a2a2a] flex-1 flex flex-col overflow-hidden">
@@ -486,28 +520,16 @@ const CalendarManager: React.FC<CalendarManagerProps> = ({ storagePrefix }) => {
                   const isToday = cd.date === today;
                   const isSelected = cd.date === selectedDate;
                   return (
-                    <button
-                      key={i}
-                      onClick={() => setSelectedDate(cd.date)}
-                      className={`relative border-b border-r border-[#2a2a2a] p-1.5 text-left transition-none hover:bg-[rgba(255,255,255,0.03)] flex flex-col ${
-                        !cd.isCurrentMonth ? 'opacity-30' : ''
-                      } ${isSelected ? 'bg-[rgba(255,255,255,0.05)]' : ''}`}
-                    >
-                      <span className={`text-xs font-medium w-6 h-6 flex items-center justify-center rounded-full ${
-                        isToday ? 'bg-white text-[#212121]' : 'text-[#9B9B9B]'
-                      }`}>{cd.day}</span>
+                    <button key={i} onClick={() => setSelectedDate(cd.date)}
+                      className={`relative border-b border-r border-[#2a2a2a] p-1.5 text-left transition-none hover:bg-[rgba(255,255,255,0.03)] flex flex-col ${!cd.isCurrentMonth ? 'opacity-30' : ''} ${isSelected ? 'bg-[rgba(255,255,255,0.05)]' : ''}`}>
+                      <span className={`text-xs font-medium w-6 h-6 flex items-center justify-center rounded-full ${isToday ? 'bg-white text-[#212121]' : 'text-[#9B9B9B]'}`}>{cd.day}</span>
                       <div className="mt-0.5 space-y-0.5 overflow-hidden flex-1">
-                        {dayEvents.slice(0, 3).map(ev => {
-                          const cc = getColorClasses(ev.color);
-                          return (
-                            <div key={ev.id} className={`text-[9px] leading-tight truncate px-1 py-0.5 rounded ${cc.bg} ${cc.text} font-medium`}>
-                              {ev.title || 'Untitled'}
-                            </div>
-                          );
-                        })}
-                        {dayEvents.length > 3 && (
-                          <div className="text-[9px] text-[#555] px-1">+{dayEvents.length - 3} more</div>
-                        )}
+                        {dayEvents.slice(0, 3).map(ev => (
+                          <div key={ev.id} className="text-[9px] leading-tight truncate px-1 py-0.5 rounded bg-[rgba(255,255,255,0.06)] text-[#ECECEC] font-medium">
+                            {ev.title || 'Untitled'}
+                          </div>
+                        ))}
+                        {dayEvents.length > 3 && <div className="text-[9px] text-[#555] px-1">+{dayEvents.length - 3} more</div>}
                       </div>
                     </button>
                   );
@@ -515,7 +537,6 @@ const CalendarManager: React.FC<CalendarManagerProps> = ({ storagePrefix }) => {
               </div>
             </div>
           ) : (
-            /* ── Week View ── */
             <div className="bg-[#1c1c1c] rounded-2xl border border-[#2a2a2a] flex-1 flex flex-col overflow-hidden">
               <div className="grid grid-cols-[60px_repeat(7,1fr)] border-b border-[#2a2a2a]">
                 <div />
@@ -523,15 +544,9 @@ const CalendarManager: React.FC<CalendarManagerProps> = ({ storagePrefix }) => {
                   const isToday2 = wd.date === today;
                   const isSel = wd.date === selectedDate;
                   return (
-                    <button
-                      key={wd.date}
-                      onClick={() => setSelectedDate(wd.date)}
-                      className={`py-2.5 text-center transition-none ${isSel ? 'bg-[rgba(255,255,255,0.05)]' : ''}`}
-                    >
+                    <button key={wd.date} onClick={() => setSelectedDate(wd.date)} className={`py-2.5 text-center transition-none ${isSel ? 'bg-[rgba(255,255,255,0.05)]' : ''}`}>
                       <div className="text-[10px] uppercase tracking-wider text-[#555] font-medium">{wd.dayName}</div>
-                      <div className={`text-sm font-semibold mt-0.5 w-7 h-7 mx-auto flex items-center justify-center rounded-full ${
-                        isToday2 ? 'bg-white text-[#212121]' : 'text-[#ECECEC]'
-                      }`}>{wd.day}</div>
+                      <div className={`text-sm font-semibold mt-0.5 w-7 h-7 mx-auto flex items-center justify-center rounded-full ${isToday2 ? 'bg-white text-[#212121]' : 'text-[#ECECEC]'}`}>{wd.day}</div>
                     </button>
                   );
                 })}
@@ -554,7 +569,7 @@ const CalendarManager: React.FC<CalendarManagerProps> = ({ storagePrefix }) => {
           )}
         </div>
 
-        {/* ── Right: Daily Schedule Panel ── */}
+        {/* Right: Daily Schedule Panel */}
         <div className="w-80 flex-shrink-0 flex flex-col min-h-0">
           <div className="bg-[#1c1c1c] rounded-2xl border border-[#2a2a2a] flex-1 flex flex-col overflow-hidden">
             <div className="px-4 py-3 border-b border-[#2a2a2a] flex items-center justify-between">
@@ -562,29 +577,21 @@ const CalendarManager: React.FC<CalendarManagerProps> = ({ storagePrefix }) => {
                 <h2 className="text-sm font-semibold text-[#ECECEC]">
                   {new Date(selectedDate + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
                 </h2>
-                <p className="text-[10px] text-[#555] mt-0.5">
-                  {selectedDayEvents.length} event{selectedDayEvents.length !== 1 ? 's' : ''} · drag to create
-                </p>
+                <p className="text-[10px] text-[#555] mt-0.5">{selectedDayEvents.length} event{selectedDayEvents.length !== 1 ? 's' : ''} · drag to create</p>
               </div>
-              <button
-                onClick={() => openNewEvent(selectedDate)}
-                className="p-1.5 rounded-lg text-[#666] hover:text-[#ECECEC] hover:bg-[rgba(255,255,255,0.05)] transition-none"
-                title="Add event"
-              >
+              <button onClick={() => openNewEvent(selectedDate)} className="p-1.5 rounded-lg text-[#666] hover:text-[#ECECEC] hover:bg-[rgba(255,255,255,0.05)] transition-none" title="Add event">
                 <Plus size={16} />
               </button>
             </div>
-
             <div ref={scheduleRef} className="flex-1 overflow-y-auto custom-scrollbar relative" style={{ minHeight: 0 }}>
               {renderTimeline(selectedDate, true)}
             </div>
           </div>
-
-          {selectedDayEvents.length === 0 && !isDragging && (
+          {selectedDayEvents.length === 0 && !dragMode && (
             <div className="mt-3 bg-[#1c1c1c] rounded-2xl border border-[#2a2a2a] p-6 flex flex-col items-center justify-center text-center">
               <Clock size={24} className="text-[#444] mb-2" />
               <p className="text-xs text-[#555]">No events scheduled</p>
-              <p className="text-[10px] text-[#444] mt-1">Click and drag on the timeline to create</p>
+              <p className="text-[10px] text-[#444] mt-1">Click and drag on the timeline</p>
             </div>
           )}
         </div>
@@ -595,98 +602,50 @@ const CalendarManager: React.FC<CalendarManagerProps> = ({ storagePrefix }) => {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 animate-in fade-in duration-200" onClick={() => setModalOpen(false)}>
           <div className="bg-[#1e1e1e] border border-[#2a2a2a] rounded-xl w-full max-w-md overflow-hidden" onClick={e => e.stopPropagation()}>
             <div className="p-5 border-b border-[#2a2a2a] flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-[#ECECEC]">
-                {editingEvent ? 'Edit Event' : 'New Event'}
-              </h3>
-              <button onClick={() => setModalOpen(false)} className="p-1 text-[#666] hover:text-[#ECECEC] transition-none">
-                <X size={16} />
-              </button>
+              <h3 className="text-sm font-semibold text-[#ECECEC]">{editingEvent ? 'Edit Event' : 'New Event'}</h3>
+              <button onClick={() => setModalOpen(false)} className="p-1 text-[#666] hover:text-[#ECECEC] transition-none"><X size={16} /></button>
             </div>
             <div className="p-5 space-y-4">
               <div>
                 <label className="text-[10px] uppercase tracking-wider text-[#555] font-medium">Event name</label>
-                <input
-                  ref={titleInputRef}
-                  value={formTitle}
-                  onChange={e => setFormTitle(e.target.value)}
-                  placeholder="e.g. Client call, Team standup..."
-                  className="w-full mt-1 bg-[#2a2a2a] border border-[#3a3a3a] rounded-lg px-3 py-2.5 text-sm text-[#ECECEC] placeholder-[#555] focus:outline-none focus:ring-1 focus:ring-[#555]"
-                  autoFocus
-                />
+                <input value={formTitle} onChange={e => setFormTitle(e.target.value)} placeholder="e.g. Client call, Team standup..."
+                  className="w-full mt-1 bg-[#2a2a2a] border border-[#3a3a3a] rounded-lg px-3 py-2.5 text-sm text-[#ECECEC] placeholder-[#555] focus:outline-none focus:ring-1 focus:ring-[#555]" autoFocus />
               </div>
               <div>
                 <label className="text-[10px] uppercase tracking-wider text-[#555] font-medium">Date</label>
-                <input
-                  type="date"
-                  value={formDate}
-                  onChange={e => setFormDate(e.target.value)}
-                  className="w-full mt-1 bg-[#2a2a2a] border border-[#3a3a3a] rounded-lg px-3 py-2.5 text-sm text-[#ECECEC] focus:outline-none focus:ring-1 focus:ring-[#555] [color-scheme:dark]"
-                />
+                <input type="date" value={formDate} onChange={e => setFormDate(e.target.value)}
+                  className="w-full mt-1 bg-[#2a2a2a] border border-[#3a3a3a] rounded-lg px-3 py-2.5 text-sm text-[#ECECEC] focus:outline-none focus:ring-1 focus:ring-[#555] [color-scheme:dark]" />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-[10px] uppercase tracking-wider text-[#555] font-medium">Start</label>
-                  <input
-                    type="time"
-                    value={formStart}
-                    onChange={e => setFormStart(e.target.value)}
-                    className="w-full mt-1 bg-[#2a2a2a] border border-[#3a3a3a] rounded-lg px-3 py-2.5 text-sm text-[#ECECEC] focus:outline-none focus:ring-1 focus:ring-[#555] [color-scheme:dark]"
-                  />
+                  <input type="time" value={formStart} onChange={e => setFormStart(e.target.value)}
+                    className="w-full mt-1 bg-[#2a2a2a] border border-[#3a3a3a] rounded-lg px-3 py-2.5 text-sm text-[#ECECEC] focus:outline-none focus:ring-1 focus:ring-[#555] [color-scheme:dark]" />
                 </div>
                 <div>
                   <label className="text-[10px] uppercase tracking-wider text-[#555] font-medium">End</label>
-                  <input
-                    type="time"
-                    value={formEnd}
-                    onChange={e => setFormEnd(e.target.value)}
-                    className="w-full mt-1 bg-[#2a2a2a] border border-[#3a3a3a] rounded-lg px-3 py-2.5 text-sm text-[#ECECEC] focus:outline-none focus:ring-1 focus:ring-[#555] [color-scheme:dark]"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="text-[10px] uppercase tracking-wider text-[#555] font-medium">Color</label>
-                <div className="flex gap-2 mt-2">
-                  {EVENT_COLORS.map(c => (
-                    <button
-                      key={c.value}
-                      onClick={() => setFormColor(c.value)}
-                      className={`w-7 h-7 rounded-full ${c.dot} transition-none ${formColor === c.value ? 'ring-2 ring-offset-2 ring-offset-[#1e1e1e] ring-white/50' : 'opacity-50 hover:opacity-80'}`}
-                    />
-                  ))}
+                  <input type="time" value={formEnd} onChange={e => setFormEnd(e.target.value)}
+                    className="w-full mt-1 bg-[#2a2a2a] border border-[#3a3a3a] rounded-lg px-3 py-2.5 text-sm text-[#ECECEC] focus:outline-none focus:ring-1 focus:ring-[#555] [color-scheme:dark]" />
                 </div>
               </div>
               <div>
                 <label className="text-[10px] uppercase tracking-wider text-[#555] font-medium">Notes (optional)</label>
-                <textarea
-                  value={formDesc}
-                  onChange={e => setFormDesc(e.target.value)}
-                  placeholder="Add details..."
-                  rows={3}
-                  className="w-full mt-1 bg-[#2a2a2a] border border-[#3a3a3a] rounded-lg px-3 py-2.5 text-sm text-[#ECECEC] placeholder-[#555] focus:outline-none focus:ring-1 focus:ring-[#555] resize-none"
-                />
+                <textarea value={formDesc} onChange={e => setFormDesc(e.target.value)} placeholder="Add details..." rows={3}
+                  className="w-full mt-1 bg-[#2a2a2a] border border-[#3a3a3a] rounded-lg px-3 py-2.5 text-sm text-[#ECECEC] placeholder-[#555] focus:outline-none focus:ring-1 focus:ring-[#555] resize-none" />
               </div>
             </div>
             <div className="flex items-center justify-between p-4 border-t border-[#2a2a2a]">
               <div>
                 {editingEvent && (
-                  <button
-                    onClick={() => deleteEvent(editingEvent.id)}
-                    className="flex items-center gap-1.5 text-xs text-rose-400 hover:text-rose-300 transition-none"
-                  >
-                    <Trash2 size={13} />
-                    Delete
+                  <button onClick={() => deleteEvent(editingEvent.id)} className="flex items-center gap-1.5 text-xs text-rose-400 hover:text-rose-300 transition-none">
+                    <Trash2 size={13} /> Delete
                   </button>
                 )}
               </div>
               <div className="flex gap-3">
-                <button onClick={() => setModalOpen(false)} className="px-4 py-2 bg-[#2a2a2a] hover:bg-[#333] text-[#ECECEC] rounded-lg text-sm font-medium transition-none">
-                  Cancel
-                </button>
-                <button
-                  onClick={saveEvent}
-                  disabled={!formTitle.trim()}
-                  className="px-4 py-2 bg-white hover:bg-[#e5e5e5] text-[#212121] rounded-lg text-sm font-medium transition-none disabled:opacity-40 disabled:cursor-not-allowed"
-                >
+                <button onClick={() => setModalOpen(false)} className="px-4 py-2 bg-[#2a2a2a] hover:bg-[#333] text-[#ECECEC] rounded-lg text-sm font-medium transition-none">Cancel</button>
+                <button onClick={saveEvent} disabled={!formTitle.trim()}
+                  className="px-4 py-2 bg-white hover:bg-[#e5e5e5] text-[#212121] rounded-lg text-sm font-medium transition-none disabled:opacity-40 disabled:cursor-not-allowed">
                   {editingEvent ? 'Save Changes' : 'Create Event'}
                 </button>
               </div>
