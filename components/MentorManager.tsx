@@ -481,22 +481,38 @@ const MentorManager: React.FC<MentorManagerProps> = ({ storagePrefix }) => {
         content: m.content,
       }));
 
-      const res = await fetch('/api/mentor', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          messages: recentMessages,
-          context: buildContext(),
-        }),
+      // Retry-aware fetch — handles 429 rate limits with exponential backoff
+      const fetchWithRetry = async (body: any, retries = 3): Promise<any> => {
+        for (let attempt = 0; attempt < retries; attempt++) {
+          const res = await fetch('/api/mentor', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
+          });
+
+          if (res.status === 429) {
+            const retryAfter = res.headers.get('retry-after');
+            const waitMs = retryAfter ? parseInt(retryAfter) * 1000 : Math.min(2000 * Math.pow(2, attempt), 15000);
+            console.log(`Rate limited (429). Waiting ${waitMs}ms before retry ${attempt + 1}/${retries}...`);
+            await new Promise(r => setTimeout(r, waitMs));
+            continue;
+          }
+
+          if (!res.ok) {
+            const errText = await res.text();
+            console.error('Mentor API error:', res.status, errText);
+            throw new Error(`API error (${res.status})`);
+          }
+
+          return await res.json();
+        }
+        throw new Error('Rate limited — too many requests. Wait a moment and try again.');
+      };
+
+      let data = await fetchWithRetry({
+        messages: recentMessages,
+        context: buildContext(),
       });
-
-      if (!res.ok) {
-        const errText = await res.text();
-        console.error('Mentor API error:', res.status, errText);
-        throw new Error(`API error (${res.status})`);
-      }
-
-      let data = await res.json();
       console.log('Mentor initial response:', { message: data.message?.slice(0, 100), needsFollowUp: data.needsFollowUp, toolCalls: data.toolCalls?.length, stopReason: data.stopReason });
 
       // Execute tool calls — handles all mentor tools
@@ -744,15 +760,16 @@ const MentorManager: React.FC<MentorManagerProps> = ({ storagePrefix }) => {
         return results;
       };
 
-      // Tool loop — keep executing tools and sending results back until Claude responds with text
+      // Tool loop — execute tools and send results back until Claude responds with text
+      // Capped at 3 rounds with delays to avoid rate limiting.
       let loopMessages = [...recentMessages];
-      let maxLoops = 10; // Safety limit
+      let maxLoops = 3;
       let lastTextMessage = data.message || '';
-      let allToolsSummary: string[] = []; // Track what tools did in case we never get text
+      let allToolsSummary: string[] = [];
 
       while (data.needsFollowUp && data.toolCalls && data.toolCalls.length > 0 && maxLoops > 0) {
         maxLoops--;
-        console.log(`Tool loop iteration ${10 - maxLoops}, executing ${data.toolCalls.length} tools:`, data.toolCalls.map((t: any) => t.name));
+        console.log(`Tool loop iteration ${3 - maxLoops}, executing ${data.toolCalls.length} tools:`, data.toolCalls.map((t: any) => t.name));
         const toolResults = await executeTools(data.toolCalls);
         allToolsSummary.push(...toolResults.map(r => r.content));
 
@@ -763,47 +780,40 @@ const MentorManager: React.FC<MentorManagerProps> = ({ storagePrefix }) => {
           { role: 'user', content: toolResults.map((r: any) => ({ type: 'tool_result', tool_use_id: r.tool_use_id, content: r.content })) },
         ];
 
+        // Delay between follow-up calls to avoid rate limiting
+        await new Promise(r => setTimeout(r, 1500));
+
         try {
-          const followUpRes = await fetch('/api/mentor', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              messages: loopMessages,
-              context: buildContext(),
-            }),
+          data = await fetchWithRetry({
+            messages: loopMessages,
+            context: buildContext(),
           });
-
-          if (!followUpRes.ok) {
-            console.error('Follow-up API error:', followUpRes.status);
-            // If we have tool results, use them as the response
-            lastTextMessage = lastTextMessage || allToolsSummary.join('\n');
-            break;
-          }
-
-          data = await followUpRes.json();
           console.log('Follow-up response:', { message: data.message?.slice(0, 100), needsFollowUp: data.needsFollowUp, toolCalls: data.toolCalls?.length });
           if (data.message) lastTextMessage = data.message;
-        } catch (loopErr) {
-          console.error('Follow-up fetch error:', loopErr);
-          lastTextMessage = lastTextMessage || allToolsSummary.join('\n');
+        } catch (loopErr: any) {
+          console.error('Follow-up error:', loopErr.message);
+          // Graceful fallback — show what tools already completed
+          if (allToolsSummary.length > 0) {
+            lastTextMessage = `Done. Here's what I did:\n${allToolsSummary.map(s => `- ${s}`).join('\n')}`;
+          }
           break;
         }
       }
 
-      // If we exhausted the loop without getting text, build a summary
+      // If loop exhausted without text, build a summary from what tools did
       if (!lastTextMessage && !data.message && allToolsSummary.length > 0) {
         lastTextMessage = `Done. Here's what I did:\n${allToolsSummary.map(s => `- ${s}`).join('\n')}`;
       }
 
-      // Execute any remaining non-loop tool calls (server-side handled ones)
+      // Execute any remaining tool calls from the final response
       if (data.toolCalls && data.toolCalls.length > 0 && !data.needsFollowUp) {
         const finalResults = await executeTools(data.toolCalls);
+        allToolsSummary.push(...finalResults.map(r => r.content));
         if (!lastTextMessage && !data.message) {
-          lastTextMessage = `Done. Here's what I did:\n${finalResults.map(r => `- ${r.content}`).join('\n')}`;
+          lastTextMessage = `Done. Here's what I did:\n${allToolsSummary.map(s => `- ${s}`).join('\n')}`;
         }
       }
 
-      // Use the last text message we got from any point in the loop
       const assistantContent = data.message || lastTextMessage || data.error || 'Something went wrong — try again.';
 
       const assistantMsg: ChatMessage = {
