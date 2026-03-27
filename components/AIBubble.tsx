@@ -231,20 +231,35 @@ const AIBubble: React.FC<AIBubbleProps> = ({
         };
       }
 
-      const res = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: apiMessages, memories: clientMemories, clientContext, pageContext }),
-      });
+      // Fetch with retry for rate limits / overload
+      const fetchWithRetry = async (body: any, retries = 3): Promise<any> => {
+        for (let attempt = 0; attempt <= retries; attempt++) {
+          const res = await fetch('/api/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
+          });
+          if (res.status === 429 || res.status === 529 || res.status === 504) {
+            if (attempt < retries) {
+              const waitMs = Math.min(3000 * Math.pow(2, attempt), 15000);
+              console.log(`API ${res.status}, retrying in ${waitMs}ms (${attempt + 1}/${retries})...`);
+              await new Promise(r => setTimeout(r, waitMs));
+              continue;
+            }
+          }
+          const contentType = res.headers.get('content-type') || '';
+          if (!contentType.includes('application/json')) {
+            const t = await res.text();
+            throw new Error(`API error (${res.status})`);
+          }
+          const json = await res.json();
+          if (!res.ok) throw new Error(json.error || json.details || `Failed (${res.status})`);
+          return json;
+        }
+        throw new Error('API unavailable — try again in a moment.');
+      };
 
-      const contentType = res.headers.get('content-type') || '';
-      if (!contentType.includes('application/json')) {
-        const t = await res.text();
-        throw new Error(`API returned ${res.status}: ${t.slice(0, 200)}`);
-      }
-
-      let data = await res.json();
-      if (!res.ok) throw new Error(data.error || data.details || `Failed (${res.status})`);
+      let data = await fetchWithRetry({ messages: apiMessages, memories: clientMemories, clientContext, pageContext });
 
       // Tool execution loop — if AI wants to write to sections, execute and follow up
       let lastTextMessage = data.message || '';
@@ -308,13 +323,7 @@ const AIBubble: React.FC<AIBubbleProps> = ({
         ];
 
         try {
-          const followUpRes = await fetch('/api/chat', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ messages: loopMessages, memories: clientMemories, clientContext, pageContext }),
-          });
-          if (!followUpRes.ok) { lastTextMessage = lastTextMessage || toolResults.map(r => r.content).join('. '); break; }
-          data = await followUpRes.json();
+          data = await fetchWithRetry({ messages: loopMessages, memories: clientMemories, clientContext, pageContext });
           if (data.message) lastTextMessage = data.message;
         } catch {
           lastTextMessage = lastTextMessage || toolResults.map(r => r.content).join('. ');
