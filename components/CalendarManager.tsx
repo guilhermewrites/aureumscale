@@ -758,6 +758,13 @@ const CalendarManager: React.FC<CalendarManagerProps> = ({ storagePrefix }) => {
                 <div className="mt-1 space-y-1">
                   {(() => {
                     const lines = formDesc ? formDesc.split('\n').filter(l => l.trim()) : [];
+                    // Helper: update formDesc AND auto-save to event immediately
+                    const updateDesc = (newDesc: string) => {
+                      setFormDesc(newDesc);
+                      if (editingEvent) {
+                        setEvents(prev => prev.map(e => e.id === editingEvent.id ? { ...e, description: newDesc.trim() || undefined } : e));
+                      }
+                    };
                     return lines.map((line, i) => {
                       const done = line.startsWith('[x] ');
                       const text = line.replace(/^\[x\] |^\[ \] /, '');
@@ -768,7 +775,7 @@ const CalendarManager: React.FC<CalendarManagerProps> = ({ storagePrefix }) => {
                             onClick={() => {
                               const updated = [...lines];
                               updated[i] = done ? `[ ] ${text}` : `[x] ${text}`;
-                              setFormDesc(updated.join('\n'));
+                              updateDesc(updated.join('\n'));
                             }}
                             className="flex-shrink-0 w-4 h-4 rounded border flex items-center justify-center transition-all"
                             style={{
@@ -790,7 +797,7 @@ const CalendarManager: React.FC<CalendarManagerProps> = ({ storagePrefix }) => {
                             type="button"
                             onClick={() => {
                               const updated = lines.filter((_, idx) => idx !== i);
-                              setFormDesc(updated.join('\n'));
+                              updateDesc(updated.join('\n'));
                             }}
                             className="opacity-0 group-hover:opacity-100 text-[#555] hover:text-rose-400 transition-opacity"
                           >
@@ -813,7 +820,11 @@ const CalendarManager: React.FC<CalendarManagerProps> = ({ storagePrefix }) => {
                           const val = (e.target as HTMLInputElement).value.trim();
                           const lines = formDesc ? formDesc.split('\n').filter(l => l.trim()) : [];
                           lines.push(`[ ] ${val}`);
-                          setFormDesc(lines.join('\n'));
+                          const newDesc = lines.join('\n');
+                          setFormDesc(newDesc);
+                          if (editingEvent) {
+                            setEvents(prev => prev.map(ev => ev.id === editingEvent.id ? { ...ev, description: newDesc.trim() || undefined } : ev));
+                          }
                           (e.target as HTMLInputElement).value = '';
                           e.preventDefault();
                         }
