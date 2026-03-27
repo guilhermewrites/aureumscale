@@ -452,23 +452,12 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
     let cancelled = false;
     setTweetsLoading(true);
     (async () => {
-      // Try with sort_order first, fall back if column doesn't exist yet
-      let result = await supabase
+      const { data, error } = await supabase
         .from('client_tweets')
         .select('*')
         .eq('client_id', client.id)
         .eq('user_id', storagePrefix)
-        .order('sort_order', { ascending: true, nullsFirst: false })
         .order('post_date', { ascending: true });
-      if (result.error) {
-        result = await supabase
-          .from('client_tweets')
-          .select('*')
-          .eq('client_id', client.id)
-          .eq('user_id', storagePrefix)
-          .order('post_date', { ascending: true });
-      }
-      const { data, error } = result;
       if (cancelled) return;
       if (!error && data) {
         setTweets(data.map((r: any) => ({
