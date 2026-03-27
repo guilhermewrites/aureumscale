@@ -39,6 +39,13 @@ KNOWLEDGE MANAGEMENT:
 - When you save knowledge, briefly confirm what you saved.
 - Pick an appropriate category: Agency Operations, Sales & Outreach, Scaling, Mindset, Fitness, Nutrition, Productivity, or Other.
 
+KNOWLEDGE RETRIEVAL:
+- You have a tool called "search_knowledge" to search your knowledge base for relevant information.
+- ALWAYS use search_knowledge BEFORE answering questions about the user's business, preferences, routines, strategies, or anything you may have previously saved.
+- Search proactively — don't guess from memory. If the user asks about pricing, search "pricing". If they ask about routines, search "routine". If they ask what you know about them, search broadly.
+- You can search multiple times in a conversation if needed.
+- Only the 5 most recent entries are shown by default. Everything else requires a search.
+
 Current date and time: ${context.currentDateTime}
 Day of week: ${context.dayOfWeek}`;
 
@@ -96,10 +103,12 @@ Day of week: ${context.dayOfWeek}`;
     if (fs.overdueAmount > 0) prompt += `, OVERDUE: $${fs.overdueAmount.toLocaleString()}`;
   }
 
-  // Knowledge base
+  // Knowledge base — only inject 5 most recent for general awareness
   if (context.knowledgeEntries && context.knowledgeEntries.length > 0) {
-    prompt += `\n\n--- USER'S KNOWLEDGE BASE ---`;
-    for (const entry of context.knowledgeEntries) {
+    const recentEntries = context.knowledgeEntries.slice(0, 5);
+    prompt += `\n\n--- RECENT KNOWLEDGE (${recentEntries.length} of ${context.knowledgeEntries.length} total entries) ---`;
+    prompt += `\nYou have ${context.knowledgeEntries.length} total knowledge entries. Use the search_knowledge tool to look up specific topics when needed.`;
+    for (const entry of recentEntries) {
       prompt += `\n\n[${entry.category.toUpperCase()}] ${entry.title}:\n${entry.content}`;
     }
   }
@@ -188,6 +197,25 @@ export default async function handler(req: Request) {
             },
           },
           {
+            name: 'search_knowledge',
+            description: 'Search the knowledge base for relevant information. Use this before answering questions about the user\'s business, preferences, routines, strategies, or anything previously discussed. Returns matching entries.',
+            input_schema: {
+              type: 'object',
+              properties: {
+                query: {
+                  type: 'string',
+                  description: 'Search query — keywords or topic to look up (e.g. "pricing", "morning routine", "client acquisition")',
+                },
+                category: {
+                  type: 'string',
+                  enum: ['Agency Operations', 'Sales & Outreach', 'Scaling', 'Mindset', 'Fitness', 'Nutrition', 'Productivity', 'Other'],
+                  description: 'Optional: filter by category',
+                },
+              },
+              required: ['query'],
+            },
+          },
+          {
             name: 'add_calendar_event',
             description: 'Add an event to the user\'s calendar. Use when they ask to schedule something, block time, or set a reminder.',
             input_schema: {
@@ -253,16 +281,18 @@ export default async function handler(req: Request) {
       }
     }
 
-    // If Claude used tools, do a follow-up call with tool results so it responds with text
-    if (data.stop_reason === 'tool_use' && toolCalls.length > 0) {
-      // Build the tool result messages
+    // If Claude used tools, check if search_knowledge needs client-side handling
+    // For non-search tools, do a server-side follow-up. For search, return to client.
+    const hasSearch = toolCalls.some(tc => tc.name === 'search_knowledge');
+
+    if (data.stop_reason === 'tool_use' && toolCalls.length > 0 && !hasSearch) {
+      // No search needed — handle entirely server-side
       const toolResultContent = toolCalls.map(tc => ({
         type: 'tool_result' as const,
         tool_use_id: tc.id,
         content: `Done. ${tc.name === 'save_knowledge' ? `Saved "${tc.input.title}" to ${tc.input.category}.` : `Added "${tc.input.title}" to calendar on ${tc.input.date}.`}`,
       }));
 
-      // Follow-up call to get actual text response
       const followUp = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
         headers: {
@@ -293,11 +323,19 @@ export default async function handler(req: Request) {
       }
     }
 
+    // If search is needed, return tool calls + raw assistant content so client can handle the loop
+    const needsClientLoop = data.stop_reason === 'tool_use' && hasSearch;
+
     if (!assistantMessage && toolCalls.length === 0) {
       assistantMessage = 'No response generated.';
     }
 
-    return new Response(JSON.stringify({ message: assistantMessage, toolCalls }), {
+    return new Response(JSON.stringify({
+      message: assistantMessage,
+      toolCalls,
+      needsFollowUp: needsClientLoop,
+      rawAssistantContent: needsClientLoop ? data.content : undefined,
+    }), {
       status: 200,
       headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
     });

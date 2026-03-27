@@ -403,7 +403,8 @@ const MentorManager: React.FC<MentorManagerProps> = ({ storagePrefix }) => {
       todayEvents: calendarEvents.filter(e => e.date === today),
       upcomingEvents: calendarEvents.filter(e => e.date !== today),
       recentLogs: todayLogs.map(l => ({ date: l.date, category: l.category, content: l.content })),
-      knowledgeEntries: knowledge.slice(0, 20).map(k => ({ category: k.category, title: k.title, content: k.content })),
+      knowledgeEntries: knowledge.slice(0, 5).map(k => ({ category: k.category, title: k.title, content: k.content })),
+      totalKnowledgeCount: knowledge.length,
       clientsSummary: null,
       financeSummary: null,
     };
@@ -454,12 +455,12 @@ const MentorManager: React.FC<MentorManagerProps> = ({ storagePrefix }) => {
         }),
       });
 
-      const data = await res.json();
-      const assistantContent = data.message || data.error || 'No response.';
+      let data = await res.json();
 
-      // Handle tool calls (save_knowledge, add_calendar_event)
-      if (data.toolCalls && data.toolCalls.length > 0) {
-        for (const tool of data.toolCalls) {
+      // Execute tool calls (save_knowledge, add_calendar_event, search_knowledge)
+      const executeTools = async (toolCalls: any[]) => {
+        const results: { tool_use_id: string; content: string }[] = [];
+        for (const tool of toolCalls) {
           if (tool.name === 'save_knowledge') {
             const entry = {
               user_id: storagePrefix,
@@ -470,6 +471,7 @@ const MentorManager: React.FC<MentorManagerProps> = ({ storagePrefix }) => {
             };
             const { data: saved } = await supabase.from('mentor_knowledge').insert(entry).select().single();
             if (saved) setKnowledge(prev => [saved, ...prev]);
+            results.push({ tool_use_id: tool.id, content: `Saved "${tool.input.title}" to ${tool.input.category}.` });
           } else if (tool.name === 'add_calendar_event') {
             await supabase.from('calendar_events').insert({
               user_id: storagePrefix,
@@ -481,9 +483,65 @@ const MentorManager: React.FC<MentorManagerProps> = ({ storagePrefix }) => {
               color: '#2a2a2a',
             });
             loadCalendarEvents();
+            results.push({ tool_use_id: tool.id, content: `Added "${tool.input.title}" to calendar on ${tool.input.date}.` });
+          } else if (tool.name === 'search_knowledge') {
+            // Search Supabase for matching knowledge entries
+            const query = tool.input.query?.toLowerCase() || '';
+            const category = tool.input.category;
+            let q = supabase.from('mentor_knowledge').select('*').eq('user_id', storagePrefix);
+            if (category) q = q.eq('category', category);
+            const { data: entries } = await q.order('created_at', { ascending: false }).limit(50);
+
+            // Filter by search query (text match on title + content)
+            const matches = (entries || []).filter(e =>
+              e.title.toLowerCase().includes(query) ||
+              e.content.toLowerCase().includes(query) ||
+              e.category.toLowerCase().includes(query)
+            ).slice(0, 10);
+
+            if (matches.length === 0) {
+              results.push({ tool_use_id: tool.id, content: `No knowledge entries found matching "${tool.input.query}".` });
+            } else {
+              const formatted = matches.map(m => `[${m.category}] ${m.title}:\n${m.content}`).join('\n\n');
+              results.push({ tool_use_id: tool.id, content: `Found ${matches.length} entries:\n\n${formatted}` });
+            }
           }
         }
+        return results;
+      };
+
+      // If the API says we need a follow-up (search_knowledge was used), handle the tool loop
+      if (data.needsFollowUp && data.toolCalls && data.toolCalls.length > 0) {
+        const toolResults = await executeTools(data.toolCalls);
+
+        // Send tool results back to API for a follow-up response
+        const followUpMessages = [
+          ...recentMessages,
+          { role: 'assistant', content: data.rawAssistantContent },
+          { role: 'user', content: toolResults.map(r => ({ type: 'tool_result', tool_use_id: r.tool_use_id, content: r.content })) },
+        ];
+
+        const followUpRes = await fetch('/api/mentor', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            messages: followUpMessages,
+            context: buildContext(),
+          }),
+        });
+
+        data = await followUpRes.json();
+
+        // Handle any additional tool calls from follow-up (save_knowledge after search, etc.)
+        if (data.toolCalls && data.toolCalls.length > 0 && !data.needsFollowUp) {
+          await executeTools(data.toolCalls);
+        }
+      } else if (data.toolCalls && data.toolCalls.length > 0) {
+        // Non-search tools already handled server-side, but still execute client-side effects
+        await executeTools(data.toolCalls);
       }
+
+      const assistantContent = data.message || data.error || 'No response.';
 
       const assistantMsg: ChatMessage = {
         id: genId(),
