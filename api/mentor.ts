@@ -246,9 +246,50 @@ export default async function handler(req: Request) {
         assistantMessage += block.text;
       } else if (block.type === 'tool_use') {
         toolCalls.push({
+          id: block.id,
           name: block.name,
           input: block.input,
         });
+      }
+    }
+
+    // If Claude used tools, do a follow-up call with tool results so it responds with text
+    if (data.stop_reason === 'tool_use' && toolCalls.length > 0) {
+      // Build the tool result messages
+      const toolResultContent = toolCalls.map(tc => ({
+        type: 'tool_result' as const,
+        tool_use_id: tc.id,
+        content: `Done. ${tc.name === 'save_knowledge' ? `Saved "${tc.input.title}" to ${tc.input.category}.` : `Added "${tc.input.title}" to calendar on ${tc.input.date}.`}`,
+      }));
+
+      // Follow-up call to get actual text response
+      const followUp = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01',
+        },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 2048,
+          system: systemPrompt,
+          messages: [
+            ...messages.map((m: any) => ({ role: m.role, content: m.content })),
+            { role: 'assistant', content: data.content },
+            { role: 'user', content: toolResultContent },
+          ],
+        }),
+      });
+
+      if (followUp.ok) {
+        const followUpData = await followUp.json();
+        assistantMessage = '';
+        for (const block of (followUpData.content || [])) {
+          if (block.type === 'text') {
+            assistantMessage += block.text;
+          }
+        }
       }
     }
 
