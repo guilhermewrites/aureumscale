@@ -578,13 +578,17 @@ const MentorManager: React.FC<MentorManagerProps> = ({ storagePrefix }) => {
         return results;
       };
 
-      // If the API says we need a follow-up (search_knowledge was used), handle the tool loop
-      if (data.needsFollowUp && data.toolCalls && data.toolCalls.length > 0) {
+      // Tool loop — keep executing tools and sending results back until Claude responds with text
+      let loopMessages = [...recentMessages];
+      let maxLoops = 5; // Safety limit
+
+      while (data.needsFollowUp && data.toolCalls && data.toolCalls.length > 0 && maxLoops > 0) {
+        maxLoops--;
         const toolResults = await executeTools(data.toolCalls);
 
-        // Send tool results back to API for a follow-up response
-        const followUpMessages = [
-          ...recentMessages,
+        // Build the conversation with assistant's tool calls + our results
+        loopMessages = [
+          ...loopMessages,
           { role: 'assistant', content: data.rawAssistantContent },
           { role: 'user', content: toolResults.map(r => ({ type: 'tool_result', tool_use_id: r.tool_use_id, content: r.content })) },
         ];
@@ -593,19 +597,16 @@ const MentorManager: React.FC<MentorManagerProps> = ({ storagePrefix }) => {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            messages: followUpMessages,
+            messages: loopMessages,
             context: buildContext(),
           }),
         });
 
         data = await followUpRes.json();
+      }
 
-        // Handle any additional tool calls from follow-up (save_knowledge after search, etc.)
-        if (data.toolCalls && data.toolCalls.length > 0 && !data.needsFollowUp) {
-          await executeTools(data.toolCalls);
-        }
-      } else if (data.toolCalls && data.toolCalls.length > 0) {
-        // Non-search tools already handled server-side, but still execute client-side effects
+      // Execute any remaining non-loop tool calls (server-side handled ones)
+      if (data.toolCalls && data.toolCalls.length > 0 && !data.needsFollowUp) {
         await executeTools(data.toolCalls);
       }
 
