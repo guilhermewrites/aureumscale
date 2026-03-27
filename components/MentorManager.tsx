@@ -277,6 +277,11 @@ const MentorManager: React.FC<MentorManagerProps> = ({ storagePrefix }) => {
   // Calendar events (for context)
   const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>([]);
 
+  // Business context (for system prompt)
+  const [clientsData, setClientsData] = useState<any[]>([]);
+  const [financeData, setFinanceData] = useState<any[]>([]);
+  const [boardTasksData, setBoardTasksData] = useState<any[]>([]);
+
   // Goals editing
   const [editingAreaId, setEditingAreaId] = useState<string | null>(null);
   const [newGoalText, setNewGoalText] = useState('');
@@ -292,6 +297,7 @@ const MentorManager: React.FC<MentorManagerProps> = ({ storagePrefix }) => {
     loadConversations();
     loadKnowledge();
     loadCalendarEvents();
+    loadBusinessContext();
   }, [storagePrefix]);
 
   const loadProfile = async () => {
@@ -387,6 +393,17 @@ const MentorManager: React.FC<MentorManagerProps> = ({ storagePrefix }) => {
     }
   };
 
+  const loadBusinessContext = async () => {
+    const [clientsRes, financeRes, tasksRes] = await Promise.all([
+      supabase.from('clients').select('id, name, service, status, payment_status, amount, leader').eq('user_id', storagePrefix).order('created_at', { ascending: false }),
+      supabase.from('finance_items').select('id, client_name, amount, invoice_date, status, description').eq('user_id', storagePrefix).order('invoice_date', { ascending: false }).limit(20),
+      supabase.from('board_tasks').select('*').eq('user_id', storagePrefix).order('status').order('order_num'),
+    ]);
+    if (clientsRes.data) setClientsData(clientsRes.data);
+    if (financeRes.data) setFinanceData(financeRes.data);
+    if (tasksRes.data) setBoardTasksData(tasksRes.data);
+  };
+
   // ── Build AI context ──
 
   const buildContext = useCallback(() => {
@@ -405,10 +422,28 @@ const MentorManager: React.FC<MentorManagerProps> = ({ storagePrefix }) => {
       recentLogs: todayLogs.map(l => ({ date: l.date, category: l.category, content: l.content })),
       knowledgeEntries: knowledge.slice(0, 5).map(k => ({ category: k.category, title: k.title, content: k.content })),
       totalKnowledgeCount: knowledge.length,
-      clientsSummary: null,
-      financeSummary: null,
+      clientsSummary: clientsData.length > 0 ? {
+        activeCount: clientsData.filter(c => c.status !== 'inactive').length,
+        totalRevenue: clientsData.reduce((sum, c) => sum + (c.amount || 0), 0),
+        pendingInvoices: financeData.filter(f => f.status === 'pending').length,
+        clients: clientsData.map(c => `${c.name} (${c.service || 'N/A'}) — ${c.status || 'active'} — $${c.amount || 0}`),
+      } : null,
+      financeSummary: financeData.length > 0 ? {
+        paidThisMonth: financeData.filter(f => f.status === 'paid').reduce((sum, f) => sum + (f.amount || 0), 0),
+        pendingThisMonth: financeData.filter(f => f.status === 'pending').reduce((sum, f) => sum + (f.amount || 0), 0),
+        overdueAmount: financeData.filter(f => f.status === 'overdue').reduce((sum, f) => sum + (f.amount || 0), 0),
+        recentInvoices: financeData.slice(0, 10).map(f => `${f.client_name}: $${f.amount} (${f.status})`),
+      } : null,
+      boardTasks: boardTasksData.length > 0 ? boardTasksData.map(t => ({
+        id: t.id,
+        title: t.title,
+        status: t.status,
+        client_name: t.client_name,
+        estimated_revenue: t.estimated_revenue,
+        description: t.description,
+      })) : null,
     };
-  }, [profile, calendarEvents, todayLogs, knowledge]);
+  }, [profile, calendarEvents, todayLogs, knowledge, clientsData, financeData, boardTasksData]);
 
   // ── Chat ──
 
@@ -440,8 +475,8 @@ const MentorManager: React.FC<MentorManagerProps> = ({ storagePrefix }) => {
     });
 
     try {
-      // Build messages for API (last 20 for context window)
-      const recentMessages = [...messages.slice(-18), userMsg].map(m => ({
+      // Build messages for API (last 40 for better conversation memory)
+      const recentMessages = [...messages.slice(-38), userMsg].map(m => ({
         role: m.role,
         content: m.content,
       }));

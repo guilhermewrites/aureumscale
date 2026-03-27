@@ -112,12 +112,40 @@ Day of week: ${context.dayOfWeek}`;
     prompt += `\nActive clients: ${cs.activeCount}`;
     prompt += `\nTotal revenue: $${cs.totalRevenue?.toLocaleString() || 0}`;
     if (cs.pendingInvoices > 0) prompt += `\nPending invoices: ${cs.pendingInvoices}`;
+    if (cs.clients && cs.clients.length > 0) {
+      prompt += `\n\nClient list:`;
+      for (const c of cs.clients) {
+        prompt += `\n- ${c}`;
+      }
+    }
   }
 
   if (context.financeSummary) {
     const fs = context.financeSummary;
-    prompt += `\nThis month — Collected: $${fs.paidThisMonth?.toLocaleString() || 0}, Pending: $${fs.pendingThisMonth?.toLocaleString() || 0}`;
+    prompt += `\n\nFinancials — Collected: $${fs.paidThisMonth?.toLocaleString() || 0}, Pending: $${fs.pendingThisMonth?.toLocaleString() || 0}`;
     if (fs.overdueAmount > 0) prompt += `, OVERDUE: $${fs.overdueAmount.toLocaleString()}`;
+    if (fs.recentInvoices && fs.recentInvoices.length > 0) {
+      prompt += `\nRecent invoices:`;
+      for (const inv of fs.recentInvoices) {
+        prompt += `\n- ${inv}`;
+      }
+    }
+  }
+
+  // Board tasks
+  if (context.boardTasks && context.boardTasks.length > 0) {
+    prompt += `\n\n--- TASK BOARD (Kanban) ---`;
+    const byStatus: Record<string, any[]> = {};
+    for (const t of context.boardTasks) {
+      if (!byStatus[t.status]) byStatus[t.status] = [];
+      byStatus[t.status].push(t);
+    }
+    for (const [status, tasks] of Object.entries(byStatus)) {
+      prompt += `\n\n[${status}]`;
+      for (const t of tasks) {
+        prompt += `\n- ${t.title} (ID: ${t.id})${t.client_name ? ` — Client: ${t.client_name}` : ''}${t.estimated_revenue > 0 ? ` — $${t.estimated_revenue}` : ''}${t.description ? ` — ${t.description}` : ''}`;
+      }
+    }
   }
 
   // Knowledge base — only inject 5 most recent for general awareness
