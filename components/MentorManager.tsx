@@ -17,6 +17,7 @@ import {
   Check,
   Brain,
   Clock,
+  Camera,
 } from 'lucide-react';
 import { supabase } from '../services/supabaseClient';
 
@@ -38,6 +39,7 @@ interface LifeArea {
 
 interface MentorProfile {
   mentor_name: string;
+  mentor_photo: string;
   personality: string;
   custom_personality: string;
   tone: string;
@@ -82,6 +84,7 @@ interface CalendarEvent {
 
 const DEFAULT_PROFILE: MentorProfile = {
   mentor_name: 'Aurelius',
+  mentor_photo: '',
   personality: 'stoic',
   custom_personality: '',
   tone: 'direct',
@@ -240,6 +243,26 @@ const MentorManager: React.FC<MentorManagerProps> = ({ storagePrefix }) => {
   const [isLoading, setIsLoading] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const mentorPhotoRef = useRef<HTMLInputElement>(null);
+
+  const handleMentorPhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const img = new window.Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const canvas = document.createElement('canvas');
+      const scale = Math.min(200 / img.width, 200 / img.height, 1);
+      canvas.width = img.width * scale;
+      canvas.height = img.height * scale;
+      const ctx = canvas.getContext('2d');
+      if (ctx) ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+      saveProfile({ ...profile, mentor_photo: dataUrl });
+    };
+    img.src = url;
+  };
 
   // Logs
   const [todayLogs, setTodayLogs] = useState<MentorLog[]>([]);
@@ -280,6 +303,7 @@ const MentorManager: React.FC<MentorManagerProps> = ({ storagePrefix }) => {
     if (data) {
       setProfile({
         mentor_name: data.mentor_name || 'Aurelius',
+        mentor_photo: data.mentor_photo || '',
         personality: data.personality || 'stoic',
         custom_personality: data.custom_personality || '',
         tone: data.tone || 'direct',
@@ -296,6 +320,7 @@ const MentorManager: React.FC<MentorManagerProps> = ({ storagePrefix }) => {
     await supabase.from('mentor_profile').upsert({
       user_id: storagePrefix,
       mentor_name: updated.mentor_name,
+      mentor_photo: updated.mentor_photo,
       personality: updated.personality,
       custom_personality: updated.custom_personality,
       tone: updated.tone,
@@ -704,9 +729,13 @@ const MentorManager: React.FC<MentorManagerProps> = ({ storagePrefix }) => {
                 <div key={msg.id} className={`flex items-end gap-2.5 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                   {/* Mentor avatar */}
                   {msg.role === 'assistant' && (
-                    <div className="w-7 h-7 rounded-full bg-[#252525] border border-[#2a2a2a] flex items-center justify-center flex-shrink-0">
-                      <Brain size={14} className="text-[#888]" />
-                    </div>
+                    profile.mentor_photo ? (
+                      <img src={profile.mentor_photo} alt={profile.mentor_name} className="w-7 h-7 rounded-full object-cover flex-shrink-0" />
+                    ) : (
+                      <div className="w-7 h-7 rounded-full bg-[#252525] border border-[#2a2a2a] flex items-center justify-center flex-shrink-0">
+                        <Brain size={14} className="text-[#888]" />
+                      </div>
+                    )
                   )}
                   <div
                     className={`max-w-[78%] rounded-xl px-4 py-3 text-sm leading-relaxed ${
@@ -732,9 +761,13 @@ const MentorManager: React.FC<MentorManagerProps> = ({ storagePrefix }) => {
 
               {isLoading && (
                 <div className="flex items-end gap-2.5 justify-start">
-                  <div className="w-7 h-7 rounded-full bg-[#252525] border border-[#2a2a2a] flex items-center justify-center flex-shrink-0">
-                    <Brain size={14} className="text-[#888]" />
-                  </div>
+                  {profile.mentor_photo ? (
+                    <img src={profile.mentor_photo} alt={profile.mentor_name} className="w-7 h-7 rounded-full object-cover flex-shrink-0" />
+                  ) : (
+                    <div className="w-7 h-7 rounded-full bg-[#252525] border border-[#2a2a2a] flex items-center justify-center flex-shrink-0">
+                      <Brain size={14} className="text-[#888]" />
+                    </div>
+                  )}
                   <div className="bg-[#171717] border border-[#2a2a2a] rounded-xl px-4 py-3">
                     <div className="flex gap-1.5">
                       <div className="w-1.5 h-1.5 bg-[#555] rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
@@ -1069,14 +1102,34 @@ const MentorManager: React.FC<MentorManagerProps> = ({ storagePrefix }) => {
             </div>
           </div>
 
-          {/* Mentor name */}
+          {/* Mentor identity */}
           <div>
-            <h3 className="text-xs uppercase tracking-wider text-[#555] font-medium mb-2">Mentor Name</h3>
-            <input
-              value={profile.mentor_name}
-              onChange={e => saveProfile({ ...profile, mentor_name: e.target.value })}
-              className="bg-[#1c1c1c] border border-[#2a2a2a] rounded-lg px-3 py-2 text-sm text-[#ECECEC] focus:outline-none focus:border-[#3a3a3a] w-48"
-            />
+            <h3 className="text-xs uppercase tracking-wider text-[#555] font-medium mb-3">Mentor Identity</h3>
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => mentorPhotoRef.current?.click()}
+                className="w-16 h-16 rounded-full overflow-hidden bg-[#2a2a2a] flex items-center justify-center text-[#888] hover:brightness-110 transition-none flex-shrink-0 relative group"
+              >
+                {profile.mentor_photo ? (
+                  <img src={profile.mentor_photo} alt="Mentor" className="w-full h-full object-cover" />
+                ) : (
+                  <Brain size={24} />
+                )}
+                <div className="absolute inset-0 bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                  <Camera size={14} className="text-white" />
+                </div>
+              </button>
+              <input ref={mentorPhotoRef} type="file" accept="image/*" className="hidden" onChange={handleMentorPhotoUpload} />
+              <div className="flex-1">
+                <label className="text-[10px] text-[#555] uppercase tracking-wider">Name</label>
+                <input
+                  value={profile.mentor_name}
+                  onChange={e => saveProfile({ ...profile, mentor_name: e.target.value })}
+                  className="block mt-1 w-48 bg-[#1c1c1c] border border-[#2a2a2a] rounded-lg px-3 py-2 text-sm text-[#ECECEC] focus:outline-none focus:border-[#3a3a3a]"
+                />
+                <p className="text-[10px] text-[#444] mt-1">Click the circle to upload a photo for your mentor.</p>
+              </div>
+            </div>
           </div>
         </div>
       )}

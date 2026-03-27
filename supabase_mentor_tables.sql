@@ -6,6 +6,7 @@ CREATE TABLE IF NOT EXISTS mentor_profile (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id TEXT NOT NULL UNIQUE,
   mentor_name TEXT DEFAULT 'Aurelius',
+  mentor_photo TEXT DEFAULT '',
   personality TEXT DEFAULT 'stoic',
   custom_personality TEXT,
   tone TEXT DEFAULT 'direct',
