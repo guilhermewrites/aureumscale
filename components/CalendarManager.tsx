@@ -79,6 +79,7 @@ const CalendarManager: React.FC<CalendarManagerProps> = ({ storagePrefix }) => {
   const [formStart, setFormStart] = useState('09:00');
   const [formEnd, setFormEnd] = useState('10:00');
   const [formDesc, setFormDesc] = useState('');
+  const [failReasonIdx, setFailReasonIdx] = useState<number | null>(null);
 
   // ── Supabase helpers ──
   const toDbRow = (ev: CalendarEvent) => ({
@@ -371,6 +372,7 @@ const CalendarManager: React.FC<CalendarManagerProps> = ({ storagePrefix }) => {
     setEditingEvent(null);
     setFormTitle(''); setFormDate(date || selectedDate);
     setFormStart('09:00'); setFormEnd('10:00'); setFormDesc('');
+    setFailReasonIdx(null);
     setModalOpen(true);
   };
 
@@ -562,10 +564,12 @@ const CalendarManager: React.FC<CalendarManagerProps> = ({ storagePrefix }) => {
                       <div className="mt-0.5 space-y-0">
                         {ev.description.split('\n').filter(l => l.trim()).slice(0, 3).map((line, li) => {
                           const done = line.startsWith('[x] ');
-                          const text = line.replace(/^\[x\] |^\[ \] /, '');
+                          const failed = line.startsWith('[-] ');
+                          const rawContent = line.replace(/^\[x\] |^\[ \] |^\[-\] /, '');
+                          const text = failed ? rawContent.split(' | ')[0] : rawContent;
                           return (
-                            <div key={li} className="text-[10px] flex items-center gap-1 truncate" style={{ color: done ? '#10b981' : '#666', textDecoration: done ? 'line-through' : 'none' }}>
-                              <span>{done ? '✓' : '○'}</span>
+                            <div key={li} className="text-[10px] flex items-center gap-1 truncate" style={{ color: done ? '#10b981' : failed ? '#ef4444' : '#666', textDecoration: (done || failed) ? 'line-through' : 'none' }}>
+                              <span>{done ? '✓' : failed ? '✕' : '○'}</span>
                               <span className="truncate">{text}</span>
                             </div>
                           );
@@ -766,43 +770,120 @@ const CalendarManager: React.FC<CalendarManagerProps> = ({ storagePrefix }) => {
                       }
                     };
                     return lines.map((line, i) => {
+                      // Three states: [ ] pending, [x] done (green), [-] failed (red)
+                      // Failed format: [-] task text | reason why
                       const done = line.startsWith('[x] ');
-                      const text = line.replace(/^\[x\] |^\[ \] /, '');
+                      const failed = line.startsWith('[-] ');
+                      const rawContent = line.replace(/^\[x\] |^\[ \] |^\[-\] /, '');
+                      const [text, reason] = failed ? rawContent.split(' | ') : [rawContent, ''];
+                      const showingReasonInput = failReasonIdx === i;
+
                       return (
-                        <div key={i} className="flex items-center gap-2 group">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const updated = [...lines];
-                              updated[i] = done ? `[ ] ${text}` : `[x] ${text}`;
-                              updateDesc(updated.join('\n'));
-                            }}
-                            className="flex-shrink-0 w-4 h-4 rounded border flex items-center justify-center transition-all"
-                            style={{
-                              borderColor: done ? '#10b981' : '#555',
-                              background: done ? '#10b981' : 'transparent',
-                            }}
-                          >
-                            {done && <span className="text-[10px] text-white font-bold">✓</span>}
-                          </button>
-                          <span
-                            className="text-sm flex-1"
-                            style={{
-                              color: done ? '#10b981' : '#ECECEC',
-                              textDecoration: done ? 'line-through' : 'none',
-                              opacity: done ? 0.8 : 1,
-                            }}
-                          >{text}</span>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const updated = lines.filter((_, idx) => idx !== i);
-                              updateDesc(updated.join('\n'));
-                            }}
-                            className="opacity-0 group-hover:opacity-100 text-[#555] hover:text-rose-400 transition-opacity"
-                          >
-                            <X size={12} />
-                          </button>
+                        <div key={i} className="group">
+                          <div className="flex items-center gap-2">
+                            {/* Left click = green ✓, Right click = red ✗ */}
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const updated = [...lines];
+                                if (done) {
+                                  // done → pending
+                                  updated[i] = `[ ] ${text}`;
+                                  updateDesc(updated.join('\n'));
+                                } else if (failed) {
+                                  // failed → pending
+                                  updated[i] = `[ ] ${text}`;
+                                  setFailReasonIdx(null);
+                                  updateDesc(updated.join('\n'));
+                                } else {
+                                  // pending → done
+                                  updated[i] = `[x] ${text}`;
+                                  updateDesc(updated.join('\n'));
+                                }
+                              }}
+                              onContextMenu={(e) => {
+                                e.preventDefault();
+                                if (failed) {
+                                  // Already failed → toggle back to pending
+                                  const updated = [...lines];
+                                  updated[i] = `[ ] ${text}`;
+                                  setFailReasonIdx(null);
+                                  updateDesc(updated.join('\n'));
+                                } else {
+                                  // pending or done → failed, show reason input
+                                  const updated = [...lines];
+                                  updated[i] = `[-] ${text}`;
+                                  setFailReasonIdx(i);
+                                  updateDesc(updated.join('\n'));
+                                }
+                              }}
+                              className="flex-shrink-0 w-4 h-4 rounded border flex items-center justify-center transition-all"
+                              style={{
+                                borderColor: done ? '#10b981' : failed ? '#ef4444' : '#555',
+                                background: done ? '#10b981' : failed ? '#ef4444' : 'transparent',
+                              }}
+                              title="Click = done, Right-click = failed"
+                            >
+                              {done && <span className="text-[10px] text-white font-bold">✓</span>}
+                              {failed && <span className="text-[10px] text-white font-bold">✕</span>}
+                            </button>
+                            <span
+                              className="text-sm flex-1"
+                              style={{
+                                color: done ? '#10b981' : failed ? '#ef4444' : '#ECECEC',
+                                textDecoration: (done || failed) ? 'line-through' : 'none',
+                                opacity: (done || failed) ? 0.8 : 1,
+                              }}
+                            >{text}</span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const updated = lines.filter((_, idx) => idx !== i);
+                                if (failReasonIdx === i) setFailReasonIdx(null);
+                                updateDesc(updated.join('\n'));
+                              }}
+                              className="opacity-0 group-hover:opacity-100 text-[#555] hover:text-rose-400 transition-opacity"
+                            >
+                              <X size={12} />
+                            </button>
+                          </div>
+                          {/* Reason display or input for failed tasks */}
+                          {failed && reason && !showingReasonInput && (
+                            <div
+                              className="ml-6 mt-0.5 text-[11px] italic cursor-pointer hover:opacity-80"
+                              style={{ color: '#ef4444', opacity: 0.7 }}
+                              onClick={() => setFailReasonIdx(i)}
+                            >
+                              {reason}
+                            </div>
+                          )}
+                          {failed && showingReasonInput && (
+                            <input
+                              autoFocus
+                              type="text"
+                              defaultValue={reason || ''}
+                              placeholder="Why couldn't you do it?"
+                              className="ml-6 mt-1 w-[calc(100%-1.5rem)] bg-[#2a2a2a] border border-[#ef4444]/30 rounded px-2 py-1 text-[11px] text-[#ef4444] placeholder-[#ef4444]/40 focus:outline-none focus:border-[#ef4444]/60"
+                              onKeyDown={e => {
+                                if (e.key === 'Enter') {
+                                  const val = (e.target as HTMLInputElement).value.trim();
+                                  const updated = [...lines];
+                                  updated[i] = val ? `[-] ${text} | ${val}` : `[-] ${text}`;
+                                  setFailReasonIdx(null);
+                                  updateDesc(updated.join('\n'));
+                                } else if (e.key === 'Escape') {
+                                  setFailReasonIdx(null);
+                                }
+                              }}
+                              onBlur={e => {
+                                const val = e.target.value.trim();
+                                const updated = [...lines];
+                                updated[i] = val ? `[-] ${text} | ${val}` : `[-] ${text}`;
+                                setFailReasonIdx(null);
+                                updateDesc(updated.join('\n'));
+                              }}
+                            />
+                          )}
                         </div>
                       );
                     });
