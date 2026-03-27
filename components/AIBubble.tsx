@@ -294,30 +294,57 @@ const AIBubble: React.FC<AIBubbleProps> = ({
               await supabase.from('ai_memory').insert({ id: crypto.randomUUID(), user_id: storagePrefix, content: memContent, category, created_at: new Date().toISOString(), updated_at: new Date().toISOString() });
               toolResults.push({ tool_use_id: tool.id, content: `Added new ${category} entry: "${memContent.slice(0, 60)}..."` });
 
-            } else if (tool.name === 'update_client_detail' && supabase && clientId) {
+            } else if (tool.name === 'update_client_detail' && supabase) {
+              const cid = clientId || clientContext?.id;
               const { field, value } = tool.input;
               const allowedFields = ['strategy_overview', 'funnel_notes', 'notes', 'ad_performance_notes', 'content_drafts'];
-              if (allowedFields.includes(field)) {
-                await supabase.from('client_details').update({ [field]: value }).eq('client_id', clientId).eq('user_id', storagePrefix);
-                toolResults.push({ tool_use_id: tool.id, content: `Updated ${field}.` });
+              if (!cid) {
+                toolResults.push({ tool_use_id: tool.id, content: 'Error: No client selected.' });
+              } else if (allowedFields.includes(field)) {
+                const { error } = await supabase.from('client_details').update({ [field]: value }).eq('client_id', cid).eq('user_id', storagePrefix);
+                toolResults.push({ tool_use_id: tool.id, content: error ? `Error: ${error.message}` : `Updated ${field}.` });
               } else {
                 toolResults.push({ tool_use_id: tool.id, content: `Cannot update field "${field}" — not allowed.` });
               }
 
-            } else if (tool.name === 'add_journal_entry' && supabase && clientId) {
+            } else if (tool.name === 'add_journal_entry' && supabase) {
               // Content Journal uses ad_performance_notes, entries separated by \n---\n
-              const { data: det } = await supabase.from('client_details').select('ad_performance_notes').eq('client_id', clientId).eq('user_id', storagePrefix).single();
-              const existing = det?.ad_performance_notes || '';
-              const newVal = existing ? `${existing}\n---\n${tool.input.content}` : tool.input.content;
-              await supabase.from('client_details').update({ ad_performance_notes: newVal }).eq('client_id', clientId).eq('user_id', storagePrefix);
-              toolResults.push({ tool_use_id: tool.id, content: `Added to Content Journal: "${tool.input.content.slice(0, 60)}..."` });
+              const cid = clientId || clientContext?.id;
+              if (!cid) {
+                toolResults.push({ tool_use_id: tool.id, content: 'Error: No client selected.' });
+              } else {
+                const { data: det, error: selErr } = await supabase.from('client_details').select('ad_performance_notes').eq('client_id', cid).eq('user_id', storagePrefix).maybeSingle();
+                if (selErr) {
+                  toolResults.push({ tool_use_id: tool.id, content: `Error reading journal: ${selErr.message}` });
+                } else if (!det) {
+                  // Row doesn't exist — create it
+                  const newVal = tool.input.content;
+                  const { error: insErr } = await supabase.from('client_details').insert({ client_id: cid, user_id: storagePrefix, ad_performance_notes: newVal });
+                  if (insErr) {
+                    toolResults.push({ tool_use_id: tool.id, content: `Error creating journal: ${insErr.message}` });
+                  } else {
+                    toolResults.push({ tool_use_id: tool.id, content: `Added to Content Journal: "${tool.input.content.slice(0, 80)}"` });
+                  }
+                } else {
+                  const existing = det.ad_performance_notes || '';
+                  const newVal = existing ? `${existing}\n---\n${tool.input.content}` : tool.input.content;
+                  const { error: updErr } = await supabase.from('client_details').update({ ad_performance_notes: newVal }).eq('client_id', cid).eq('user_id', storagePrefix);
+                  if (updErr) {
+                    toolResults.push({ tool_use_id: tool.id, content: `Error updating journal: ${updErr.message}` });
+                  } else {
+                    toolResults.push({ tool_use_id: tool.id, content: `Added to Content Journal: "${tool.input.content.slice(0, 80)}"` });
+                  }
+                }
+              }
 
-            } else if (tool.name === 'add_scripted_ad' && supabase && clientId) {
-              const { data: det } = await supabase.from('client_details').select('scripted_ads').eq('client_id', clientId).eq('user_id', storagePrefix).single();
+            } else if (tool.name === 'add_scripted_ad' && supabase) {
+              const cid = clientId || clientContext?.id;
+              if (!cid) { toolResults.push({ tool_use_id: tool.id, content: 'Error: No client selected.' }); continue; }
+              const { data: det } = await supabase.from('client_details').select('scripted_ads').eq('client_id', cid).eq('user_id', storagePrefix).maybeSingle();
               const ads = det?.scripted_ads || [];
               const newAd = { id: crypto.randomUUID(), title: tool.input.title, hook: tool.input.hook || '', body: tool.input.body || '', cta: tool.input.cta || '' };
               ads.push(newAd);
-              await supabase.from('client_details').update({ scripted_ads: ads }).eq('client_id', clientId).eq('user_id', storagePrefix);
+              await supabase.from('client_details').update({ scripted_ads: ads }).eq('client_id', cid).eq('user_id', storagePrefix);
               toolResults.push({ tool_use_id: tool.id, content: `Added script "${tool.input.title}".` });
 
             } else {
