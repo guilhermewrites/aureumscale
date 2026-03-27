@@ -460,6 +460,13 @@ const MentorManager: React.FC<MentorManagerProps> = ({ storagePrefix }) => {
       // Execute tool calls — handles all mentor tools
       const executeTools = async (toolCalls: any[]) => {
         const results: { tool_use_id: string; content: string }[] = [];
+        // Keep a local copy of profile so chained tools within the same batch
+        // see each other's mutations (React state won't update mid-loop).
+        let latestProfile = { ...profile };
+        const saveLatestProfile = async (p: MentorProfile) => {
+          latestProfile = p;
+          await saveProfile(p);
+        };
         for (const tool of toolCalls) {
           try {
             if (tool.name === 'save_knowledge') {
@@ -559,7 +566,7 @@ const MentorManager: React.FC<MentorManagerProps> = ({ storagePrefix }) => {
               results.push({ tool_use_id: tool.id, content: `Updated invoice ${tool.input.invoice_id} status to ${tool.input.status}.` });
 
             } else if (tool.name === 'add_goal') {
-              const updated = { ...profile };
+              const updated = { ...latestProfile, life_areas: latestProfile.life_areas.map(a => ({ ...a, goals: [...a.goals] })) };
               const area = updated.life_areas.find(a => a.id === tool.input.life_area_id);
               if (!area) {
                 results.push({ tool_use_id: tool.id, content: `Life area with ID "${tool.input.life_area_id}" not found. Available areas: ${updated.life_areas.map(a => `${a.name} (ID: ${a.id})`).join(', ')}` });
@@ -571,36 +578,36 @@ const MentorManager: React.FC<MentorManagerProps> = ({ storagePrefix }) => {
                   deadline: tool.input.deadline || '',
                   completed: false,
                 });
-                await saveProfile(updated);
+                await saveLatestProfile(updated);
                 results.push({ tool_use_id: tool.id, content: `Added goal "${tool.input.text}" to ${area.name}.` });
               }
 
             } else if (tool.name === 'complete_goal') {
-              const updated = { ...profile };
+              const updated = { ...latestProfile, life_areas: latestProfile.life_areas.map(a => ({ ...a, goals: [...a.goals] })) };
               const area = updated.life_areas.find(a => a.id === tool.input.life_area_id);
               const goal = area?.goals.find(g => g.id === tool.input.goal_id);
               if (!goal) {
                 results.push({ tool_use_id: tool.id, content: `Goal not found.` });
               } else {
                 goal.completed = !goal.completed;
-                await saveProfile(updated);
+                await saveLatestProfile(updated);
                 results.push({ tool_use_id: tool.id, content: `Marked goal "${goal.text}" as ${goal.completed ? 'completed' : 'incomplete'}.` });
               }
 
             } else if (tool.name === 'delete_goal') {
-              const updated = { ...profile };
+              const updated = { ...latestProfile, life_areas: latestProfile.life_areas.map(a => ({ ...a, goals: [...a.goals] })) };
               const area = updated.life_areas.find(a => a.id === tool.input.life_area_id);
               if (area) {
                 const goal = area.goals.find(g => g.id === tool.input.goal_id);
                 area.goals = area.goals.filter(g => g.id !== tool.input.goal_id);
-                await saveProfile(updated);
+                await saveLatestProfile(updated);
                 results.push({ tool_use_id: tool.id, content: `Deleted goal "${goal?.text || tool.input.goal_id}".` });
               } else {
                 results.push({ tool_use_id: tool.id, content: `Life area not found.` });
               }
 
             } else if (tool.name === 'add_life_area') {
-              const updated = { ...profile };
+              const updated = { ...latestProfile, life_areas: [...latestProfile.life_areas] };
               const newArea = {
                 id: genId(),
                 name: tool.input.name,
@@ -608,7 +615,7 @@ const MentorManager: React.FC<MentorManagerProps> = ({ storagePrefix }) => {
                 goals: [],
               };
               updated.life_areas.push(newArea);
-              await saveProfile(updated);
+              await saveLatestProfile(updated);
               results.push({ tool_use_id: tool.id, content: `Created life area "${tool.input.name}" (ID: ${newArea.id}).` });
 
             } else if (tool.name === 'add_board_task') {
@@ -635,8 +642,38 @@ const MentorManager: React.FC<MentorManagerProps> = ({ storagePrefix }) => {
               if (!boardTasks || boardTasks.length === 0) {
                 results.push({ tool_use_id: tool.id, content: `No board tasks found${tool.input.status ? ` in "${tool.input.status}" column` : ''}.` });
               } else {
-                const formatted = boardTasks.map(t => `- [${t.status}] ${t.title}${t.client_name ? ` (${t.client_name})` : ''}${t.estimated_revenue > 0 ? ` — $${t.estimated_revenue}` : ''}`).join('\n');
+                const formatted = boardTasks.map(t => `- [${t.status}] ${t.title} (ID: ${t.id})${t.client_name ? ` — Client: ${t.client_name}` : ''}${t.estimated_revenue > 0 ? ` — $${t.estimated_revenue}` : ''}`).join('\n');
                 results.push({ tool_use_id: tool.id, content: `${boardTasks.length} tasks:\n${formatted}` });
+              }
+
+            } else if (tool.name === 'update_board_task') {
+              const updates: Record<string, any> = {};
+              if (tool.input.title) updates.title = tool.input.title;
+              if (tool.input.description !== undefined) updates.description = tool.input.description;
+              if (tool.input.client_name !== undefined) updates.client_name = tool.input.client_name;
+              if (tool.input.status) updates.status = tool.input.status;
+              if (tool.input.estimated_revenue !== undefined) updates.estimated_revenue = tool.input.estimated_revenue;
+              const { error } = await supabase.from('board_tasks').update(updates).eq('id', tool.input.task_id).eq('user_id', storagePrefix);
+              if (error) {
+                results.push({ tool_use_id: tool.id, content: `Error updating task: ${error.message}` });
+              } else {
+                results.push({ tool_use_id: tool.id, content: `Updated board task "${tool.input.task_id}": ${Object.keys(updates).join(', ')}.` });
+              }
+
+            } else if (tool.name === 'delete_board_task') {
+              const { error } = await supabase.from('board_tasks').delete().eq('id', tool.input.task_id).eq('user_id', storagePrefix);
+              if (error) {
+                results.push({ tool_use_id: tool.id, content: `Error deleting task: ${error.message}` });
+              } else {
+                results.push({ tool_use_id: tool.id, content: `Deleted board task "${tool.input.task_id}".` });
+              }
+
+            } else if (tool.name === 'move_board_task') {
+              const { error } = await supabase.from('board_tasks').update({ status: tool.input.new_status }).eq('id', tool.input.task_id).eq('user_id', storagePrefix);
+              if (error) {
+                results.push({ tool_use_id: tool.id, content: `Error moving task: ${error.message}` });
+              } else {
+                results.push({ tool_use_id: tool.id, content: `Moved task to "${tool.input.new_status}" column.` });
               }
 
             } else if (tool.name === 'update_mentor_settings') {
@@ -645,8 +682,8 @@ const MentorManager: React.FC<MentorManagerProps> = ({ storagePrefix }) => {
               if (tool.input.custom_personality !== undefined) updates.custom_personality = tool.input.custom_personality;
               if (tool.input.tone) updates.tone = tool.input.tone;
               if (tool.input.mentor_name) updates.mentor_name = tool.input.mentor_name;
-              const newProfile = { ...profile, ...updates };
-              await saveProfile(newProfile);
+              const newProfile = { ...latestProfile, ...updates };
+              await saveLatestProfile(newProfile);
               results.push({ tool_use_id: tool.id, content: `Updated mentor settings: ${Object.keys(updates).join(', ')}.` });
 
             } else {

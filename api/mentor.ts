@@ -50,7 +50,7 @@ APP MANAGEMENT:
 - You have FULL control over the user's Aureum app. You can manage their calendar, clients, finances, goals, and task board.
 - Calendar: add_calendar_event, edit_calendar_event, delete_calendar_event
 - Goals: add_goal (add a goal to a life area), complete_goal (toggle completion), delete_goal, add_life_area (create new life area)
-- Task Board: add_board_task (create a Kanban task card), list_board_tasks (view all tasks)
+- Task Board: add_board_task (create a task card), list_board_tasks (view all tasks with IDs), update_board_task (edit title/description/client/status/revenue), delete_board_task (remove a task), move_board_task (move to different column)
 - Clients: list_clients (to see all clients), update_client_notes (to update a client's notes/details), update_client_status (to change happy/moderate/frustrated)
 - Finance: list_invoices (to see financial data), update_invoice_status (to mark paid/pending/overdue)
 - When the user asks you to do something ("book a call", "mark invoice as paid", "add a goal", "create a task"), just DO IT with the right tool. Don't ask for confirmation unless the action is destructive (like deleting).
@@ -412,13 +412,52 @@ export default async function handler(req: Request) {
           },
           {
             name: 'list_board_tasks',
-            description: 'List all tasks on the Kanban board. Returns task titles, statuses, clients, and estimated revenue.',
+            description: 'List all tasks on the Kanban board. Returns task IDs, titles, statuses, clients, and estimated revenue. ALWAYS call this first before updating or deleting tasks so you have the correct task_id.',
             input_schema: {
               type: 'object',
               properties: {
                 status: { type: 'string', enum: ['Lead', 'Proposal', 'Onboarding', 'In Progress', 'Review', 'Complete'], description: 'Optional: filter by status column' },
               },
               required: [],
+            },
+          },
+          {
+            name: 'update_board_task',
+            description: 'Update an existing task card on the Kanban board. Can change title, description, client, status, or estimated revenue. Use list_board_tasks first to get the task_id.',
+            input_schema: {
+              type: 'object',
+              properties: {
+                task_id: { type: 'string', description: 'The ID of the task to update (get from list_board_tasks)' },
+                title: { type: 'string', description: 'New title (optional)' },
+                description: { type: 'string', description: 'New description (optional)' },
+                client_name: { type: 'string', description: 'New client name (optional)' },
+                status: { type: 'string', enum: ['Lead', 'Proposal', 'Onboarding', 'In Progress', 'Review', 'Complete'], description: 'Move to a different column (optional)' },
+                estimated_revenue: { type: 'number', description: 'New estimated revenue (optional)' },
+              },
+              required: ['task_id'],
+            },
+          },
+          {
+            name: 'delete_board_task',
+            description: 'Delete a task card from the Kanban board. Use list_board_tasks first to get the task_id. Ask for confirmation before deleting.',
+            input_schema: {
+              type: 'object',
+              properties: {
+                task_id: { type: 'string', description: 'The ID of the task to delete (get from list_board_tasks)' },
+              },
+              required: ['task_id'],
+            },
+          },
+          {
+            name: 'move_board_task',
+            description: 'Move a task card to a different Kanban column (change its status). Use list_board_tasks first to get the task_id.',
+            input_schema: {
+              type: 'object',
+              properties: {
+                task_id: { type: 'string', description: 'The ID of the task to move (get from list_board_tasks)' },
+                new_status: { type: 'string', enum: ['Lead', 'Proposal', 'Onboarding', 'In Progress', 'Review', 'Complete'], description: 'Target column' },
+              },
+              required: ['task_id', 'new_status'],
             },
           },
           {
@@ -472,7 +511,7 @@ export default async function handler(req: Request) {
     }
 
     // Check if any tool needs client-side handling (Supabase queries)
-    const CLIENT_SIDE_TOOLS = ['search_knowledge', 'list_clients', 'list_invoices', 'update_client_notes', 'update_client_status', 'update_invoice_status', 'edit_calendar_event', 'delete_calendar_event', 'update_mentor_settings', 'add_goal', 'complete_goal', 'delete_goal', 'add_life_area', 'add_board_task', 'list_board_tasks'];
+    const CLIENT_SIDE_TOOLS = ['search_knowledge', 'list_clients', 'list_invoices', 'update_client_notes', 'update_client_status', 'update_invoice_status', 'edit_calendar_event', 'delete_calendar_event', 'update_mentor_settings', 'add_goal', 'complete_goal', 'delete_goal', 'add_life_area', 'add_board_task', 'list_board_tasks', 'update_board_task', 'delete_board_task', 'move_board_task'];
     const hasClientSideTool = toolCalls.some(tc => CLIENT_SIDE_TOOLS.includes(tc.name));
 
     if (data.stop_reason === 'tool_use' && toolCalls.length > 0 && !hasClientSideTool) {
