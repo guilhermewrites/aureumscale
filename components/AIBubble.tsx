@@ -259,7 +259,12 @@ const AIBubble: React.FC<AIBubbleProps> = ({
         throw new Error('API unavailable — try again in a moment.');
       };
 
-      let data = await fetchWithRetry({ messages: apiMessages, memories: clientMemories, clientContext, pageContext });
+      // Read active tab fresh from localStorage (it changes without URL change)
+      const freshPageContext = pageContext && clientId
+        ? { ...pageContext, activeTab: localStorage.getItem(`aureum_tab_${clientId}`) || 'Overview' }
+        : pageContext;
+
+      let data = await fetchWithRetry({ messages: apiMessages, memories: clientMemories, clientContext, pageContext: freshPageContext });
 
       // Tool execution loop — if AI wants to write to sections, execute and follow up
       let lastTextMessage = data.message || '';
