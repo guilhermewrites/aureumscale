@@ -30,10 +30,11 @@ interface AIBubbleProps {
   clientHandle?: string;
   clientBio?: string;
   clientTweets?: string;
+  pageContext?: Record<string, any>;
 }
 
 const AIBubble: React.FC<AIBubbleProps> = ({
-  storagePrefix, clientId, clientName, clientService, clientHandle, clientBio, clientTweets,
+  storagePrefix, clientId, clientName, clientService, clientHandle, clientBio, clientTweets, pageContext,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -200,7 +201,7 @@ const AIBubble: React.FC<AIBubbleProps> = ({
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: apiMessages, memories: clientMemories, clientContext }),
+        body: JSON.stringify({ messages: apiMessages, memories: clientMemories, clientContext, pageContext }),
       });
 
       const contentType = res.headers.get('content-type') || '';
@@ -209,17 +210,94 @@ const AIBubble: React.FC<AIBubbleProps> = ({
         throw new Error(`API returned ${res.status}: ${t.slice(0, 200)}`);
       }
 
-      const data = await res.json();
+      let data = await res.json();
       if (!res.ok) throw new Error(data.error || data.details || `Failed (${res.status})`);
 
+      // Tool execution loop — if AI wants to write to sections, execute and follow up
+      let lastTextMessage = data.message || '';
+      let loopMessages = apiMessages;
+      let maxLoops = 5;
+
+      while (data.needsFollowUp && data.toolCalls && data.toolCalls.length > 0 && maxLoops > 0) {
+        maxLoops--;
+        const toolResults: { tool_use_id: string; content: string }[] = [];
+
+        for (const tool of data.toolCalls) {
+          try {
+            if (tool.name === 'update_memory' && supabase) {
+              // Add or update a memory entry (Audience, Content Rules, Examples, etc.)
+              const { category, content: memContent } = tool.input;
+              const existingMem = (pageContext?.memories || []).find((m: any) => m.category === category && m.content === '');
+              if (existingMem) {
+                await supabase.from('ai_memory').update({ content: memContent, updated_at: new Date().toISOString() }).eq('id', existingMem.id).eq('user_id', storagePrefix);
+                toolResults.push({ tool_use_id: tool.id, content: `Updated ${category} memory.` });
+              } else {
+                await supabase.from('ai_memory').insert({ id: crypto.randomUUID(), user_id: storagePrefix, content: memContent, category, created_at: new Date().toISOString(), updated_at: new Date().toISOString() });
+                toolResults.push({ tool_use_id: tool.id, content: `Added new ${category} entry.` });
+              }
+
+            } else if (tool.name === 'add_memory' && supabase) {
+              const { category, content: memContent } = tool.input;
+              await supabase.from('ai_memory').insert({ id: crypto.randomUUID(), user_id: storagePrefix, content: memContent, category, created_at: new Date().toISOString(), updated_at: new Date().toISOString() });
+              toolResults.push({ tool_use_id: tool.id, content: `Added new ${category} entry: "${memContent.slice(0, 60)}..."` });
+
+            } else if (tool.name === 'update_client_detail' && supabase && clientId) {
+              const { field, value } = tool.input;
+              const allowedFields = ['strategy_overview', 'funnel_notes', 'notes', 'ad_performance_notes', 'content_drafts'];
+              if (allowedFields.includes(field)) {
+                await supabase.from('client_details').update({ [field]: value }).eq('client_id', clientId).eq('user_id', storagePrefix);
+                toolResults.push({ tool_use_id: tool.id, content: `Updated ${field}.` });
+              } else {
+                toolResults.push({ tool_use_id: tool.id, content: `Cannot update field "${field}" — not allowed.` });
+              }
+
+            } else if (tool.name === 'add_scripted_ad' && supabase && clientId) {
+              const { data: det } = await supabase.from('client_details').select('scripted_ads').eq('client_id', clientId).eq('user_id', storagePrefix).single();
+              const ads = det?.scripted_ads || [];
+              const newAd = { id: crypto.randomUUID(), title: tool.input.title, hook: tool.input.hook || '', body: tool.input.body || '', cta: tool.input.cta || '' };
+              ads.push(newAd);
+              await supabase.from('client_details').update({ scripted_ads: ads }).eq('client_id', clientId).eq('user_id', storagePrefix);
+              toolResults.push({ tool_use_id: tool.id, content: `Added script "${tool.input.title}".` });
+
+            } else {
+              toolResults.push({ tool_use_id: tool.id, content: `Unknown tool: ${tool.name}` });
+            }
+          } catch (err: any) {
+            toolResults.push({ tool_use_id: tool.id, content: `Error: ${err.message}` });
+          }
+        }
+
+        // Send tool results back for follow-up
+        loopMessages = [
+          ...loopMessages,
+          { role: 'assistant', content: data.rawAssistantContent },
+          { role: 'user', content: toolResults.map(r => ({ type: 'tool_result', tool_use_id: r.tool_use_id, content: r.content })) },
+        ];
+
+        try {
+          const followUpRes = await fetch('/api/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ messages: loopMessages, memories: clientMemories, clientContext, pageContext }),
+          });
+          if (!followUpRes.ok) { lastTextMessage = lastTextMessage || toolResults.map(r => r.content).join('. '); break; }
+          data = await followUpRes.json();
+          if (data.message) lastTextMessage = data.message;
+        } catch {
+          lastTextMessage = lastTextMessage || toolResults.map(r => r.content).join('. ');
+          break;
+        }
+      }
+
+      const finalContent = lastTextMessage || data.message || 'Done.';
       const assistantMsg: ChatMessage = {
-        id: crypto.randomUUID(), role: 'assistant', content: data.message, created_at: new Date().toISOString(),
+        id: crypto.randomUUID(), role: 'assistant', content: finalContent, created_at: new Date().toISOString(),
       };
       setMessages(prev => [...prev, assistantMsg]);
 
       if (supabase) {
         supabase.from('ai_conversations').insert({
-          id: assistantMsg.id, user_id: storagePrefix, client_id: null, role: 'assistant', content: data.message,
+          id: assistantMsg.id, user_id: storagePrefix, client_id: null, role: 'assistant', content: finalContent,
         });
       }
     } catch (err: any) {
@@ -230,7 +308,7 @@ const AIBubble: React.FC<AIBubbleProps> = ({
       setSending(false);
       inputRef.current?.focus();
     }
-  }, [inputText, sending, messages, memories, allClients, storagePrefix, clientId, clientName, clientService, clientHandle, clientBio, clientTweets]);
+  }, [inputText, sending, messages, memories, allClients, storagePrefix, clientId, clientName, clientService, clientHandle, clientBio, clientTweets, pageContext]);
 
   const clearChat = useCallback(async () => {
     setMessages([]);

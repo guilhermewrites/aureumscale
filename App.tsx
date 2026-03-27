@@ -72,30 +72,53 @@ const App: React.FC = () => {
 const AIBubbleWithClient: React.FC<{ storagePrefix: string }> = ({ storagePrefix }) => {
   const location = useLocation();
   const [clientInfo, setClientInfo] = React.useState<{ id: string; name: string; service: string; handle: string; bio: string } | null>(null);
+  const [pageContext, setPageContext] = React.useState<Record<string, any> | undefined>(undefined);
 
   React.useEffect(() => {
     const match = location.pathname.match(/^\/clients\/(.+)$/);
-    if (!match) { setClientInfo(null); return; }
+    if (!match) { setClientInfo(null); setPageContext(undefined); return; }
     const clientId = match[1];
     if (!supabase) return;
-    supabase.from('clients').select('id, name, service').eq('id', clientId).eq('user_id', storagePrefix).single()
-      .then(({ data }) => {
-        if (data) {
-          supabase!.from('client_details').select('social_platforms').eq('client_id', clientId).eq('user_id', storagePrefix).single()
-            .then(({ data: det }) => {
-              const socials = det?.social_platforms as any;
-              setClientInfo({
-                id: data.id,
-                name: data.name || '',
-                service: data.service || '',
-                handle: socials?.twitter || '',
-                bio: '',
-              });
-            });
-        } else {
-          setClientInfo(null);
-        }
+
+    // Load full client data for AI context
+    (async () => {
+      const { data: client } = await supabase.from('clients').select('id, name, service, status, payment_status, amount').eq('id', clientId).eq('user_id', storagePrefix).single();
+      if (!client) { setClientInfo(null); setPageContext(undefined); return; }
+
+      const { data: det } = await supabase.from('client_details').select('*').eq('client_id', clientId).eq('user_id', storagePrefix).single();
+      const { data: mems } = await supabase.from('ai_memory').select('id, content, category').eq('user_id', storagePrefix);
+      const { data: tweets } = await supabase.from('client_tweets').select('text').eq('client_id', clientId).eq('user_id', storagePrefix).order('created_at', { ascending: false }).limit(5);
+
+      const socials = (det?.social_platforms as any) || {};
+      const activeTab = localStorage.getItem(`aureum_tab_${clientId}`) || 'Overview';
+
+      setClientInfo({
+        id: client.id,
+        name: client.name || '',
+        service: client.service || '',
+        handle: socials.twitter || '',
+        bio: det?.twitter_bio || '',
       });
+
+      setPageContext({
+        activeTab,
+        clientStatus: client.status || 'Happy',
+        paymentStatus: client.payment_status || 'Pending',
+        amount: client.amount || 0,
+        strategyOverview: det?.strategy_overview || '',
+        funnelNotes: det?.funnel_notes || '',
+        funnelUrl: det?.funnel_url || '',
+        notes: det?.notes || '',
+        adPerformanceNotes: det?.ad_performance_notes || '',
+        contentDrafts: det?.content_drafts || '',
+        scriptedAds: det?.scripted_ads || [],
+        adsPerformance: det?.ads_performance || {},
+        twitterBio: det?.twitter_bio || '',
+        twitterFollowers: det?.twitter_followers || 0,
+        recentTweets: tweets?.map(t => t.text).filter(Boolean).join('\n---\n') || '',
+        memories: mems || [],
+      });
+    })();
   }, [location.pathname, storagePrefix]);
 
   return (
@@ -105,6 +128,8 @@ const AIBubbleWithClient: React.FC<{ storagePrefix: string }> = ({ storagePrefix
       clientName={clientInfo?.name}
       clientService={clientInfo?.service}
       clientHandle={clientInfo?.handle}
+      clientBio={clientInfo?.bio}
+      pageContext={pageContext}
     />
   );
 };
