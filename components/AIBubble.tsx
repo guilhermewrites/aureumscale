@@ -2,6 +2,39 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Send, Trash2, Loader2, Minimize2 } from 'lucide-react';
 import { supabase } from '../services/supabaseClient';
 
+// ── Markdown renderer for assistant messages ──
+function renderInline(text: string): React.ReactNode {
+  const parts: React.ReactNode[] = [];
+  const regex = /\*\*(.+?)\*\*/g;
+  let lastIndex = 0;
+  let match;
+  while ((match = regex.exec(text)) !== null) {
+    if (match.index > lastIndex) parts.push(text.slice(lastIndex, match.index));
+    parts.push(<strong key={match.index} className="font-semibold text-[#ECECEC]">{match[1]}</strong>);
+    lastIndex = regex.lastIndex;
+  }
+  if (lastIndex < text.length) parts.push(text.slice(lastIndex));
+  return parts.length > 0 ? <>{parts}</> : text;
+}
+
+function renderMarkdown(text: string): React.ReactNode {
+  const lines = text.split('\n');
+  const elements: React.ReactNode[] = [];
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    if (line.startsWith('### ')) { elements.push(<h4 key={i} className="font-semibold text-[#ECECEC] mt-1.5 mb-0.5 text-[13px]">{line.slice(4)}</h4>); continue; }
+    if (line.startsWith('## ')) { elements.push(<h3 key={i} className="font-semibold text-[#ECECEC] mt-1.5 mb-0.5 text-[13px]">{line.slice(3)}</h3>); continue; }
+    const bulletMatch = line.match(/^(\s*)[•\-\*]\s+(.*)$/);
+    if (bulletMatch) {
+      elements.push(<div key={i} className="flex gap-1.5 ml-0.5"><span className="text-[#555] flex-shrink-0">{'•'}</span><span>{renderInline(bulletMatch[2])}</span></div>);
+      continue;
+    }
+    if (line.trim() === '') { elements.push(<div key={i} className="h-1.5" />); continue; }
+    elements.push(<p key={i}>{renderInline(line)}</p>);
+  }
+  return <>{elements}</>;
+}
+
 interface ChatMessage {
   id: string;
   role: 'user' | 'assistant';
@@ -438,12 +471,10 @@ const AIBubble: React.FC<AIBubbleProps> = ({
                       borderBottomLeftRadius: msg.role === 'user' ? 16 : 6,
                     }}
                   >
-                    {msg.content.split('\n').map((line, i) => (
-                      <React.Fragment key={i}>
-                        {i > 0 && <br />}
-                        {msg.role === 'user' ? line : renderMessageText(line)}
-                      </React.Fragment>
-                    ))}
+                    {msg.role === 'user'
+                      ? <div className="whitespace-pre-wrap">{msg.content}</div>
+                      : <div className="space-y-0.5">{renderMarkdown(msg.content)}</div>
+                    }
                   </div>
                 </div>
               ))
