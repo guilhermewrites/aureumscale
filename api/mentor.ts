@@ -54,6 +54,11 @@ APP MANAGEMENT:
 - When the user asks you to do something ("book a call", "mark invoice as paid", "update client notes"), just DO IT with the right tool. Don't ask for confirmation unless the action is destructive (like deleting).
 - Always confirm what you did after taking an action.
 
+SELF-SETTINGS:
+- You have a tool called "update_mentor_settings" to update your own personality, custom instructions, tone, and name.
+- Use it when the user tells you to change how you speak, your persona, your tone, or gives you a new identity/role to adopt.
+- When the user says "save this to your settings" or "speak to me like this from now on", use this tool to persist the change.
+
 Current date and time: ${context.currentDateTime}
 Day of week: ${context.dayOfWeek}`;
 
@@ -337,6 +342,20 @@ export default async function handler(req: Request) {
               required: ['invoice_id', 'status'],
             },
           },
+          {
+            name: 'update_mentor_settings',
+            description: 'Update your own settings — personality, custom instructions, tone, or name. Use when the user tells you to change how you behave, speak, or adopt a new persona.',
+            input_schema: {
+              type: 'object',
+              properties: {
+                personality: { type: 'string', enum: ['stoic', 'tough_love', 'strategic', 'gentle', 'motivational'], description: 'Base personality preset (optional)' },
+                custom_personality: { type: 'string', description: 'Custom personality instructions — the full text of how you should behave and speak. This REPLACES the existing custom instructions.' },
+                tone: { type: 'string', enum: ['direct', 'analytical', 'casual', 'formal'], description: 'Communication tone (optional)' },
+                mentor_name: { type: 'string', description: 'Your name (optional)' },
+              },
+              required: [],
+            },
+          },
         ],
       }),
     });
@@ -374,7 +393,7 @@ export default async function handler(req: Request) {
     }
 
     // Check if any tool needs client-side handling (Supabase queries)
-    const CLIENT_SIDE_TOOLS = ['search_knowledge', 'list_clients', 'list_invoices', 'update_client_notes', 'update_client_status', 'update_invoice_status', 'edit_calendar_event', 'delete_calendar_event'];
+    const CLIENT_SIDE_TOOLS = ['search_knowledge', 'list_clients', 'list_invoices', 'update_client_notes', 'update_client_status', 'update_invoice_status', 'edit_calendar_event', 'delete_calendar_event', 'update_mentor_settings'];
     const hasClientSideTool = toolCalls.some(tc => CLIENT_SIDE_TOOLS.includes(tc.name));
 
     if (data.stop_reason === 'tool_use' && toolCalls.length > 0 && !hasClientSideTool) {

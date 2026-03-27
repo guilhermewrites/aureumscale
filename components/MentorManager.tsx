@@ -558,6 +558,16 @@ const MentorManager: React.FC<MentorManagerProps> = ({ storagePrefix }) => {
               await supabase.from('finance_items').update({ status: tool.input.status }).eq('id', tool.input.invoice_id).eq('user_id', storagePrefix);
               results.push({ tool_use_id: tool.id, content: `Updated invoice ${tool.input.invoice_id} status to ${tool.input.status}.` });
 
+            } else if (tool.name === 'update_mentor_settings') {
+              const updates: Partial<MentorProfile> = {};
+              if (tool.input.personality) updates.personality = tool.input.personality;
+              if (tool.input.custom_personality !== undefined) updates.custom_personality = tool.input.custom_personality;
+              if (tool.input.tone) updates.tone = tool.input.tone;
+              if (tool.input.mentor_name) updates.mentor_name = tool.input.mentor_name;
+              const newProfile = { ...profile, ...updates };
+              await saveProfile(newProfile);
+              results.push({ tool_use_id: tool.id, content: `Updated mentor settings: ${Object.keys(updates).join(', ')}.` });
+
             } else {
               results.push({ tool_use_id: tool.id, content: `Unknown tool: ${tool.name}` });
             }
