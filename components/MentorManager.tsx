@@ -475,8 +475,8 @@ const MentorManager: React.FC<MentorManagerProps> = ({ storagePrefix }) => {
     });
 
     try {
-      // Build messages for API (last 40 for better conversation memory)
-      const recentMessages = [...messages.slice(-38), userMsg].map(m => ({
+      // Build messages for API (last 80 for better conversation memory)
+      const recentMessages = [...messages.slice(-78), userMsg].map(m => ({
         role: m.role,
         content: m.content,
       }));
@@ -746,12 +746,15 @@ const MentorManager: React.FC<MentorManagerProps> = ({ storagePrefix }) => {
 
       // Tool loop — keep executing tools and sending results back until Claude responds with text
       let loopMessages = [...recentMessages];
-      let maxLoops = 8; // Safety limit
+      let maxLoops = 10; // Safety limit
       let lastTextMessage = data.message || '';
+      let allToolsSummary: string[] = []; // Track what tools did in case we never get text
 
       while (data.needsFollowUp && data.toolCalls && data.toolCalls.length > 0 && maxLoops > 0) {
         maxLoops--;
+        console.log(`Tool loop iteration ${10 - maxLoops}, executing ${data.toolCalls.length} tools:`, data.toolCalls.map((t: any) => t.name));
         const toolResults = await executeTools(data.toolCalls);
+        allToolsSummary.push(...toolResults.map(r => r.content));
 
         // Build the conversation with assistant's tool calls + our results
         loopMessages = [
@@ -772,20 +775,32 @@ const MentorManager: React.FC<MentorManagerProps> = ({ storagePrefix }) => {
 
           if (!followUpRes.ok) {
             console.error('Follow-up API error:', followUpRes.status);
+            // If we have tool results, use them as the response
+            lastTextMessage = lastTextMessage || allToolsSummary.join('\n');
             break;
           }
 
           data = await followUpRes.json();
+          console.log('Follow-up response:', { message: data.message?.slice(0, 100), needsFollowUp: data.needsFollowUp, toolCalls: data.toolCalls?.length });
           if (data.message) lastTextMessage = data.message;
         } catch (loopErr) {
           console.error('Follow-up fetch error:', loopErr);
+          lastTextMessage = lastTextMessage || allToolsSummary.join('\n');
           break;
         }
       }
 
+      // If we exhausted the loop without getting text, build a summary
+      if (!lastTextMessage && !data.message && allToolsSummary.length > 0) {
+        lastTextMessage = `Done. Here's what I did:\n${allToolsSummary.map(s => `- ${s}`).join('\n')}`;
+      }
+
       // Execute any remaining non-loop tool calls (server-side handled ones)
       if (data.toolCalls && data.toolCalls.length > 0 && !data.needsFollowUp) {
-        await executeTools(data.toolCalls);
+        const finalResults = await executeTools(data.toolCalls);
+        if (!lastTextMessage && !data.message) {
+          lastTextMessage = `Done. Here's what I did:\n${finalResults.map(r => `- ${r.content}`).join('\n')}`;
+        }
       }
 
       // Use the last text message we got from any point in the loop

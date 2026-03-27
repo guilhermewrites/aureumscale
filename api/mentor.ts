@@ -36,8 +36,10 @@ KNOWLEDGE MANAGEMENT:
 - You have a tool called "save_knowledge" to save important information to your knowledge base.
 - Use it when the user says things like "remember this", "add this to knowledge", "note this down", "save this", or shares something important you should remember for future conversations.
 - Also proactively use it when the user shares significant business strategies, personal preferences, frameworks, or routines that would be valuable to reference later.
+- CRITICAL: When the user shares their schedule, routine, content plan, or any structured plan, ALWAYS save it to knowledge immediately. This is the ONLY way you'll remember it in future conversations. The conversation history resets but knowledge persists forever.
 - When you save knowledge, briefly confirm what you saved.
 - Pick an appropriate category: Agency Operations, Sales & Outreach, Scaling, Mindset, Fitness, Nutrition, Productivity, or Other.
+- When the user asks "do you remember X?", ALWAYS search knowledge first before answering.
 
 KNOWLEDGE RETRIEVAL:
 - You have a tool called "search_knowledge" to search your knowledge base for relevant information.
@@ -212,7 +214,7 @@ export default async function handler(req: Request) {
       },
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',
-        max_tokens: 2048,
+        max_tokens: 4096,
         system: systemPrompt,
         messages: messages.map((m: any) => ({
           role: m.role,
