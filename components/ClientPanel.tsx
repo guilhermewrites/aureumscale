@@ -293,6 +293,41 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
     return () => { cancelled = true; };
   }, [client?.id, storagePrefix]);
 
+  // ─── Reload when AI agent writes data ──────────────────────────────────────
+  useEffect(() => {
+    const reload = async () => {
+      if (!supabase || !client) return;
+      const { data } = await supabase.from('client_details').select('*').eq('client_id', client.id).single();
+      if (data) {
+        setDetails(prev => ({
+          ...prev,
+          ads_performance:      data.ads_performance      ?? prev.ads_performance,
+          social_platforms:     data.social_platforms     ?? prev.social_platforms,
+          strategy_overview:    data.strategy_overview    ?? prev.strategy_overview,
+          google_drive_url:     data.google_drive_url     ?? prev.google_drive_url,
+          funnel_notes:         data.funnel_notes         ?? prev.funnel_notes,
+          funnel_url:           data.funnel_url           ?? prev.funnel_url,
+          scripted_ads:         data.scripted_ads         ?? prev.scripted_ads,
+          notes:                data.notes                ?? prev.notes,
+          ad_performance_notes: data.ad_performance_notes ?? prev.ad_performance_notes,
+          contact_email:        data.contact_email        ?? prev.contact_email,
+          client_since:         data.client_since         ?? prev.client_since,
+          twitter_banner_url:   data.twitter_banner_url   ?? prev.twitter_banner_url,
+          twitter_handle:       data.twitter_handle       ?? prev.twitter_handle,
+          twitter_bio:          data.twitter_bio          ?? prev.twitter_bio,
+          twitter_followers:    data.twitter_followers    ?? prev.twitter_followers,
+          twitter_following:    data.twitter_following    ?? prev.twitter_following,
+          content_drafts:       data.content_drafts       ?? prev.content_drafts,
+        }));
+      }
+      // Also reload memories
+      const { data: mems } = await supabase.from('ai_memory').select('*').eq('user_id', storagePrefix).order('created_at', { ascending: true });
+      if (mems) setClientMemories(mems);
+    };
+    window.addEventListener('aureum-data-refresh', reload);
+    return () => window.removeEventListener('aureum-data-refresh', reload);
+  }, [client?.id, storagePrefix]);
+
   // ─── Save ──────────────────────────────────────────────────────────────────
 
   const saveDetails = useCallback(async (next: ClientDetails) => {

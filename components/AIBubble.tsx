@@ -270,12 +270,17 @@ const AIBubble: React.FC<AIBubbleProps> = ({
       let lastTextMessage = data.message || '';
       let loopMessages = apiMessages;
       let maxLoops = 5;
+      let toolsExecuted = false;
+
+      console.log('[AIBubble] Initial response:', { message: data.message?.slice(0, 80), needsFollowUp: data.needsFollowUp, toolCalls: data.toolCalls?.length });
 
       while (data.needsFollowUp && data.toolCalls && data.toolCalls.length > 0 && maxLoops > 0) {
         maxLoops--;
+        toolsExecuted = true;
         const toolResults: { tool_use_id: string; content: string }[] = [];
 
         for (const tool of data.toolCalls) {
+          console.log('[AIBubble] Executing tool:', tool.name, tool.input);
           try {
             if (tool.name === 'update_memory' && supabase) {
               // Add or update a memory entry (Audience, Content Rules, Examples, etc.)
@@ -369,6 +374,12 @@ const AIBubble: React.FC<AIBubbleProps> = ({
           lastTextMessage = lastTextMessage || toolResults.map(r => r.content).join('. ');
           break;
         }
+      }
+
+      // If tools were executed, notify ClientPanel to reload data
+      if (toolsExecuted) {
+        console.log('[AIBubble] Tools executed — dispatching refresh event');
+        window.dispatchEvent(new CustomEvent('aureum-data-refresh'));
       }
 
       const finalContent = lastTextMessage || data.message || 'Done.';
