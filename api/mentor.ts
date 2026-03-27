@@ -47,12 +47,15 @@ KNOWLEDGE RETRIEVAL:
 - Only the 5 most recent entries are shown by default. Everything else requires a search.
 
 APP MANAGEMENT:
-- You have FULL control over the user's Aureum app. You can manage their calendar, clients, and finances.
+- You have FULL control over the user's Aureum app. You can manage their calendar, clients, finances, goals, and task board.
 - Calendar: add_calendar_event, edit_calendar_event, delete_calendar_event
+- Goals: add_goal (add a goal to a life area), complete_goal (toggle completion), delete_goal, add_life_area (create new life area)
+- Task Board: add_board_task (create a Kanban task card), list_board_tasks (view all tasks)
 - Clients: list_clients (to see all clients), update_client_notes (to update a client's notes/details), update_client_status (to change happy/moderate/frustrated)
 - Finance: list_invoices (to see financial data), update_invoice_status (to mark paid/pending/overdue)
-- When the user asks you to do something ("book a call", "mark invoice as paid", "update client notes"), just DO IT with the right tool. Don't ask for confirmation unless the action is destructive (like deleting).
+- When the user asks you to do something ("book a call", "mark invoice as paid", "add a goal", "create a task"), just DO IT with the right tool. Don't ask for confirmation unless the action is destructive (like deleting).
 - Always confirm what you did after taking an action.
+- When adding goals, ALWAYS use add_goal with the correct life_area_id from the user's life areas listed above. If the life area doesn't exist yet, create it first with add_life_area.
 
 SELF-SETTINGS:
 - You have a tool called "update_mentor_settings" to update your own personality, custom instructions, tone, and name.
@@ -65,11 +68,12 @@ Day of week: ${context.dayOfWeek}`;
   // Life areas and goals
   if (context.lifeAreas && context.lifeAreas.length > 0) {
     prompt += `\n\n--- USER'S LIFE AREAS & GOALS ---`;
+    prompt += `\nIMPORTANT: Use these exact IDs when calling add_goal, complete_goal, delete_goal.`;
     for (const area of context.lifeAreas) {
-      prompt += `\n\n**${area.name}** (Priority: ${area.priority || 'medium'})`;
+      prompt += `\n\n**${area.name}** (ID: ${area.id}, Priority: ${area.priority || 'medium'})`;
       if (area.goals && area.goals.length > 0) {
         for (const goal of area.goals) {
-          prompt += `\n- ${goal.completed ? '✅' : '⬜'} ${goal.text}${goal.deadline ? ` (deadline: ${goal.deadline})` : ''}`;
+          prompt += `\n- ${goal.completed ? '✅' : '⬜'} ${goal.text} (Goal ID: ${goal.id})${goal.deadline ? ` (deadline: ${goal.deadline})` : ''}`;
         }
       }
     }
@@ -343,6 +347,81 @@ export default async function handler(req: Request) {
             },
           },
           {
+            name: 'add_goal',
+            description: 'Add a goal to one of the user\'s life areas (e.g. Business, Fitness, Health). Use when the user asks to set a goal, add a target, or create an objective. You MUST use a valid life_area_id from the user\'s current life areas.',
+            input_schema: {
+              type: 'object',
+              properties: {
+                life_area_id: { type: 'string', description: 'The ID of the life area to add the goal to (from the user\'s life areas list)' },
+                text: { type: 'string', description: 'The goal text/description' },
+                deadline: { type: 'string', description: 'Optional deadline in YYYY-MM-DD format' },
+              },
+              required: ['life_area_id', 'text'],
+            },
+          },
+          {
+            name: 'complete_goal',
+            description: 'Toggle a goal as completed or uncompleted.',
+            input_schema: {
+              type: 'object',
+              properties: {
+                life_area_id: { type: 'string', description: 'The life area ID' },
+                goal_id: { type: 'string', description: 'The goal ID to toggle' },
+              },
+              required: ['life_area_id', 'goal_id'],
+            },
+          },
+          {
+            name: 'delete_goal',
+            description: 'Delete a goal from a life area.',
+            input_schema: {
+              type: 'object',
+              properties: {
+                life_area_id: { type: 'string', description: 'The life area ID' },
+                goal_id: { type: 'string', description: 'The goal ID to delete' },
+              },
+              required: ['life_area_id', 'goal_id'],
+            },
+          },
+          {
+            name: 'add_life_area',
+            description: 'Create a new life area for organizing goals. Use when the user mentions a life category that doesn\'t exist yet.',
+            input_schema: {
+              type: 'object',
+              properties: {
+                name: { type: 'string', description: 'Name of the life area (e.g. "Relationships", "Finance", "Spirituality")' },
+                priority: { type: 'string', enum: ['high', 'medium', 'low'], description: 'Priority level (default: medium)' },
+              },
+              required: ['name'],
+            },
+          },
+          {
+            name: 'add_board_task',
+            description: 'Create a task card on the Kanban board in the Clients section. Use when the user asks to create a task, add work to do for a client, or track revenue-generating work.',
+            input_schema: {
+              type: 'object',
+              properties: {
+                title: { type: 'string', description: 'Task title' },
+                description: { type: 'string', description: 'Task description (optional)' },
+                client_name: { type: 'string', description: 'Client name to assign (optional)' },
+                status: { type: 'string', enum: ['Lead', 'Proposal', 'Onboarding', 'In Progress', 'Review', 'Complete'], description: 'Kanban column (default: Lead)' },
+                estimated_revenue: { type: 'number', description: 'Estimated revenue in dollars (optional)' },
+              },
+              required: ['title'],
+            },
+          },
+          {
+            name: 'list_board_tasks',
+            description: 'List all tasks on the Kanban board. Returns task titles, statuses, clients, and estimated revenue.',
+            input_schema: {
+              type: 'object',
+              properties: {
+                status: { type: 'string', enum: ['Lead', 'Proposal', 'Onboarding', 'In Progress', 'Review', 'Complete'], description: 'Optional: filter by status column' },
+              },
+              required: [],
+            },
+          },
+          {
             name: 'update_mentor_settings',
             description: 'Update your own settings — personality, custom instructions, tone, or name. Use when the user tells you to change how you behave, speak, or adopt a new persona.',
             input_schema: {
@@ -393,7 +472,7 @@ export default async function handler(req: Request) {
     }
 
     // Check if any tool needs client-side handling (Supabase queries)
-    const CLIENT_SIDE_TOOLS = ['search_knowledge', 'list_clients', 'list_invoices', 'update_client_notes', 'update_client_status', 'update_invoice_status', 'edit_calendar_event', 'delete_calendar_event', 'update_mentor_settings'];
+    const CLIENT_SIDE_TOOLS = ['search_knowledge', 'list_clients', 'list_invoices', 'update_client_notes', 'update_client_status', 'update_invoice_status', 'edit_calendar_event', 'delete_calendar_event', 'update_mentor_settings', 'add_goal', 'complete_goal', 'delete_goal', 'add_life_area', 'add_board_task', 'list_board_tasks'];
     const hasClientSideTool = toolCalls.some(tc => CLIENT_SIDE_TOOLS.includes(tc.name));
 
     if (data.stop_reason === 'tool_use' && toolCalls.length > 0 && !hasClientSideTool) {

@@ -558,6 +558,87 @@ const MentorManager: React.FC<MentorManagerProps> = ({ storagePrefix }) => {
               await supabase.from('finance_items').update({ status: tool.input.status }).eq('id', tool.input.invoice_id).eq('user_id', storagePrefix);
               results.push({ tool_use_id: tool.id, content: `Updated invoice ${tool.input.invoice_id} status to ${tool.input.status}.` });
 
+            } else if (tool.name === 'add_goal') {
+              const updated = { ...profile };
+              const area = updated.life_areas.find(a => a.id === tool.input.life_area_id);
+              if (!area) {
+                results.push({ tool_use_id: tool.id, content: `Life area with ID "${tool.input.life_area_id}" not found. Available areas: ${updated.life_areas.map(a => `${a.name} (ID: ${a.id})`).join(', ')}` });
+              } else {
+                const goalId = genId();
+                area.goals.push({
+                  id: goalId,
+                  text: tool.input.text,
+                  deadline: tool.input.deadline || '',
+                  completed: false,
+                });
+                await saveProfile(updated);
+                results.push({ tool_use_id: tool.id, content: `Added goal "${tool.input.text}" to ${area.name}.` });
+              }
+
+            } else if (tool.name === 'complete_goal') {
+              const updated = { ...profile };
+              const area = updated.life_areas.find(a => a.id === tool.input.life_area_id);
+              const goal = area?.goals.find(g => g.id === tool.input.goal_id);
+              if (!goal) {
+                results.push({ tool_use_id: tool.id, content: `Goal not found.` });
+              } else {
+                goal.completed = !goal.completed;
+                await saveProfile(updated);
+                results.push({ tool_use_id: tool.id, content: `Marked goal "${goal.text}" as ${goal.completed ? 'completed' : 'incomplete'}.` });
+              }
+
+            } else if (tool.name === 'delete_goal') {
+              const updated = { ...profile };
+              const area = updated.life_areas.find(a => a.id === tool.input.life_area_id);
+              if (area) {
+                const goal = area.goals.find(g => g.id === tool.input.goal_id);
+                area.goals = area.goals.filter(g => g.id !== tool.input.goal_id);
+                await saveProfile(updated);
+                results.push({ tool_use_id: tool.id, content: `Deleted goal "${goal?.text || tool.input.goal_id}".` });
+              } else {
+                results.push({ tool_use_id: tool.id, content: `Life area not found.` });
+              }
+
+            } else if (tool.name === 'add_life_area') {
+              const updated = { ...profile };
+              const newArea = {
+                id: genId(),
+                name: tool.input.name,
+                priority: (tool.input.priority || 'medium') as 'high' | 'medium' | 'low',
+                goals: [],
+              };
+              updated.life_areas.push(newArea);
+              await saveProfile(updated);
+              results.push({ tool_use_id: tool.id, content: `Created life area "${tool.input.name}" (ID: ${newArea.id}).` });
+
+            } else if (tool.name === 'add_board_task') {
+              const taskId = crypto.randomUUID();
+              const { data: existing } = await supabase.from('board_tasks').select('id').eq('user_id', storagePrefix).eq('status', tool.input.status || 'Lead');
+              const orderNum = existing?.length || 0;
+              await supabase.from('board_tasks').insert({
+                id: taskId,
+                user_id: storagePrefix,
+                title: tool.input.title,
+                description: tool.input.description || '',
+                client_id: '',
+                client_name: tool.input.client_name || '',
+                status: tool.input.status || 'Lead',
+                estimated_revenue: tool.input.estimated_revenue || 0,
+                order_num: orderNum,
+              });
+              results.push({ tool_use_id: tool.id, content: `Created board task "${tool.input.title}" in ${tool.input.status || 'Lead'} column${tool.input.estimated_revenue ? ` ($${tool.input.estimated_revenue})` : ''}.` });
+
+            } else if (tool.name === 'list_board_tasks') {
+              let q = supabase.from('board_tasks').select('*').eq('user_id', storagePrefix);
+              if (tool.input.status) q = q.eq('status', tool.input.status);
+              const { data: boardTasks } = await q.order('status').order('order_num');
+              if (!boardTasks || boardTasks.length === 0) {
+                results.push({ tool_use_id: tool.id, content: `No board tasks found${tool.input.status ? ` in "${tool.input.status}" column` : ''}.` });
+              } else {
+                const formatted = boardTasks.map(t => `- [${t.status}] ${t.title}${t.client_name ? ` (${t.client_name})` : ''}${t.estimated_revenue > 0 ? ` — $${t.estimated_revenue}` : ''}`).join('\n');
+                results.push({ tool_use_id: tool.id, content: `${boardTasks.length} tasks:\n${formatted}` });
+              }
+
             } else if (tool.name === 'update_mentor_settings') {
               const updates: Partial<MentorProfile> = {};
               if (tool.input.personality) updates.personality = tool.input.personality;
