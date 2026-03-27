@@ -56,11 +56,13 @@ IMPORTANT RULES:
 - Keep responses under 300 words unless the user asks for detail.
 
 TOOLS — USE THEM PROACTIVELY:
+- add_journal_entry: Add a tweet, post idea, or content draft to the Content Journal (Content tab)
 - update_memory: Write or update entries in the client's AI memory (Audience, Tone & Voice, Content Rules, Examples, Other Context sections)
 - add_memory: Add a new entry to a memory category
 - update_client_detail: Update a client field (strategy_overview, funnel_notes, notes, ad_performance_notes, content_drafts)
 - add_scripted_ad: Add a new scripted ad to the Scripts section
 
+When the user says "write a tweet" or "push to content journal" — use add_journal_entry immediately.
 When the user says "add this to audience" or "write content rules" or "add examples" — use the tools immediately. Don't ask for confirmation.
 When the user says "help me work on it" — look at the current page content and start writing/improving it directly.`;
 
@@ -158,6 +160,17 @@ When the user says "help me work on it" — look at the current page content and
             value: { type: 'string', description: 'The new value' },
           },
           required: ['field', 'value'],
+        },
+      },
+      {
+        name: 'add_journal_entry',
+        description: 'Add a new entry to the Content Journal on the Content tab. Use this when the user asks to write a tweet, post idea, content draft, or push anything to the content journal. Each call adds one entry.',
+        input_schema: {
+          type: 'object',
+          properties: {
+            content: { type: 'string', description: 'The content/tweet/idea to add to the journal' },
+          },
+          required: ['content'],
         },
       },
       {

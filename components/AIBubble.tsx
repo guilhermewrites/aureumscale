@@ -304,6 +304,14 @@ const AIBubble: React.FC<AIBubbleProps> = ({
                 toolResults.push({ tool_use_id: tool.id, content: `Cannot update field "${field}" — not allowed.` });
               }
 
+            } else if (tool.name === 'add_journal_entry' && supabase && clientId) {
+              // Content Journal uses ad_performance_notes, entries separated by \n---\n
+              const { data: det } = await supabase.from('client_details').select('ad_performance_notes').eq('client_id', clientId).eq('user_id', storagePrefix).single();
+              const existing = det?.ad_performance_notes || '';
+              const newVal = existing ? `${existing}\n---\n${tool.input.content}` : tool.input.content;
+              await supabase.from('client_details').update({ ad_performance_notes: newVal }).eq('client_id', clientId).eq('user_id', storagePrefix);
+              toolResults.push({ tool_use_id: tool.id, content: `Added to Content Journal: "${tool.input.content.slice(0, 60)}..."` });
+
             } else if (tool.name === 'add_scripted_ad' && supabase && clientId) {
               const { data: det } = await supabase.from('client_details').select('scripted_ads').eq('client_id', clientId).eq('user_id', storagePrefix).single();
               const ads = det?.scripted_ads || [];
