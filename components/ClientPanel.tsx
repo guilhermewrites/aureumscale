@@ -210,6 +210,9 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
   const [tweetsLoading, setTweetsLoading] = useState(false);
   const [journalSelection, setJournalSelection] = useState<{ text: string; x: number; y: number; start: number; end: number } | null>(null);
   const [deleteConfirmTweet, setDeleteConfirmTweet] = useState<string | null>(null);
+  const [dragTweetId, setDragTweetId] = useState<string | null>(null);
+  const [dragOverTweetId, setDragOverTweetId] = useState<string | null>(null);
+  const journalMousePos = useRef<{ x: number; y: number } | null>(null);
   const tweetDebounceRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
   const tweetImageRef = useRef<HTMLInputElement>(null);
   const photoInputRef = useRef<HTMLInputElement>(null);
@@ -454,6 +457,7 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
         .select('*')
         .eq('client_id', client.id)
         .eq('user_id', storagePrefix)
+        .order('sort_order', { ascending: true, nullsFirst: false })
         .order('post_date', { ascending: true });
       if (cancelled) return;
       if (!error && data) {
@@ -1134,7 +1138,38 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
                 ) : (
                   <div>
                     {tweets.map(tw => (
-                      <div key={tw.id} className="border-b transition-colors hover:bg-[rgba(231,233,234,0.03)]" style={{ borderColor: '#2f3336' }}>
+                      <div
+                        key={tw.id}
+                        draggable
+                        onDragStart={e => { setDragTweetId(tw.id); e.dataTransfer.effectAllowed = 'move'; }}
+                        onDragOver={e => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; setDragOverTweetId(tw.id); }}
+                        onDragLeave={() => setDragOverTweetId(null)}
+                        onDrop={e => {
+                          e.preventDefault();
+                          if (!dragTweetId || dragTweetId === tw.id) { setDragTweetId(null); setDragOverTweetId(null); return; }
+                          setTweets(prev => {
+                            const dragged = prev.find(t => t.id === dragTweetId);
+                            if (!dragged) return prev;
+                            const without = prev.filter(t => t.id !== dragTweetId);
+                            const targetIdx = without.findIndex(t => t.id === tw.id);
+                            without.splice(targetIdx, 0, dragged);
+                            // Persist new order: update post_date so the order sticks
+                            if (supabase && client) {
+                              without.forEach((t, i) => {
+                                supabase.from('client_tweets').update({ sort_order: i }).eq('id', t.id).eq('client_id', client.id);
+                              });
+                            }
+                            return without;
+                          });
+                          setDragTweetId(null); setDragOverTweetId(null);
+                        }}
+                        onDragEnd={() => { setDragTweetId(null); setDragOverTweetId(null); }}
+                        className="border-b transition-colors hover:bg-[rgba(231,233,234,0.03)] cursor-grab active:cursor-grabbing"
+                        style={{
+                          borderColor: '#2f3336',
+                          borderTop: dragOverTweetId === tw.id && dragTweetId !== tw.id ? '2px solid #1d9bf0' : undefined,
+                          opacity: dragTweetId === tw.id ? 0.4 : 1,
+                        }}>
                         <div className="flex gap-3 px-4 pt-3 pb-1">
                           {/* Avatar */}
                           <div className="flex-shrink-0">
@@ -1613,14 +1648,15 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
                 <textarea
                   value={details.ad_performance_notes || ''}
                   onChange={e => setField('ad_performance_notes', e.target.value)}
-                  onMouseUp={e => {
+                  onMouseMove={e => { journalMousePos.current = { x: e.clientX, y: e.clientY }; }}
+                  onSelect={e => {
                     const ta = e.target as HTMLTextAreaElement;
                     const selected = ta.value.substring(ta.selectionStart, ta.selectionEnd).trim();
                     if (selected.length > 3) {
+                      // Use last known mouse position for popup placement
                       const rect = ta.getBoundingClientRect();
-                      // Position popup near the mouse
-                      const popupX = Math.min(e.clientX - rect.left, rect.width - 140);
-                      const popupY = e.clientY - rect.top - 40;
+                      const popupX = Math.min((journalMousePos.current?.x ?? rect.width / 2) - rect.left, rect.width - 140);
+                      const popupY = (journalMousePos.current?.y ?? rect.height / 2) - rect.top - 40;
                       setJournalSelection({ text: selected, x: popupX, y: popupY, start: ta.selectionStart, end: ta.selectionEnd });
                     } else {
                       setJournalSelection(null);
