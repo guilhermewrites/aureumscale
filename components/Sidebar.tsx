@@ -19,6 +19,7 @@ import {
   ExternalLink,
   Globe,
   CalendarDays,
+  Brain,
 } from 'lucide-react';
 import { NavigationItem, AppUser } from '../types';
 import useLocalStorage from '../hooks/useLocalStorage';
@@ -38,6 +39,7 @@ const navToRoute: Record<string, string> = {
   [NavigationItem.GENERAL_ROOM]: '/general-room',
   [NavigationItem.ARNAS_GINTALAS]: '/arnas-gintalas',
   [NavigationItem.CALENDAR]: '/calendar',
+  [NavigationItem.MENTOR]: '/mentor',
 };
 
 const routeToNavItem: Record<string, NavigationItem> = {
@@ -51,6 +53,7 @@ const routeToNavItem: Record<string, NavigationItem> = {
   '/general-room': NavigationItem.GENERAL_ROOM,
   '/arnas-gintalas': NavigationItem.ARNAS_GINTALAS,
   '/calendar': NavigationItem.CALENDAR,
+  '/mentor': NavigationItem.MENTOR,
 };
 
 // Brand SVG icons for resources
@@ -209,6 +212,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeUserId, onUserChange, collapsed
     { id: NavigationItem.FINANCE, icon: DollarSign, label: 'Finance' },
     { id: NavigationItem.BRANDING, icon: Megaphone, label: 'Branding' },
     { id: NavigationItem.CALENDAR, icon: CalendarDays, label: 'Calendar' },
+    { id: NavigationItem.MENTOR, icon: Brain, label: 'Mentor' },
   ];
 
   const funnelItems = [

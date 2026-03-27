@@ -51,6 +51,7 @@ export enum NavigationItem {
   GENERAL_ROOM = 'General Room',
   ARNAS_GINTALAS = 'Arnas Gintalas',
   CALENDAR = 'Calendar',
+  MENTOR = 'Mentor',
   // Legacy (kept to avoid breaking existing data)
   PLANNER = 'Planner',
   CONTENT = 'Content',
