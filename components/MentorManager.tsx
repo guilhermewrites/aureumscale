@@ -457,6 +457,34 @@ const MentorManager: React.FC<MentorManagerProps> = ({ storagePrefix }) => {
       const data = await res.json();
       const assistantContent = data.message || data.error || 'No response.';
 
+      // Handle tool calls (save_knowledge, add_calendar_event)
+      if (data.toolCalls && data.toolCalls.length > 0) {
+        for (const tool of data.toolCalls) {
+          if (tool.name === 'save_knowledge') {
+            const entry = {
+              user_id: storagePrefix,
+              category: tool.input.category || 'Other',
+              title: tool.input.title || 'Untitled',
+              content: tool.input.content || '',
+              source: 'Mentor AI',
+            };
+            const { data: saved } = await supabase.from('mentor_knowledge').insert(entry).select().single();
+            if (saved) setKnowledge(prev => [saved, ...prev]);
+          } else if (tool.name === 'add_calendar_event') {
+            await supabase.from('calendar_events').insert({
+              user_id: storagePrefix,
+              date: tool.input.date,
+              title: tool.input.title,
+              start_time: tool.input.start_time,
+              end_time: tool.input.end_time,
+              notes: tool.input.notes || '',
+              color: '#2a2a2a',
+            });
+            loadCalendarEvents();
+          }
+        }
+      }
+
       const assistantMsg: ChatMessage = {
         id: genId(),
         role: 'assistant',

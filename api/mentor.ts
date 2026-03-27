@@ -32,6 +32,13 @@ IMPORTANT RULES:
 - Format responses cleanly with line breaks. Use bullet points for lists.
 - Keep responses under 300 words unless the user asks for detail.
 
+KNOWLEDGE MANAGEMENT:
+- You have a tool called "save_knowledge" to save important information to your knowledge base.
+- Use it when the user says things like "remember this", "add this to knowledge", "note this down", "save this", or shares something important you should remember for future conversations.
+- Also proactively use it when the user shares significant business strategies, personal preferences, frameworks, or routines that would be valuable to reference later.
+- When you save knowledge, briefly confirm what you saved.
+- Pick an appropriate category: Agency Operations, Sales & Outreach, Scaling, Mindset, Fitness, Nutrition, Productivity, or Other.
+
 Current date and time: ${context.currentDateTime}
 Day of week: ${context.dayOfWeek}`;
 
@@ -156,6 +163,61 @@ export default async function handler(req: Request) {
           role: m.role,
           content: m.content,
         })),
+        tools: [
+          {
+            name: 'save_knowledge',
+            description: 'Save important information to the knowledge base so you can reference it in future conversations. Use this when the user asks you to remember something, or when they share valuable business strategies, personal preferences, frameworks, or routines.',
+            input_schema: {
+              type: 'object',
+              properties: {
+                category: {
+                  type: 'string',
+                  enum: ['Agency Operations', 'Sales & Outreach', 'Scaling', 'Mindset', 'Fitness', 'Nutrition', 'Productivity', 'Other'],
+                  description: 'The category for this knowledge entry',
+                },
+                title: {
+                  type: 'string',
+                  description: 'A short descriptive title for this knowledge entry',
+                },
+                content: {
+                  type: 'string',
+                  description: 'The actual knowledge content to save',
+                },
+              },
+              required: ['category', 'title', 'content'],
+            },
+          },
+          {
+            name: 'add_calendar_event',
+            description: 'Add an event to the user\'s calendar. Use when they ask to schedule something, block time, or set a reminder.',
+            input_schema: {
+              type: 'object',
+              properties: {
+                date: {
+                  type: 'string',
+                  description: 'Event date in YYYY-MM-DD format',
+                },
+                title: {
+                  type: 'string',
+                  description: 'Event title',
+                },
+                start_time: {
+                  type: 'string',
+                  description: 'Start time in HH:MM format (24h)',
+                },
+                end_time: {
+                  type: 'string',
+                  description: 'End time in HH:MM format (24h)',
+                },
+                notes: {
+                  type: 'string',
+                  description: 'Optional notes for the event',
+                },
+              },
+              required: ['date', 'title', 'start_time', 'end_time'],
+            },
+          },
+        ],
       }),
     });
 
@@ -174,9 +236,27 @@ export default async function handler(req: Request) {
     }
 
     const data = await response.json();
-    const assistantMessage = data.content?.[0]?.text || 'No response generated.';
 
-    return new Response(JSON.stringify({ message: assistantMessage }), {
+    // Extract text and tool calls from response
+    let assistantMessage = '';
+    const toolCalls: any[] = [];
+
+    for (const block of (data.content || [])) {
+      if (block.type === 'text') {
+        assistantMessage += block.text;
+      } else if (block.type === 'tool_use') {
+        toolCalls.push({
+          name: block.name,
+          input: block.input,
+        });
+      }
+    }
+
+    if (!assistantMessage && toolCalls.length === 0) {
+      assistantMessage = 'No response generated.';
+    }
+
+    return new Response(JSON.stringify({ message: assistantMessage, toolCalls }), {
       status: 200,
       headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
     });
