@@ -146,6 +146,73 @@ function formatTime(dateStr: string) {
   return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
 
+// ── Simple Markdown renderer ──
+
+function renderMarkdown(text: string): React.ReactNode {
+  const lines = text.split('\n');
+  const elements: React.ReactNode[] = [];
+
+  for (let i = 0; i < lines.length; i++) {
+    let line = lines[i];
+
+    // Headings (optional)
+    if (line.startsWith('### ')) {
+      elements.push(<h4 key={i} className="font-semibold text-[#ECECEC] mt-2 mb-1">{line.slice(4)}</h4>);
+      continue;
+    }
+    if (line.startsWith('## ')) {
+      elements.push(<h3 key={i} className="font-semibold text-[#ECECEC] mt-2 mb-1">{line.slice(3)}</h3>);
+      continue;
+    }
+
+    // Bullet points
+    const bulletMatch = line.match(/^(\s*)[•\-\*]\s+(.*)$/);
+    if (bulletMatch) {
+      const content = bulletMatch[2];
+      elements.push(
+        <div key={i} className="flex gap-2 ml-1">
+          <span className="text-[#555] flex-shrink-0 mt-0.5">{'•'}</span>
+          <span>{renderInline(content)}</span>
+        </div>
+      );
+      continue;
+    }
+
+    // Empty line = spacing
+    if (line.trim() === '') {
+      elements.push(<div key={i} className="h-2" />);
+      continue;
+    }
+
+    // Regular paragraph
+    elements.push(<p key={i}>{renderInline(line)}</p>);
+  }
+
+  return <>{elements}</>;
+}
+
+function renderInline(text: string): React.ReactNode {
+  // Bold **text** and bullet-proof
+  const parts: React.ReactNode[] = [];
+  const regex = /\*\*(.+?)\*\*/g;
+  let lastIndex = 0;
+  let match;
+
+  while ((match = regex.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      parts.push(text.slice(lastIndex, match.index));
+    }
+    parts.push(<strong key={match.index} className="font-semibold text-[#ECECEC]">{match[1]}</strong>);
+    lastIndex = regex.lastIndex;
+  }
+
+  if (lastIndex < text.length) {
+    parts.push(text.slice(lastIndex));
+  }
+
+  return parts.length === 1 ? parts[0] : <>{parts}</>;
+}
+
 // ── Component ──
 
 interface MentorManagerProps {
@@ -154,6 +221,14 @@ interface MentorManagerProps {
 
 const MentorManager: React.FC<MentorManagerProps> = ({ storagePrefix }) => {
   const [activeTab, setActiveTab] = useState<'today' | 'goals' | 'knowledge' | 'settings'>('today');
+
+  // User photo from localStorage
+  const userPhoto = useMemo(() => {
+    try {
+      const users = JSON.parse(localStorage.getItem('writestakeover_users') || '[]');
+      return users[0]?.photoUrl || null;
+    } catch { return null; }
+  }, []);
 
   // Profile
   const [profile, setProfile] = useState<MentorProfile>(DEFAULT_PROFILE);
@@ -626,21 +701,40 @@ const MentorManager: React.FC<MentorManagerProps> = ({ storagePrefix }) => {
               )}
 
               {messages.map(msg => (
-                <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                <div key={msg.id} className={`flex items-end gap-2.5 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                  {/* Mentor avatar */}
+                  {msg.role === 'assistant' && (
+                    <div className="w-7 h-7 rounded-full bg-[#252525] border border-[#2a2a2a] flex items-center justify-center flex-shrink-0">
+                      <Brain size={14} className="text-[#888]" />
+                    </div>
+                  )}
                   <div
-                    className={`max-w-[80%] rounded-xl px-4 py-3 text-sm leading-relaxed ${
+                    className={`max-w-[78%] rounded-xl px-4 py-3 text-sm leading-relaxed ${
                       msg.role === 'user'
                         ? 'bg-[#252525] text-[#ECECEC]'
                         : 'bg-[#171717] text-[#CDCDCD] border border-[#2a2a2a]'
                     }`}
                   >
-                    <div className="whitespace-pre-wrap">{msg.content}</div>
+                    {msg.role === 'assistant' ? renderMarkdown(msg.content) : <div className="whitespace-pre-wrap">{msg.content}</div>}
                   </div>
+                  {/* User avatar */}
+                  {msg.role === 'user' && (
+                    userPhoto ? (
+                      <img src={userPhoto} alt="You" className="w-7 h-7 rounded-full object-cover flex-shrink-0" />
+                    ) : (
+                      <div className="w-7 h-7 rounded-full bg-emerald-500 flex items-center justify-center flex-shrink-0 text-[10px] font-bold text-white">
+                        GU
+                      </div>
+                    )
+                  )}
                 </div>
               ))}
 
               {isLoading && (
-                <div className="flex justify-start">
+                <div className="flex items-end gap-2.5 justify-start">
+                  <div className="w-7 h-7 rounded-full bg-[#252525] border border-[#2a2a2a] flex items-center justify-center flex-shrink-0">
+                    <Brain size={14} className="text-[#888]" />
+                  </div>
                   <div className="bg-[#171717] border border-[#2a2a2a] rounded-xl px-4 py-3">
                     <div className="flex gap-1.5">
                       <div className="w-1.5 h-1.5 bg-[#555] rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
