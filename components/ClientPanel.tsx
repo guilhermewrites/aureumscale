@@ -486,9 +486,11 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
   const addTweet = useCallback(async () => {
     if (!supabase || !client) return;
     const eng = randEngagement();
-    const tw: Tweet = { id: crypto.randomUUID(), text: '', post_date: '', image_url: '', ...eng };
+    const tw: Tweet = { id: crypto.randomUUID(), text: '', post_date: new Date().toISOString().split('T')[0], image_url: '', ...eng };
     setTweets(prev => [tw, ...prev]);
-    await supabase.from('client_tweets').insert({ ...tw, client_id: client.id, user_id: storagePrefix });
+    const { error } = await supabase.from('client_tweets').insert({ ...tw, client_id: client.id, user_id: storagePrefix });
+    if (error) console.error('❌ TWEET INSERT FAILED:', error.message, error.details, error.hint);
+    else console.log('✅ Tweet saved to Supabase:', tw.id);
   }, [client, storagePrefix]);
 
   const updateTweet = useCallback((id: string, patch: Partial<Tweet>) => {
@@ -505,13 +507,17 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
       if ('retweets' in patch) dbPatch.retweets = patch.retweets;
       if ('replies' in patch) dbPatch.replies = patch.replies;
       if ('views' in patch) dbPatch.views = patch.views;
-      await supabase.from('client_tweets').update(dbPatch).eq('id', id);
+      const { error } = await supabase.from('client_tweets').update(dbPatch).eq('id', id);
+      if (error) console.error('❌ TWEET UPDATE FAILED:', id, error.message);
     }, 600);
   }, []);
 
   const deleteTweet = useCallback(async (id: string) => {
     setTweets(prev => prev.filter(t => t.id !== id));
-    if (supabase) await supabase.from('client_tweets').delete().eq('id', id);
+    if (supabase) {
+      const { error } = await supabase.from('client_tweets').delete().eq('id', id);
+      if (error) console.error('❌ TWEET DELETE FAILED:', id, error.message);
+    }
   }, []);
 
   const uploadTweetImage = useCallback(async (tweetId: string, file: File) => {
