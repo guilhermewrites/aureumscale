@@ -601,7 +601,7 @@ const MentorManager: React.FC<MentorManagerProps> = ({ storagePrefix }) => {
   }, []);
 
   const tabs = [
-    { id: 'today' as const, label: 'Today', icon: Sparkles },
+    { id: 'today' as const, label: 'Chat', icon: Sparkles },
     { id: 'goals' as const, label: 'Goals', icon: Target },
     { id: 'knowledge' as const, label: 'Knowledge', icon: BookOpen },
     { id: 'settings' as const, label: 'Settings', icon: Settings },
