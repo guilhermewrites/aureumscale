@@ -208,6 +208,8 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
   interface Tweet { id: string; text: string; post_date: string; image_url: string; likes: number; retweets: number; replies: number; views: number; }
   const [tweets, setTweets] = useState<Tweet[]>([]);
   const [tweetsLoading, setTweetsLoading] = useState(false);
+  const [journalSelection, setJournalSelection] = useState<{ text: string; x: number; y: number; start: number; end: number } | null>(null);
+  const [deleteConfirmTweet, setDeleteConfirmTweet] = useState<string | null>(null);
   const tweetDebounceRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
   const tweetImageRef = useRef<HTMLInputElement>(null);
   const photoInputRef = useRef<HTMLInputElement>(null);
@@ -1173,14 +1175,41 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
                                 return <span className="text-[11px] font-medium px-1.5 py-0.5 rounded-full flex-shrink-0" style={{ color, background: diff < 0 ? 'rgba(244,33,46,0.1)' : 'rgba(29,155,240,0.1)' }}>{label}</span>;
                               })()}
                               <div className="flex-1" />
-                              {/* More menu (delete) */}
-                              <button
-                                onClick={() => deleteTweet(tw.id)}
-                                className="p-1.5 -mr-1.5 rounded-full transition-colors"
-                                style={{ color: '#71767b' }}
-                                onMouseEnter={e => { e.currentTarget.style.color = '#1d9bf0'; e.currentTarget.style.background = 'rgba(29,155,240,0.1)'; }}
-                                onMouseLeave={e => { e.currentTarget.style.color = '#71767b'; e.currentTarget.style.background = 'transparent'; }}
-                              ><MoreIcon /></button>
+                              {/* More menu (delete with confirmation) */}
+                              <div className="relative">
+                                <button
+                                  onClick={() => setDeleteConfirmTweet(deleteConfirmTweet === tw.id ? null : tw.id)}
+                                  className="p-1.5 -mr-1.5 rounded-full transition-colors"
+                                  style={{ color: '#71767b' }}
+                                  onMouseEnter={e => { e.currentTarget.style.color = '#1d9bf0'; e.currentTarget.style.background = 'rgba(29,155,240,0.1)'; }}
+                                  onMouseLeave={e => { e.currentTarget.style.color = '#71767b'; e.currentTarget.style.background = 'transparent'; }}
+                                ><MoreIcon /></button>
+                                {deleteConfirmTweet === tw.id && (
+                                  <div
+                                    className="absolute right-0 top-8 z-50 rounded-xl py-1 shadow-xl"
+                                    style={{ background: '#1c1c1c', border: '1px solid #2a2a2a', minWidth: 160 }}
+                                  >
+                                    <button
+                                      onClick={() => { deleteTweet(tw.id); setDeleteConfirmTweet(null); }}
+                                      className="w-full flex items-center gap-2 px-4 py-2.5 text-[13px] font-semibold transition-colors text-left"
+                                      style={{ color: '#f4212e' }}
+                                      onMouseEnter={e => (e.currentTarget.style.background = 'rgba(244,33,46,0.1)')}
+                                      onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                                    >
+                                      <Trash2 size={14} /> Delete post
+                                    </button>
+                                    <button
+                                      onClick={() => setDeleteConfirmTweet(null)}
+                                      className="w-full flex items-center gap-2 px-4 py-2.5 text-[13px] transition-colors text-left"
+                                      style={{ color: '#ECECEC' }}
+                                      onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.05)')}
+                                      onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                                    >
+                                      Cancel
+                                    </button>
+                                  </div>
+                                )}
+                              </div>
                             </div>
 
                             {/* Tweet body */}
@@ -1574,121 +1603,70 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-bold" style={{ color: '#ECECEC' }}>Content Journal</span>
-                    {(() => { const count = (details.ad_performance_notes || '').split('\n---\n').filter(s => s.trim()).length; return count > 0 ? (
-                      <span className="text-[11px] font-medium px-1.5 py-0.5 rounded-full" style={{ background: 'rgba(255,255,255,0.06)', color: '#888' }}>{count}</span>
-                    ) : null; })()}
                   </div>
                   <p className="text-[11px] mt-0.5" style={{ color: '#555' }}>Brainstorm ideas, then push to posts</p>
                 </div>
               </div>
 
-              {/* Journal entries */}
-              <div className="flex-1 overflow-y-auto p-3 space-y-2">
-                {(details.ad_performance_notes || '').split('\n---\n').filter(Boolean).map((entry, i, arr) => (
-                  <div key={i} className="rounded-xl p-3 group/entry" style={{ background: '#161616' }}>
-                    <textarea
-                      value={entry}
-                      onChange={e => {
-                        const entries = (details.ad_performance_notes || '').split('\n---\n').filter(Boolean);
-                        entries[i] = e.target.value;
-                        setField('ad_performance_notes', entries.join('\n---\n'));
-                      }}
-                      className="w-full bg-transparent text-[13px] leading-5 focus:outline-none resize-none placeholder-[#333]"
-                      style={{ color: '#ECECEC' }}
-                      placeholder="Write an idea…"
-                      rows={Math.max(2, entry.split('\n').length)}
-                    />
-                    {/* Journal entry image */}
-                    {entry.match(/!\[img\]\((.*?)\)/) && (
-                      <div className="mt-2 relative rounded-xl overflow-hidden" style={{ maxHeight: 160 }}>
-                        <img src={entry.match(/!\[img\]\((.*?)\)/)![1]} alt="" className="w-full object-cover rounded-xl" style={{ maxHeight: 160 }} />
-                        <button
-                          onClick={() => {
-                            const entries = (details.ad_performance_notes || '').split('\n---\n').filter(Boolean);
-                            entries[i] = entries[i].replace(/!\[img\]\(.*?\)\n?/, '');
-                            setField('ad_performance_notes', entries.join('\n---\n'));
-                          }}
-                          className="absolute top-1 right-1 p-1 rounded-full"
-                          style={{ background: 'rgba(0,0,0,0.7)', color: '#ECECEC' }}
-                        ><Trash2 size={10} /></button>
-                      </div>
-                    )}
-                    <div className="flex items-center justify-between mt-2 opacity-0 group-hover/entry:opacity-100 transition-opacity">
-                      <div className="flex items-center gap-1.5">
-                      <button
-                        onClick={() => {
-                          const inp = document.createElement('input');
-                          inp.type = 'file'; inp.accept = 'image/*';
-                          inp.onchange = async (ev: any) => {
-                            const file = ev.target.files?.[0];
-                            if (!file) return;
-                            const reader = new FileReader();
-                            reader.onload = () => {
-                              const entries = (details.ad_performance_notes || '').split('\n---\n').filter(Boolean);
-                              entries[i] = entries[i].replace(/!\[img\]\(.*?\)\n?/, '');
-                              entries[i] = `![img](${reader.result})\n${entries[i]}`;
-                              setField('ad_performance_notes', entries.join('\n---\n'));
-                            };
-                            reader.readAsDataURL(file);
-                          };
-                          inp.click();
-                        }}
-                        className="p-1.5 rounded-full transition-colors"
-                        style={{ color: '#555' }}
-                        onMouseEnter={e => { e.currentTarget.style.color = '#1d9bf0'; }}
-                        onMouseLeave={e => { e.currentTarget.style.color = '#555'; }}
-                        title="Add image"
-                      ><ImageIcon size={13} /></button>
-                      <button
-                        onClick={() => {
-                          if (!supabase || !client) return;
-                          const imgMatch = entry.match(/!\[img\]\((.*?)\)/);
-                          const imgUrl = imgMatch ? imgMatch[1] : '';
-                          const text = entry.replace(/!\[img\]\(.*?\)\n?/, '').trim();
-                          const eng = { likes: Math.floor(Math.random() * 800) + 5, retweets: Math.floor(Math.random() * 120) + 1, replies: Math.floor(Math.random() * 40) + 1, views: Math.floor(Math.random() * 50000) + 500 };
-                          const tw = { id: crypto.randomUUID(), text, post_date: new Date().toISOString().split('T')[0], image_url: imgUrl, ...eng };
-                          setTweets(prev => [tw, ...prev]);
-                          supabase.from('client_tweets').insert({ ...tw, client_id: client.id, user_id: storagePrefix });
-                        }}
-                        className="flex items-center gap-1.5 text-[11px] font-semibold px-3 py-1.5 rounded-full transition-colors"
-                        style={{ background: '#1d9bf0', color: '#fff' }}
-                        onMouseEnter={e => (e.currentTarget.style.background = '#1a8cd8')}
-                        onMouseLeave={e => (e.currentTarget.style.background = '#1d9bf0')}
-                      >
-                        <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><path d="M12 2.59l5.7 5.7-1.41 1.42L13 6.41V16h-2V6.41l-3.3 3.3-1.41-1.42L12 2.59zM21 15l-.02 3.51c0 1.38-1.12 2.49-2.5 2.49H5.5C4.11 21 3 19.88 3 18.5V15h2v3.5c0 .28.22.5.5.5h12.98c.28 0 .5-.22.5-.5L19 15h2z"/></svg>
-                        Push to Post
-                      </button>
-                      </div>
-                      <button
-                        onClick={() => {
-                          const entries = (details.ad_performance_notes || '').split('\n---\n').filter(Boolean);
-                          entries.splice(i, 1);
-                          setField('ad_performance_notes', entries.join('\n---\n'));
-                        }}
-                        className="p-1.5 rounded-full transition-colors"
-                        style={{ color: '#333' }}
-                        onMouseEnter={e => { e.currentTarget.style.color = '#ef4444'; }}
-                        onMouseLeave={e => { e.currentTarget.style.color = '#333'; }}
-                      >
-                        <Trash2 size={12} />
-                      </button>
-                    </div>
-                  </div>
-                ))}
-
-                <button
-                  onClick={() => {
-                    const current = details.ad_performance_notes || '';
-                    const newVal = current ? current + '\n---\n' : '';
-                    setField('ad_performance_notes', newVal + ' ');
+              {/* Freeform journal with selection-to-post */}
+              <div className="flex-1 overflow-y-auto p-3 relative">
+                <textarea
+                  value={details.ad_performance_notes || ''}
+                  onChange={e => setField('ad_performance_notes', e.target.value)}
+                  onMouseUp={e => {
+                    const ta = e.target as HTMLTextAreaElement;
+                    const selected = ta.value.substring(ta.selectionStart, ta.selectionEnd).trim();
+                    if (selected.length > 3) {
+                      const rect = ta.getBoundingClientRect();
+                      // Position popup near the mouse
+                      const popupX = Math.min(e.clientX - rect.left, rect.width - 140);
+                      const popupY = e.clientY - rect.top - 40;
+                      setJournalSelection({ text: selected, x: popupX, y: popupY, start: ta.selectionStart, end: ta.selectionEnd });
+                    } else {
+                      setJournalSelection(null);
+                    }
                   }}
-                  className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-xs font-semibold transition-colors"
-                  style={{ color: '#555', border: '1px dashed #2a2a2a' }}
-                  onMouseEnter={e => { e.currentTarget.style.color = '#ECECEC'; e.currentTarget.style.borderColor = '#444'; }}
-                  onMouseLeave={e => { e.currentTarget.style.color = '#555'; e.currentTarget.style.borderColor = '#2a2a2a'; }}
-                >
-                  <Plus size={14} /> New Idea
-                </button>
+                  onBlur={() => { setTimeout(() => setJournalSelection(null), 200); }}
+                  className="w-full h-full bg-transparent text-[13px] leading-6 focus:outline-none resize-none placeholder-[#333]"
+                  style={{ color: '#ECECEC', minHeight: 300 }}
+                  placeholder="Write your content ideas here... Select text and push to posts when ready."
+                />
+
+                {/* Selection popup: Move to Post */}
+                {journalSelection && (
+                  <div
+                    className="absolute z-50 flex items-center gap-1 rounded-lg px-2 py-1.5 shadow-xl"
+                    style={{
+                      left: journalSelection.x,
+                      top: journalSelection.y,
+                      background: '#1d9bf0',
+                      boxShadow: '0 4px 20px rgba(0,0,0,0.5)',
+                    }}
+                  >
+                    <button
+                      onMouseDown={e => {
+                        e.preventDefault(); // prevent blur
+                        if (!supabase || !client) return;
+                        const text = journalSelection.text;
+                        const eng = { likes: 0, retweets: 0, replies: 0, views: 0 };
+                        const tw = { id: crypto.randomUUID(), text, post_date: new Date().toISOString().split('T')[0], image_url: '', ...eng };
+                        setTweets(prev => [tw, ...prev]);
+                        supabase.from('client_tweets').insert({ ...tw, client_id: client.id, user_id: storagePrefix });
+                        // Remove selected text from journal
+                        const current = details.ad_performance_notes || '';
+                        const before = current.substring(0, journalSelection.start);
+                        const after = current.substring(journalSelection.end);
+                        const cleaned = (before + after).replace(/\n{3,}/g, '\n\n').trim();
+                        setField('ad_performance_notes', cleaned);
+                        setJournalSelection(null);
+                      }}
+                      className="flex items-center gap-1.5 text-[11px] font-semibold text-white whitespace-nowrap"
+                    >
+                      <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><path d="M12 2.59l5.7 5.7-1.41 1.42L13 6.41V16h-2V6.41l-3.3 3.3-1.41-1.42L12 2.59zM21 15l-.02 3.51c0 1.38-1.12 2.49-2.5 2.49H5.5C4.11 21 3 19.88 3 18.5V15h2v3.5c0 .28.22.5.5.5h12.98c.28 0 .5-.22.5-.5L19 15h2z"/></svg>
+                      Move to Post
+                    </button>
+                  </div>
+                )}
               </div>
           </div>
         )}
