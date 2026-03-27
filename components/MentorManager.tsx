@@ -467,16 +467,17 @@ const MentorManager: React.FC<MentorManagerProps> = ({ storagePrefix }) => {
     setIsLoading(true);
     scrollToBottom();
 
-    // Save user message
-    await supabase.from('mentor_conversations').insert({
+    // Save user message to Supabase for persistence across refreshes
+    const { error: saveErr } = await supabase.from('mentor_conversations').insert({
       user_id: storagePrefix,
       role: 'user',
       content,
     });
+    if (saveErr) console.error('Failed to save user message:', saveErr);
 
     try {
-      // Build messages for API (last 80 for better conversation memory)
-      const recentMessages = [...messages.slice(-78), userMsg].map(m => ({
+      // Build messages for API (last 30 to keep payload small and avoid timeouts)
+      const recentMessages = [...messages.slice(-28), userMsg].map(m => ({
         role: m.role,
         content: m.content,
       }));
@@ -490,10 +491,10 @@ const MentorManager: React.FC<MentorManagerProps> = ({ storagePrefix }) => {
             body: JSON.stringify(body),
           });
 
-          if (res.status === 429) {
+          if (res.status === 429 || res.status === 529 || res.status === 504) {
             const retryAfter = res.headers.get('retry-after');
-            const waitMs = retryAfter ? parseInt(retryAfter) * 1000 : Math.min(2000 * Math.pow(2, attempt), 15000);
-            console.log(`Rate limited (429). Waiting ${waitMs}ms before retry ${attempt + 1}/${retries}...`);
+            const waitMs = retryAfter ? parseInt(retryAfter) * 1000 : Math.min(3000 * Math.pow(2, attempt), 20000);
+            console.log(`API ${res.status}. Waiting ${waitMs}ms before retry ${attempt + 1}/${retries}...`);
             await new Promise(r => setTimeout(r, waitMs));
             continue;
           }
@@ -591,6 +592,22 @@ const MentorManager: React.FC<MentorManagerProps> = ({ storagePrefix }) => {
               await supabase.from('calendar_events').delete().eq('id', tool.input.event_id).eq('user_id', storagePrefix);
               loadCalendarEvents();
               results.push({ tool_use_id: tool.id, content: `Deleted calendar event ${tool.input.event_id}.` });
+
+            } else if (tool.name === 'list_calendar_events') {
+              const { data: events } = await supabase
+                .from('calendar_events')
+                .select('*')
+                .eq('user_id', storagePrefix)
+                .gte('date', tool.input.start_date)
+                .lte('date', tool.input.end_date)
+                .order('date')
+                .order('start_time');
+              if (!events || events.length === 0) {
+                results.push({ tool_use_id: tool.id, content: `No events found between ${tool.input.start_date} and ${tool.input.end_date}.` });
+              } else {
+                const formatted = events.map(e => `- [ID: ${e.id}] ${e.date} ${e.start_time}–${e.end_time}: ${e.title}${e.description ? ` (${e.description})` : ''}`).join('\n');
+                results.push({ tool_use_id: tool.id, content: `${events.length} events:\n${formatted}` });
+              }
 
             } else if (tool.name === 'list_clients') {
               const { data: clients } = await supabase.from('clients').select('id, name, service, status, payment_status, amount, leader').eq('user_id', storagePrefix).order('created_at', { ascending: false });
@@ -825,12 +842,13 @@ const MentorManager: React.FC<MentorManagerProps> = ({ storagePrefix }) => {
 
       setMessages(prev => [...prev, assistantMsg]);
 
-      // Save assistant message
-      await supabase.from('mentor_conversations').insert({
+      // Save assistant message to Supabase for persistence across refreshes
+      const { error: saveAssistErr } = await supabase.from('mentor_conversations').insert({
         user_id: storagePrefix,
         role: 'assistant',
         content: assistantContent,
       });
+      if (saveAssistErr) console.error('Failed to save assistant message:', saveAssistErr);
     } catch (err: any) {
       const errorMsg: ChatMessage = {
         id: genId(),

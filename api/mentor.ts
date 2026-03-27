@@ -50,7 +50,7 @@ KNOWLEDGE RETRIEVAL:
 
 APP MANAGEMENT:
 - You have FULL control over the user's Aureum app. You can manage their calendar, clients, finances, goals, and task board.
-- Calendar: add_calendar_event, edit_calendar_event, delete_calendar_event
+- Calendar: add_calendar_event, edit_calendar_event, delete_calendar_event, list_calendar_events (for any date range). You have event IDs in the schedule context — use them directly to edit/delete without asking the user for IDs.
 - Goals: add_goal (add a goal to a life area), complete_goal (toggle completion), delete_goal, add_life_area (create new life area)
 - Task Board: add_board_task (create a task card), list_board_tasks (view all tasks with IDs), update_board_task (edit title/description/client/status/revenue), delete_board_task (remove a task), move_board_task (move to different column)
 - Clients: list_clients (to see all clients), update_client_notes (to update a client's notes/details), update_client_status (to change happy/moderate/frustrated)
@@ -88,21 +88,22 @@ Day of week: ${context.dayOfWeek}`;
     }
   }
 
-  // Today's calendar
+  // Today's calendar — include IDs so mentor can edit/delete events
   if (context.todayEvents && context.todayEvents.length > 0) {
     prompt += `\n\n--- TODAY'S SCHEDULE ---`;
+    prompt += `\nUse these event IDs with edit_calendar_event or delete_calendar_event:`;
     for (const ev of context.todayEvents) {
-      prompt += `\n- ${ev.startTime}–${ev.endTime}: ${ev.title}${ev.notes ? ` (${ev.notes})` : ''}`;
+      prompt += `\n- [ID: ${ev.id}] ${ev.startTime}–${ev.endTime}: ${ev.title}${ev.notes ? ` (${ev.notes})` : ''}`;
     }
   } else {
     prompt += `\n\n--- TODAY'S SCHEDULE ---\nNo events scheduled today.`;
   }
 
-  // Upcoming events
+  // Upcoming events — include IDs
   if (context.upcomingEvents && context.upcomingEvents.length > 0) {
     prompt += `\n\n--- UPCOMING (next 3 days) ---`;
     for (const ev of context.upcomingEvents) {
-      prompt += `\n- ${ev.date} ${ev.startTime}–${ev.endTime}: ${ev.title}`;
+      prompt += `\n- [ID: ${ev.id}] ${ev.date} ${ev.startTime}–${ev.endTime}: ${ev.title}`;
     }
   }
 
@@ -221,7 +222,7 @@ export default async function handler(req: Request) {
       },
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',
-        max_tokens: 4096,
+        max_tokens: 2048,
         system: systemPrompt,
         messages: messages.map((m: any) => ({
           role: m.role,
@@ -318,13 +319,25 @@ export default async function handler(req: Request) {
           },
           {
             name: 'delete_calendar_event',
-            description: 'Delete a calendar event. Only use when the user explicitly asks to remove/cancel an event.',
+            description: 'Delete a calendar event. Use when the user asks to remove, cancel, or clear events from their schedule. You already have event IDs from the schedule context above — use them directly without needing to call list_calendar_events first.',
             input_schema: {
               type: 'object',
               properties: {
                 event_id: { type: 'string', description: 'The ID of the event to delete' },
               },
               required: ['event_id'],
+            },
+          },
+          {
+            name: 'list_calendar_events',
+            description: 'List calendar events for a date range. Returns event IDs, titles, times. Use this when you need events beyond the 3-day window shown in your context, or to get fresh data after making changes.',
+            input_schema: {
+              type: 'object',
+              properties: {
+                start_date: { type: 'string', description: 'Start date YYYY-MM-DD' },
+                end_date: { type: 'string', description: 'End date YYYY-MM-DD' },
+              },
+              required: ['start_date', 'end_date'],
             },
           },
           {
