@@ -4,6 +4,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { Plus, Trash2, ChevronDown, Camera, Loader2, Archive, RotateCcw, GripVertical, Pencil, X, Check, ArrowRightLeft } from 'lucide-react';
 import { supabase } from '../services/supabaseClient';
 import ClientPanel from './ClientPanel';
+import TaskBoard from './TaskBoard';
 
 type ClientType = 'recurring' | 'one-time' | 'profit-share';
 
@@ -1048,6 +1049,12 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
           </button>
         </div>
       </div>
+
+      {/* ── Task Board ──────────────────────────────────────────────────────── */}
+      <TaskBoard
+        storagePrefix={storagePrefix}
+        clients={clients.filter(c => c.active).map(c => ({ id: c.id, name: c.name }))}
+      />
 
       {/* ── Recurring Clients ──────────────────────────────────────────────── */}
       <div className="space-y-3">
