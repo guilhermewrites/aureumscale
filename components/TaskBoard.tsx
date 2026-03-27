@@ -49,6 +49,7 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storagePrefix, clients }) => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [dragId, setDragId] = useState<string | null>(null);
   const [dragOverCol, setDragOverCol] = useState<string | null>(null);
+  const [dragOverCardId, setDragOverCardId] = useState<string | null>(null);
   const [collapsed, setCollapsed] = useState(false);
   const titleRef = useRef<HTMLInputElement>(null);
 
@@ -103,40 +104,70 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storagePrefix, clients }) => {
     if (editingId === id) setEditingId(null);
   }, [editingId]);
 
-  // Drag and drop
+  // Drag and drop — supports reordering within a column + moving between columns
   const handleDragStart = (e: React.DragEvent, taskId: string) => {
     setDragId(taskId);
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('text/plain', taskId);
   };
 
-  const handleDragOver = (e: React.DragEvent, col: string) => {
+  const handleColDragOver = (e: React.DragEvent, col: string) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
     setDragOverCol(col);
   };
 
+  const handleCardDragOver = (e: React.DragEvent, cardId: string, col: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    e.dataTransfer.dropEffect = 'move';
+    setDragOverCol(col);
+    setDragOverCardId(cardId);
+  };
+
   const handleDragLeave = () => {
     setDragOverCol(null);
+    setDragOverCardId(null);
   };
 
   const handleDrop = (e: React.DragEvent, targetCol: string) => {
     e.preventDefault();
     setDragOverCol(null);
+    const hoveredCard = dragOverCardId;
+    setDragOverCardId(null);
     if (!dragId) return;
-    const task = tasks.find(t => t.id === dragId);
-    if (!task || task.status === targetCol) { setDragId(null); return; }
-    const colTasks = tasks.filter(t => t.status === targetCol);
-    const updated = tasks.map(t =>
-      t.id === dragId ? { ...t, status: targetCol, order_num: colTasks.length } : t
-    );
-    saveTasks(updated);
+
+    const draggedTask = tasks.find(t => t.id === dragId);
+    if (!draggedTask) { setDragId(null); return; }
+
+    // Get tasks in target column (excluding the dragged one)
+    const colTasks = tasks
+      .filter(t => t.status === targetCol && t.id !== dragId)
+      .sort((a, b) => a.order_num - b.order_num);
+
+    // Determine insertion index
+    let insertIdx = colTasks.length; // default: end of list
+    if (hoveredCard && hoveredCard !== dragId) {
+      const hoverIdx = colTasks.findIndex(t => t.id === hoveredCard);
+      if (hoverIdx >= 0) insertIdx = hoverIdx;
+    }
+
+    // Insert the dragged task at the right position
+    colTasks.splice(insertIdx, 0, { ...draggedTask, status: targetCol });
+
+    // Reassign order_num for the whole column
+    const reordered = colTasks.map((t, i) => ({ ...t, order_num: i }));
+
+    // Merge back into full task list
+    const otherTasks = tasks.filter(t => t.status !== targetCol && t.id !== dragId);
+    saveTasks([...otherTasks, ...reordered]);
     setDragId(null);
   };
 
   const handleDragEnd = () => {
     setDragId(null);
     setDragOverCol(null);
+    setDragOverCardId(null);
   };
 
   // Revenue totals
@@ -192,7 +223,7 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storagePrefix, clients }) => {
                   border: isDragOver ? '1px dashed #444' : '1px solid #2a2a2a',
                   transition: 'background 0.15s, border 0.15s',
                 }}
-                onDragOver={e => handleDragOver(e, col)}
+                onDragOver={e => handleColDragOver(e, col)}
                 onDragLeave={handleDragLeave}
                 onDrop={e => handleDrop(e, col)}
               >
@@ -220,6 +251,7 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storagePrefix, clients }) => {
                       task={task}
                       isEditing={editingId === task.id}
                       isDragging={dragId === task.id}
+                      isDragOver={dragOverCardId === task.id && dragId !== task.id}
                       clients={clients}
                       titleRef={editingId === task.id ? titleRef : undefined}
                       onEdit={() => setEditingId(task.id)}
@@ -227,6 +259,7 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storagePrefix, clients }) => {
                       onDelete={() => deleteTask(task.id)}
                       onClose={() => setEditingId(null)}
                       onDragStart={e => handleDragStart(e, task.id)}
+                      onCardDragOver={e => handleCardDragOver(e, task.id, col)}
                       onDragEnd={handleDragEnd}
                     />
                   ))}
@@ -256,6 +289,7 @@ interface TaskCardProps {
   task: BoardTask;
   isEditing: boolean;
   isDragging: boolean;
+  isDragOver: boolean;
   clients: { id: string; name: string }[];
   titleRef?: React.RefObject<HTMLInputElement | null>;
   onEdit: () => void;
@@ -263,12 +297,13 @@ interface TaskCardProps {
   onDelete: () => void;
   onClose: () => void;
   onDragStart: (e: React.DragEvent) => void;
+  onCardDragOver: (e: React.DragEvent) => void;
   onDragEnd: () => void;
 }
 
 const TaskCard: React.FC<TaskCardProps> = ({
-  task, isEditing, isDragging, clients, titleRef,
-  onEdit, onUpdate, onDelete, onClose, onDragStart, onDragEnd,
+  task, isEditing, isDragging, isDragOver, clients, titleRef,
+  onEdit, onUpdate, onDelete, onClose, onDragStart, onCardDragOver, onDragEnd,
 }) => {
   const [showClientPicker, setShowClientPicker] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -418,16 +453,19 @@ const TaskCard: React.FC<TaskCardProps> = ({
     <div
       draggable
       onDragStart={onDragStart}
+      onDragOver={onCardDragOver}
       onDragEnd={onDragEnd}
       onClick={onEdit}
-      className="rounded-lg p-2.5 cursor-pointer group transition-all"
+      className="rounded-lg p-2.5 cursor-grab active:cursor-grabbing group transition-all"
       style={{
         background: '#232323',
-        border: '1px solid #2a2a2a',
+        border: isDragOver ? '1px solid #555' : '1px solid #2a2a2a',
+        borderTop: isDragOver ? '2px solid #888' : undefined,
         opacity: isDragging ? 0.4 : 1,
+        marginTop: isDragOver ? -1 : undefined,
       }}
-      onMouseEnter={e => { e.currentTarget.style.borderColor = '#3a3a3a'; }}
-      onMouseLeave={e => { e.currentTarget.style.borderColor = '#2a2a2a'; }}
+      onMouseEnter={e => { if (!isDragOver) e.currentTarget.style.borderColor = '#3a3a3a'; }}
+      onMouseLeave={e => { if (!isDragOver) e.currentTarget.style.borderColor = '#2a2a2a'; }}
     >
       <div className="flex items-start gap-1.5">
         <GripVertical size={12} className="mt-0.5 opacity-0 group-hover:opacity-40 transition-opacity flex-shrink-0" style={{ color: '#888' }} />
