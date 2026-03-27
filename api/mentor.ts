@@ -539,57 +539,14 @@ export default async function handler(req: Request) {
       }
     }
 
-    // Check if any tool needs client-side handling (Supabase queries)
-    const CLIENT_SIDE_TOOLS = ['search_knowledge', 'list_clients', 'list_invoices', 'update_client_notes', 'update_client_status', 'update_invoice_status', 'edit_calendar_event', 'delete_calendar_event', 'update_mentor_settings', 'add_goal', 'complete_goal', 'delete_goal', 'add_life_area', 'add_board_task', 'list_board_tasks', 'update_board_task', 'delete_board_task', 'move_board_task'];
-    const hasClientSideTool = toolCalls.some(tc => CLIENT_SIDE_TOOLS.includes(tc.name));
+    // ALL tools are client-side (executed against Supabase from the browser).
+    // The server just passes tool calls back to the client for execution.
+    const needsClientLoop = data.stop_reason === 'tool_use' && toolCalls.length > 0;
 
-    if (data.stop_reason === 'tool_use' && toolCalls.length > 0 && !hasClientSideTool) {
-      // No search needed — handle entirely server-side
-      const toolResultContent = toolCalls.map(tc => ({
-        type: 'tool_result' as const,
-        tool_use_id: tc.id,
-        content: `Done. ${tc.name === 'save_knowledge' ? `Saved "${tc.input.title}" to ${tc.input.category}.` : `Added "${tc.input.title}" to calendar on ${tc.input.date}.`}`,
-      }));
-
-      const followUp = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': apiKey,
-          'anthropic-version': '2023-06-01',
-        },
-        body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514',
-          max_tokens: 2048,
-          system: systemPrompt,
-          messages: [
-            ...messages.map((m: any) => ({ role: m.role, content: m.content })),
-            { role: 'assistant', content: data.content },
-            { role: 'user', content: toolResultContent },
-          ],
-        }),
-      });
-
-      if (followUp.ok) {
-        const followUpData = await followUp.json();
-        assistantMessage = '';
-        for (const block of (followUpData.content || [])) {
-          if (block.type === 'text') {
-            assistantMessage += block.text;
-          }
-        }
-      }
-    }
-
-    // If search is needed, return tool calls + raw assistant content so client can handle the loop
-    const needsClientLoop = data.stop_reason === 'tool_use' && hasClientSideTool;
-
-    // If Claude only used tools (no text) and it's not a client loop, set a fallback
-    if (!assistantMessage && toolCalls.length === 0) {
+    if (!assistantMessage && !needsClientLoop) {
       assistantMessage = 'No response generated.';
     }
 
-    // If Claude returned text + tool calls (mixed), still flag for follow-up but include the text
     return new Response(JSON.stringify({
       message: assistantMessage || '',
       toolCalls,
