@@ -379,7 +379,14 @@ const CalendarManager: React.FC<CalendarManagerProps> = ({ storagePrefix }) => {
     setEditingEvent(ev);
     setFormTitle(ev.title); setFormDate(ev.date);
     setFormStart(ev.startTime); setFormEnd(ev.endTime);
-    setFormDesc(ev.description || '');
+    // Auto-migrate: if description has no checkbox prefixes but has commas, split into subtasks
+    let desc = ev.description || '';
+    if (desc && !desc.includes('[x] ') && !desc.includes('[ ] ')) {
+      // Old format: comma or newline separated plain text → convert to subtask lines
+      const parts = desc.includes('\n') ? desc.split('\n') : desc.split(',');
+      desc = parts.map(p => p.trim()).filter(Boolean).map(p => `[ ] ${p}`).join('\n');
+    }
+    setFormDesc(desc);
     setModalOpen(true);
   };
 
@@ -552,7 +559,18 @@ const CalendarManager: React.FC<CalendarManagerProps> = ({ storagePrefix }) => {
                       </div>
                     )}
                     {pos.height > 56 && ev.description && (
-                      <div className="text-[10px] text-[#666] mt-0.5 truncate">{ev.description}</div>
+                      <div className="mt-0.5 space-y-0">
+                        {ev.description.split('\n').filter(l => l.trim()).slice(0, 3).map((line, li) => {
+                          const done = line.startsWith('[x] ');
+                          const text = line.replace(/^\[x\] |^\[ \] /, '');
+                          return (
+                            <div key={li} className="text-[10px] flex items-center gap-1 truncate" style={{ color: done ? '#10b981' : '#666', textDecoration: done ? 'line-through' : 'none' }}>
+                              <span>{done ? '✓' : '○'}</span>
+                              <span className="truncate">{text}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
                     )}
                   </>
                 )}
@@ -736,9 +754,73 @@ const CalendarManager: React.FC<CalendarManagerProps> = ({ storagePrefix }) => {
                 </div>
               </div>
               <div>
-                <label className="text-[10px] uppercase tracking-wider text-[#555] font-medium">Notes (optional)</label>
-                <textarea value={formDesc} onChange={e => setFormDesc(e.target.value)} placeholder="Add details..." rows={3}
-                  className="w-full mt-1 bg-[#2a2a2a] border border-[#3a3a3a] rounded-lg px-3 py-2.5 text-sm text-[#ECECEC] placeholder-[#555] focus:outline-none focus:ring-1 focus:ring-[#555] resize-none" />
+                <label className="text-[10px] uppercase tracking-wider text-[#555] font-medium">Sub-tasks</label>
+                <div className="mt-1 space-y-1">
+                  {(() => {
+                    const lines = formDesc ? formDesc.split('\n').filter(l => l.trim()) : [];
+                    return lines.map((line, i) => {
+                      const done = line.startsWith('[x] ');
+                      const text = line.replace(/^\[x\] |^\[ \] /, '');
+                      return (
+                        <div key={i} className="flex items-center gap-2 group">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const updated = [...lines];
+                              updated[i] = done ? `[ ] ${text}` : `[x] ${text}`;
+                              setFormDesc(updated.join('\n'));
+                            }}
+                            className="flex-shrink-0 w-4 h-4 rounded border flex items-center justify-center transition-all"
+                            style={{
+                              borderColor: done ? '#10b981' : '#555',
+                              background: done ? '#10b981' : 'transparent',
+                            }}
+                          >
+                            {done && <span className="text-[10px] text-white font-bold">✓</span>}
+                          </button>
+                          <span
+                            className="text-sm flex-1"
+                            style={{
+                              color: done ? '#10b981' : '#ECECEC',
+                              textDecoration: done ? 'line-through' : 'none',
+                              opacity: done ? 0.8 : 1,
+                            }}
+                          >{text}</span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const updated = lines.filter((_, idx) => idx !== i);
+                              setFormDesc(updated.join('\n'));
+                            }}
+                            className="opacity-0 group-hover:opacity-100 text-[#555] hover:text-rose-400 transition-opacity"
+                          >
+                            <X size={12} />
+                          </button>
+                        </div>
+                      );
+                    });
+                  })()}
+                  <div className="flex items-center gap-2 mt-1">
+                    <div className="flex-shrink-0 w-4 h-4 rounded border border-[#3a3a3a] flex items-center justify-center">
+                      <Plus size={10} className="text-[#555]" />
+                    </div>
+                    <input
+                      type="text"
+                      placeholder="Add a sub-task..."
+                      className="flex-1 bg-transparent border-none text-sm text-[#ECECEC] placeholder-[#444] focus:outline-none"
+                      onKeyDown={e => {
+                        if (e.key === 'Enter' && (e.target as HTMLInputElement).value.trim()) {
+                          const val = (e.target as HTMLInputElement).value.trim();
+                          const lines = formDesc ? formDesc.split('\n').filter(l => l.trim()) : [];
+                          lines.push(`[ ] ${val}`);
+                          setFormDesc(lines.join('\n'));
+                          (e.target as HTMLInputElement).value = '';
+                          e.preventDefault();
+                        }
+                      }}
+                    />
+                  </div>
+                </div>
               </div>
             </div>
             <div className="flex items-center justify-between p-4 border-t border-[#2a2a2a]">
