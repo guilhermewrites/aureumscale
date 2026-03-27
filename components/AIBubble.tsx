@@ -78,6 +78,26 @@ const AIBubble: React.FC<AIBubbleProps> = ({
   const chatRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
+  // Resizable panel
+  const [panelSize, setPanelSize] = useState({ w: 400, h: 540 });
+  const resizeRef = useRef<{ startX: number; startY: number; startW: number; startH: number; edge: string } | null>(null);
+
+  useEffect(() => {
+    const onMouseMove = (e: MouseEvent) => {
+      if (!resizeRef.current) return;
+      const { startX, startY, startW, startH, edge } = resizeRef.current;
+      let newW = startW;
+      let newH = startH;
+      if (edge.includes('left')) newW = Math.max(320, Math.min(900, startW + (startX - e.clientX)));
+      if (edge.includes('top')) newH = Math.max(300, Math.min(window.innerHeight - 60, startH + (startY - e.clientY)));
+      setPanelSize({ w: newW, h: newH });
+    };
+    const onMouseUp = () => { resizeRef.current = null; document.body.style.cursor = ''; document.body.style.userSelect = ''; };
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onMouseUp);
+    return () => { window.removeEventListener('mousemove', onMouseMove); window.removeEventListener('mouseup', onMouseUp); };
+  }, []);
+
   // @mention state
   const [allClients, setAllClients] = useState<ClientRecord[]>([]);
   const [mentionQuery, setMentionQuery] = useState<string | null>(null);
@@ -448,11 +468,30 @@ const AIBubble: React.FC<AIBubbleProps> = ({
         <div
           className="fixed z-[9999] flex flex-col shadow-2xl"
           style={{
-            bottom: 28, right: 28, width: 400, height: 540,
+            bottom: 28, right: 28, width: panelSize.w, height: panelSize.h,
             background: '#1c1c1c', borderRadius: 20,
             border: '1px solid #2a2a2a', overflow: 'hidden',
           }}
         >
+          {/* Resize handles */}
+          {/* Left edge */}
+          <div
+            className="absolute left-0 top-0 bottom-0 z-50"
+            style={{ width: 6, cursor: 'ew-resize' }}
+            onMouseDown={e => { resizeRef.current = { startX: e.clientX, startY: e.clientY, startW: panelSize.w, startH: panelSize.h, edge: 'left' }; document.body.style.cursor = 'ew-resize'; document.body.style.userSelect = 'none'; }}
+          />
+          {/* Top edge */}
+          <div
+            className="absolute left-0 right-0 top-0 z-50"
+            style={{ height: 6, cursor: 'ns-resize' }}
+            onMouseDown={e => { resizeRef.current = { startX: e.clientX, startY: e.clientY, startW: panelSize.w, startH: panelSize.h, edge: 'top' }; document.body.style.cursor = 'ns-resize'; document.body.style.userSelect = 'none'; }}
+          />
+          {/* Top-left corner */}
+          <div
+            className="absolute left-0 top-0 z-50"
+            style={{ width: 12, height: 12, cursor: 'nwse-resize' }}
+            onMouseDown={e => { resizeRef.current = { startX: e.clientX, startY: e.clientY, startW: panelSize.w, startH: panelSize.h, edge: 'top-left' }; document.body.style.cursor = 'nwse-resize'; document.body.style.userSelect = 'none'; }}
+          />
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: '1px solid #222' }}>
             <div className="flex items-center gap-2.5">
