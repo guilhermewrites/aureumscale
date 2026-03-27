@@ -29,7 +29,7 @@ function renderMarkdown(text: string): React.ReactNode {
       elements.push(<div key={i} className="flex gap-1.5 ml-0.5"><span className="text-[#555] flex-shrink-0">{'•'}</span><span>{renderInline(bulletMatch[2])}</span></div>);
       continue;
     }
-    if (line.trim() === '') { elements.push(<div key={i} className="h-1.5" />); continue; }
+    if (line.trim() === '') { elements.push(<div key={i} className="h-3" />); continue; }
     elements.push(<p key={i}>{renderInline(line)}</p>);
   }
   return <>{elements}</>;
