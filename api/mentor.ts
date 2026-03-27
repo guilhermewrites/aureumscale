@@ -46,6 +46,14 @@ KNOWLEDGE RETRIEVAL:
 - You can search multiple times in a conversation if needed.
 - Only the 5 most recent entries are shown by default. Everything else requires a search.
 
+APP MANAGEMENT:
+- You have FULL control over the user's Aureum app. You can manage their calendar, clients, and finances.
+- Calendar: add_calendar_event, edit_calendar_event, delete_calendar_event
+- Clients: list_clients (to see all clients), update_client_notes (to update a client's notes/details), update_client_status (to change happy/moderate/frustrated)
+- Finance: list_invoices (to see financial data), update_invoice_status (to mark paid/pending/overdue)
+- When the user asks you to do something ("book a call", "mark invoice as paid", "update client notes"), just DO IT with the right tool. Don't ask for confirmation unless the action is destructive (like deleting).
+- Always confirm what you did after taking an action.
+
 Current date and time: ${context.currentDateTime}
 Day of week: ${context.dayOfWeek}`;
 
@@ -245,6 +253,90 @@ export default async function handler(req: Request) {
               required: ['date', 'title', 'start_time', 'end_time'],
             },
           },
+          {
+            name: 'edit_calendar_event',
+            description: 'Edit an existing calendar event. Use when the user asks to reschedule, rename, or update an event.',
+            input_schema: {
+              type: 'object',
+              properties: {
+                event_id: { type: 'string', description: 'The ID of the event to edit' },
+                title: { type: 'string', description: 'New title (optional)' },
+                date: { type: 'string', description: 'New date YYYY-MM-DD (optional)' },
+                start_time: { type: 'string', description: 'New start time HH:MM (optional)' },
+                end_time: { type: 'string', description: 'New end time HH:MM (optional)' },
+                notes: { type: 'string', description: 'New notes (optional)' },
+              },
+              required: ['event_id'],
+            },
+          },
+          {
+            name: 'delete_calendar_event',
+            description: 'Delete a calendar event. Only use when the user explicitly asks to remove/cancel an event.',
+            input_schema: {
+              type: 'object',
+              properties: {
+                event_id: { type: 'string', description: 'The ID of the event to delete' },
+              },
+              required: ['event_id'],
+            },
+          },
+          {
+            name: 'list_clients',
+            description: 'List all clients in the app. Returns client names, IDs, status, payment info. Use this to look up client data before taking actions.',
+            input_schema: {
+              type: 'object',
+              properties: {},
+              required: [],
+            },
+          },
+          {
+            name: 'update_client_notes',
+            description: 'Update notes or details for a specific client. Use list_clients first to get the client ID.',
+            input_schema: {
+              type: 'object',
+              properties: {
+                client_id: { type: 'string', description: 'The client ID' },
+                field: { type: 'string', enum: ['strategy_overview', 'funnel_notes', 'google_drive_url'], description: 'Which field to update' },
+                value: { type: 'string', description: 'The new value' },
+              },
+              required: ['client_id', 'field', 'value'],
+            },
+          },
+          {
+            name: 'update_client_status',
+            description: 'Update a client\'s satisfaction status.',
+            input_schema: {
+              type: 'object',
+              properties: {
+                client_id: { type: 'string', description: 'The client ID' },
+                status: { type: 'string', enum: ['Happy', 'Moderate', 'Frustrated'], description: 'New status' },
+              },
+              required: ['client_id', 'status'],
+            },
+          },
+          {
+            name: 'list_invoices',
+            description: 'List recent invoices/finance items. Returns amounts, client names, dates, and payment status.',
+            input_schema: {
+              type: 'object',
+              properties: {
+                status: { type: 'string', enum: ['paid', 'pending', 'overdue'], description: 'Optional: filter by status' },
+              },
+              required: [],
+            },
+          },
+          {
+            name: 'update_invoice_status',
+            description: 'Update the payment status of an invoice.',
+            input_schema: {
+              type: 'object',
+              properties: {
+                invoice_id: { type: 'string', description: 'The invoice/finance item ID' },
+                status: { type: 'string', enum: ['paid', 'pending', 'overdue'], description: 'New status' },
+              },
+              required: ['invoice_id', 'status'],
+            },
+          },
         ],
       }),
     });
@@ -281,11 +373,11 @@ export default async function handler(req: Request) {
       }
     }
 
-    // If Claude used tools, check if search_knowledge needs client-side handling
-    // For non-search tools, do a server-side follow-up. For search, return to client.
-    const hasSearch = toolCalls.some(tc => tc.name === 'search_knowledge');
+    // Check if any tool needs client-side handling (Supabase queries)
+    const CLIENT_SIDE_TOOLS = ['search_knowledge', 'list_clients', 'list_invoices', 'update_client_notes', 'update_client_status', 'update_invoice_status', 'edit_calendar_event', 'delete_calendar_event'];
+    const hasClientSideTool = toolCalls.some(tc => CLIENT_SIDE_TOOLS.includes(tc.name));
 
-    if (data.stop_reason === 'tool_use' && toolCalls.length > 0 && !hasSearch) {
+    if (data.stop_reason === 'tool_use' && toolCalls.length > 0 && !hasClientSideTool) {
       // No search needed — handle entirely server-side
       const toolResultContent = toolCalls.map(tc => ({
         type: 'tool_result' as const,
@@ -324,7 +416,7 @@ export default async function handler(req: Request) {
     }
 
     // If search is needed, return tool calls + raw assistant content so client can handle the loop
-    const needsClientLoop = data.stop_reason === 'tool_use' && hasSearch;
+    const needsClientLoop = data.stop_reason === 'tool_use' && hasClientSideTool;
 
     if (!assistantMessage && toolCalls.length === 0) {
       assistantMessage = 'No response generated.';

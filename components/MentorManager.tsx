@@ -457,54 +457,112 @@ const MentorManager: React.FC<MentorManagerProps> = ({ storagePrefix }) => {
 
       let data = await res.json();
 
-      // Execute tool calls (save_knowledge, add_calendar_event, search_knowledge)
+      // Execute tool calls — handles all mentor tools
       const executeTools = async (toolCalls: any[]) => {
         const results: { tool_use_id: string; content: string }[] = [];
         for (const tool of toolCalls) {
-          if (tool.name === 'save_knowledge') {
-            const entry = {
-              user_id: storagePrefix,
-              category: tool.input.category || 'Other',
-              title: tool.input.title || 'Untitled',
-              content: tool.input.content || '',
-              source: 'Mentor AI',
-            };
-            const { data: saved } = await supabase.from('mentor_knowledge').insert(entry).select().single();
-            if (saved) setKnowledge(prev => [saved, ...prev]);
-            results.push({ tool_use_id: tool.id, content: `Saved "${tool.input.title}" to ${tool.input.category}.` });
-          } else if (tool.name === 'add_calendar_event') {
-            await supabase.from('calendar_events').insert({
-              user_id: storagePrefix,
-              date: tool.input.date,
-              title: tool.input.title,
-              start_time: tool.input.start_time,
-              end_time: tool.input.end_time,
-              notes: tool.input.notes || '',
-              color: '#2a2a2a',
-            });
-            loadCalendarEvents();
-            results.push({ tool_use_id: tool.id, content: `Added "${tool.input.title}" to calendar on ${tool.input.date}.` });
-          } else if (tool.name === 'search_knowledge') {
-            // Search Supabase for matching knowledge entries
-            const query = tool.input.query?.toLowerCase() || '';
-            const category = tool.input.category;
-            let q = supabase.from('mentor_knowledge').select('*').eq('user_id', storagePrefix);
-            if (category) q = q.eq('category', category);
-            const { data: entries } = await q.order('created_at', { ascending: false }).limit(50);
+          try {
+            if (tool.name === 'save_knowledge') {
+              const entry = {
+                user_id: storagePrefix,
+                category: tool.input.category || 'Other',
+                title: tool.input.title || 'Untitled',
+                content: tool.input.content || '',
+                source: 'Mentor AI',
+              };
+              const { data: saved } = await supabase.from('mentor_knowledge').insert(entry).select().single();
+              if (saved) setKnowledge(prev => [saved, ...prev]);
+              results.push({ tool_use_id: tool.id, content: `Saved "${tool.input.title}" to ${tool.input.category}.` });
 
-            // Filter by search query (text match on title + content)
-            const matches = (entries || []).filter(e =>
-              e.title.toLowerCase().includes(query) ||
-              e.content.toLowerCase().includes(query) ||
-              e.category.toLowerCase().includes(query)
-            ).slice(0, 10);
+            } else if (tool.name === 'search_knowledge') {
+              const query = tool.input.query?.toLowerCase() || '';
+              const category = tool.input.category;
+              let q = supabase.from('mentor_knowledge').select('*').eq('user_id', storagePrefix);
+              if (category) q = q.eq('category', category);
+              const { data: entries } = await q.order('created_at', { ascending: false }).limit(50);
+              const matches = (entries || []).filter(e =>
+                e.title.toLowerCase().includes(query) ||
+                e.content.toLowerCase().includes(query) ||
+                e.category.toLowerCase().includes(query)
+              ).slice(0, 10);
+              if (matches.length === 0) {
+                results.push({ tool_use_id: tool.id, content: `No knowledge entries found matching "${tool.input.query}".` });
+              } else {
+                const formatted = matches.map(m => `[${m.category}] ${m.title}:\n${m.content}`).join('\n\n');
+                results.push({ tool_use_id: tool.id, content: `Found ${matches.length} entries:\n\n${formatted}` });
+              }
 
-            if (matches.length === 0) {
-              results.push({ tool_use_id: tool.id, content: `No knowledge entries found matching "${tool.input.query}".` });
+            } else if (tool.name === 'add_calendar_event') {
+              await supabase.from('calendar_events').insert({
+                user_id: storagePrefix,
+                date: tool.input.date,
+                title: tool.input.title,
+                start_time: tool.input.start_time,
+                end_time: tool.input.end_time,
+                notes: tool.input.notes || '',
+                color: '#2a2a2a',
+              });
+              loadCalendarEvents();
+              results.push({ tool_use_id: tool.id, content: `Added "${tool.input.title}" to calendar on ${tool.input.date}.` });
+
+            } else if (tool.name === 'edit_calendar_event') {
+              const updates: any = {};
+              if (tool.input.title) updates.title = tool.input.title;
+              if (tool.input.date) updates.date = tool.input.date;
+              if (tool.input.start_time) updates.start_time = tool.input.start_time;
+              if (tool.input.end_time) updates.end_time = tool.input.end_time;
+              if (tool.input.notes !== undefined) updates.notes = tool.input.notes;
+              await supabase.from('calendar_events').update(updates).eq('id', tool.input.event_id).eq('user_id', storagePrefix);
+              loadCalendarEvents();
+              results.push({ tool_use_id: tool.id, content: `Updated calendar event ${tool.input.event_id}.` });
+
+            } else if (tool.name === 'delete_calendar_event') {
+              await supabase.from('calendar_events').delete().eq('id', tool.input.event_id).eq('user_id', storagePrefix);
+              loadCalendarEvents();
+              results.push({ tool_use_id: tool.id, content: `Deleted calendar event ${tool.input.event_id}.` });
+
+            } else if (tool.name === 'list_clients') {
+              const { data: clients } = await supabase.from('clients').select('id, name, service, status, payment_status, amount, leader').eq('user_id', storagePrefix).order('created_at', { ascending: false });
+              if (!clients || clients.length === 0) {
+                results.push({ tool_use_id: tool.id, content: 'No clients found.' });
+              } else {
+                const formatted = clients.map(c => `- ${c.name} (ID: ${c.id}) | Service: ${c.service || 'N/A'} | Status: ${c.status || 'N/A'} | Payment: ${c.payment_status || 'N/A'} | Amount: $${c.amount || 0} | Leader: ${c.leader || 'N/A'}`).join('\n');
+                results.push({ tool_use_id: tool.id, content: `${clients.length} clients:\n${formatted}` });
+              }
+
+            } else if (tool.name === 'update_client_notes') {
+              const { data: detail } = await supabase.from('client_details').select('*').eq('client_id', tool.input.client_id).eq('user_id', storagePrefix).single();
+              if (detail) {
+                await supabase.from('client_details').update({ [tool.input.field]: tool.input.value }).eq('client_id', tool.input.client_id).eq('user_id', storagePrefix);
+              } else {
+                await supabase.from('client_details').insert({ user_id: storagePrefix, client_id: tool.input.client_id, [tool.input.field]: tool.input.value });
+              }
+              results.push({ tool_use_id: tool.id, content: `Updated ${tool.input.field} for client ${tool.input.client_id}.` });
+
+            } else if (tool.name === 'update_client_status') {
+              await supabase.from('clients').update({ status: tool.input.status }).eq('id', tool.input.client_id).eq('user_id', storagePrefix);
+              results.push({ tool_use_id: tool.id, content: `Updated client ${tool.input.client_id} status to ${tool.input.status}.` });
+
+            } else if (tool.name === 'list_invoices') {
+              let q = supabase.from('finance_items').select('id, client_name, amount, invoice_date, status, description').eq('user_id', storagePrefix);
+              if (tool.input.status) q = q.eq('status', tool.input.status);
+              const { data: invoices } = await q.order('invoice_date', { ascending: false }).limit(20);
+              if (!invoices || invoices.length === 0) {
+                results.push({ tool_use_id: tool.id, content: `No invoices found${tool.input.status ? ` with status "${tool.input.status}"` : ''}.` });
+              } else {
+                const formatted = invoices.map(inv => `- ${inv.client_name}: $${inv.amount} | ${inv.invoice_date} | ${inv.status}${inv.description ? ` | ${inv.description}` : ''} (ID: ${inv.id})`).join('\n');
+                results.push({ tool_use_id: tool.id, content: `${invoices.length} invoices:\n${formatted}` });
+              }
+
+            } else if (tool.name === 'update_invoice_status') {
+              await supabase.from('finance_items').update({ status: tool.input.status }).eq('id', tool.input.invoice_id).eq('user_id', storagePrefix);
+              results.push({ tool_use_id: tool.id, content: `Updated invoice ${tool.input.invoice_id} status to ${tool.input.status}.` });
+
             } else {
-              const formatted = matches.map(m => `[${m.category}] ${m.title}:\n${m.content}`).join('\n\n');
-              results.push({ tool_use_id: tool.id, content: `Found ${matches.length} entries:\n\n${formatted}` });
+              results.push({ tool_use_id: tool.id, content: `Unknown tool: ${tool.name}` });
             }
+          } catch (err: any) {
+            results.push({ tool_use_id: tool.id, content: `Error executing ${tool.name}: ${err.message}` });
           }
         }
         return results;
