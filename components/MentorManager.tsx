@@ -542,17 +542,23 @@ const MentorManager: React.FC<MentorManagerProps> = ({ storagePrefix }) => {
               }
 
             } else if (tool.name === 'add_calendar_event') {
-              await supabase.from('calendar_events').insert({
+              const eventId = crypto.randomUUID();
+              const { error: calErr } = await supabase.from('calendar_events').insert({
+                id: eventId,
                 user_id: storagePrefix,
                 date: tool.input.date,
                 title: tool.input.title,
                 start_time: tool.input.start_time,
                 end_time: tool.input.end_time,
-                notes: tool.input.notes || '',
-                color: '#2a2a2a',
+                description: tool.input.notes || '',
               });
-              loadCalendarEvents();
-              results.push({ tool_use_id: tool.id, content: `Added "${tool.input.title}" to calendar on ${tool.input.date}.` });
+              if (calErr) {
+                console.error('Calendar insert error:', calErr);
+                results.push({ tool_use_id: tool.id, content: `Error adding event: ${calErr.message}` });
+              } else {
+                loadCalendarEvents();
+                results.push({ tool_use_id: tool.id, content: `Added "${tool.input.title}" to calendar on ${tool.input.date} from ${tool.input.start_time} to ${tool.input.end_time}.` });
+              }
 
             } else if (tool.name === 'edit_calendar_event') {
               const updates: any = {};
