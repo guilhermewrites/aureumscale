@@ -1,5 +1,6 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { supabase } from '../services/supabaseClient';
 import {
   LayoutDashboard,
   Briefcase,
@@ -115,9 +116,10 @@ interface SidebarProps {
   onToggleCollapse: () => void;
   onSignOut?: () => void;
   userEmail?: string;
+  storagePrefix?: string;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ activeUserId, onUserChange, collapsed, onToggleCollapse, onSignOut, userEmail }) => {
+const Sidebar: React.FC<SidebarProps> = ({ activeUserId, onUserChange, collapsed, onToggleCollapse, onSignOut, userEmail, storagePrefix }) => {
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -135,6 +137,35 @@ const Sidebar: React.FC<SidebarProps> = ({ activeUserId, onUserChange, collapsed
   const [profilePhotoUrl, setProfilePhotoUrl] = useState<string | undefined>(undefined);
   const photoInputRef = useRef<HTMLInputElement>(null);
   const logoInputRef = useRef<HTMLInputElement>(null);
+
+  // Load profile from Supabase on mount
+  useEffect(() => {
+    if (!storagePrefix) return;
+    (async () => {
+      const { data } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .eq('user_id', storagePrefix)
+        .single();
+      if (data && (data.first_name || data.last_name || data.photo_url)) {
+        const firstName = data.first_name || '';
+        const lastName = data.last_name || '';
+        const fullName = `${firstName} ${lastName}`.trim() || 'Guilherme';
+        const initials = firstName && lastName
+          ? (firstName[0] + lastName[0]).toUpperCase()
+          : fullName.slice(0, 2).toUpperCase();
+        setUsers(prev => prev.map((u, i) => i === 0 ? {
+          ...u,
+          firstName,
+          lastName,
+          name: fullName,
+          label: fullName,
+          initials,
+          photoUrl: data.photo_url || undefined,
+        } : u));
+      }
+    })();
+  }, [storagePrefix]);
 
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -166,7 +197,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeUserId, onUserChange, collapsed
     setUserDropdownOpen(false);
   };
 
-  const saveProfile = () => {
+  const saveProfile = async () => {
     const nextFirst = profileFirstName.trim();
     const nextLast = profileLastName.trim();
     const fullName = `${nextFirst} ${nextLast}`.trim();
@@ -182,6 +213,17 @@ const Sidebar: React.FC<SidebarProps> = ({ activeUserId, onUserChange, collapsed
       photoUrl: profilePhotoUrl
     } : u));
     setIsProfileOpen(false);
+
+    // Persist to Supabase
+    if (storagePrefix) {
+      await supabase.from('user_profiles').upsert({
+        user_id: storagePrefix,
+        first_name: nextFirst,
+        last_name: nextLast,
+        photo_url: profilePhotoUrl || '',
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'user_id' });
+    }
   };
 
   const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {

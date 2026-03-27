@@ -616,6 +616,7 @@ const AuthenticatedApp: React.FC<{ user: User; signOut: () => Promise<void> }> =
         onToggleCollapse={() => setSidebarCollapsed(c => !c)}
         onSignOut={signOut}
         userEmail={user.email}
+        storagePrefix={storagePrefix}
       />
 
       <main key={user.id} className={`flex-1 ${sidebarCollapsed ? 'ml-16' : 'ml-64'} p-8 overflow-y-auto`}>
