@@ -490,7 +490,14 @@ const MentorManager: React.FC<MentorManagerProps> = ({ storagePrefix }) => {
         }),
       });
 
+      if (!res.ok) {
+        const errText = await res.text();
+        console.error('Mentor API error:', res.status, errText);
+        throw new Error(`API error (${res.status})`);
+      }
+
       let data = await res.json();
+      console.log('Mentor initial response:', { message: data.message?.slice(0, 100), needsFollowUp: data.needsFollowUp, toolCalls: data.toolCalls?.length, stopReason: data.stopReason });
 
       // Execute tool calls — handles all mentor tools
       const executeTools = async (toolCalls: any[]) => {
@@ -733,7 +740,8 @@ const MentorManager: React.FC<MentorManagerProps> = ({ storagePrefix }) => {
 
       // Tool loop — keep executing tools and sending results back until Claude responds with text
       let loopMessages = [...recentMessages];
-      let maxLoops = 5; // Safety limit
+      let maxLoops = 8; // Safety limit
+      let lastTextMessage = data.message || '';
 
       while (data.needsFollowUp && data.toolCalls && data.toolCalls.length > 0 && maxLoops > 0) {
         maxLoops--;
@@ -743,19 +751,30 @@ const MentorManager: React.FC<MentorManagerProps> = ({ storagePrefix }) => {
         loopMessages = [
           ...loopMessages,
           { role: 'assistant', content: data.rawAssistantContent },
-          { role: 'user', content: toolResults.map(r => ({ type: 'tool_result', tool_use_id: r.tool_use_id, content: r.content })) },
+          { role: 'user', content: toolResults.map((r: any) => ({ type: 'tool_result', tool_use_id: r.tool_use_id, content: r.content })) },
         ];
 
-        const followUpRes = await fetch('/api/mentor', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            messages: loopMessages,
-            context: buildContext(),
-          }),
-        });
+        try {
+          const followUpRes = await fetch('/api/mentor', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              messages: loopMessages,
+              context: buildContext(),
+            }),
+          });
 
-        data = await followUpRes.json();
+          if (!followUpRes.ok) {
+            console.error('Follow-up API error:', followUpRes.status);
+            break;
+          }
+
+          data = await followUpRes.json();
+          if (data.message) lastTextMessage = data.message;
+        } catch (loopErr) {
+          console.error('Follow-up fetch error:', loopErr);
+          break;
+        }
       }
 
       // Execute any remaining non-loop tool calls (server-side handled ones)
@@ -763,7 +782,8 @@ const MentorManager: React.FC<MentorManagerProps> = ({ storagePrefix }) => {
         await executeTools(data.toolCalls);
       }
 
-      const assistantContent = data.message || data.error || 'No response.';
+      // Use the last text message we got from any point in the loop
+      const assistantContent = data.message || lastTextMessage || data.error || 'Something went wrong — try again.';
 
       const assistantMsg: ChatMessage = {
         id: genId(),

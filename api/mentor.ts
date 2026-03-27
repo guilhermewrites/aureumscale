@@ -151,8 +151,9 @@ Day of week: ${context.dayOfWeek}`;
   // Knowledge base — only inject 5 most recent for general awareness
   if (context.knowledgeEntries && context.knowledgeEntries.length > 0) {
     const recentEntries = context.knowledgeEntries.slice(0, 5);
-    prompt += `\n\n--- RECENT KNOWLEDGE (${recentEntries.length} of ${context.knowledgeEntries.length} total entries) ---`;
-    prompt += `\nYou have ${context.knowledgeEntries.length} total knowledge entries. Use the search_knowledge tool to look up specific topics when needed.`;
+    const totalKnowledge = context.totalKnowledgeCount || recentEntries.length;
+    prompt += `\n\n--- RECENT KNOWLEDGE (${recentEntries.length} of ${totalKnowledge} total entries) ---`;
+    prompt += `\nYou have ${totalKnowledge} total knowledge entries. Use the search_knowledge tool to look up specific topics when needed.`;
     for (const entry of recentEntries) {
       prompt += `\n\n[${entry.category.toUpperCase()}] ${entry.title}:\n${entry.content}`;
     }
@@ -583,15 +584,18 @@ export default async function handler(req: Request) {
     // If search is needed, return tool calls + raw assistant content so client can handle the loop
     const needsClientLoop = data.stop_reason === 'tool_use' && hasClientSideTool;
 
+    // If Claude only used tools (no text) and it's not a client loop, set a fallback
     if (!assistantMessage && toolCalls.length === 0) {
       assistantMessage = 'No response generated.';
     }
 
+    // If Claude returned text + tool calls (mixed), still flag for follow-up but include the text
     return new Response(JSON.stringify({
-      message: assistantMessage,
+      message: assistantMessage || '',
       toolCalls,
       needsFollowUp: needsClientLoop,
       rawAssistantContent: needsClientLoop ? data.content : undefined,
+      stopReason: data.stop_reason,
     }), {
       status: 200,
       headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
