@@ -78,25 +78,55 @@ const AIBubble: React.FC<AIBubbleProps> = ({
   const chatRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
-  // Resizable panel
+  // Resizable + draggable panel
   const [panelSize, setPanelSize] = useState({ w: 400, h: 540 });
+  const [panelPos, setPanelPos] = useState<{ x: number; y: number } | null>(null); // null = default bottom-right
   const resizeRef = useRef<{ startX: number; startY: number; startW: number; startH: number; edge: string } | null>(null);
+  const dragRef = useRef<{ startX: number; startY: number; startPosX: number; startPosY: number } | null>(null);
+
+  // Get effective position (default to bottom-right)
+  const effectivePos = panelPos ?? { x: window.innerWidth - panelSize.w - 28, y: window.innerHeight - panelSize.h - 28 };
 
   useEffect(() => {
     const onMouseMove = (e: MouseEvent) => {
-      if (!resizeRef.current) return;
-      const { startX, startY, startW, startH, edge } = resizeRef.current;
-      let newW = startW;
-      let newH = startH;
-      if (edge.includes('left')) newW = Math.max(320, Math.min(900, startW + (startX - e.clientX)));
-      if (edge.includes('top')) newH = Math.max(300, Math.min(window.innerHeight - 60, startH + (startY - e.clientY)));
-      setPanelSize({ w: newW, h: newH });
+      // Handle resize
+      if (resizeRef.current) {
+        const { startX, startY, startW, startH, edge } = resizeRef.current;
+        let newW = startW;
+        let newH = startH;
+        const pos = panelPos ?? { x: window.innerWidth - startW - 28, y: window.innerHeight - startH - 28 };
+        let newX = pos.x;
+        let newY = pos.y;
+        if (edge.includes('left')) {
+          newW = Math.max(320, Math.min(900, startW + (startX - e.clientX)));
+          newX = pos.x - (newW - startW);
+        }
+        if (edge.includes('top')) {
+          newH = Math.max(300, Math.min(window.innerHeight - 20, startH + (startY - e.clientY)));
+          newY = pos.y - (newH - startH);
+        }
+        setPanelSize({ w: newW, h: newH });
+        setPanelPos({ x: newX, y: newY });
+        return;
+      }
+      // Handle drag
+      if (dragRef.current) {
+        const { startX, startY, startPosX, startPosY } = dragRef.current;
+        const newX = Math.max(0, Math.min(window.innerWidth - 100, startPosX + (e.clientX - startX)));
+        const newY = Math.max(0, Math.min(window.innerHeight - 100, startPosY + (e.clientY - startY)));
+        setPanelPos({ x: newX, y: newY });
+      }
     };
-    const onMouseUp = () => { resizeRef.current = null; document.body.style.cursor = ''; document.body.style.userSelect = ''; };
+    const onMouseUp = () => {
+      resizeRef.current = null;
+      dragRef.current = null;
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    };
     window.addEventListener('mousemove', onMouseMove);
     window.addEventListener('mouseup', onMouseUp);
     return () => { window.removeEventListener('mousemove', onMouseMove); window.removeEventListener('mouseup', onMouseUp); };
-  }, []);
+  }, [panelPos]);
 
   // @mention state
   const [allClients, setAllClients] = useState<ClientRecord[]>([]);
@@ -468,7 +498,8 @@ const AIBubble: React.FC<AIBubbleProps> = ({
         <div
           className="fixed z-[9999] flex flex-col shadow-2xl"
           style={{
-            bottom: 28, right: 28, width: panelSize.w, height: panelSize.h,
+            left: effectivePos.x, top: effectivePos.y,
+            width: panelSize.w, height: panelSize.h,
             background: '#1c1c1c', borderRadius: 20,
             border: '1px solid #2a2a2a', overflow: 'hidden',
           }}
@@ -492,8 +523,19 @@ const AIBubble: React.FC<AIBubbleProps> = ({
             style={{ width: 12, height: 12, cursor: 'nwse-resize' }}
             onMouseDown={e => { resizeRef.current = { startX: e.clientX, startY: e.clientY, startW: panelSize.w, startH: panelSize.h, edge: 'top-left' }; document.body.style.cursor = 'nwse-resize'; document.body.style.userSelect = 'none'; }}
           />
-          {/* Header */}
-          <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: '1px solid #222' }}>
+          {/* Header — drag to move */}
+          <div
+            className="flex items-center justify-between px-4 py-3 cursor-grab active:cursor-grabbing"
+            style={{ borderBottom: '1px solid #222' }}
+            onMouseDown={e => {
+              // Don't start drag if clicking a button
+              if ((e.target as HTMLElement).closest('button')) return;
+              const pos = panelPos ?? { x: window.innerWidth - panelSize.w - 28, y: window.innerHeight - panelSize.h - 28 };
+              dragRef.current = { startX: e.clientX, startY: e.clientY, startPosX: pos.x, startPosY: pos.y };
+              document.body.style.cursor = 'grabbing';
+              document.body.style.userSelect = 'none';
+            }}
+          >
             <div className="flex items-center gap-2.5">
               <img src="/aureum-logo.svg" alt="" style={{ width: 20, height: 20 }} />
               <div>
