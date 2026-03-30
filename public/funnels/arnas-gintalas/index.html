@@ -614,12 +614,49 @@ input:focus {
 /* ── FOOTER ── */
 footer {
   border-top: 1px solid var(--border);
-  padding: 24px 40px;
+  padding: 40px 40px 32px;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: space-between;
+  gap: 16px;
   font-size: 11px;
   color: var(--dim);
+  text-align: center;
+}
+.footer-links {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.footer-links a {
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 11px;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+.footer-links a:hover { color: var(--text); }
+.footer-sep { color: var(--dim); opacity: 0.4; }
+.footer-copy {
+  font-size: 11px;
+  color: var(--dim);
+}
+.footer-disclaimer {
+  max-width: 700px;
+  margin-top: 12px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.footer-disclaimer p {
+  font-size: 9px;
+  line-height: 1.6;
+  color: var(--dim);
+  opacity: 0.7;
 }
 
 /* ── ANIMATIONS ── */
@@ -1020,7 +1057,8 @@ footer {
   .discover-body { grid-template-columns: 1fr; }
   .disc-case-card { max-width: 100%; }
   nav { padding: 16px 24px; }
-  footer { flex-direction: column; gap: 8px; text-align: center; }
+  footer { padding: 32px 20px 24px; }
+  .footer-disclaimer { max-width: 100%; }
 }
 </style>
 </head>
@@ -1147,8 +1185,21 @@ footer {
 
   <!-- FOOTER -->
   <footer>
-    <span>© 2026 Arnas Gintalas · All rights reserved</span>
-    <span>Privacy Policy · Terms of Use</span>
+    <div class="footer-links">
+      <a href="#">Privacy Policy</a>
+      <span class="footer-sep">·</span>
+      <a href="#">Terms of Service</a>
+      <span class="footer-sep">·</span>
+      <a href="#">Earnings Disclaimer</a>
+      <span class="footer-sep">·</span>
+      <a href="#">Contact</a>
+    </div>
+    <p class="footer-copy">© 2026 Arnas Gintalas · All rights reserved</p>
+    <div class="footer-disclaimer">
+      <p>This site is not a part of the Facebook™ website or Facebook™ Inc. Additionally, this site is NOT endorsed by Facebook™ in any way. FACEBOOK™ is a trademark of FACEBOOK™, Inc.</p>
+      <p>This site is not a part of the Instagram™ website or Instagram™/Meta Platforms, Inc. Additionally, this site is NOT endorsed by Instagram™ or Meta™ in any way. INSTAGRAM™ is a trademark of META PLATFORMS™, Inc.</p>
+      <p>EARNINGS DISCLAIMER: The results stated on this page and in any of our materials are not typical. Your results will vary and depend on many factors, including but not limited to your background, experience, and work ethic. All business entails risk as well as massive and consistent effort and action. If you're not willing to accept that, this is not for you. We make no guarantees regarding the level of success you may experience. The testimonials and examples used are exceptional results, which do not apply to the average attendee, and are not intended to represent or guarantee that anyone will achieve the same or similar results. Each individual's success depends on their unique background, dedication, desire, and motivation.</p>
+    </div>
   </footer>
 
 </div>
