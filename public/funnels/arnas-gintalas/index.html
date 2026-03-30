@@ -901,6 +901,58 @@ footer {
   box-shadow: 0 0 32px rgba(124,58,237,0.25);
 }
 
+/* ── COUNTDOWN ── */
+.countdown-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-bottom: 24px;
+}
+.countdown-block {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 12px;
+  padding: 18px 6px 12px;
+  text-align: center;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  position: relative;
+  overflow: hidden;
+}
+.countdown-block::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(160deg, rgba(255,255,255,0.05) 0%, transparent 60%);
+  pointer-events: none;
+}
+.countdown-num {
+  font-size: 30px;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  color: var(--text);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  margin-bottom: 6px;
+  font-family: 'JetBrains Mono', monospace;
+}
+.countdown-lbl {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--dim);
+  font-family: 'JetBrains Mono', monospace;
+}
+.event-tz-note {
+  font-size: 10px;
+  color: var(--dim);
+  text-align: center;
+  margin-top: -18px;
+  margin-bottom: 20px;
+  font-family: 'JetBrains Mono', monospace;
+}
+
 /* ── RESPONSIVE ── */
 @media (max-width: 900px) {
   .hero-bg-wrap {
@@ -1014,36 +1066,41 @@ footer {
     <div class="optin-card">
       <div class="optin-inner-glow"></div>
       <div class="optin-label">Reserve Your Seat</div>
-      <div class="optin-title">Free Registration</div>
-      <p class="optin-desc">Drop your details below and we'll send the webinar link straight to your inbox.</p>
+      <div class="optin-title">Event Starts In</div>
+      <p class="optin-desc">Secure your free spot — limited seats available.</p>
 
       <div class="date-badge">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-        <span><strong>Today</strong> · Live · 8PM EST</span>
+        <span id="event-date-display"><strong>Live Event</strong> · 2:00 PM GMT</span>
+      </div>
+      <div class="event-tz-note" id="event-tz-note"></div>
+
+      <div class="countdown-grid">
+        <div class="countdown-block">
+          <div class="countdown-num" id="cd-days">00</div>
+          <div class="countdown-lbl">Days</div>
+        </div>
+        <div class="countdown-block">
+          <div class="countdown-num" id="cd-hours">00</div>
+          <div class="countdown-lbl">Hours</div>
+        </div>
+        <div class="countdown-block">
+          <div class="countdown-num" id="cd-mins">00</div>
+          <div class="countdown-lbl">Min</div>
+        </div>
+        <div class="countdown-block">
+          <div class="countdown-num" id="cd-secs">00</div>
+          <div class="countdown-lbl">Sec</div>
+        </div>
       </div>
 
-      <form onsubmit="return false;" class="form-group">
-        <div class="field-wrap">
-          <svg class="field-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-          <input type="text" placeholder="Your full name" required>
-        </div>
-        <div class="field-wrap">
-          <svg class="field-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-          <input type="email" placeholder="Your best email" required>
-        </div>
-        <div class="field-wrap">
-          <svg class="field-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.59 1h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 8.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-          <input type="tel" id="phone" placeholder="Phone number" required>
-        </div>
-      </form>
-
-      <button class="btn-submit" onclick="handleSubmit()">
-        Register For Free →
-      </button>
+      <a href="https://form.typeform.com/to/WYXD0GmM?utm_campaign=xxxxx&utm_source=xxxxx" class="btn-submit" style="display:block;text-align:center;text-decoration:none;">
+        Reserve My Free Seat →
+      </a>
 
       <p class="form-note">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-        Your info is safe. Zero spam, ever.
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        100% free · No credit card required
       </p>
     </div>
     </div><!-- /optin-wrap -->
@@ -1069,101 +1126,12 @@ footer {
     </div>
     </div>
   </div>
-  <div class="fan-name">
-      <div class="fan-name-text">Arnas Gintalas</div>
-      <div class="fan-name-sub">Founder · Instagram Mastery</div>
-    </div>
-  </div>
-
-  <div class="fold-2-wrap">
-  <!-- CARDS BELOW HERO -->
-  <div class="cards-section">
-    <div class="cards-divider">
-      <div class="cards-divider-line"></div>
-      <div class="cards-divider-label">What You'll Learn</div>
-      <div class="cards-divider-line"></div>
-    </div>
-
-        <div class="cards-grid">
-      <div class="info-card">
-        <div class="card-number">01</div>
-        <div class="card-icon">⚡</div>
-        <div class="card-title">The Anonymous Theme Page Model</div>
-        <p class="card-body">How to build and monetize Instagram theme pages without showing your face, creating content, or relying on followers.</p>
-      </div>
-      <div class="info-card">
-        <div class="card-number">02</div>
-        <div class="card-icon">🤖</div>
-        <div class="card-title">Organic Growth That Compounds</div>
-        <p class="card-body">The exact strategy behind rapid page growth — consistent reach, viral content loops, and zero ad spend required.</p>
-      </div>
-      <div class="info-card">
-        <div class="card-number">03</div>
-        <div class="card-icon">🎯</div>
-        <div class="card-title">Scale to 7 Figures Per Month</div>
-        <p class="card-body">How to turn theme pages into a real revenue engine — multiple income streams, automation, and predictable monthly profit.</p>
-      </div>
-    </div>
-    </div>
-  </div>
-
-  <!-- DISCOVER SECTION -->
-  <section class="discover-section">
-    <div class="discover-inner">
-      <div class="discover-header">
-        <span class="disc-pre">In This</span>
-        <h2 class="disc-title"><span class="disc-purple">100% Free</span> Live Training,<br>You'll Discover…</h2>
-      </div>
-
-      <div class="discover-body">
-        <!-- LEFT: bullet list -->
-        <ul class="disc-list">
-          <li>
-            <div class="disc-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
-            <div class="disc-text">The <span class="disc-underline">Exact Blueprint</span> Behind <strong>Anonymous Theme Pages That Generate 7 Figures Per Month</strong> — Without Showing Your Face</div>
-          </li>
-          <li>
-            <div class="disc-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
-            <div class="disc-text">How To Use The <strong>3 Monetization Pillars</strong> That Turn Any Theme Page Into A <span class="disc-underline">Predictable Income Stream</span></div>
-          </li>
-          <li>
-            <div class="disc-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
-            <div class="disc-text">The <span class="disc-underline">Biggest Mistake</span> Beginners Make With Theme Pages — <strong>And The Simple Fix</strong> That Turns Followers Into <span class="disc-underline">Real Revenue</span></div>
-          </li>
-          <li>
-            <div class="disc-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
-            <div class="disc-text">Why Most People <strong>Waste Months Growing Pages</strong> That Never Make Money — And <span class="disc-underline">How To Pick Winning Niches From Day One</span></div>
-          </li>
-          <li>
-            <div class="disc-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
-            <div class="disc-text">The <strong>Content System</strong> That Lets You Post Daily <span class="disc-underline">In Under 15 Minutes</span> — No Editing Skills Required</div>
-          </li>
-        </ul>
-
-        <!-- RIGHT: case study card -->
-        <div class="disc-case-card">
-          <div class="disc-case-lock">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-          </div>
-          <div class="disc-case-title">Theme Page Case Study</div>
-          <div class="disc-case-stats">From Zero to 7 Figures/Month With Anonymous Instagram Pages</div>
-          <div class="disc-case-note">Register to unlock full case study on next page</div>
-        </div>
-      </div>
-
-      <!-- CTA -->
-      <div class="disc-cta-wrap">
-        <button class="disc-cta-btn" onclick="window.location.href='thank-you.html'">SAVE MY SEAT →</button>
-      </div>
-    </div>
-  </section>
 
   <!-- FOOTER -->
   <footer>
     <span>© 2026 Arnas Gintalas · All rights reserved</span>
     <span>Privacy Policy · Terms of Use</span>
   </footer>
-  </div><!-- .fold-2-wrap -->
 
 </div>
 
@@ -1195,19 +1163,44 @@ function headlineLoop() {
 }
 headlineLoop();
 
-// Phone mask
-document.getElementById('phone').addEventListener('input', function(e) {
-  let v = e.target.value.replace(/\D/g, '');
-  if (v.length > 11) v = v.slice(0, 11);
-  if (v.length > 6) v = '(' + v.slice(0,2) + ') ' + v.slice(2,7) + '-' + v.slice(7);
-  else if (v.length > 2) v = '(' + v.slice(0,2) + ') ' + v.slice(2);
-  e.target.value = v;
-});
+// ── COUNTDOWN ──
+// *** UPDATE THIS DATE to your actual event date/time (UTC) ***
+var EVENT_UTC = new Date('2026-04-10T14:00:00Z');
 
-// Submit handler
-function handleSubmit() {
-  window.location.href = 'thank-you.html';
+var cdDays  = document.getElementById('cd-days');
+var cdHours = document.getElementById('cd-hours');
+var cdMins  = document.getElementById('cd-mins');
+var cdSecs  = document.getElementById('cd-secs');
+
+function pad(n) { return String(n).padStart(2, '0'); }
+
+function updateCountdown() {
+  var diff = EVENT_UTC - Date.now();
+  if (diff <= 0) {
+    cdDays.textContent = '00';
+    cdHours.textContent = '00';
+    cdMins.textContent = '00';
+    cdSecs.textContent = '00';
+    return;
+  }
+  cdDays.textContent  = pad(Math.floor(diff / 86400000));
+  cdHours.textContent = pad(Math.floor((diff % 86400000) / 3600000));
+  cdMins.textContent  = pad(Math.floor((diff % 3600000) / 60000));
+  cdSecs.textContent  = pad(Math.floor((diff % 60000) / 1000));
 }
+
+// Show event time in visitor's local timezone (auto-detected from browser)
+(function() {
+  var localDate = EVENT_UTC.toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' });
+  var localTime = EVENT_UTC.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  var tz = Intl.DateTimeFormat().resolvedOptions().timeZone.replace(/_/g, ' ');
+  document.getElementById('event-date-display').innerHTML =
+    '<strong>' + localDate + '</strong> · ' + localTime;
+  document.getElementById('event-tz-note').textContent = tz;
+})();
+
+updateCountdown();
+setInterval(updateCountdown, 1000);
 </script>
 </body>
 </html>
