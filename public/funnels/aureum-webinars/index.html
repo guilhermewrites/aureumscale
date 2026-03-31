@@ -71,7 +71,6 @@ body {
   object-position: center top;
 }
 
-/* Dark overlay for text readability */
 .hero-bg::after {
   content: '';
   position: absolute;
@@ -130,7 +129,7 @@ body {
 .video-frame {
   position: relative;
   width: 100%;
-  padding-bottom: 56.25%; /* 16:9 */
+  padding-bottom: 56.25%;
   border-radius: 12px;
   overflow: hidden;
   background: rgba(255, 255, 255, 0.08);
@@ -152,7 +151,6 @@ body {
   border-radius: 12px;
 }
 
-/* Placeholder when no video is set */
 .video-placeholder {
   position: absolute;
   inset: 0;
@@ -196,16 +194,377 @@ body {
     0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
-.cta-btn:active {
-  transform: translateY(0);
+.cta-btn:active { transform: translateY(0); }
+.cta-btn svg { transition: transform 0.3s ease; }
+.cta-btn:hover svg { transform: translateX(3px); }
+
+/* ══════════════════════════════════════
+   FORM OVERLAY
+   ══════════════════════════════════════ */
+.form-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(10, 8, 5, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.4s ease;
 }
 
-.cta-btn svg {
-  transition: transform 0.3s ease;
+.form-overlay.active {
+  opacity: 1;
+  pointer-events: all;
 }
 
-.cta-btn:hover svg {
+.form-container {
+  position: relative;
+  width: 100%;
+  max-width: 540px;
+  margin: 0 20px;
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(40px);
+  -webkit-backdrop-filter: blur(40px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  padding: 40px 36px 36px;
+  box-shadow:
+    0 24px 80px rgba(0, 0, 0, 0.5),
+    0 0 0 1px rgba(255, 255, 255, 0.04) inset;
+  transform: translateY(20px) scale(0.97);
+  transition: transform 0.4s ease;
+}
+
+.form-overlay.active .form-container {
+  transform: translateY(0) scale(1);
+}
+
+/* Close button */
+.form-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.05);
+  color: var(--dim);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  font-size: 16px;
+  line-height: 1;
+}
+
+.form-close:hover {
+  background: rgba(255,255,255,0.1);
+  color: var(--text);
+}
+
+/* ── PROGRESS BAR ── */
+.form-progress {
+  margin-bottom: 32px;
+}
+
+.form-progress-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.form-progress-count {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--brand);
+  letter-spacing: 0.04em;
+}
+
+.form-progress-pct {
+  font-size: 11px;
+  color: var(--dim);
+}
+
+.form-progress-track {
+  width: 100%;
+  height: 4px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.form-progress-fill {
+  height: 100%;
+  background: var(--brand);
+  border-radius: 4px;
+  transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  width: 10%;
+}
+
+/* ── QUESTION SLIDES ── */
+.form-question {
+  display: none;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.form-question.active {
+  display: flex;
+  animation: slideIn 0.4s ease forwards;
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(30px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes slideOut {
+  from { opacity: 1; transform: translateX(0); }
+  to   { opacity: 0; transform: translateX(-30px); }
+}
+
+.form-question.exiting {
+  display: flex;
+  animation: slideOut 0.25s ease forwards;
+}
+
+.form-question-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-weight: 600;
+  font-size: 24px;
+  color: var(--text);
+  line-height: 1.3;
+}
+
+/* ── TEXT INPUTS ── */
+.form-input-wrap {
+  position: relative;
+}
+
+.form-input {
+  width: 100%;
+  padding: 16px 18px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 10px;
+  color: var(--text);
+  font-family: 'Inter', sans-serif;
+  font-size: 15px;
+  font-weight: 400;
+  outline: none;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.form-input::placeholder {
+  color: var(--dim);
+  opacity: 0.6;
+}
+
+.form-input:focus {
+  border-color: var(--brand);
+  background: rgba(255,255,255,0.07);
+}
+
+/* Instagram prefix */
+.form-input-prefix {
+  position: relative;
+}
+
+.form-input-prefix .form-input {
+  padding-left: 38px;
+}
+
+.form-input-prefix::before {
+  content: '@';
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--brand);
+  font-size: 15px;
+  font-weight: 600;
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* Phone input */
+.phone-input-wrap {
+  display: flex;
+  gap: 10px;
+}
+
+.phone-country {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 14px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 10px;
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+  min-width: 90px;
+  justify-content: center;
+}
+
+.phone-country-flag {
+  font-size: 18px;
+  line-height: 1;
+}
+
+.phone-input-wrap .form-input {
+  flex: 1;
+}
+
+/* ── OPTION BUTTONS ── */
+.form-options {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.form-option {
+  display: flex;
+  align-items: center;
+  padding: 16px 20px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+}
+
+.form-option:hover {
+  background: rgba(255,255,255,0.08);
+  border-color: rgba(255,255,255,0.15);
+}
+
+.form-option.selected {
+  background: rgba(199, 181, 158, 0.12);
+  border-color: var(--brand);
+  color: var(--brand);
+}
+
+.form-option-dot {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid rgba(255,255,255,0.15);
+  margin-right: 14px;
+  flex-shrink: 0;
+  transition: all 0.2s;
+  position: relative;
+}
+
+.form-option.selected .form-option-dot {
+  border-color: var(--brand);
+  background: var(--brand);
+}
+
+.form-option.selected .form-option-dot::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--dark);
+}
+
+/* ── NEXT / SUBMIT BUTTON ── */
+.form-next-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 16px;
+  background: var(--brand);
+  color: var(--dark);
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  margin-top: 4px;
+}
+
+.form-next-btn:hover {
+  background: var(--brand-hover);
+  transform: translateY(-1px);
+}
+
+.form-next-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.form-next-btn svg {
+  transition: transform 0.2s;
+}
+
+.form-next-btn:hover:not(:disabled) svg {
   transform: translateX(3px);
+}
+
+/* ── SUCCESS SCREEN ── */
+.form-success {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 16px;
+  padding: 20px 0;
+}
+
+.form-success.active {
+  display: flex;
+  animation: slideIn 0.5s ease forwards;
+}
+
+.form-success-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: rgba(199, 181, 158, 0.15);
+  border: 2px solid var(--brand);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 4px;
+}
+
+.form-success-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-weight: 600;
+  font-size: 28px;
+  color: var(--text);
+}
+
+.form-success-text {
+  font-size: 14px;
+  color: var(--dim);
+  line-height: 1.6;
+  max-width: 360px;
 }
 
 /* ── FOOTER ── */
@@ -236,7 +595,6 @@ footer {
 }
 
 .footer-links a:hover { color: var(--text); }
-
 .footer-sep { color: var(--dim); opacity: 0.4; font-size: 11px; }
 
 .footer-copy {
@@ -268,18 +626,9 @@ footer {
     min-height: 100svh;
   }
 
-  .hero-title {
-    font-size: clamp(42px, 12vw, 64px);
-  }
-
-  .hero-subtitle {
-    margin-bottom: 36px;
-    padding: 0 10px;
-  }
-
-  .video-wrapper {
-    margin-bottom: 32px;
-  }
+  .hero-title { font-size: clamp(42px, 12vw, 64px); }
+  .hero-subtitle { margin-bottom: 36px; padding: 0 10px; }
+  .video-wrapper { margin-bottom: 32px; }
 
   .cta-btn {
     padding: 16px 36px;
@@ -291,6 +640,13 @@ footer {
 
   footer { padding: 32px 20px 24px; }
   .footer-disclaimer { max-width: 100%; }
+
+  .form-container {
+    padding: 32px 24px 28px;
+    margin: 0 12px;
+  }
+
+  .form-question-title { font-size: 20px; }
 }
 
 /* ── FADE IN ANIMATION ── */
@@ -329,12 +685,191 @@ footer {
         </div>
       </div>
 
-      <a href="#" class="cta-btn">
+      <button class="cta-btn" onclick="openForm()">
         Click Here To Apply
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
-      </a>
+      </button>
     </div>
   </section>
+
+  <!-- ═══ FORM OVERLAY ═══ -->
+  <div class="form-overlay" id="formOverlay">
+    <div class="form-container">
+      <button class="form-close" onclick="closeForm()">&times;</button>
+
+      <!-- PROGRESS -->
+      <div class="form-progress">
+        <div class="form-progress-label">
+          <span class="form-progress-count" id="progressCount">1 / 10</span>
+          <span class="form-progress-pct" id="progressPct">10%</span>
+        </div>
+        <div class="form-progress-track">
+          <div class="form-progress-fill" id="progressFill"></div>
+        </div>
+      </div>
+
+      <!-- Q1: Instagram -->
+      <div class="form-question active" data-step="1">
+        <p class="form-question-title">What's your Instagram?</p>
+        <div class="form-input-wrap form-input-prefix">
+          <input type="text" class="form-input" id="q1" placeholder="yourusername" autocomplete="off" spellcheck="false">
+        </div>
+        <button class="form-next-btn" onclick="nextStep(1)" disabled>
+          Continue
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+        </button>
+      </div>
+
+      <!-- Q2: Info-product -->
+      <div class="form-question" data-step="2">
+        <p class="form-question-title">Are you running an info-product offer?</p>
+        <div class="form-options" data-q="2">
+          <div class="form-option" onclick="selectOption(this, 2)">
+            <span class="form-option-dot"></span> Yes
+          </div>
+          <div class="form-option" onclick="selectOption(this, 2)">
+            <span class="form-option-dot"></span> No
+          </div>
+        </div>
+      </div>
+
+      <!-- Q3: Bottleneck -->
+      <div class="form-question" data-step="3">
+        <p class="form-question-title">What's the current bottleneck of your operation?</p>
+        <div class="form-options" data-q="3">
+          <div class="form-option" onclick="selectOption(this, 3)">
+            <span class="form-option-dot"></span> Close-rate
+          </div>
+          <div class="form-option" onclick="selectOption(this, 3)">
+            <span class="form-option-dot"></span> Show-up rate
+          </div>
+          <div class="form-option" onclick="selectOption(this, 3)">
+            <span class="form-option-dot"></span> Lead-flow
+          </div>
+          <div class="form-option" onclick="selectOption(this, 3)">
+            <span class="form-option-dot"></span> Other
+          </div>
+        </div>
+      </div>
+
+      <!-- Q4: Revenue -->
+      <div class="form-question" data-step="4">
+        <p class="form-question-title">What's your monthly revenue? Rough estimate is fine.</p>
+        <div class="form-options" data-q="4">
+          <div class="form-option" onclick="selectOption(this, 4)">
+            <span class="form-option-dot"></span> $10,000 USD to $20,000 USD
+          </div>
+          <div class="form-option" onclick="selectOption(this, 4)">
+            <span class="form-option-dot"></span> $20,000 USD to $50,000 USD
+          </div>
+          <div class="form-option" onclick="selectOption(this, 4)">
+            <span class="form-option-dot"></span> Over $50,000 USD
+          </div>
+        </div>
+      </div>
+
+      <!-- Q5: Webinar before -->
+      <div class="form-question" data-step="5">
+        <p class="form-question-title">Have you ever done a webinar before?</p>
+        <div class="form-options" data-q="5">
+          <div class="form-option" onclick="selectOption(this, 5)">
+            <span class="form-option-dot"></span> Yes
+          </div>
+          <div class="form-option" onclick="selectOption(this, 5)">
+            <span class="form-option-dot"></span> No
+          </div>
+        </div>
+      </div>
+
+      <!-- Q6: Running ads -->
+      <div class="form-question" data-step="6">
+        <p class="form-question-title">Are you currently running ads?</p>
+        <div class="form-options" data-q="6">
+          <div class="form-option" onclick="selectOption(this, 6)">
+            <span class="form-option-dot"></span> Yes
+          </div>
+          <div class="form-option" onclick="selectOption(this, 6)">
+            <span class="form-option-dot"></span> No
+          </div>
+        </div>
+      </div>
+
+      <!-- Q7: Investment -->
+      <div class="form-question" data-step="7">
+        <p class="form-question-title">If we were to work together, what's a comfortable range of investment that you'd be willing to make today?</p>
+        <div class="form-options" data-q="7">
+          <div class="form-option" onclick="selectOption(this, 7)">
+            <span class="form-option-dot"></span> $3,000 USD to $5,000 USD
+          </div>
+          <div class="form-option" onclick="selectOption(this, 7)">
+            <span class="form-option-dot"></span> $5,000 USD to $7,000 USD
+          </div>
+          <div class="form-option" onclick="selectOption(this, 7)">
+            <span class="form-option-dot"></span> $7,000 USD to $10,000 USD
+          </div>
+          <div class="form-option" onclick="selectOption(this, 7)">
+            <span class="form-option-dot"></span> Over $10,000 USD
+          </div>
+        </div>
+      </div>
+
+      <!-- Q8: Seriousness -->
+      <div class="form-question" data-step="8">
+        <p class="form-question-title">How serious are you about building a webinar vertical in your operation?</p>
+        <div class="form-options" data-q="8">
+          <div class="form-option" onclick="selectOption(this, 8)">
+            <span class="form-option-dot"></span> Somewhat interested
+          </div>
+          <div class="form-option" onclick="selectOption(this, 8)">
+            <span class="form-option-dot"></span> Interested
+          </div>
+          <div class="form-option" onclick="selectOption(this, 8)">
+            <span class="form-option-dot"></span> I'm ready to do it
+          </div>
+        </div>
+      </div>
+
+      <!-- Q9: Email -->
+      <div class="form-question" data-step="9">
+        <p class="form-question-title">What's your email?</p>
+        <div class="form-input-wrap">
+          <input type="email" class="form-input" id="q9" placeholder="your@email.com" autocomplete="email">
+        </div>
+        <button class="form-next-btn" onclick="nextStep(9)" disabled>
+          Continue
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+        </button>
+      </div>
+
+      <!-- Q10: Phone -->
+      <div class="form-question" data-step="10">
+        <p class="form-question-title">What's your phone number?</p>
+        <div class="form-input-wrap">
+          <div class="phone-input-wrap">
+            <div class="phone-country" id="phoneCountry">
+              <span class="phone-country-flag" id="phoneFlag"></span>
+              <span id="phoneCode"></span>
+            </div>
+            <input type="tel" class="form-input" id="q10" placeholder="Your phone number" autocomplete="tel">
+          </div>
+        </div>
+        <button class="form-next-btn" onclick="submitForm()" disabled>
+          Submit Application
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+        </button>
+      </div>
+
+      <!-- SUCCESS -->
+      <div class="form-success" id="formSuccess">
+        <div class="form-success-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#C7B59E" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+        <p class="form-success-title">Application Received</p>
+        <p class="form-success-text">Thank you for applying. We'll review your details and get back to you shortly.</p>
+      </div>
+
+    </div>
+  </div>
 
   <!-- ═══ FOOTER ═══ -->
   <footer>
@@ -354,6 +889,227 @@ footer {
       <p>EARNINGS DISCLAIMER: The results stated on this page and in any of our materials are not typical. Your results will vary and depend on many factors, including but not limited to your background, experience, and work ethic. All business entails risk as well as massive and consistent effort and action. If you're not willing to accept that, this is not for you. We make no guarantees regarding the level of success you may experience. The testimonials and examples used are exceptional results, which do not apply to the average attendee, and are not intended to represent or guarantee that anyone will achieve the same or similar results. Each individual's success depends on their unique background, dedication, desire, and motivation.</p>
     </div>
   </footer>
+
+<script>
+// ── STATE ──
+let currentStep = 1;
+const totalSteps = 10;
+const answers = {};
+
+// ── PHONE COUNTRY DETECTION ──
+const countryData = {
+  US: { flag: '\u{1F1FA}\u{1F1F8}', code: '+1' },
+  GB: { flag: '\u{1F1EC}\u{1F1E7}', code: '+44' },
+  BR: { flag: '\u{1F1E7}\u{1F1F7}', code: '+55' },
+  PT: { flag: '\u{1F1F5}\u{1F1F9}', code: '+351' },
+  DE: { flag: '\u{1F1E9}\u{1F1EA}', code: '+49' },
+  FR: { flag: '\u{1F1EB}\u{1F1F7}', code: '+33' },
+  ES: { flag: '\u{1F1EA}\u{1F1F8}', code: '+34' },
+  IT: { flag: '\u{1F1EE}\u{1F1F9}', code: '+39' },
+  CA: { flag: '\u{1F1E8}\u{1F1E6}', code: '+1' },
+  AU: { flag: '\u{1F1E6}\u{1F1FA}', code: '+61' },
+  IN: { flag: '\u{1F1EE}\u{1F1F3}', code: '+91' },
+  MX: { flag: '\u{1F1F2}\u{1F1FD}', code: '+52' },
+  NL: { flag: '\u{1F1F3}\u{1F1F1}', code: '+31' },
+  SE: { flag: '\u{1F1F8}\u{1F1EA}', code: '+46' },
+  NO: { flag: '\u{1F1F3}\u{1F1F4}', code: '+47' },
+  DK: { flag: '\u{1F1E9}\u{1F1F0}', code: '+45' },
+  IE: { flag: '\u{1F1EE}\u{1F1EA}', code: '+353' },
+  LT: { flag: '\u{1F1F1}\u{1F1F9}', code: '+370' },
+  PL: { flag: '\u{1F1F5}\u{1F1F1}', code: '+48' },
+  AE: { flag: '\u{1F1E6}\u{1F1EA}', code: '+971' },
+  ZA: { flag: '\u{1F1FF}\u{1F1E6}', code: '+27' },
+  NZ: { flag: '\u{1F1F3}\u{1F1FF}', code: '+64' },
+  SG: { flag: '\u{1F1F8}\u{1F1EC}', code: '+65' },
+  CH: { flag: '\u{1F1E8}\u{1F1ED}', code: '+41' },
+  AT: { flag: '\u{1F1E6}\u{1F1F9}', code: '+43' },
+  BE: { flag: '\u{1F1E7}\u{1F1EA}', code: '+32' },
+  FI: { flag: '\u{1F1EB}\u{1F1EE}', code: '+358' },
+  AR: { flag: '\u{1F1E6}\u{1F1F7}', code: '+54' },
+  CO: { flag: '\u{1F1E8}\u{1F1F4}', code: '+57' },
+  CL: { flag: '\u{1F1E8}\u{1F1F1}', code: '+56' },
+  PH: { flag: '\u{1F1F5}\u{1F1ED}', code: '+63' },
+  JP: { flag: '\u{1F1EF}\u{1F1F5}', code: '+81' },
+  KR: { flag: '\u{1F1F0}\u{1F1F7}', code: '+82' },
+  IL: { flag: '\u{1F1EE}\u{1F1F1}', code: '+972' },
+};
+
+function setPhoneCountry(code) {
+  const c = countryData[code] || countryData['US'];
+  document.getElementById('phoneFlag').textContent = c.flag;
+  document.getElementById('phoneCode').textContent = c.code;
+}
+
+// Detect country via timezone + language as fallback (no external API needed)
+function detectCountry() {
+  try {
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || '';
+    const lang = navigator.language || '';
+    const tzMap = {
+      'America/New_York': 'US', 'America/Chicago': 'US', 'America/Denver': 'US',
+      'America/Los_Angeles': 'US', 'America/Phoenix': 'US', 'America/Anchorage': 'US',
+      'Pacific/Honolulu': 'US', 'America/Detroit': 'US', 'America/Indiana': 'US',
+      'America/Toronto': 'CA', 'America/Vancouver': 'CA', 'America/Edmonton': 'CA',
+      'America/Winnipeg': 'CA', 'America/Halifax': 'CA',
+      'America/Sao_Paulo': 'BR', 'America/Fortaleza': 'BR', 'America/Manaus': 'BR',
+      'America/Recife': 'BR', 'America/Bahia': 'BR', 'America/Belem': 'BR',
+      'Europe/London': 'GB', 'Europe/Berlin': 'DE', 'Europe/Paris': 'FR',
+      'Europe/Madrid': 'ES', 'Europe/Rome': 'IT', 'Europe/Lisbon': 'PT',
+      'Europe/Amsterdam': 'NL', 'Europe/Stockholm': 'SE', 'Europe/Oslo': 'NO',
+      'Europe/Copenhagen': 'DK', 'Europe/Dublin': 'IE', 'Europe/Vilnius': 'LT',
+      'Europe/Warsaw': 'PL', 'Europe/Zurich': 'CH', 'Europe/Vienna': 'AT',
+      'Europe/Brussels': 'BE', 'Europe/Helsinki': 'FI',
+      'Australia/Sydney': 'AU', 'Australia/Melbourne': 'AU', 'Australia/Perth': 'AU',
+      'Asia/Kolkata': 'IN', 'Asia/Calcutta': 'IN',
+      'America/Mexico_City': 'MX', 'America/Cancun': 'MX', 'America/Tijuana': 'MX',
+      'Asia/Dubai': 'AE', 'Africa/Johannesburg': 'ZA', 'Pacific/Auckland': 'NZ',
+      'Asia/Singapore': 'SG', 'America/Argentina/Buenos_Aires': 'AR',
+      'America/Bogota': 'CO', 'America/Santiago': 'CL',
+      'Asia/Manila': 'PH', 'Asia/Tokyo': 'JP', 'Asia/Seoul': 'KR',
+      'Asia/Jerusalem': 'IL',
+    };
+    const detected = tzMap[tz] || null;
+    if (detected) return detected;
+    // Fallback: language
+    const langMap = { 'pt-BR': 'BR', 'pt': 'PT', 'en-GB': 'GB', 'en-AU': 'AU',
+      'de': 'DE', 'fr': 'FR', 'es': 'ES', 'it': 'IT', 'nl': 'NL', 'sv': 'SE',
+      'da': 'DK', 'no': 'NO', 'pl': 'PL', 'ja': 'JP', 'ko': 'KR' };
+    return langMap[lang] || langMap[lang.split('-')[0]] || 'US';
+  } catch (e) {
+    return 'US';
+  }
+}
+
+// ── INIT ──
+setPhoneCountry(detectCountry());
+
+// ── INPUT VALIDATION ──
+document.getElementById('q1').addEventListener('input', function() {
+  const btn = this.closest('.form-question').querySelector('.form-next-btn');
+  btn.disabled = this.value.trim().length < 2;
+});
+
+document.getElementById('q9').addEventListener('input', function() {
+  const btn = this.closest('.form-question').querySelector('.form-next-btn');
+  btn.disabled = !this.value.includes('@') || !this.value.includes('.');
+});
+
+document.getElementById('q10').addEventListener('input', function() {
+  const btn = this.closest('.form-question').querySelector('.form-next-btn');
+  btn.disabled = this.value.replace(/\D/g, '').length < 6;
+});
+
+// ── FORM OPEN / CLOSE ──
+function openForm() {
+  document.getElementById('formOverlay').classList.add('active');
+  document.body.style.overflow = 'hidden';
+  const firstInput = document.querySelector('.form-question.active .form-input');
+  if (firstInput) setTimeout(() => firstInput.focus(), 400);
+}
+
+function closeForm() {
+  document.getElementById('formOverlay').classList.remove('active');
+  document.body.style.overflow = '';
+}
+
+// Close on overlay click (not container)
+document.getElementById('formOverlay').addEventListener('click', function(e) {
+  if (e.target === this) closeForm();
+});
+
+// Close on Escape
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') closeForm();
+});
+
+// ── PROGRESS UPDATE ──
+function updateProgress(step) {
+  const pct = Math.round((step / totalSteps) * 100);
+  document.getElementById('progressCount').textContent = step + ' / ' + totalSteps;
+  document.getElementById('progressPct').textContent = pct + '%';
+  document.getElementById('progressFill').style.width = pct + '%';
+}
+
+// ── OPTION SELECT (auto-advance) ──
+function selectOption(el, questionNum) {
+  const parent = el.closest('.form-options');
+  parent.querySelectorAll('.form-option').forEach(o => o.classList.remove('selected'));
+  el.classList.add('selected');
+  answers['q' + questionNum] = el.textContent.trim();
+
+  // Auto-advance after short delay
+  setTimeout(() => {
+    goToStep(questionNum + 1);
+  }, 350);
+}
+
+// ── NEXT STEP (for text inputs) ──
+function nextStep(fromStep) {
+  const input = document.getElementById('q' + fromStep);
+  if (input) answers['q' + fromStep] = input.value.trim();
+  goToStep(fromStep + 1);
+}
+
+// ── GO TO STEP ──
+function goToStep(step) {
+  if (step > totalSteps) return;
+
+  const currentQ = document.querySelector('.form-question.active');
+  const nextQ = document.querySelector('.form-question[data-step="' + step + '"]');
+
+  if (currentQ) {
+    currentQ.classList.remove('active');
+    currentQ.classList.add('exiting');
+    setTimeout(() => {
+      currentQ.classList.remove('exiting');
+    }, 250);
+  }
+
+  setTimeout(() => {
+    if (nextQ) {
+      nextQ.classList.add('active');
+      currentStep = step;
+      updateProgress(step);
+      const input = nextQ.querySelector('.form-input');
+      if (input) setTimeout(() => input.focus(), 100);
+    }
+  }, 280);
+}
+
+// ── SUBMIT ──
+function submitForm() {
+  const phone = document.getElementById('q10').value.trim();
+  const code = document.getElementById('phoneCode').textContent;
+  answers['q10'] = code + ' ' + phone;
+
+  // Hide last question, show success
+  const lastQ = document.querySelector('.form-question.active');
+  if (lastQ) {
+    lastQ.classList.remove('active');
+    lastQ.classList.add('exiting');
+    setTimeout(() => lastQ.classList.remove('exiting'), 250);
+  }
+
+  // Hide progress bar
+  setTimeout(() => {
+    document.querySelector('.form-progress').style.display = 'none';
+    document.getElementById('formSuccess').classList.add('active');
+  }, 300);
+
+  // Log all answers (replace with your backend/webhook later)
+  console.log('Application submitted:', answers);
+}
+
+// ── ENTER KEY SUPPORT ──
+document.querySelectorAll('.form-input').forEach(input => {
+  input.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') {
+      const btn = this.closest('.form-question').querySelector('.form-next-btn');
+      if (btn && !btn.disabled) btn.click();
+    }
+  });
+});
+</script>
 
 </body>
 </html>
