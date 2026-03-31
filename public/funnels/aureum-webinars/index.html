@@ -94,29 +94,55 @@ body {
   width: 100%;
 }
 
+/* ── LOGO ── */
+.hero-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 28px;
+}
+
+.hero-logo svg {
+  width: 28px;
+  height: 28px;
+}
+
+.hero-logo-text {
+  font-family: 'Cormorant Garamond', serif;
+  font-weight: 600;
+  font-style: italic;
+  font-size: 22px;
+  color: var(--brand);
+  letter-spacing: 0.04em;
+}
+
 /* ── TITLE ── */
 .hero-title {
   font-family: 'Cormorant Garamond', serif;
   font-weight: 700;
   font-style: italic;
-  font-size: clamp(52px, 8vw, 90px);
-  letter-spacing: 0.02em;
+  font-size: clamp(38px, 5.5vw, 62px);
+  letter-spacing: 0.01em;
   color: var(--brand);
   text-align: center;
-  line-height: 1;
-  margin-bottom: 16px;
+  line-height: 1.1;
+  margin-bottom: 20px;
   text-shadow: 0 2px 40px rgba(0,0,0,0.5);
+  max-width: 750px;
 }
 
 .hero-subtitle {
   font-family: 'Inter', sans-serif;
   font-weight: 400;
-  font-size: clamp(14px, 2vw, 18px);
+  font-size: clamp(13px, 1.6vw, 16px);
   color: var(--brand);
   text-align: center;
-  letter-spacing: 0.04em;
-  margin-bottom: 48px;
+  letter-spacing: 0.02em;
+  margin-bottom: 44px;
   text-shadow: 0 1px 20px rgba(0,0,0,0.6);
+  max-width: 600px;
+  line-height: 1.6;
+  opacity: 0.85;
 }
 
 /* ── VIDEO FRAME ── */
@@ -642,7 +668,7 @@ footer {
     min-height: 100svh;
   }
 
-  .hero-title { font-size: clamp(42px, 12vw, 64px); }
+  .hero-title { font-size: clamp(28px, 7vw, 42px); }
   .hero-subtitle { margin-bottom: 36px; padding: 0 10px; }
   .video-wrapper { margin-bottom: 32px; }
 
@@ -677,9 +703,10 @@ footer {
 }
 
 .hero-content > *:nth-child(1) { animation-delay: 0.1s; }
-.hero-content > *:nth-child(2) { animation-delay: 0.25s; }
-.hero-content > *:nth-child(3) { animation-delay: 0.45s; }
-.hero-content > *:nth-child(4) { animation-delay: 0.6s; }
+.hero-content > *:nth-child(2) { animation-delay: 0.2s; }
+.hero-content > *:nth-child(3) { animation-delay: 0.35s; }
+.hero-content > *:nth-child(4) { animation-delay: 0.5s; }
+.hero-content > *:nth-child(5) { animation-delay: 0.65s; }
 </style>
 </head>
 <body>
@@ -691,8 +718,17 @@ footer {
     </div>
 
     <div class="hero-content">
-      <h1 class="hero-title">Aureum</h1>
-      <p class="hero-subtitle">Webinars That Scale High-Ticket Offers To $100,000 Per Month</p>
+      <div class="hero-logo">
+        <svg width="28" height="28" viewBox="0 0 329 342" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M159.435 0C156.344 0 157.653 8.18269 155.58 89.755C155.58 113.649 153.907 151.653 151.58 174.782C109.648 178.746 76.6991 192.093 50.5145 213.95L157.762 0H159.435Z" fill="#C7B59E"/>
+          <path d="M169.618 0L277.229 213.041C248.317 187.838 215.732 176.419 173.073 172.018C169.109 133.505 168.054 33.6036 167.799 0H169.618Z" fill="#C7B59E"/>
+          <path d="M148.161 187.802C127.432 267.301 73.426 326.071 0 342C11.8194 275.084 61.2429 197.257 148.161 187.802Z" fill="#C7B59E"/>
+          <path d="M177.619 187.802C251.045 197.257 311.633 256.027 328.326 342C261.773 333.454 195.985 275.484 177.619 187.802Z" fill="#C7B59E"/>
+        </svg>
+        <span class="hero-logo-text">Aureum</span>
+      </div>
+      <h1 class="hero-title">We'll Scale Your Offer To $100,000+ Per Month With Webinars.</h1>
+      <p class="hero-subtitle">My team and I created demo-webinars (our proprietary webinar structure) in 2025. We've done 10 already in 2026 and they've outperformed all of our clients' previous funnels.</p>
 
       <div class="video-wrapper">
         <div class="video-frame">
