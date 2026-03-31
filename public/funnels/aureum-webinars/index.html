@@ -532,8 +532,8 @@ body {
   flex-direction: column;
   align-items: center;
   text-align: center;
-  gap: 16px;
-  padding: 20px 0;
+  gap: 20px;
+  padding: 24px 0 12px;
 }
 
 .form-success.active {
@@ -542,10 +542,10 @@ body {
 }
 
 .form-success-icon {
-  width: 56px;
-  height: 56px;
+  width: 64px;
+  height: 64px;
   border-radius: 50%;
-  background: rgba(199, 181, 158, 0.15);
+  background: rgba(199, 181, 158, 0.12);
   border: 2px solid var(--brand);
   display: flex;
   align-items: center;
@@ -555,16 +555,32 @@ body {
 
 .form-success-title {
   font-family: 'Cormorant Garamond', serif;
-  font-weight: 600;
-  font-size: 28px;
-  color: var(--text);
+  font-weight: 700;
+  font-style: italic;
+  font-size: 32px;
+  color: var(--brand);
+  line-height: 1.2;
 }
 
 .form-success-text {
   font-size: 14px;
   color: var(--dim);
-  line-height: 1.6;
-  max-width: 360px;
+  line-height: 1.7;
+  max-width: 380px;
+}
+
+.form-success-divider {
+  width: 40px;
+  height: 1px;
+  background: rgba(199, 181, 158, 0.3);
+}
+
+.form-success-note {
+  font-size: 12px;
+  color: var(--dim);
+  opacity: 0.7;
+  line-height: 1.5;
+  max-width: 320px;
 }
 
 /* ── FOOTER ── */
@@ -862,10 +878,12 @@ footer {
       <!-- SUCCESS -->
       <div class="form-success" id="formSuccess">
         <div class="form-success-icon">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#C7B59E" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#C7B59E" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
         </div>
-        <p class="form-success-title">Application Received</p>
-        <p class="form-success-text">Thank you for applying. We'll review your details and get back to you shortly.</p>
+        <p class="form-success-title">Thank You</p>
+        <p class="form-success-text">We've received your application. Our team will personally review your details and reach out to you within the next 24 hours.</p>
+        <div class="form-success-divider"></div>
+        <p class="form-success-note">Keep an eye on your inbox and phone — we'll be in touch soon.</p>
       </div>
 
     </div>
