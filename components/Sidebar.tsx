@@ -39,6 +39,7 @@ const navToRoute: Record<string, string> = {
   [NavigationItem.BRANDING]: '/branding',
   [NavigationItem.GENERAL_ROOM]: '/general-room',
   [NavigationItem.ARNAS_GINTALAS]: '/arnas-gintalas',
+  [NavigationItem.AUREUM_WEBINARS]: '/aureum-webinars',
   [NavigationItem.CALENDAR]: '/calendar',
   [NavigationItem.MENTOR]: '/mentor',
 };
@@ -53,6 +54,7 @@ const routeToNavItem: Record<string, NavigationItem> = {
   '/branding': NavigationItem.BRANDING,
   '/general-room': NavigationItem.GENERAL_ROOM,
   '/arnas-gintalas': NavigationItem.ARNAS_GINTALAS,
+  '/aureum-webinars': NavigationItem.AUREUM_WEBINARS,
   '/calendar': NavigationItem.CALENDAR,
   '/mentor': NavigationItem.MENTOR,
 };
@@ -259,6 +261,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeUserId, onUserChange, collapsed
 
   const funnelItems = [
     { id: NavigationItem.ARNAS_GINTALAS, icon: Globe, label: 'Arnas Gintalas' },
+    { id: NavigationItem.AUREUM_WEBINARS, icon: Globe, label: 'Aureum Webinars' },
   ];
 
   return (

@@ -50,6 +50,7 @@ export enum NavigationItem {
   BRANDING = 'Branding',
   GENERAL_ROOM = 'General Room',
   ARNAS_GINTALAS = 'Arnas Gintalas',
+  AUREUM_WEBINARS = 'Aureum Webinars',
   CALENDAR = 'Calendar',
   MENTOR = 'Mentor',
   // Legacy (kept to avoid breaking existing data)

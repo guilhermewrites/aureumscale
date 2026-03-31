@@ -16,6 +16,7 @@ import ClientsManager from './components/ClientsManager';
 import BrandingManager from './components/BrandingManager';
 import GeneralRoom from './components/GeneralRoom';
 import ArnasGintalasFunnel from './components/ArnasGintalasFunnel';
+import AureumWebinarsFunnel from './components/AureumWebinarsFunnel';
 import CalendarManager from './components/CalendarManager';
 import MentorManager from './components/MentorManager';
 import AIBubble from './components/AIBubble';
@@ -39,6 +40,7 @@ const routeToNav: Record<string, NavigationItem> = {
   '/branding': NavigationItem.BRANDING,
   '/general-room': NavigationItem.GENERAL_ROOM,
   '/arnas-gintalas': NavigationItem.ARNAS_GINTALAS,
+  '/aureum-webinars': NavigationItem.AUREUM_WEBINARS,
   '/calendar': NavigationItem.CALENDAR,
   '/mentor': NavigationItem.MENTOR,
 };
@@ -633,7 +635,7 @@ const AuthenticatedApp: React.FC<{ user: User; signOut: () => Promise<void> }> =
   }, [storagePrefix]);
 
   return (
-    <div className="flex min-h-screen bg-[#212121] text-[#ECECEC] font-sans selection:bg-[#444444]">
+    <div className="flex h-screen overflow-hidden bg-[#212121] text-[#ECECEC] font-sans selection:bg-[#444444]">
       <Sidebar
         activeUserId={user.id}
         onUserChange={() => {}}
@@ -644,9 +646,9 @@ const AuthenticatedApp: React.FC<{ user: User; signOut: () => Promise<void> }> =
         storagePrefix={storagePrefix}
       />
 
-      <main key={user.id} className={`flex-1 ${sidebarCollapsed ? 'ml-16' : 'ml-64'} p-8 overflow-y-auto`}>
+      <main key={user.id} className={`flex-1 ${sidebarCollapsed ? 'ml-16' : 'ml-64'} flex flex-col overflow-hidden`}>
         {/* Header */}
-        <header className="flex justify-between items-center mb-10">
+        <header className="flex-shrink-0 flex justify-between items-center px-8 pt-8 pb-6">
           <div>
             <h1 className="text-2xl font-bold text-[#ECECEC] mb-1">{activeNav}</h1>
             <p className="text-[#9B9B9B] text-sm flex items-center gap-2">
@@ -696,6 +698,7 @@ const AuthenticatedApp: React.FC<{ user: User; signOut: () => Promise<void> }> =
           </div>
         </header>
 
+        <div className="flex-1 overflow-y-auto px-8 pb-8 min-h-0">
         <Routes>
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="/dashboard" element={
@@ -956,10 +959,12 @@ const AuthenticatedApp: React.FC<{ user: User; signOut: () => Promise<void> }> =
             </div>
           } />
           <Route path="/arnas-gintalas" element={<ArnasGintalasFunnel />} />
+          <Route path="/aureum-webinars" element={<AureumWebinarsFunnel />} />
           <Route path="/calendar" element={<CalendarManager storagePrefix={storagePrefix} />} />
           <Route path="/mentor" element={<MentorManager storagePrefix={storagePrefix} />} />
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
+        </div>
       </main>
 
       {/* Floating AI bubble — always visible, passes current client context from URL */}
