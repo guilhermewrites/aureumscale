@@ -339,7 +339,8 @@ body {
 /* ── QUESTION SLIDES ── */
 .form-questions-wrap {
   position: relative;
-  min-height: 200px;
+  overflow: hidden;
+  transition: height 0.3s ease;
 }
 
 .form-question {
@@ -347,19 +348,18 @@ body {
   flex-direction: column;
   gap: 24px;
   opacity: 0;
-  visibility: hidden;
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
+  pointer-events: none;
   transition: opacity 0.3s ease, transform 0.3s ease;
-  transform: translateY(12px);
+  transform: translateY(10px);
 }
 
 .form-question.active {
   opacity: 1;
-  visibility: visible;
-  position: relative;
+  pointer-events: all;
   transform: translateY(0);
 }
 
@@ -1042,6 +1042,7 @@ function detectCountry() {
 // ── INIT ──
 setPhoneCountry(detectCountry());
 
+
 // ── INPUT VALIDATION ──
 document.getElementById('q1').addEventListener('input', function() {
   const btn = this.closest('.form-question').querySelector('.form-next-btn');
@@ -1062,6 +1063,12 @@ document.getElementById('q10').addEventListener('input', function() {
 function openForm() {
   document.getElementById('formOverlay').classList.add('active');
   document.body.style.overflow = 'hidden';
+  // Set initial height after overlay is visible
+  setTimeout(() => {
+    const wrap = document.querySelector('.form-questions-wrap');
+    const active = wrap.querySelector('.form-question.active');
+    if (wrap && active) wrap.style.height = active.offsetHeight + 'px';
+  }, 50);
   const firstInput = document.querySelector('.form-question.active .form-input');
   if (firstInput) setTimeout(() => firstInput.focus(), 400);
 }
@@ -1116,6 +1123,20 @@ function goToStep(step) {
   const currentQ = document.querySelector('.form-question.active');
   const nextQ = document.querySelector('.form-question[data-step="' + step + '"]');
 
+  const wrap = document.querySelector('.form-questions-wrap');
+
+  // Measure next question height while it's still invisible
+  if (nextQ) {
+    nextQ.style.opacity = '0';
+    nextQ.style.position = 'relative';
+    nextQ.style.pointerEvents = 'none';
+    const h = nextQ.offsetHeight;
+    nextQ.style.opacity = '';
+    nextQ.style.position = '';
+    nextQ.style.pointerEvents = '';
+    wrap.style.height = h + 'px';
+  }
+
   if (currentQ) {
     currentQ.classList.remove('active');
   }
@@ -1123,16 +1144,11 @@ function goToStep(step) {
   currentStep = step;
   updateProgress(step);
 
-  // Small delay so the fade-out starts before fade-in
-  requestAnimationFrame(() => {
-    requestAnimationFrame(() => {
-      if (nextQ) {
-        nextQ.classList.add('active');
-        const input = nextQ.querySelector('.form-input');
-        if (input) setTimeout(() => input.focus(), 300);
-      }
-    });
-  });
+  if (nextQ) {
+    nextQ.classList.add('active');
+    const input = nextQ.querySelector('.form-input');
+    if (input) setTimeout(() => input.focus(), 350);
+  }
 }
 
 // ── SUBMIT ──
