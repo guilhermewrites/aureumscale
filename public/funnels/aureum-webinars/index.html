@@ -337,30 +337,30 @@ body {
 }
 
 /* ── QUESTION SLIDES ── */
+.form-questions-wrap {
+  position: relative;
+  min-height: 200px;
+}
+
 .form-question {
-  display: none;
+  display: flex;
   flex-direction: column;
   gap: 24px;
+  opacity: 0;
+  visibility: hidden;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  transform: translateY(12px);
 }
 
 .form-question.active {
-  display: flex;
-  animation: slideIn 0.35s ease forwards;
-}
-
-@keyframes slideIn {
-  from { opacity: 0; transform: translateY(16px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes slideOut {
-  from { opacity: 1; }
-  to   { opacity: 0; }
-}
-
-.form-question.exiting {
-  display: flex;
-  animation: slideOut 0.15s ease forwards;
+  opacity: 1;
+  visibility: visible;
+  position: relative;
+  transform: translateY(0);
 }
 
 .form-question-title {
@@ -762,6 +762,7 @@ footer {
         </div>
       </div>
 
+      <div class="form-questions-wrap">
       <!-- Q1: Instagram -->
       <div class="form-question active" data-step="1">
         <p class="form-question-title">What's your Instagram?</p>
@@ -912,6 +913,8 @@ footer {
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
         </button>
       </div>
+
+      </div><!-- /form-questions-wrap -->
 
       <!-- SUCCESS -->
       <div class="form-success" id="formSuccess">
@@ -1115,23 +1118,21 @@ function goToStep(step) {
 
   if (currentQ) {
     currentQ.classList.remove('active');
-    currentQ.classList.add('exiting');
-    setTimeout(() => {
-      currentQ.classList.remove('exiting');
-    }, 150);
   }
 
-  // Update progress immediately for seamless feel
   currentStep = step;
   updateProgress(step);
 
-  setTimeout(() => {
-    if (nextQ) {
-      nextQ.classList.add('active');
-      const input = nextQ.querySelector('.form-input');
-      if (input) setTimeout(() => input.focus(), 80);
-    }
-  }, 160);
+  // Small delay so the fade-out starts before fade-in
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      if (nextQ) {
+        nextQ.classList.add('active');
+        const input = nextQ.querySelector('.form-input');
+        if (input) setTimeout(() => input.focus(), 300);
+      }
+    });
+  });
 }
 
 // ── SUBMIT ──
