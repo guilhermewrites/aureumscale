@@ -297,6 +297,7 @@ body {
 /* ── PROGRESS BAR ── */
 .form-progress {
   margin-bottom: 32px;
+  padding-right: 0;
 }
 
 .form-progress-label {
@@ -304,6 +305,7 @@ body {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 10px;
+  padding-right: 40px;
 }
 
 .form-progress-count {
@@ -343,22 +345,22 @@ body {
 
 .form-question.active {
   display: flex;
-  animation: slideIn 0.4s ease forwards;
+  animation: slideIn 0.35s ease forwards;
 }
 
 @keyframes slideIn {
-  from { opacity: 0; transform: translateX(30px); }
-  to   { opacity: 1; transform: translateX(0); }
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes slideOut {
-  from { opacity: 1; transform: translateX(0); }
-  to   { opacity: 0; transform: translateX(-30px); }
+  from { opacity: 1; }
+  to   { opacity: 0; }
 }
 
 .form-question.exiting {
   display: flex;
-  animation: slideOut 0.25s ease forwards;
+  animation: slideOut 0.15s ease forwards;
 }
 
 .form-question-title {
@@ -1116,18 +1118,20 @@ function goToStep(step) {
     currentQ.classList.add('exiting');
     setTimeout(() => {
       currentQ.classList.remove('exiting');
-    }, 250);
+    }, 150);
   }
+
+  // Update progress immediately for seamless feel
+  currentStep = step;
+  updateProgress(step);
 
   setTimeout(() => {
     if (nextQ) {
       nextQ.classList.add('active');
-      currentStep = step;
-      updateProgress(step);
       const input = nextQ.querySelector('.form-input');
-      if (input) setTimeout(() => input.focus(), 100);
+      if (input) setTimeout(() => input.focus(), 80);
     }
-  }, 280);
+  }, 160);
 }
 
 // ── SUBMIT ──
