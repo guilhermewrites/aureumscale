@@ -864,8 +864,6 @@ function submitForm() {
     seriousness: answers.q8 || null,
     email: answers.q9 || null,
     phone: answers.q10 || null,
-    -- Save the entire set of answers as JSON so every question/value is captured.
-    -- This prevents missing fields if the Supabase schema changes.
     answers: answers,
     source: 'aureum-webinars'
   }).then(({ error }) => {
