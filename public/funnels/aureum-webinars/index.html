@@ -823,11 +823,20 @@ footer {
 .testimonials-grid {
   display: flex;
   justify-content: center;
-  flex-wrap: wrap;
   gap: 24px;
   max-width: 1200px;
   margin: 0 auto;
   perspective: 1200px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  overflow-y: visible;
+  padding: 20px 40px;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.testimonials-grid::-webkit-scrollbar {
+  display: none;
 }
 
 .portrait-card {
@@ -1387,18 +1396,20 @@ footer {
   .fold-divider, .fold-divider-reverse { height: 100px; }
 
   .testimonials-grid {
-    flex-direction: column;
-    align-items: center;
+    justify-content: flex-start;
     gap: 16px;
+    padding: 20px 24px;
   }
 
   .portrait-card {
-    width: 280px;
-    height: 320px;
+    width: 180px;
+    min-width: 180px;
+    height: 260px;
   }
 
   .portrait-card:hover {
-    width: 320px;
+    width: 260px;
+    min-width: 260px;
   }
 
   .ads-grid {
