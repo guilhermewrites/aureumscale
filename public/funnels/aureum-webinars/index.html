@@ -222,7 +222,6 @@ footer {
 }
 .form-container {
   background: #111;
-  border: 1px solid rgba(255,255,255,0.08);
   border-radius: 16px;
   padding: 40px 36px;
   width: 90%;
@@ -230,6 +229,42 @@ footer {
   position: relative;
   transform: translateY(20px);
   transition: transform 0.35s cubic-bezier(0.16,1,0.3,1);
+  /* Ray border setup — the border is painted by the ::before pseudo */
+  border: 1px solid transparent;
+}
+.form-container::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: 17px;
+  padding: 1px;
+  background: conic-gradient(
+    from var(--ray-angle, 0deg) at 50% 50%,
+    transparent 0deg,
+    transparent 300deg,
+    rgba(255,255,255,0.5) 330deg,
+    rgba(255,255,255,0.9) 345deg,
+    #fff 360deg
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.6s;
+}
+.form-container.ray-active::before {
+  opacity: 1;
+  animation: rayRotate 3s linear infinite;
+}
+@keyframes rayRotate {
+  to { --ray-angle: 360deg; }
+}
+@property --ray-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
 }
 .form-overlay.active .form-container {
   transform: translateY(0);
@@ -273,7 +308,9 @@ footer {
   to { opacity: 1; transform: translateY(0); }
 }
 .form-question-title {
-  font-size: 18px; font-weight: 600; margin-bottom: 20px; line-height: 1.4;
+  font-family: 'Playfair Display', serif;
+  font-style: italic;
+  font-size: 22px; font-weight: 400; margin-bottom: 20px; line-height: 1.4;
   color: #fff;
 }
 
@@ -336,7 +373,8 @@ footer {
   display: inline-flex; align-items: center; gap: 8px;
   margin-top: 8px; padding: 12px 28px;
   background: #fff; color: #000; border: none; border-radius: 8px;
-  font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 600;
+  font-family: 'Playfair Display', serif; font-style: italic;
+  font-size: 15px; font-weight: 500;
   cursor: pointer; transition: opacity 0.2s;
 }
 .form-next-btn:disabled { opacity: 0.25; cursor: not-allowed; }
@@ -719,6 +757,8 @@ document.getElementById('q10').addEventListener('input', function() {
 function openForm() {
   document.getElementById('formOverlay').classList.add('active');
   document.body.style.overflow = 'hidden';
+  // Activate ray border
+  document.querySelector('.form-container').classList.add('ray-active');
   setTimeout(() => {
     const wrap = document.querySelector('.form-questions-wrap');
     const active = wrap.querySelector('.form-question.active');
@@ -730,6 +770,7 @@ function openForm() {
 
 function closeForm() {
   document.getElementById('formOverlay').classList.remove('active');
+  document.querySelector('.form-container').classList.remove('ray-active');
   document.body.style.overflow = '';
 }
 
@@ -776,17 +817,6 @@ function goToStep(step) {
 
   const wrap = document.querySelector('.form-questions-wrap');
 
-  if (nextQ) {
-    nextQ.style.opacity = '0';
-    nextQ.style.position = 'relative';
-    nextQ.style.pointerEvents = 'none';
-    const h = nextQ.offsetHeight;
-    nextQ.style.opacity = '';
-    nextQ.style.position = '';
-    nextQ.style.pointerEvents = '';
-    wrap.style.height = h + 'px';
-  }
-
   if (currentQ) {
     currentQ.classList.remove('active');
   }
@@ -795,7 +825,10 @@ function goToStep(step) {
   updateProgress(step);
 
   if (nextQ) {
+    // Show it first so we can measure, then animate
     nextQ.classList.add('active');
+    const h = nextQ.offsetHeight;
+    if (wrap) wrap.style.height = h + 'px';
     const input = nextQ.querySelector('.form-input');
     if (input) setTimeout(() => input.focus(), 350);
   }
