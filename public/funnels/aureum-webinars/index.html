@@ -179,15 +179,28 @@ body {
   color: #000;
   border: none;
   padding: 16px 40px;
-  font-family: 'Inter', sans-serif;
+  font-family: 'Playfair Display', cursive;
   font-size: 15px;
   font-weight: 600;
+  font-style: italic;
   border-radius: 6px;
   cursor: pointer;
   transition: opacity 0.2s;
   letter-spacing: 0.01em;
 }
 .cta-btn:hover { opacity: 0.85; }
+
+/* Back button (form navigation) */
+.form-back {
+  position: absolute; top: 16px; left: 20px;
+  background: none; border: none;
+  color: rgba(255,255,255,0.4);
+  font-size: 20px;
+  cursor: pointer;
+  transition: color 0.2s;
+  visibility: hidden;
+}
+.form-back:hover { color: #fff; }
 
 /* ── FOOTER ── */
 footer {
@@ -457,6 +470,7 @@ footer {
   <!-- FORM OVERLAY -->
   <div class="form-overlay" id="formOverlay">
     <div class="form-container">
+      <button id="formBackBtn" class="form-back" type="button" onclick="goBack()" aria-label="Go back">&larr;</button>
       <button class="form-close" onclick="closeForm()">&times;</button>
 
       <!-- PROGRESS -->
@@ -755,13 +769,21 @@ document.getElementById('q10').addEventListener('input', function() {
 
 // ── FORM OPEN / CLOSE ──
 function openForm() {
+  // Reset form navigation state so the overlay always starts on step 1.
+  currentStep = 1;
+  const wrap = document.querySelector('.form-questions-wrap');
+  document.querySelectorAll('.form-question').forEach(q => q.classList.remove('active'));
+  const q1 = document.querySelector('.form-question[data-step="1"]');
+  if (q1) q1.classList.add('active');
+  updateProgress(1);
+  updateBackButton();
+
   document.getElementById('formOverlay').classList.add('active');
   document.body.style.overflow = 'hidden';
   // Activate ray border
   document.querySelector('.form-container').classList.add('ray-active');
   setTimeout(() => {
-    const wrap = document.querySelector('.form-questions-wrap');
-    const active = wrap.querySelector('.form-question.active');
+    const active = wrap?.querySelector('.form-question.active');
     if (wrap && active) wrap.style.height = active.offsetHeight + 'px';
   }, 50);
   const firstInput = document.querySelector('.form-question.active .form-input');
@@ -823,6 +845,7 @@ function goToStep(step) {
 
   currentStep = step;
   updateProgress(step);
+  updateBackButton();
 
   if (nextQ) {
     // Show it first so we can measure, then animate
@@ -832,6 +855,37 @@ function goToStep(step) {
     const input = nextQ.querySelector('.form-input');
     if (input) setTimeout(() => input.focus(), 350);
   }
+}
+
+function updateBackButton() {
+  const btn = document.getElementById('formBackBtn');
+  if (!btn) return;
+  btn.style.visibility = currentStep > 1 ? 'visible' : 'hidden';
+}
+
+function saveAnswerForStep(step) {
+  // For option-based steps (q2..q8), selectOption() already wrote to answers.
+  const input = document.getElementById('q' + step);
+  if (!input) return;
+
+  if (step === 10) {
+    // Phone: combine phone code + phone number like submitForm() does.
+    const code = document.getElementById('phoneCode')?.textContent || '';
+    const phone = (input.value || '').trim();
+    answers['q10'] = code + (code ? ' ' : '') + phone;
+    return;
+  }
+
+  answers['q' + step] = (input.value || '').trim();
+}
+
+function goBack() {
+  const active = document.querySelector('.form-question.active');
+  const step = active ? parseInt(active.dataset.step, 10) : currentStep;
+  if (!step || step <= 1) return;
+
+  saveAnswerForStep(step);
+  goToStep(step - 1);
 }
 
 // ── SUBMIT ──
