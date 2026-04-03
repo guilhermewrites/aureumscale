@@ -1,0 +1,1132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Thank You — Arnas Gintalas</title>
+
+<!-- Meta Pixel -->
+<script>
+!function(f,b,e,v,n,t,s)
+{if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+n.queue=[];t=b.createElement(e);t.async=!0;
+t.src=v;s=b.getElementsByTagName(e)[0];
+s.parentNode.insertBefore(t,s)}(window, document,'script',
+'https://connect.facebook.net/en_US/fbevents.js');
+fbq('init', '1012872378571647');
+fbq('track', 'PageView');
+</script>
+<noscript><img height="1" width="1" style="display:none"
+src="https://www.facebook.com/tr?id=1012872378571647&ev=PageView&noscript=1"/></noscript>
+<!-- End Meta Pixel -->
+
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&family=Cormorant+Garamond:ital,wght@1,400;1,500;1,600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --purple-1: #7c3aed;
+  --purple-2: #9d5ff5;
+  --purple-3: #c4b5fd;
+  --purple-glow: rgba(124, 58, 237, 0.18);
+  --bg: #09090b;
+  --bg2: #0f0f11;
+  --card: rgba(255,255,255,0.035);
+  --border: rgba(255,255,255,0.08);
+  --border-hover: rgba(255,255,255,0.18);
+  --text: #fafafa;
+  --muted: rgba(255,255,255,0.5);
+  --dim: rgba(255,255,255,0.3);
+  --font: 'Plus Jakarta Sans', sans-serif;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── CURSOR CANVAS ── */
+#smokeCanvas {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  pointer-events: none;
+}
+
+/* ── GRID BG ── */
+.grid-bg {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.022) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.022) 1px, transparent 1px);
+  background-size: 64px 64px;
+}
+.grid-bg::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(255,255,255,0.03) 0%, transparent 70%);
+}
+
+/* ── NOISE ── */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  opacity: 0.025;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  pointer-events: none;
+}
+
+/* ── HERO BG IMAGE ── */
+.hero-bg-wrap {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+.hero-bg-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center top;
+}
+.hero-bg-wrap::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(to right, rgba(9,9,11,0.88) 0%, rgba(9,9,11,0.45) 35%, rgba(9,9,11,0.20) 50%, rgba(9,9,11,0.45) 65%, rgba(9,9,11,0.88) 100%),
+    linear-gradient(to bottom, rgba(9,9,11,0.15) 0%, rgba(9,9,11,0.05) 40%, rgba(9,9,11,0.60) 75%, rgba(9,9,11,1) 100%);
+}
+
+/* ── WRAPPER ── */
+.page {
+  position: relative;
+  z-index: 1;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── NAV ── */
+nav {
+  padding: 20px 40px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+  backdrop-filter: blur(12px);
+}
+.nav-logo {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text);
+}
+.nav-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  background: var(--card);
+  border: 1px solid var(--border);
+  padding: 7px 16px;
+  border-radius: 100px;
+}
+.live-dot {
+  width: 6px;
+  height: 6px;
+  background: var(--purple-2);
+  border-radius: 50%;
+  animation: blink 2s ease-in-out infinite;
+}
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.25; }
+}
+
+/* ── HERO LAYOUT (two-column like opt-in page) ── */
+.hero {
+  flex: 1;
+  padding: 72px 40px 64px;
+  max-width: 1200px;
+  width: 100%;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr 460px;
+  gap: 64px;
+  align-items: center;
+}
+
+/* LEFT COLUMN — copy */
+.hero-left {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.event-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--dim);
+  margin-bottom: 28px;
+  font-family: 'JetBrains Mono', monospace;
+}
+.event-tag::before {
+  content: '';
+  display: inline-block;
+  width: 20px;
+  height: 1px;
+  background: var(--purple-2);
+  opacity: 0.7;
+}
+
+.ty-headline {
+  font-size: clamp(30px, 4vw, 46px);
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  line-height: 1.12;
+  color: var(--text);
+  margin-bottom: 24px;
+}
+.ty-headline .script-text {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-style: italic;
+  font-weight: 600;
+  font-size: 1.1em;
+  color: var(--purple-3);
+  letter-spacing: 0.01em;
+}
+
+.ty-body {
+  font-size: 16px;
+  line-height: 1.75;
+  color: var(--muted);
+  margin-bottom: 32px;
+  max-width: 520px;
+}
+
+.ty-ps {
+  font-size: 14px;
+  line-height: 1.65;
+  color: rgba(255,255,255,0.65);
+  margin-bottom: 36px;
+  padding: 20px 24px;
+  background: rgba(124,58,237,0.08);
+  border: 1px solid rgba(124,58,237,0.2);
+  border-radius: 12px;
+  max-width: 520px;
+}
+.ty-ps strong {
+  color: var(--text);
+  font-weight: 700;
+}
+
+/* Telegram CTA */
+.btn-telegram {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background: linear-gradient(135deg, #7c3aed 0%, #9d5ff5 100%);
+  color: #fff;
+  font-family: var(--font);
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border: none;
+  border-radius: 12px;
+  padding: 18px 40px;
+  cursor: pointer;
+  transition: opacity 0.2s, transform 0.2s, box-shadow 0.2s;
+  text-decoration: none;
+}
+.btn-telegram:hover {
+  opacity: 0.92;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 32px rgba(124,58,237,0.35);
+}
+.btn-telegram:active { transform: translateY(0); }
+
+.btn-telegram svg {
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+}
+
+/* RIGHT COLUMN — countdown card */
+.optin-wrap {
+  position: relative;
+  z-index: 1;
+}
+.optin-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 40px 36px;
+  position: relative;
+  overflow: hidden;
+  backdrop-filter: blur(20px);
+}
+.optin-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 20px;
+  background: linear-gradient(135deg, rgba(255,255,255,0.04) 0%, transparent 60%);
+  pointer-events: none;
+}
+
+/* Animated border glow */
+.optin-card::after {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: 21px;
+  padding: 1px;
+  background: conic-gradient(
+    from var(--angle, 0deg),
+    transparent 60%,
+    rgba(255,255,255,0.15) 72%,
+    rgba(255,255,255,1.0) 80%,
+    rgba(255,255,255,0.15) 88%,
+    transparent 100%
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box,
+                linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  animation: spin-border 3.5s linear infinite;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.optin-inner-glow {
+  position: absolute;
+  inset: 0;
+  border-radius: 20px;
+  pointer-events: none;
+  z-index: 1;
+  background: conic-gradient(
+    from var(--angle, 0deg),
+    transparent 60%,
+    rgba(255,255,255,0.0) 70%,
+    rgba(255,255,255,0.06) 80%,
+    rgba(255,255,255,0.0) 90%,
+    transparent 100%
+  );
+  animation: spin-border 3.5s linear infinite;
+  -webkit-mask: radial-gradient(ellipse 100% 100% at 50% 50%,
+    transparent 55%,
+    rgba(0,0,0,0.6) 72%,
+    black 100%);
+  mask: radial-gradient(ellipse 100% 100% at 50% 50%,
+    transparent 55%,
+    rgba(0,0,0,0.6) 72%,
+    black 100%);
+}
+
+@property --angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+@keyframes spin-border {
+  to { --angle: 360deg; }
+}
+
+.optin-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--dim);
+  margin-bottom: 10px;
+  font-family: 'JetBrains Mono', monospace;
+  position: relative;
+  z-index: 2;
+}
+.optin-title {
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--text);
+  line-height: 1.25;
+  margin-bottom: 8px;
+  position: relative;
+  z-index: 2;
+}
+.optin-desc {
+  font-size: 13px;
+  color: var(--muted);
+  margin-bottom: 32px;
+  line-height: 1.6;
+  position: relative;
+  z-index: 2;
+}
+
+/* Date badge */
+.date-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin-bottom: 24px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  position: relative;
+  z-index: 2;
+}
+.date-badge strong { color: var(--text); }
+
+/* Countdown */
+.countdown-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-bottom: 24px;
+  position: relative;
+  z-index: 2;
+}
+.countdown-block {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 12px;
+  padding: 18px 6px 12px;
+  text-align: center;
+  backdrop-filter: blur(12px);
+  position: relative;
+  overflow: hidden;
+}
+.countdown-block::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(160deg, rgba(255,255,255,0.05) 0%, transparent 60%);
+  pointer-events: none;
+}
+.countdown-num {
+  font-size: 30px;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  color: var(--text);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  margin-bottom: 6px;
+  font-family: 'JetBrains Mono', monospace;
+}
+.countdown-lbl {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--dim);
+  font-family: 'JetBrains Mono', monospace;
+}
+.event-tz-note {
+  font-size: 10px;
+  color: var(--dim);
+  text-align: center;
+  margin-top: -18px;
+  margin-bottom: 20px;
+  font-family: 'JetBrains Mono', monospace;
+  position: relative;
+  z-index: 2;
+}
+
+.card-cta-note {
+  font-size: 11px;
+  color: var(--dim);
+  text-align: center;
+  line-height: 1.5;
+  position: relative;
+  z-index: 2;
+}
+.card-cta-note svg {
+  display: inline;
+  vertical-align: middle;
+  margin-right: 4px;
+}
+
+/* ── SOCIAL PROOF POPUP ── */
+.social-proof-popup {
+  position: fixed;
+  bottom: 24px;
+  left: 24px;
+  z-index: 100;
+  background: rgba(15,15,17,0.92);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 14px 20px;
+  backdrop-filter: blur(16px);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+  pointer-events: none;
+  max-width: 380px;
+}
+.social-proof-popup.visible {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.sp-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(124,58,237,0.3), rgba(124,58,237,0.1));
+  border: 1px solid rgba(124,58,237,0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.sp-icon svg {
+  width: 18px;
+  height: 18px;
+  color: var(--purple-3);
+}
+
+.sp-text {
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--text);
+  font-weight: 500;
+}
+.sp-text strong { font-weight: 700; }
+.sp-time {
+  font-size: 11px;
+  color: var(--dim);
+  margin-top: 2px;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* ── FOOTER ── */
+footer {
+  border-top: 1px solid var(--border);
+  padding: 40px 40px 32px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  font-size: 11px;
+  color: var(--dim);
+  text-align: center;
+}
+.footer-links {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.footer-links a {
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 11px;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+.footer-links a:hover { color: var(--text); }
+.footer-sep { color: var(--dim); opacity: 0.4; }
+.footer-copy { font-size: 11px; color: var(--dim); }
+.footer-disclaimer {
+  max-width: 700px;
+  margin-top: 12px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.footer-disclaimer p {
+  font-size: 9px;
+  line-height: 1.6;
+  color: var(--dim);
+  opacity: 0.7;
+}
+
+/* ── ANIMATIONS ── */
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.hero-left > * {
+  opacity: 0;
+  animation: fade-up 0.6s ease forwards;
+}
+.hero-left .event-tag     { animation-delay: 0.05s; }
+.hero-left .ty-headline   { animation-delay: 0.15s; }
+.hero-left .ty-body        { animation-delay: 0.25s; }
+.hero-left .ty-ps          { animation-delay: 0.35s; }
+.hero-left .btn-telegram   { animation-delay: 0.45s; }
+.optin-card {
+  opacity: 0;
+  animation: fade-up 0.6s ease 0.3s forwards;
+}
+
+/* ── RESPONSIVE ── */
+@media (max-width: 900px) {
+  .hero-bg-wrap img {
+    object-position: center 15%;
+  }
+  .hero-bg-wrap::after {
+    background:
+      linear-gradient(to right, rgba(9,9,11,0.3) 0%, rgba(9,9,11,0.1) 50%, rgba(9,9,11,0.3) 100%),
+      linear-gradient(to bottom, rgba(9,9,11,0) 0%, rgba(9,9,11,0) 30%, rgba(9,9,11,0.85) 60%, rgba(9,9,11,1) 75%);
+  }
+  .hero {
+    grid-template-columns: 1fr;
+    gap: 32px;
+    padding: 42vh 24px 40px;
+    align-items: center;
+  }
+  .hero-left {
+    text-align: center;
+    align-items: center;
+  }
+  .ty-body, .ty-ps {
+    text-align: center;
+    max-width: 100%;
+  }
+  .optin-wrap { max-width: 100%; }
+  .optin-card { padding: 32px 24px; }
+  nav { padding: 16px 24px; }
+  footer { padding: 32px 20px 24px; }
+  .footer-disclaimer { max-width: 100%; }
+  .social-proof-popup {
+    left: 12px;
+    right: 12px;
+    bottom: 16px;
+    max-width: none;
+  }
+}
+</style>
+</head>
+<body>
+
+<div class="hero-bg-wrap">
+  <img src="../hero-bg.jpg" alt="" />
+</div>
+<div class="grid-bg"></div>
+<canvas id="smokeCanvas"></canvas>
+
+<div class="page">
+
+  <!-- NAV -->
+  <nav>
+    <div class="nav-logo">Arnas Gintalas</div>
+    <div class="nav-pill">
+      <div class="live-dot"></div>
+      Free Live Event
+    </div>
+  </nav>
+
+  <!-- HERO: two-column layout like opt-in page -->
+  <section class="hero">
+
+    <!-- LEFT: headline + copy -->
+    <div class="hero-left">
+
+      <div class="event-tag">You're In · One Last Step</div>
+
+      <h1 class="ty-headline">
+        Your last step: Join our <span class="script-text">Telegram</span> group.
+      </h1>
+
+      <p class="ty-body">
+        In our Telegram channel you're going to get exclusive content before the event even starts. I'll be sharing real behind the scenes on how this strategy works. Not a fancy presentation, real life. I'll be dropping valuable insights, audios, pictures, messages. You'll be able to see how it all actually works. Don't miss out.
+      </p>
+
+      <div class="ty-ps">
+        <strong>Ps:</strong> We're only going to let 1000 people join this Telegram group, during last event we had over 3000 sign ups so click the button while it still works.
+      </div>
+
+      <a href="https://t.me/+rCBwZzO95oplYWIx" target="_blank" rel="noopener" class="btn-telegram">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M11.944 0A12 12 0 1 0 24 12.056A12.01 12.01 0 0 0 11.944 0Zm5.573 8.192c-.21 1.768-.886 6.06-1.253 8.04c-.155.84-.46 1.12-.755 1.148c-.642.06-1.13-.424-1.753-.832c-.974-.637-1.525-1.033-2.47-1.654c-1.092-.717-.384-1.112.238-1.756c.163-.17 2.994-2.745 3.049-2.979c.007-.03.013-.14-.052-.198s-.162-.038-.232-.022c-.098.022-1.662 1.056-4.692 3.1c-.444.305-.846.454-1.206.447c-.397-.008-1.16-.224-1.728-.409c-.697-.227-1.252-.346-1.203-.73c.025-.2.3-.405.826-.613c3.236-1.41 5.394-2.34 6.473-2.79c3.082-1.282 3.723-1.505 4.14-1.512c.092-.002.298.021.431.128a.466.466 0 0 1 .157.3c.015.088.034.257.02.397Z"/></svg>
+        Join The VIP Telegram For Free
+      </a>
+
+    </div>
+
+    <!-- RIGHT: countdown card -->
+    <div class="optin-wrap">
+    <div class="optin-card">
+      <div class="optin-inner-glow"></div>
+      <div class="optin-label">You're Registered</div>
+      <div class="optin-title">Event Starts In</div>
+      <p class="optin-desc">Don't miss the live event — join Telegram for early access content.</p>
+
+      <div class="date-badge">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        <span id="event-date-display"><strong>Live Event</strong> · 2:00 PM GMT</span>
+      </div>
+      <div class="event-tz-note" id="event-tz-note"></div>
+
+      <div class="countdown-grid">
+        <div class="countdown-block">
+          <div class="countdown-num" id="cd-days">00</div>
+          <div class="countdown-lbl">Days</div>
+        </div>
+        <div class="countdown-block">
+          <div class="countdown-num" id="cd-hours">00</div>
+          <div class="countdown-lbl">Hours</div>
+        </div>
+        <div class="countdown-block">
+          <div class="countdown-num" id="cd-mins">00</div>
+          <div class="countdown-lbl">Min</div>
+        </div>
+        <div class="countdown-block">
+          <div class="countdown-num" id="cd-secs">00</div>
+          <div class="countdown-lbl">Sec</div>
+        </div>
+      </div>
+
+      <p class="card-cta-note">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        You're registered · Join Telegram for bonus content
+      </p>
+    </div>
+    </div>
+
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-links">
+      <a href="#">Privacy Policy</a>
+      <span class="footer-sep">·</span>
+      <a href="#">Terms of Service</a>
+      <span class="footer-sep">·</span>
+      <a href="#">Earnings Disclaimer</a>
+      <span class="footer-sep">·</span>
+      <a href="#">Contact</a>
+    </div>
+    <p class="footer-copy">© 2026 Arnas Gintalas · All rights reserved</p>
+    <div class="footer-disclaimer">
+      <p>This site is not a part of the Facebook™ website or Facebook™ Inc. Additionally, this site is NOT endorsed by Facebook™ in any way. FACEBOOK™ is a trademark of FACEBOOK™, Inc.</p>
+      <p>This site is not a part of the Instagram™ website or Instagram™/Meta Platforms, Inc. Additionally, this site is NOT endorsed by Instagram™ or Meta™ in any way. INSTAGRAM™ is a trademark of META PLATFORMS™, Inc.</p>
+      <p>EARNINGS DISCLAIMER: The results stated on this page and in any of our materials are not typical. Your results will vary and depend on many factors, including but not limited to your background, experience, and work ethic. All business entails risk as well as massive and consistent effort and action. If you're not willing to accept that, this is not for you. We make no guarantees regarding the level of success you may experience. The testimonials and examples used are exceptional results, which do not apply to the average attendee, and are not intended to represent or guarantee that anyone will achieve the same or similar results. Each individual's success depends on their unique background, dedication, desire, and motivation.</p>
+    </div>
+  </footer>
+
+</div>
+
+<!-- SOCIAL PROOF POPUP -->
+<div class="social-proof-popup" id="social-proof">
+  <div class="sp-icon">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M11.944 0A12 12 0 1 0 24 12.056A12.01 12.01 0 0 0 11.944 0Zm5.573 8.192c-.21 1.768-.886 6.06-1.253 8.04c-.155.84-.46 1.12-.755 1.148c-.642.06-1.13-.424-1.753-.832c-.974-.637-1.525-1.033-2.47-1.654c-1.092-.717-.384-1.112.238-1.756c.163-.17 2.994-2.745 3.049-2.979c.007-.03.013-.14-.052-.198s-.162-.038-.232-.022c-.098.022-1.662 1.056-4.692 3.1c-.444.305-.846.454-1.206.447c-.397-.008-1.16-.224-1.728-.409c-.697-.227-1.252-.346-1.203-.73c.025-.2.3-.405.826-.613c3.236-1.41 5.394-2.34 6.473-2.79c3.082-1.282 3.723-1.505 4.14-1.512c.092-.002.298.021.431.128a.466.466 0 0 1 .157.3c.015.088.034.257.02.397Z"/></svg>
+  </div>
+  <div>
+    <div class="sp-text" id="sp-text"></div>
+    <div class="sp-time" id="sp-time"></div>
+  </div>
+</div>
+
+<script>
+// ── COUNTDOWN ──
+var EVENT_UTC = new Date('2026-04-07T14:00:00Z');
+
+var cdDays  = document.getElementById('cd-days');
+var cdHours = document.getElementById('cd-hours');
+var cdMins  = document.getElementById('cd-mins');
+var cdSecs  = document.getElementById('cd-secs');
+
+function pad(n) { return String(n).padStart(2, '0'); }
+
+function updateCountdown() {
+  var diff = EVENT_UTC - Date.now();
+  if (diff <= 0) {
+    cdDays.textContent = '00';
+    cdHours.textContent = '00';
+    cdMins.textContent = '00';
+    cdSecs.textContent = '00';
+    return;
+  }
+  cdDays.textContent  = pad(Math.floor(diff / 86400000));
+  cdHours.textContent = pad(Math.floor((diff % 86400000) / 3600000));
+  cdMins.textContent  = pad(Math.floor((diff % 3600000) / 60000));
+  cdSecs.textContent  = pad(Math.floor((diff % 60000) / 1000));
+}
+
+// Show event time in visitor's local timezone
+(function() {
+  var localDate = EVENT_UTC.toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' });
+  var localTime = EVENT_UTC.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  var tz = Intl.DateTimeFormat().resolvedOptions().timeZone.replace(/_/g, ' ');
+  document.getElementById('event-date-display').innerHTML =
+    '<strong>' + localDate + '</strong> · ' + localTime;
+  document.getElementById('event-tz-note').textContent = tz;
+})();
+
+updateCountdown();
+setInterval(updateCountdown, 1000);
+
+// ── SOCIAL PROOF NOTIFICATIONS ──
+var people = [
+  { name: 'Oliver Alexander', state: 'Texas' },
+  { name: 'Emma Richardson', state: 'California' },
+  { name: 'Liam Carter', state: 'Florida' },
+  { name: 'Sophia Martinez', state: 'New York' },
+  { name: 'Noah Bennett', state: 'Illinois' },
+  { name: 'Ava Thompson', state: 'Georgia' },
+  { name: 'Ethan Walker', state: 'Ohio' },
+  { name: 'Isabella Davis', state: 'Pennsylvania' },
+  { name: 'Mason Rodriguez', state: 'Arizona' },
+  { name: 'Mia Johnson', state: 'North Carolina' },
+  { name: 'James Wilson', state: 'Michigan' },
+  { name: 'Charlotte Brown', state: 'Tennessee' },
+  { name: 'Benjamin Moore', state: 'Virginia' },
+  { name: 'Amelia Taylor', state: 'Washington' },
+  { name: 'Lucas Anderson', state: 'Colorado' },
+  { name: 'Harper White', state: 'Oregon' },
+  { name: 'Alexander Harris', state: 'Nevada' },
+  { name: 'Evelyn Clark', state: 'Minnesota' },
+  { name: 'Daniel Lewis', state: 'Maryland' },
+  { name: 'Abigail Robinson', state: 'Indiana' },
+  { name: 'Henry Hall', state: 'Missouri' },
+  { name: 'Emily Young', state: 'Wisconsin' },
+  { name: 'Sebastian King', state: 'Massachusetts' },
+  { name: 'Ella Wright', state: 'South Carolina' },
+  { name: 'Jack Scott', state: 'Alabama' },
+  { name: 'Victoria Green', state: 'Louisiana' },
+  { name: 'Owen Adams', state: 'Kentucky' },
+  { name: 'Grace Nelson', state: 'Connecticut' },
+  { name: 'Ryan Hill', state: 'Utah' },
+  { name: 'Chloe Baker', state: 'Iowa' }
+];
+
+var timeAgos = ['2 seconds ago', '4 seconds ago', '7 seconds ago', '3 seconds ago', '5 seconds ago', '8 seconds ago', '6 seconds ago', '1 second ago', '9 seconds ago', '4 seconds ago'];
+
+var popup = document.getElementById('social-proof');
+var spText = document.getElementById('sp-text');
+var spTime = document.getElementById('sp-time');
+var usedIndices = [];
+
+function getRandomPerson() {
+  if (usedIndices.length >= people.length) usedIndices = [];
+  var idx;
+  do {
+    idx = Math.floor(Math.random() * people.length);
+  } while (usedIndices.indexOf(idx) !== -1);
+  usedIndices.push(idx);
+  return people[idx];
+}
+
+function showPopup() {
+  var person = getRandomPerson();
+  var timeAgo = timeAgos[Math.floor(Math.random() * timeAgos.length)];
+  spText.innerHTML = '<strong>' + person.name + '</strong> — ' + person.state + ', just joined the Telegram group';
+  spTime.textContent = timeAgo;
+  popup.classList.add('visible');
+  var showDuration = 3000 + Math.random() * 2000;
+  setTimeout(function() {
+    popup.classList.remove('visible');
+    var nextDelay = 4000 + Math.random() * 3000;
+    setTimeout(showPopup, nextDelay);
+  }, showDuration);
+}
+
+setTimeout(showPopup, 800);
+</script>
+
+<!-- ── CURSOR TRAIL (purple-tinted for Arnas branding) ── -->
+<script>
+(function() {
+  const canvas = document.getElementById('smokeCanvas');
+  const ctx = canvas.getContext('2d');
+  let W, H;
+  const isMobile = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+
+  let mouseX = -9999, mouseY = -9999;
+  let smoothX = -9999, smoothY = -9999;
+  let prevSX = -9999, prevSY = -9999;
+  let velocity = 0;
+  let moving = false;
+
+  const trail = [];
+  const maxTrailLen = 120;
+  const trailLifetime = 800;
+
+  let wisps = [];
+
+  function resize() {
+    W = canvas.width = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  window.addEventListener('mousemove', e => {
+    mouseX = e.clientX; mouseY = e.clientY; moving = true;
+  });
+  window.addEventListener('mouseout', e => {
+    if (!e.relatedTarget && !e.toElement) { mouseX = -9999; mouseY = -9999; }
+  });
+  document.addEventListener('mousemove', e => {
+    mouseX = e.clientX; mouseY = e.clientY; moving = true;
+  });
+  window.addEventListener('touchmove', e => {
+    const t = e.touches[0]; mouseX = t.clientX; mouseY = t.clientY; moving = true;
+  }, { passive: true });
+  window.addEventListener('touchend', () => { mouseX = -9999; mouseY = -9999; });
+
+  class Wisp {
+    constructor(x, y, intensity) {
+      this.x = x + (Math.random() - 0.5) * 3;
+      this.y = y + (Math.random() - 0.5) * 3;
+      this.vx = (Math.random() - 0.5) * 0.4;
+      this.vy = -Math.random() * 0.5 - 0.15;
+      this.life = 1;
+      this.decay = 0.01 + Math.random() * 0.008;
+      this.radius = 3 + Math.random() * 5;
+      this.maxRadius = this.radius * (2.2 + Math.random());
+      this.intensity = intensity;
+    }
+    update() {
+      this.life -= this.decay;
+      this.x += this.vx;
+      this.y += this.vy;
+      this.vy -= 0.004;
+      this.vx *= 0.98;
+      this.radius += (this.maxRadius - this.radius) * 0.015;
+    }
+    draw(ctx) {
+      if (this.life <= 0) return;
+      const fade = this.life * this.life;
+      const r = this.radius;
+      const a = fade * this.intensity * 0.3;
+      const grad = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, r);
+      grad.addColorStop(0, `rgba(157,95,245,${a})`);
+      grad.addColorStop(0.3, `rgba(124,58,237,${a * 0.5})`);
+      grad.addColorStop(0.7, `rgba(90,40,180,${a * 0.15})`);
+      grad.addColorStop(1, 'rgba(60,20,120,0)');
+      ctx.fillStyle = grad;
+      ctx.fillRect(this.x - r, this.y - r, r * 2, r * 2);
+    }
+  }
+
+  function smoothPoints(pts, passes) {
+    if (pts.length < 3) return pts;
+    let arr = pts;
+    for (let p = 0; p < passes; p++) {
+      const out = [arr[0]];
+      for (let i = 1; i < arr.length - 1; i++) {
+        out.push({
+          x: arr[i - 1].x * 0.25 + arr[i].x * 0.5 + arr[i + 1].x * 0.25,
+          y: arr[i - 1].y * 0.25 + arr[i].y * 0.5 + arr[i + 1].y * 0.25,
+          t: arr[i].t
+        });
+      }
+      out.push(arr[arr.length - 1]);
+      arr = out;
+    }
+    return arr;
+  }
+
+  function drawTrail(ctx) {
+    if (trail.length < 3) return;
+    const now = performance.now();
+    const pts = smoothPoints(trail, 3);
+    const len = pts.length;
+
+    ctx.save();
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+
+    const layers = [
+      { width: 10, alphaScale: 0.1, shadow: 18, shadowAlpha: 0.3 },
+      { width: 3,  alphaScale: 0.4, shadow: 8,  shadowAlpha: 0.5 },
+      { width: 1.2, alphaScale: 1.0, shadow: 3,  shadowAlpha: 0.8 },
+    ];
+
+    for (const layer of layers) {
+      const chunkSize = 6;
+      const overlap = 1;
+
+      for (let start = 0; start < len - 1; start += chunkSize - overlap) {
+        const end = Math.min(start + chunkSize, len);
+        if (end - start < 2) continue;
+
+        const midIdx = Math.floor((start + end) / 2);
+        const age = now - pts[midIdx].t;
+        const rawAlpha = Math.max(0, 1 - age / trailLifetime);
+        const alpha = rawAlpha * rawAlpha * rawAlpha;
+        if (alpha < 0.003) continue;
+
+        ctx.beginPath();
+        const p0 = pts[start];
+        const p1 = pts[start + 1];
+        ctx.moveTo((p0.x + p1.x) / 2, (p0.y + p1.y) / 2);
+
+        for (let j = start + 1; j < end - 1; j++) {
+          const mx = (pts[j].x + pts[j + 1].x) / 2;
+          const my = (pts[j].y + pts[j + 1].y) / 2;
+          ctx.quadraticCurveTo(pts[j].x, pts[j].y, mx, my);
+        }
+        const last = pts[end - 1];
+        ctx.quadraticCurveTo(last.x, last.y, last.x, last.y);
+
+        const a = alpha * layer.alphaScale;
+        ctx.strokeStyle = `rgba(196,181,253,${a})`;
+        ctx.lineWidth = layer.width;
+        ctx.shadowColor = `rgba(124,58,237,${alpha * layer.shadowAlpha})`;
+        ctx.shadowBlur = layer.shadow;
+        ctx.stroke();
+      }
+    }
+
+    ctx.shadowBlur = 0;
+    ctx.restore();
+  }
+
+  function drawEmber(ctx) {
+    if (trail.length < 1) return;
+    const head = trail[trail.length - 1];
+    const now = performance.now();
+    const headAge = now - head.t;
+    const ageFade = Math.max(0, 1 - headAge / 200);
+    const intensity = Math.min(velocity / 5, 1) * ageFade;
+    if (intensity < 0.01) return;
+
+    const r1 = 3 + intensity * 3;
+    const grad1 = ctx.createRadialGradient(head.x, head.y, 0, head.x, head.y, r1);
+    grad1.addColorStop(0, `rgba(196,181,253,${intensity * 0.95})`);
+    grad1.addColorStop(0.4, `rgba(157,95,245,${intensity * 0.5})`);
+    grad1.addColorStop(1, 'rgba(124,58,237,0)');
+    ctx.fillStyle = grad1;
+    ctx.fillRect(head.x - r1, head.y - r1, r1 * 2, r1 * 2);
+
+    const r2 = 10 + intensity * 12;
+    const grad2 = ctx.createRadialGradient(head.x, head.y, 0, head.x, head.y, r2);
+    grad2.addColorStop(0, `rgba(196,181,253,${intensity * 0.15})`);
+    grad2.addColorStop(0.3, `rgba(157,95,245,${intensity * 0.06})`);
+    grad2.addColorStop(1, 'rgba(124,58,237,0)');
+    ctx.fillStyle = grad2;
+    ctx.fillRect(head.x - r2, head.y - r2, r2 * 2, r2 * 2);
+  }
+
+  function drawGridGlow(ctx) {
+    if (trail.length > 0 && velocity > 1) {
+      const head = trail[trail.length - 1];
+      const now = performance.now();
+      const ageFade = Math.max(0, 1 - (now - head.t) / 300);
+      const glowStrength = Math.min(velocity / 15, 1) * ageFade;
+      const glowR = 80 + velocity * 2;
+      const grad = ctx.createRadialGradient(head.x, head.y, 0, head.x, head.y, glowR);
+      grad.addColorStop(0, `rgba(124,58,237,${glowStrength * 0.08})`);
+      grad.addColorStop(0.5, `rgba(124,58,237,${glowStrength * 0.03})`);
+      grad.addColorStop(1, 'rgba(124,58,237,0)');
+      ctx.fillStyle = grad;
+      ctx.fillRect(head.x - glowR, head.y - glowR, glowR * 2, glowR * 2);
+    }
+  }
+
+  function animate() {
+    requestAnimationFrame(animate);
+    ctx.clearRect(0, 0, W, H);
+    const now = performance.now();
+
+    if (mouseX > -9000) {
+      if (smoothX < -9000) { smoothX = mouseX; smoothY = mouseY; }
+      smoothX += (mouseX - smoothX) * 0.5;
+      smoothY += (mouseY - smoothY) * 0.5;
+    } else {
+      smoothX = -9999; smoothY = -9999;
+    }
+
+    if (smoothX > -9000 && prevSX > -9000) {
+      const dx = smoothX - prevSX;
+      const dy = smoothY - prevSY;
+      velocity += (Math.sqrt(dx * dx + dy * dy) - velocity) * 0.3;
+    } else {
+      velocity *= 0.85;
+    }
+    prevSX = smoothX;
+    prevSY = smoothY;
+
+    if (smoothX > -9000 && velocity > 0.5) {
+      if (trail.length > 0) {
+        const last = trail[trail.length - 1];
+        const dx = smoothX - last.x;
+        const dy = smoothY - last.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist > 2) {
+          const steps = Math.min(Math.ceil(dist / 2), 10);
+          for (let s = 1; s <= steps; s++) {
+            const t = s / steps;
+            trail.push({ x: last.x + dx * t, y: last.y + dy * t, t: now });
+          }
+        }
+      } else {
+        trail.push({ x: smoothX, y: smoothY, t: now });
+      }
+
+      if (Math.random() < 0.45) {
+        wisps.push(new Wisp(smoothX, smoothY, Math.min(velocity / 5, 1)));
+      }
+    }
+
+    while (trail.length > 0 && (now - trail[0].t) > trailLifetime) {
+      trail.shift();
+    }
+    if (trail.length > maxTrailLen) {
+      trail.splice(0, trail.length - maxTrailLen);
+    }
+
+    drawGridGlow(ctx);
+
+    for (let i = wisps.length - 1; i >= 0; i--) {
+      wisps[i].update();
+      wisps[i].draw(ctx);
+      if (wisps[i].life <= 0) wisps.splice(i, 1);
+    }
+
+    drawTrail(ctx);
+    drawEmber(ctx);
+
+    const maxWisps = isMobile ? 40 : 100;
+    if (wisps.length > maxWisps) wisps.splice(0, wisps.length - maxWisps);
+  }
+
+  animate();
+})();
+</script>
+</body>
+</html>

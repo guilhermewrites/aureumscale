@@ -1008,6 +1008,14 @@ footer {
   font-family: 'JetBrains Mono', monospace;
 }
 
+/* ── CURSOR CANVAS ── */
+#smokeCanvas {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  pointer-events: none;
+}
+
 /* ── RESPONSIVE ── */
 @media (max-width: 900px) {
   .hero-bg-wrap {
@@ -1068,6 +1076,7 @@ footer {
   <img src="hero-bg.jpg" alt="" />
 </div>
 <div class="grid-bg"></div>
+<canvas id="smokeCanvas"></canvas>
 
 <div class="page">
 
@@ -1234,7 +1243,7 @@ headlineLoop();
 
 // ── COUNTDOWN ──
 // *** UPDATE THIS DATE to your actual event date/time (UTC) ***
-var EVENT_UTC = new Date('2026-03-31T14:00:00Z');
+var EVENT_UTC = new Date('2026-04-07T14:00:00Z');
 
 var cdDays  = document.getElementById('cd-days');
 var cdHours = document.getElementById('cd-hours');
@@ -1270,6 +1279,169 @@ function updateCountdown() {
 
 updateCountdown();
 setInterval(updateCountdown, 1000);
+</script>
+
+<!-- ── CURSOR TRAIL (purple-tinted for branding) ── -->
+<script>
+(function() {
+  const canvas = document.getElementById('smokeCanvas');
+  const ctx = canvas.getContext('2d');
+  let W, H;
+  const isMobile = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+
+  let mouseX = -9999, mouseY = -9999;
+  let smoothX = -9999, smoothY = -9999;
+  let prevSX = -9999, prevSY = -9999;
+  let velocity = 0;
+
+  const trail = [];
+  const maxTrailLen = 120;
+  const trailLifetime = 800;
+  let wisps = [];
+
+  function resize() { W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; }
+  resize();
+  window.addEventListener('resize', resize);
+
+  window.addEventListener('mousemove', e => { mouseX = e.clientX; mouseY = e.clientY; });
+  window.addEventListener('mouseout', e => { if (!e.relatedTarget && !e.toElement) { mouseX = -9999; mouseY = -9999; } });
+  document.addEventListener('mousemove', e => { mouseX = e.clientX; mouseY = e.clientY; });
+  window.addEventListener('touchmove', e => { const t = e.touches[0]; mouseX = t.clientX; mouseY = t.clientY; }, { passive: true });
+  window.addEventListener('touchend', () => { mouseX = -9999; mouseY = -9999; });
+
+  class Wisp {
+    constructor(x, y, intensity) {
+      this.x = x + (Math.random() - 0.5) * 3; this.y = y + (Math.random() - 0.5) * 3;
+      this.vx = (Math.random() - 0.5) * 0.4; this.vy = -Math.random() * 0.5 - 0.15;
+      this.life = 1; this.decay = 0.01 + Math.random() * 0.008;
+      this.radius = 3 + Math.random() * 5; this.maxRadius = this.radius * (2.2 + Math.random());
+      this.intensity = intensity;
+    }
+    update() { this.life -= this.decay; this.x += this.vx; this.y += this.vy; this.vy -= 0.004; this.vx *= 0.98; this.radius += (this.maxRadius - this.radius) * 0.015; }
+    draw(ctx) {
+      if (this.life <= 0) return;
+      const fade = this.life * this.life, r = this.radius, a = fade * this.intensity * 0.3;
+      const grad = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, r);
+      grad.addColorStop(0, `rgba(157,95,245,${a})`); grad.addColorStop(0.3, `rgba(124,58,237,${a * 0.5})`);
+      grad.addColorStop(0.7, `rgba(90,40,180,${a * 0.15})`); grad.addColorStop(1, 'rgba(60,20,120,0)');
+      ctx.fillStyle = grad; ctx.fillRect(this.x - r, this.y - r, r * 2, r * 2);
+    }
+  }
+
+  function smoothPoints(pts, passes) {
+    if (pts.length < 3) return pts;
+    let arr = pts;
+    for (let p = 0; p < passes; p++) {
+      const out = [arr[0]];
+      for (let i = 1; i < arr.length - 1; i++) {
+        out.push({ x: arr[i-1].x*0.25 + arr[i].x*0.5 + arr[i+1].x*0.25, y: arr[i-1].y*0.25 + arr[i].y*0.5 + arr[i+1].y*0.25, t: arr[i].t });
+      }
+      out.push(arr[arr.length - 1]); arr = out;
+    }
+    return arr;
+  }
+
+  function drawTrail(ctx) {
+    if (trail.length < 3) return;
+    const now = performance.now(), pts = smoothPoints(trail, 3), len = pts.length;
+    ctx.save(); ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    const layers = [
+      { width: 10, alphaScale: 0.1, shadow: 18, shadowAlpha: 0.3 },
+      { width: 3,  alphaScale: 0.4, shadow: 8,  shadowAlpha: 0.5 },
+      { width: 1.2, alphaScale: 1.0, shadow: 3,  shadowAlpha: 0.8 },
+    ];
+    for (const layer of layers) {
+      for (let start = 0; start < len - 1; start += 5) {
+        const end = Math.min(start + 6, len);
+        if (end - start < 2) continue;
+        const midIdx = Math.floor((start + end) / 2);
+        const age = now - pts[midIdx].t;
+        const rawAlpha = Math.max(0, 1 - age / trailLifetime);
+        const alpha = rawAlpha * rawAlpha * rawAlpha;
+        if (alpha < 0.003) continue;
+        ctx.beginPath();
+        ctx.moveTo((pts[start].x + pts[start+1].x)/2, (pts[start].y + pts[start+1].y)/2);
+        for (let j = start + 1; j < end - 1; j++) {
+          ctx.quadraticCurveTo(pts[j].x, pts[j].y, (pts[j].x + pts[j+1].x)/2, (pts[j].y + pts[j+1].y)/2);
+        }
+        const last = pts[end - 1];
+        ctx.quadraticCurveTo(last.x, last.y, last.x, last.y);
+        ctx.strokeStyle = `rgba(196,181,253,${alpha * layer.alphaScale})`;
+        ctx.lineWidth = layer.width;
+        ctx.shadowColor = `rgba(124,58,237,${alpha * layer.shadowAlpha})`;
+        ctx.shadowBlur = layer.shadow;
+        ctx.stroke();
+      }
+    }
+    ctx.shadowBlur = 0; ctx.restore();
+  }
+
+  function drawEmber(ctx) {
+    if (trail.length < 1) return;
+    const head = trail[trail.length - 1], now = performance.now();
+    const ageFade = Math.max(0, 1 - (now - head.t) / 200);
+    const intensity = Math.min(velocity / 5, 1) * ageFade;
+    if (intensity < 0.01) return;
+    const r1 = 3 + intensity * 3;
+    const grad1 = ctx.createRadialGradient(head.x, head.y, 0, head.x, head.y, r1);
+    grad1.addColorStop(0, `rgba(196,181,253,${intensity * 0.95})`);
+    grad1.addColorStop(0.4, `rgba(157,95,245,${intensity * 0.5})`);
+    grad1.addColorStop(1, 'rgba(124,58,237,0)');
+    ctx.fillStyle = grad1; ctx.fillRect(head.x - r1, head.y - r1, r1 * 2, r1 * 2);
+    const r2 = 10 + intensity * 12;
+    const grad2 = ctx.createRadialGradient(head.x, head.y, 0, head.x, head.y, r2);
+    grad2.addColorStop(0, `rgba(196,181,253,${intensity * 0.15})`);
+    grad2.addColorStop(0.3, `rgba(157,95,245,${intensity * 0.06})`);
+    grad2.addColorStop(1, 'rgba(124,58,237,0)');
+    ctx.fillStyle = grad2; ctx.fillRect(head.x - r2, head.y - r2, r2 * 2, r2 * 2);
+  }
+
+  function drawGridGlow(ctx) {
+    if (trail.length > 0 && velocity > 1) {
+      const head = trail[trail.length - 1], now = performance.now();
+      const ageFade = Math.max(0, 1 - (now - head.t) / 300);
+      const gs = Math.min(velocity / 15, 1) * ageFade, r = 80 + velocity * 2;
+      const grad = ctx.createRadialGradient(head.x, head.y, 0, head.x, head.y, r);
+      grad.addColorStop(0, `rgba(124,58,237,${gs * 0.08})`);
+      grad.addColorStop(0.5, `rgba(124,58,237,${gs * 0.03})`);
+      grad.addColorStop(1, 'rgba(124,58,237,0)');
+      ctx.fillStyle = grad; ctx.fillRect(head.x - r, head.y - r, r * 2, r * 2);
+    }
+  }
+
+  function animate() {
+    requestAnimationFrame(animate);
+    ctx.clearRect(0, 0, W, H);
+    const now = performance.now();
+    if (mouseX > -9000) {
+      if (smoothX < -9000) { smoothX = mouseX; smoothY = mouseY; }
+      smoothX += (mouseX - smoothX) * 0.5; smoothY += (mouseY - smoothY) * 0.5;
+    } else { smoothX = -9999; smoothY = -9999; }
+    if (smoothX > -9000 && prevSX > -9000) {
+      const dx = smoothX - prevSX, dy = smoothY - prevSY;
+      velocity += (Math.sqrt(dx * dx + dy * dy) - velocity) * 0.3;
+    } else { velocity *= 0.85; }
+    prevSX = smoothX; prevSY = smoothY;
+    if (smoothX > -9000 && velocity > 0.5) {
+      if (trail.length > 0) {
+        const last = trail[trail.length - 1], dx = smoothX - last.x, dy = smoothY - last.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist > 2) {
+          const steps = Math.min(Math.ceil(dist / 2), 10);
+          for (let s = 1; s <= steps; s++) { const t = s / steps; trail.push({ x: last.x + dx * t, y: last.y + dy * t, t: now }); }
+        }
+      } else { trail.push({ x: smoothX, y: smoothY, t: now }); }
+      if (Math.random() < 0.45) wisps.push(new Wisp(smoothX, smoothY, Math.min(velocity / 5, 1)));
+    }
+    while (trail.length > 0 && (now - trail[0].t) > trailLifetime) trail.shift();
+    if (trail.length > maxTrailLen) trail.splice(0, trail.length - maxTrailLen);
+    drawGridGlow(ctx);
+    for (let i = wisps.length - 1; i >= 0; i--) { wisps[i].update(); wisps[i].draw(ctx); if (wisps[i].life <= 0) wisps.splice(i, 1); }
+    drawTrail(ctx); drawEmber(ctx);
+    if (wisps.length > (isMobile ? 40 : 100)) wisps.splice(0, wisps.length - (isMobile ? 40 : 100));
+  }
+  animate();
+})();
 </script>
 </body>
 </html>
