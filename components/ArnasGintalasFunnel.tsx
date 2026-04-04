@@ -3,6 +3,10 @@ import React, { useState } from 'react';
 const pages = [
   { id: 'optin', label: 'Opt-In Page', src: '/funnels/arnas-gintalas/index.html' },
   { id: 'thankyou', label: 'Thank You Page', src: '/funnels/arnas-gintalas/thank-you/index.html' },
+  { id: 'igmastery-optin', label: 'IG Mastery Opt-In', src: '/funnels/arnas-gintalas/igmastery/index.html' },
+  { id: 'igmastery-ty', label: 'IG Mastery Thank You', src: '/funnels/arnas-gintalas/igmastery/thank-you.html' },
+  { id: 'igmastery-privacy', label: 'Privacy Policy', src: '/funnels/arnas-gintalas/igmastery/privacy-policy.html' },
+  { id: 'igmastery-terms', label: 'Terms', src: '/funnels/arnas-gintalas/igmastery/terms.html' },
 ];
 
 const ArnasGintalasFunnel: React.FC = () => {
