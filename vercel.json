@@ -1,6 +1,7 @@
 {
   "rewrites": [
     { "source": "/api/:path*", "destination": "/api/:path*" },
+    { "source": "/funnels/:path*", "destination": "/funnels/:path*" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
