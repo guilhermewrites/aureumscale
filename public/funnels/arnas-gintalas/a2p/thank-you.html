@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Thank You — Arnas Gintalas</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&family=Cormorant+Garamond:ital,wght@1,400;1,500;1,600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --purple-1: #7c3aed;
+  --purple-2: #9d5ff5;
+  --purple-3: #c4b5fd;
+  --bg: #09090b;
+  --card: rgba(255,255,255,0.035);
+  --border: rgba(255,255,255,0.08);
+  --text: #fafafa;
+  --muted: rgba(255,255,255,0.5);
+  --dim: rgba(255,255,255,0.3);
+  --font: 'Plus Jakarta Sans', sans-serif;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--font); background: var(--bg); color: var(--text);
+  min-height: 100vh; overflow-x: hidden; -webkit-font-smoothing: antialiased;
+}
+
+.grid-bg {
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.022) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.022) 1px, transparent 1px);
+  background-size: 64px 64px;
+}
+.grid-bg::after {
+  content: ''; position: absolute; inset: 0;
+  background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(255,255,255,0.03) 0%, transparent 70%);
+}
+
+body::before {
+  content: ''; position: fixed; inset: 0; z-index: 0; opacity: 0.025; pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+.hero-bg-wrap {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100vh;
+  z-index: 0; pointer-events: none; overflow: hidden;
+}
+.hero-bg-wrap img { width: 100%; height: 100%; object-fit: cover; object-position: center top; }
+.hero-bg-wrap::after {
+  content: ''; position: absolute; inset: 0;
+  background:
+    linear-gradient(to right, rgba(9,9,11,0.88) 0%, rgba(9,9,11,0.45) 35%, rgba(9,9,11,0.20) 50%, rgba(9,9,11,0.45) 65%, rgba(9,9,11,0.88) 100%),
+    linear-gradient(to bottom, rgba(9,9,11,0.15) 0%, rgba(9,9,11,0.05) 40%, rgba(9,9,11,0.60) 75%, rgba(9,9,11,1) 100%);
+}
+
+.page {
+  position: relative; z-index: 1; min-height: 100vh;
+  display: flex; flex-direction: column;
+}
+
+nav {
+  padding: 20px 40px; display: flex; align-items: center; justify-content: space-between;
+  border-bottom: 1px solid var(--border); backdrop-filter: blur(12px);
+}
+.nav-logo { font-size: 13px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text); }
+.nav-pill {
+  display: flex; align-items: center; gap: 8px; font-size: 11px; font-weight: 600;
+  letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted);
+  background: var(--card); border: 1px solid var(--border); padding: 7px 16px; border-radius: 100px;
+}
+.live-dot { width: 6px; height: 6px; background: var(--purple-2); border-radius: 50%; animation: blink 2s ease-in-out infinite; }
+@keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.25; } }
+
+.ty-section {
+  flex: 1; display: flex; align-items: center; justify-content: center;
+  padding: 80px 24px;
+}
+
+.ty-card {
+  max-width: 560px; width: 100%; text-align: center;
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 24px; padding: 56px 48px 48px;
+  position: relative; overflow: hidden; backdrop-filter: blur(20px);
+  opacity: 0; animation: fade-up 0.7s ease 0.15s forwards;
+}
+.ty-card::before {
+  content: ''; position: absolute; inset: 0; border-radius: 24px;
+  background: linear-gradient(135deg, rgba(255,255,255,0.04) 0%, transparent 60%);
+  pointer-events: none;
+}
+
+.check-circle {
+  width: 72px; height: 72px; border-radius: 50%;
+  background: linear-gradient(135deg, rgba(124,58,237,0.25), rgba(124,58,237,0.08));
+  border: 1px solid rgba(124,58,237,0.4);
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 28px;
+}
+.check-circle svg { width: 32px; height: 32px; color: var(--purple-3); }
+
+.ty-headline {
+  font-size: clamp(24px, 3.5vw, 34px); font-weight: 900;
+  letter-spacing: -0.03em; line-height: 1.2;
+  color: var(--text); margin-bottom: 20px;
+}
+
+.ty-body {
+  font-size: 16px; line-height: 1.75; color: var(--muted); margin-bottom: 0;
+}
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+footer {
+  border-top: 1px solid var(--border); padding: 40px 40px 32px;
+  display: flex; flex-direction: column; align-items: center;
+  gap: 16px; font-size: 11px; color: var(--dim); text-align: center;
+}
+.footer-links {
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap; justify-content: center;
+}
+.footer-links a { color: var(--muted); text-decoration: none; font-size: 11px; font-weight: 500; transition: color 0.2s; }
+.footer-links a:hover { color: var(--text); }
+.footer-sep { color: var(--dim); opacity: 0.4; }
+.footer-copy { font-size: 11px; color: var(--dim); }
+
+@media (max-width: 900px) {
+  .hero-bg-wrap img { object-position: center 15%; }
+  .hero-bg-wrap::after {
+    background:
+      linear-gradient(to right, rgba(9,9,11,0.3) 0%, rgba(9,9,11,0.1) 50%, rgba(9,9,11,0.3) 100%),
+      linear-gradient(to bottom, rgba(9,9,11,0) 0%, rgba(9,9,11,0) 30%, rgba(9,9,11,0.85) 60%, rgba(9,9,11,1) 75%);
+  }
+  .ty-section { padding: 60px 16px; }
+  .ty-card { padding: 40px 24px 36px; }
+  nav { padding: 16px 24px; }
+  footer { padding: 32px 20px 24px; }
+}
+</style>
+</head>
+<body>
+
+<div class="hero-bg-wrap">
+  <img src="../hero-bg.jpg" alt="" />
+</div>
+<div class="grid-bg"></div>
+
+<div class="page">
+
+  <nav>
+    <div class="nav-logo">Arnas Gintalas</div>
+    <div class="nav-pill">
+      <div class="live-dot"></div>
+      Free Live Event
+    </div>
+  </nav>
+
+  <section class="ty-section">
+    <div class="ty-card">
+      <div class="check-circle">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="20 6 9 17 4 12"/>
+        </svg>
+      </div>
+      <h1 class="ty-headline">Thank you for applying!</h1>
+      <p class="ty-body">My team will reach out to you shortly. We appreciate your interest and look forward to connecting with you.</p>
+    </div>
+  </section>
+
+  <footer>
+    <div class="footer-links">
+      <a href="privacy-policy.html">Privacy Policy</a>
+      <span class="footer-sep">·</span>
+      <a href="terms.html">Terms &amp; Conditions</a>
+      <span class="footer-sep">·</span>
+      <a href="#">Contact</a>
+    </div>
+    <p class="footer-copy">© 2026 [COMPANY_NAME]. All rights reserved. | <a href="privacy-policy.html" style="color:inherit;text-decoration:underline;">Privacy Policy</a> | <a href="terms.html" style="color:inherit;text-decoration:underline;">Terms &amp; Conditions</a></p>
+  </footer>
+
+</div>
+</body>
+</html>

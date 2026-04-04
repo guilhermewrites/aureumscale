@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Apply — Arnas Gintalas</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&family=Cormorant+Garamond:ital,wght@1,400;1,500;1,600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --purple-1: #7c3aed;
+  --purple-2: #9d5ff5;
+  --purple-3: #c4b5fd;
+  --bg: #09090b;
+  --card: rgba(255,255,255,0.035);
+  --border: rgba(255,255,255,0.08);
+  --text: #fafafa;
+  --muted: rgba(255,255,255,0.5);
+  --dim: rgba(255,255,255,0.3);
+  --input-bg: rgba(255,255,255,0.04);
+  --font: 'Plus Jakarta Sans', sans-serif;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+.grid-bg {
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.022) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.022) 1px, transparent 1px);
+  background-size: 64px 64px;
+}
+.grid-bg::after {
+  content: ''; position: absolute; inset: 0;
+  background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(255,255,255,0.03) 0%, transparent 70%);
+}
+
+body::before {
+  content: ''; position: fixed; inset: 0; z-index: 0; opacity: 0.025; pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+.hero-bg-wrap {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100vh;
+  z-index: 0; pointer-events: none; overflow: hidden;
+}
+.hero-bg-wrap img {
+  width: 100%; height: 100%; object-fit: cover; object-position: center top;
+}
+.hero-bg-wrap::after {
+  content: ''; position: absolute; inset: 0;
+  background:
+    linear-gradient(to right, rgba(9,9,11,0.88) 0%, rgba(9,9,11,0.45) 35%, rgba(9,9,11,0.20) 50%, rgba(9,9,11,0.45) 65%, rgba(9,9,11,0.88) 100%),
+    linear-gradient(to bottom, rgba(9,9,11,0.15) 0%, rgba(9,9,11,0.05) 40%, rgba(9,9,11,0.60) 75%, rgba(9,9,11,1) 100%);
+}
+
+.page {
+  position: relative; z-index: 1; min-height: 100vh;
+  display: flex; flex-direction: column;
+}
+
+nav {
+  padding: 20px 40px; display: flex; align-items: center; justify-content: space-between;
+  border-bottom: 1px solid var(--border); backdrop-filter: blur(12px);
+}
+.nav-logo {
+  font-size: 13px; font-weight: 700; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--text);
+}
+.nav-pill {
+  display: flex; align-items: center; gap: 8px; font-size: 11px; font-weight: 600;
+  letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted);
+  background: var(--card); border: 1px solid var(--border);
+  padding: 7px 16px; border-radius: 100px;
+}
+.live-dot {
+  width: 6px; height: 6px; background: var(--purple-2);
+  border-radius: 50%; animation: blink 2s ease-in-out infinite;
+}
+@keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.25; } }
+
+/* ── HERO ── */
+.hero {
+  flex: 1; padding: 72px 40px 64px;
+  max-width: 1200px; width: 100%; margin: 0 auto;
+  display: grid; grid-template-columns: 1fr 420px;
+  gap: 64px; align-items: center;
+}
+
+.hero-left { display: flex; flex-direction: column; }
+
+.event-tag {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-size: 10px; font-weight: 700; letter-spacing: 0.18em;
+  text-transform: uppercase; color: var(--dim); margin-bottom: 28px;
+  font-family: 'JetBrains Mono', monospace;
+}
+.event-tag::before {
+  content: ''; display: inline-block; width: 20px; height: 1px;
+  background: var(--purple-2); opacity: 0.7;
+}
+
+.hero-headline {
+  font-size: clamp(32px, 4vw, 50px); font-weight: 900;
+  line-height: 1.08; letter-spacing: -0.03em;
+  color: var(--text); margin-bottom: 22px;
+}
+.hero-headline .script-text {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-style: italic; font-weight: 600; font-size: 1.1em;
+  color: var(--purple-3); letter-spacing: 0.01em;
+}
+
+.hero-sub {
+  font-size: 16px; line-height: 1.7; color: var(--muted);
+  max-width: 520px; margin-bottom: 32px;
+}
+
+.trust-row {
+  display: flex; align-items: center; gap: 20px; flex-wrap: wrap;
+}
+.trust-item {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 12px; color: var(--dim); font-weight: 500;
+}
+.trust-icon { width: 18px; height: 18px; opacity: 0.5; }
+.trust-divider { width: 1px; height: 16px; background: var(--border); }
+
+/* ── OPT-IN CARD ── */
+.optin-wrap { position: relative; z-index: 1; }
+.optin-card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 20px; padding: 40px 36px;
+  position: relative; overflow: hidden; backdrop-filter: blur(20px);
+}
+.optin-card::before {
+  content: ''; position: absolute; inset: 0; border-radius: 20px;
+  background: linear-gradient(135deg, rgba(255,255,255,0.04) 0%, transparent 60%);
+  pointer-events: none;
+}
+.optin-card::after {
+  content: ''; position: absolute; inset: -1px; border-radius: 21px; padding: 1px;
+  background: conic-gradient(from var(--angle, 0deg), transparent 60%, rgba(255,255,255,0.15) 72%, rgba(255,255,255,1.0) 80%, rgba(255,255,255,0.15) 88%, transparent 100%);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor; mask-composite: exclude;
+  animation: spin-border 3.5s linear infinite; pointer-events: none; z-index: 2;
+}
+.optin-inner-glow {
+  position: absolute; inset: 0; border-radius: 20px; pointer-events: none; z-index: 1;
+  background: conic-gradient(from var(--angle, 0deg), transparent 60%, rgba(255,255,255,0.0) 70%, rgba(255,255,255,0.06) 80%, rgba(255,255,255,0.0) 90%, transparent 100%);
+  animation: spin-border 3.5s linear infinite;
+  -webkit-mask: radial-gradient(ellipse 100% 100% at 50% 50%, transparent 55%, rgba(0,0,0,0.6) 72%, black 100%);
+  mask: radial-gradient(ellipse 100% 100% at 50% 50%, transparent 55%, rgba(0,0,0,0.6) 72%, black 100%);
+}
+@property --angle { syntax: '<angle>'; initial-value: 0deg; inherits: false; }
+@keyframes spin-border { to { --angle: 360deg; } }
+
+.optin-label {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.18em;
+  text-transform: uppercase; color: var(--dim); margin-bottom: 10px;
+  font-family: 'JetBrains Mono', monospace; position: relative; z-index: 2;
+}
+.optin-title {
+  font-size: 20px; font-weight: 800; letter-spacing: -0.02em;
+  color: var(--text); line-height: 1.25; margin-bottom: 8px;
+  position: relative; z-index: 2;
+}
+.optin-desc {
+  font-size: 13px; color: var(--muted); margin-bottom: 28px;
+  line-height: 1.6; position: relative; z-index: 2;
+}
+
+.form-group {
+  display: flex; flex-direction: column; gap: 12px;
+  margin-bottom: 20px; position: relative; z-index: 2;
+}
+.field-wrap { position: relative; }
+.field-icon {
+  position: absolute; left: 16px; top: 50%; transform: translateY(-50%);
+  color: var(--dim); font-size: 14px; pointer-events: none;
+}
+input[type="text"], input[type="email"], input[type="tel"] {
+  width: 100%; background: var(--input-bg); border: 1px solid var(--border);
+  border-radius: 10px; padding: 14px 16px 14px 42px;
+  font-family: var(--font); font-size: 14px; color: var(--text); outline: none;
+  transition: border-color 0.2s, background 0.2s;
+}
+input::placeholder { color: var(--dim); }
+input:focus { border-color: rgba(255,255,255,0.22); background: rgba(255,255,255,0.06); }
+
+/* ── CHECKBOXES ── */
+.consent-section {
+  position: relative; z-index: 2;
+  margin-bottom: 16px;
+  display: flex; flex-direction: column; gap: 12px;
+}
+.consent-row {
+  display: flex; align-items: flex-start; gap: 10px;
+}
+.consent-row input[type="checkbox"] {
+  width: 16px; height: 16px; margin-top: 2px; flex-shrink: 0;
+  accent-color: var(--purple-1); cursor: pointer;
+}
+.consent-row label {
+  font-size: 10px; line-height: 1.5; color: var(--dim); cursor: pointer;
+}
+.consent-row label a {
+  color: var(--muted); text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.consent-row label a:hover { color: var(--text); }
+
+.consent-agreement {
+  font-size: 10px; line-height: 1.5; color: var(--dim);
+  text-align: center; margin-bottom: 16px;
+  position: relative; z-index: 2;
+}
+.consent-agreement a {
+  color: var(--muted); text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.consent-agreement a:hover { color: var(--text); }
+
+.btn-submit {
+  width: 100%; background: var(--text); color: var(--bg);
+  font-family: var(--font); font-size: 14px; font-weight: 800;
+  letter-spacing: 0.05em; text-transform: uppercase;
+  border: none; border-radius: 10px; padding: 16px 24px;
+  cursor: pointer; transition: opacity 0.2s, transform 0.2s;
+  margin-bottom: 16px; position: relative; z-index: 2;
+}
+.btn-submit:hover { opacity: 0.9; transform: translateY(-1px); }
+.btn-submit:active { transform: translateY(0); }
+
+.form-note {
+  font-size: 11px; color: var(--dim); text-align: center;
+  line-height: 1.5; position: relative; z-index: 2;
+}
+.form-note svg { display: inline; vertical-align: middle; margin-right: 4px; }
+
+/* ── BUSINESS DESCRIPTION SECTION ── */
+.biz-section {
+  padding: 0 40px 80px;
+  max-width: 1200px; width: 100%; margin: 0 auto;
+}
+.biz-divider {
+  display: flex; align-items: center; gap: 20px; margin-bottom: 40px;
+}
+.biz-divider-line { flex: 1; height: 1px; background: var(--border); }
+.biz-divider-label {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.2em;
+  text-transform: uppercase; color: var(--dim);
+  font-family: 'JetBrains Mono', monospace; white-space: nowrap;
+}
+.biz-content {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;
+}
+.biz-card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 16px; padding: 28px 24px;
+  position: relative; overflow: hidden;
+  transition: border-color 0.3s, transform 0.3s;
+}
+.biz-card:hover { border-color: rgba(255,255,255,0.15); transform: translateY(-3px); }
+.biz-card::before {
+  content: ''; position: absolute; inset: 0; border-radius: 16px;
+  background: linear-gradient(135deg, rgba(255,255,255,0.03) 0%, transparent 50%);
+  pointer-events: none;
+}
+.biz-card-icon { font-size: 24px; margin-bottom: 14px; line-height: 1; }
+.biz-card-title {
+  font-size: 16px; font-weight: 800; letter-spacing: -0.02em;
+  color: var(--text); margin-bottom: 10px; line-height: 1.25;
+}
+.biz-card-body { font-size: 13px; line-height: 1.7; color: var(--muted); }
+
+/* ── FOLD 2 OPAQUE BG ── */
+.fold-2-wrap { position: relative; z-index: 1; background: var(--bg); }
+
+/* ── FOOTER ── */
+footer {
+  border-top: 1px solid var(--border); padding: 40px 40px 32px;
+  display: flex; flex-direction: column; align-items: center;
+  gap: 16px; font-size: 11px; color: var(--dim); text-align: center;
+}
+.footer-links {
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap; justify-content: center;
+}
+.footer-links a {
+  color: var(--muted); text-decoration: none; font-size: 11px;
+  font-weight: 500; transition: color 0.2s;
+}
+.footer-links a:hover { color: var(--text); }
+.footer-sep { color: var(--dim); opacity: 0.4; }
+.footer-copy { font-size: 11px; color: var(--dim); }
+.footer-disclaimer {
+  max-width: 700px; margin-top: 12px; padding-top: 20px;
+  border-top: 1px solid var(--border);
+  display: flex; flex-direction: column; gap: 12px;
+}
+.footer-disclaimer p { font-size: 9px; line-height: 1.6; color: var(--dim); opacity: 0.7; }
+
+/* ── ANIMATIONS ── */
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.hero-left > * { opacity: 0; animation: fade-up 0.6s ease forwards; }
+.hero-left .event-tag     { animation-delay: 0.05s; }
+.hero-left .hero-headline { animation-delay: 0.15s; }
+.hero-left .hero-sub      { animation-delay: 0.25s; }
+.hero-left .trust-row     { animation-delay: 0.35s; }
+.optin-card { opacity: 0; animation: fade-up 0.6s ease 0.3s forwards; }
+.biz-card { opacity: 0; animation: fade-up 0.6s ease forwards; }
+.biz-card:nth-child(1) { animation-delay: 0.5s; }
+.biz-card:nth-child(2) { animation-delay: 0.62s; }
+.biz-card:nth-child(3) { animation-delay: 0.74s; }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 900px) {
+  .hero-bg-wrap img { object-position: center 15%; }
+  .hero-bg-wrap::after {
+    background:
+      linear-gradient(to right, rgba(9,9,11,0.3) 0%, rgba(9,9,11,0.1) 50%, rgba(9,9,11,0.3) 100%),
+      linear-gradient(to bottom, rgba(9,9,11,0) 0%, rgba(9,9,11,0) 30%, rgba(9,9,11,0.85) 60%, rgba(9,9,11,1) 75%);
+  }
+  .hero { grid-template-columns: 1fr; gap: 32px; padding: 42vh 24px 40px; }
+  .hero-left { text-align: center; align-items: center; }
+  .hero-sub { text-align: center; max-width: 100%; }
+  .trust-row { justify-content: center; }
+  .event-tag { justify-content: center; }
+  .optin-wrap { max-width: 100%; }
+  .optin-card { padding: 32px 24px; }
+  .biz-section { padding: 0 24px 60px; }
+  .biz-content { grid-template-columns: 1fr; }
+  nav { padding: 16px 24px; }
+  footer { padding: 32px 20px 24px; }
+  .footer-disclaimer { max-width: 100%; }
+}
+</style>
+</head>
+<body>
+
+<div class="hero-bg-wrap">
+  <img src="../hero-bg.jpg" alt="" />
+</div>
+<div class="grid-bg"></div>
+
+<div class="page">
+
+  <nav>
+    <div class="nav-logo">Arnas Gintalas</div>
+    <div class="nav-pill">
+      <div class="live-dot"></div>
+      Free Live Event
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero">
+
+    <div class="hero-left">
+
+      <div class="event-tag">Free Educational Webinar</div>
+
+      <h1 class="hero-headline">
+        Learn How to Grow<br>
+        <span class="script-text">Instagram</span><br>
+        Theme Pages
+      </h1>
+
+      <p class="hero-sub">
+        Arnas Gintalas is an entrepreneur and educator who teaches how to build and grow anonymous Instagram theme pages. In this free live webinar, he shares his strategies for content creation, audience growth, and monetization through social media.
+      </p>
+
+      <div class="trust-row">
+        <div class="trust-item">
+          <svg class="trust-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          Free to attend
+        </div>
+        <div class="trust-divider"></div>
+        <div class="trust-item">
+          <svg class="trust-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          60 min educational session
+        </div>
+        <div class="trust-divider"></div>
+        <div class="trust-item">
+          <svg class="trust-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          No purchase required
+        </div>
+      </div>
+
+    </div>
+
+    <!-- OPT-IN CARD -->
+    <div class="optin-wrap">
+    <div class="optin-card">
+      <div class="optin-inner-glow"></div>
+      <div class="optin-label">Register for free</div>
+      <div class="optin-title">Join the Free Webinar</div>
+      <p class="optin-desc">Enter your details below to register for the upcoming live educational session.</p>
+
+      <form id="optin-form" action="thank-you.html" method="GET">
+
+        <div class="form-group">
+          <div class="field-wrap">
+            <span class="field-icon">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            </span>
+            <input type="text" name="name" placeholder="Full name" required />
+          </div>
+          <div class="field-wrap">
+            <span class="field-icon">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+            </span>
+            <input type="email" name="email" placeholder="Email address" required />
+          </div>
+          <div class="field-wrap">
+            <span class="field-icon">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+            </span>
+            <input type="tel" name="phone" placeholder="Phone number" required />
+          </div>
+        </div>
+
+        <!-- SMS CONSENT CHECKBOXES — unchecked by default, NOT required -->
+        <div class="consent-section">
+          <div class="consent-row">
+            <input type="checkbox" id="consent-transactional" name="consent_transactional" />
+            <label for="consent-transactional">
+              You agree to receive automated transactional messages with varying frequency from [COMPANY_NAME] ([PROGRAM_NAME]). Txt and data rates may apply. Reply STOP to end. Text HELP for help. <a href="terms.html" target="_blank">Terms of Service</a> | <a href="privacy-policy.html" target="_blank">Privacy Policy</a>
+            </label>
+          </div>
+          <div class="consent-row">
+            <input type="checkbox" id="consent-promotional" name="consent_promotional" />
+            <label for="consent-promotional">
+              You agree to receive automated promotional messages with varying frequency from [COMPANY_NAME] ([PROGRAM_NAME]). Txt and data rates may apply. Reply STOP to end. Text HELP for help. <a href="terms.html" target="_blank">Terms of Service</a> | <a href="privacy-policy.html" target="_blank">Privacy Policy</a>
+            </label>
+          </div>
+        </div>
+
+        <p class="consent-agreement">
+          By submitting your information, you agree to our <a href="terms.html" target="_blank">Terms of Service</a> and <a href="privacy-policy.html" target="_blank">Privacy Policy</a>.
+        </p>
+
+        <button type="submit" class="btn-submit">Register For Free →</button>
+      </form>
+
+      <p class="form-note">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        Your information is secure and will never be shared.
+      </p>
+    </div>
+    </div>
+
+  </section>
+
+  <div class="fold-2-wrap">
+
+  <!-- ABOUT SECTION -->
+  <section class="biz-section">
+    <div class="biz-divider">
+      <div class="biz-divider-line"></div>
+      <div class="biz-divider-label">What You'll Learn</div>
+      <div class="biz-divider-line"></div>
+    </div>
+    <div class="biz-content">
+      <div class="biz-card">
+        <div class="biz-card-icon">📱</div>
+        <div class="biz-card-title">Instagram Theme Pages</div>
+        <div class="biz-card-body">Learn what anonymous Instagram theme pages are, how they work, and why they've become a popular way to build an audience on social media.</div>
+      </div>
+      <div class="biz-card">
+        <div class="biz-card-icon">📈</div>
+        <div class="biz-card-title">Content & Growth Strategies</div>
+        <div class="biz-card-body">Discover content creation approaches and audience growth strategies that Arnas has used in his own experience building Instagram pages.</div>
+      </div>
+      <div class="biz-card">
+        <div class="biz-card-icon">🎓</div>
+        <div class="biz-card-title">Educational Walkthrough</div>
+        <div class="biz-card-body">A live 60-minute educational session where Arnas walks through his process and answers attendee questions in real time.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-links">
+      <a href="privacy-policy.html">Privacy Policy</a>
+      <span class="footer-sep">·</span>
+      <a href="terms.html">Terms &amp; Conditions</a>
+      <span class="footer-sep">·</span>
+      <a href="#">Contact</a>
+    </div>
+    <p class="footer-copy">© 2026 [COMPANY_NAME]. All rights reserved. | <a href="privacy-policy.html" style="color:inherit;text-decoration:underline;">Privacy Policy</a> | <a href="terms.html" style="color:inherit;text-decoration:underline;">Terms &amp; Conditions</a></p>
+    <div class="footer-disclaimer">
+      <p>RESULTS DISCLAIMER: This webinar is for educational and informational purposes only. Any examples or case studies shared are individual experiences and are not guaranteed. Your results will depend on many factors including your effort, skills, experience, and market conditions. We make no representations, warranties, or guarantees regarding specific outcomes.</p>
+      <p>This site is not a part of the Facebook™ website or Facebook™ Inc. Additionally, this site is NOT endorsed by Facebook™ in any way. FACEBOOK™ is a trademark of FACEBOOK™, Inc.</p>
+      <p>This site is not a part of the Instagram™ website or Instagram™/Meta Platforms, Inc. Additionally, this site is NOT endorsed by Instagram™ or Meta™ in any way. INSTAGRAM™ is a trademark of META PLATFORMS™, Inc.</p>
+    </div>
+  </footer>
+
+  </div>
+
+</div>
+
+</body>
+</html>
