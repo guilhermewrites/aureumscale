@@ -17,6 +17,7 @@ import BrandingManager from './components/BrandingManager';
 import GeneralRoom from './components/GeneralRoom';
 import ArnasGintalasFunnel from './components/ArnasGintalasFunnel';
 import AureumWebinarsFunnel from './components/AureumWebinarsFunnel';
+import LukeAlexanderFunnel from './components/LukeAlexanderFunnel';
 import CalendarManager from './components/CalendarManager';
 import MentorManager from './components/MentorManager';
 import AIBubble from './components/AIBubble';
@@ -41,6 +42,7 @@ const routeToNav: Record<string, NavigationItem> = {
   '/general-room': NavigationItem.GENERAL_ROOM,
   '/arnas-gintalas': NavigationItem.ARNAS_GINTALAS,
   '/aureum-webinars': NavigationItem.AUREUM_WEBINARS,
+  '/luke-alexander': NavigationItem.LUKE_ALEXANDER,
   '/calendar': NavigationItem.CALENDAR,
   '/mentor': NavigationItem.MENTOR,
 };
@@ -960,6 +962,7 @@ const AuthenticatedApp: React.FC<{ user: User; signOut: () => Promise<void> }> =
           } />
           <Route path="/arnas-gintalas" element={<ArnasGintalasFunnel />} />
           <Route path="/aureum-webinars" element={<AureumWebinarsFunnel />} />
+          <Route path="/luke-alexander" element={<LukeAlexanderFunnel />} />
           <Route path="/calendar" element={<CalendarManager storagePrefix={storagePrefix} />} />
           <Route path="/mentor" element={<MentorManager storagePrefix={storagePrefix} />} />
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
