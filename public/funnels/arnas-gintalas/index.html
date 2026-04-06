@@ -1067,7 +1067,32 @@ footer {
   nav { padding: 16px 24px; }
   footer { padding: 32px 20px 24px; }
   .footer-disclaimer { max-width: 100%; }
+  .social-proof-popup {
+    left: 12px; right: 12px; bottom: 16px; max-width: none;
+  }
 }
+
+/* ── SOCIAL PROOF POPUP ── */
+.social-proof-popup {
+  position: fixed; bottom: 24px; left: 24px; z-index: 100;
+  background: rgba(15,15,17,0.92); border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 14px; padding: 14px 20px; backdrop-filter: blur(16px);
+  display: flex; align-items: center; gap: 12px;
+  opacity: 0; transform: translateY(16px);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+  pointer-events: none; max-width: 420px;
+}
+.social-proof-popup.visible { opacity: 1; transform: translateY(0); pointer-events: auto; }
+.sp-icon {
+  width: 38px; height: 38px; border-radius: 50%;
+  background: linear-gradient(135deg, rgba(124,58,237,0.3), rgba(124,58,237,0.1));
+  border: 1px solid rgba(124,58,237,0.35);
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.sp-icon svg { width: 18px; height: 18px; color: #c4b5fd; }
+.sp-text { font-size: 13px; line-height: 1.45; color: #fafafa; font-weight: 500; }
+.sp-text strong { font-weight: 700; }
+.sp-time { font-size: 11px; color: rgba(255,255,255,0.3); margin-top: 2px; font-family: 'JetBrains Mono', monospace; }
 </style>
 </head>
 <body>
@@ -1098,13 +1123,11 @@ footer {
       <div class="event-tag">Live Webinar · 2026</div>
 
       <h1 class="hero-headline">
-        Ultimate <span class="script-text">Instagram</span><br>
-        Mastery:<br>
-        <span id="headline-typed"></span><span class="cursor-h"></span>
+        Come To This Event And I'll Teach You How To Make <span class="script-text">$342.92 Per Day</span> With Instagram
       </h1>
 
       <p class="hero-sub">
-        Arnas Gintalas scaled anonymous Instagram theme pages to over 7 figures per month — and in this free training, he's showing you exactly how.
+        This is 100% anonymous, without showing your face, and done with AI. Just come to this live event and you'll see.
       </p>
 
       <div class="trust-row">
@@ -1214,33 +1237,6 @@ footer {
 </div>
 
 <script>
-// ── HEADLINE TYPEWRITER ──
-const headlinePhrases = [
-  'Achieve Time Freedom.',
-  'Make Money Online.',
-];
-const hEl = document.getElementById('headline-typed');
-let hPi = 0, hCi = 0, hDel = false;
-
-function headlineLoop() {
-  const word = headlinePhrases[hPi];
-  if (!hDel) {
-    hEl.textContent = word.slice(0, ++hCi);
-    if (hCi === word.length) { setTimeout(() => { hDel = true; headlineLoop(); }, 2600); return; }
-    setTimeout(headlineLoop, 60);
-  } else {
-    hEl.textContent = word.slice(0, --hCi);
-    if (hCi === 0) {
-      hDel = false;
-      hPi = (hPi + 1) % headlinePhrases.length;
-      setTimeout(headlineLoop, 350);
-      return;
-    }
-    setTimeout(headlineLoop, 35);
-  }
-}
-headlineLoop();
-
 // ── COUNTDOWN ──
 // *** UPDATE THIS DATE to your actual event date/time (UTC) ***
 var EVENT_UTC = new Date('2026-04-07T14:00:00Z');
@@ -1442,6 +1438,78 @@ setInterval(updateCountdown, 1000);
   }
   animate();
 })();
+</script>
+
+<!-- SOCIAL PROOF POPUP -->
+<div class="social-proof-popup" id="social-proof">
+  <div class="sp-icon">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+  </div>
+  <div>
+    <div class="sp-text" id="sp-text"></div>
+    <div class="sp-time" id="sp-time"></div>
+  </div>
+</div>
+
+<script>
+var people = [
+  { name: 'Oliver Alexander', state: 'Texas' },
+  { name: 'Emma Richardson', state: 'California' },
+  { name: 'Liam Carter', state: 'Florida' },
+  { name: 'Sophia Martinez', state: 'New York' },
+  { name: 'Noah Bennett', state: 'Illinois' },
+  { name: 'Ava Thompson', state: 'Georgia' },
+  { name: 'Ethan Walker', state: 'Ohio' },
+  { name: 'Isabella Davis', state: 'Pennsylvania' },
+  { name: 'Mason Rodriguez', state: 'Arizona' },
+  { name: 'Mia Johnson', state: 'North Carolina' },
+  { name: 'James Wilson', state: 'Michigan' },
+  { name: 'Charlotte Brown', state: 'Tennessee' },
+  { name: 'Benjamin Moore', state: 'Virginia' },
+  { name: 'Amelia Taylor', state: 'Washington' },
+  { name: 'Lucas Anderson', state: 'Colorado' },
+  { name: 'Harper White', state: 'Oregon' },
+  { name: 'Alexander Harris', state: 'Nevada' },
+  { name: 'Evelyn Clark', state: 'Minnesota' },
+  { name: 'Daniel Lewis', state: 'Maryland' },
+  { name: 'Abigail Robinson', state: 'Indiana' },
+  { name: 'Henry Hall', state: 'Missouri' },
+  { name: 'Emily Young', state: 'Wisconsin' },
+  { name: 'Sebastian King', state: 'Massachusetts' },
+  { name: 'Ella Wright', state: 'South Carolina' },
+  { name: 'Jack Scott', state: 'Alabama' },
+  { name: 'Victoria Green', state: 'Louisiana' },
+  { name: 'Owen Adams', state: 'Kentucky' },
+  { name: 'Grace Nelson', state: 'Connecticut' },
+  { name: 'Ryan Hill', state: 'Utah' },
+  { name: 'Chloe Baker', state: 'Iowa' }
+];
+var timeAgos = ['2 seconds ago','3 seconds ago','4 seconds ago','5 seconds ago','1 second ago','6 seconds ago','3 seconds ago'];
+var popup = document.getElementById('social-proof');
+var spText = document.getElementById('sp-text');
+var spTime = document.getElementById('sp-time');
+var usedIndices = [];
+
+function getRandomPerson() {
+  if (usedIndices.length >= people.length) usedIndices = [];
+  var idx;
+  do { idx = Math.floor(Math.random() * people.length); } while (usedIndices.indexOf(idx) !== -1);
+  usedIndices.push(idx);
+  return people[idx];
+}
+
+function showPopup() {
+  var person = getRandomPerson();
+  var timeAgo = timeAgos[Math.floor(Math.random() * timeAgos.length)];
+  spText.innerHTML = '<strong>' + person.name + '</strong> — ' + person.state + ', just joined the Instagram Income Mastery Event';
+  spTime.textContent = timeAgo;
+  popup.classList.add('visible');
+  setTimeout(function() {
+    popup.classList.remove('visible');
+    setTimeout(showPopup, 2000 + Math.random() * 2000);
+  }, 3000);
+}
+setTimeout(showPopup, 500);
 </script>
 </body>
 </html>
