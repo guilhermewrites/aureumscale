@@ -272,7 +272,7 @@ body {
 
 /* ══════════════════════════════════════
    COUNTDOWN — HUD / Technical frame
-   Pentagon shape: rectangle bottom + triangle roof
+   Pentagon shape: rectangle + triangle roof
    ══════════════════════════════════════ */
 .countdown-section {
   margin-top: 36px;
@@ -285,20 +285,14 @@ body {
   50% { opacity: 0.3; }
 }
 
-/* The entire frame wrapper — positions the SVG behind everything */
+/* Fixed-width wrapper for the entire frame */
 .countdown-frame {
   position: relative;
   display: inline-block;
+  width: 520px;
 }
 
-/* SVG pentagon frame drawn behind content */
-.countdown-frame-svg {
-  position: absolute;
-  pointer-events: none;
-  z-index: 0;
-}
-
-/* Label sits inside the triangle roof area */
+/* Label: centered above the rectangle, inside the roof */
 .countdown-label {
   position: relative;
   z-index: 2;
@@ -307,9 +301,11 @@ body {
   letter-spacing: 0.2em;
   text-transform: uppercase;
   color: rgba(255,255,255,0.3);
-  margin-bottom: 14px;
-  display: inline-flex;
+  margin-bottom: 0;
+  padding-bottom: 16px;
+  display: flex;
   align-items: center;
+  justify-content: center;
   gap: 7px;
 }
 .countdown-label .red-dot {
@@ -321,19 +317,47 @@ body {
   animation: pulse-dot 2s ease-in-out infinite;
 }
 
-/* Number boxes container */
+/* Rectangle container with CSS border */
 .countdown-container {
-  display: inline-flex;
-  align-items: stretch;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
   position: relative;
   z-index: 2;
+  border: 1px solid rgba(255,255,255,0.09);
 }
+/* Corner markers using box-shadows on pseudo-elements */
+.countdown-container::before,
+.countdown-container::after {
+  content: '';
+  position: absolute;
+  width: 7px;
+  height: 7px;
+  border: 1px solid rgba(255,255,255,0.18);
+  background: rgba(255,255,255,0.05);
+  z-index: 3;
+}
+.countdown-container::before { top: -4px; left: -4px; }
+.countdown-container::after { top: -4px; right: -4px; }
+.corner-bl, .corner-br {
+  position: absolute;
+  width: 7px;
+  height: 7px;
+  border: 1px solid rgba(255,255,255,0.18);
+  background: rgba(255,255,255,0.05);
+  z-index: 3;
+  pointer-events: none;
+}
+.corner-bl { bottom: -4px; left: -4px; }
+.corner-br { bottom: -4px; right: -4px; }
 
 .countdown-box {
-  padding: 20px 36px;
-  min-width: 120px;
+  padding: 22px 0;
   text-align: center;
   position: relative;
+}
+/* Vertical dividers */
+.countdown-box + .countdown-box {
+  border-left: 1px solid rgba(255,255,255,0.09);
 }
 .countdown-box .number {
   font-size: 48px;
@@ -350,6 +374,18 @@ body {
   text-transform: uppercase;
   color: rgba(255,255,255,0.3);
   margin-top: 12px;
+}
+
+/* Triangle roof lines: SVG positioned exactly over the frame */
+.roof-svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1;
+  overflow: visible;
 }
 
 /* ══════════════════════════════════════
@@ -561,49 +597,19 @@ body {
     </div>
 
     <div class="countdown-section">
-      <div class="countdown-frame">
-        <!--
-          SVG Pentagon Frame:
-          - Rectangle at bottom (around the numbers)
-          - Triangle roof above (meeting at center peak)
-          - Corner markers at all 4 rectangle corners
-          - Vertical dividers between each number box
+      <div class="countdown-frame" id="cd-frame">
+        <!-- SVG roof lines: drawn dynamically to match exact container size -->
+        <svg class="roof-svg" id="roof-svg"></svg>
 
-          viewBox: 540 wide x 160 tall
-          Rectangle: y=60..150 (90px tall), x=10..530
-          Triangle peak: x=270, y=5
-        -->
-        <svg class="countdown-frame-svg" viewBox="0 0 540 155" fill="none" xmlns="http://www.w3.org/2000/svg"
-             style="top:-65px;left:50%;transform:translateX(-50%);width:540px;height:155px;">
-          <!-- Triangle roof: peak to top-left corner, peak to top-right corner -->
-          <line x1="270" y1="5" x2="10" y2="60" stroke="rgba(255,255,255,0.09)" stroke-width="1"/>
-          <line x1="270" y1="5" x2="530" y2="60" stroke="rgba(255,255,255,0.09)" stroke-width="1"/>
-          <!-- Rectangle: top edge -->
-          <line x1="10" y1="60" x2="530" y2="60" stroke="rgba(255,255,255,0.09)" stroke-width="1"/>
-          <!-- Rectangle: left edge -->
-          <line x1="10" y1="60" x2="10" y2="150" stroke="rgba(255,255,255,0.09)" stroke-width="1"/>
-          <!-- Rectangle: right edge -->
-          <line x1="530" y1="60" x2="530" y2="150" stroke="rgba(255,255,255,0.09)" stroke-width="1"/>
-          <!-- Rectangle: bottom edge -->
-          <line x1="10" y1="150" x2="530" y2="150" stroke="rgba(255,255,255,0.09)" stroke-width="1"/>
-          <!-- Vertical dividers between boxes (3 lines for 4 boxes) -->
-          <line x1="140" y1="60" x2="140" y2="150" stroke="rgba(255,255,255,0.07)" stroke-width="1"/>
-          <line x1="270" y1="60" x2="270" y2="150" stroke="rgba(255,255,255,0.07)" stroke-width="1"/>
-          <line x1="400" y1="60" x2="400" y2="150" stroke="rgba(255,255,255,0.07)" stroke-width="1"/>
-          <!-- Corner markers: 4 small squares at rectangle corners -->
-          <rect x="6" y="56" width="8" height="8" rx="1" fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.14)" stroke-width="1"/>
-          <rect x="526" y="56" width="8" height="8" rx="1" fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.14)" stroke-width="1"/>
-          <rect x="6" y="146" width="8" height="8" rx="1" fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.14)" stroke-width="1"/>
-          <rect x="526" y="146" width="8" height="8" rx="1" fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.14)" stroke-width="1"/>
-        </svg>
-
-        <!-- Label inside triangle area -->
+        <!-- Label centered above rectangle -->
         <div class="countdown-label">
           THIS <span class="red-dot"></span> LIVE EVEN STARTS IN ...
         </div>
 
-        <!-- Number boxes -->
-        <div class="countdown-container">
+        <!-- Number boxes with CSS border rectangle -->
+        <div class="countdown-container" id="cd-container">
+          <span class="corner-bl"></span>
+          <span class="corner-br"></span>
           <div class="countdown-box">
             <div class="number" id="cd-days">12</div>
             <div class="unit">Days</div>
@@ -682,6 +688,30 @@ body {
   var ampm = h >= 12 ? 'PM' : 'AM';
   var h12 = h % 12 || 12;
   document.getElementById('webinarHour').textContent = h12 + ':00 ' + ampm;
+})();
+
+// Draw SVG roof lines aligned to actual container
+(function() {
+  var frame = document.getElementById('cd-frame');
+  var container = document.getElementById('cd-container');
+  var svg = document.getElementById('roof-svg');
+  if (!frame || !container || !svg) return;
+
+  var frameRect = frame.getBoundingClientRect();
+  var contRect = container.getBoundingClientRect();
+
+  // Positions relative to the frame
+  var left = contRect.left - frameRect.left;
+  var right = contRect.right - frameRect.left;
+  var top = contRect.top - frameRect.top;
+  var cx = (left + right) / 2;
+  var peakY = top - 55; // how far above the container the peak is
+
+  var s = 'rgba(255,255,255,0.09)';
+  svg.setAttribute('style', 'position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:1;overflow:visible;');
+  svg.innerHTML =
+    '<line x1="'+cx+'" y1="'+peakY+'" x2="'+left+'" y2="'+top+'" stroke="'+s+'" stroke-width="1"/>' +
+    '<line x1="'+cx+'" y1="'+peakY+'" x2="'+right+'" y2="'+top+'" stroke="'+s+'" stroke-width="1"/>';
 })();
 
 (function() {
