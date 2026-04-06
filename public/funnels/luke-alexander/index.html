@@ -246,7 +246,7 @@ body {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 16px 48px;
+  padding: 16px 80px;
   background: linear-gradient(180deg, #e88a3a 0%, #d4742c 100%);
   color: #fff;
   font-family: var(--mono);
@@ -574,41 +574,42 @@ body {
     <div class="countdown-section">
       <div class="countdown-frame" id="cd-frame">
         <!--
-          Pentagon frame SVG — exact geometry:
-          Frame is 520px wide. Container starts at x=0, ends at x=520.
-          Container top at y=70, bottom at y=170.
-          Vertical extensions go from y=70 up to y=35 on both sides.
-          Diagonal roof from (0,35) to peak (260,0) and (520,35) to peak.
-
-          Shape path (clockwise):
-          Peak(260,0) → TopRight(520,35) → BottomRight(520,170)
-          → BottomLeft(0,170) → TopLeft(0,35) → back to Peak
+          Frame SVG — flared/diverging lines from rectangle corners.
+          Rectangle: x=30..490 (460px wide), y=60..160 (100px tall)
+          SVG is 520x260, extra space for flared lines.
+          Top-left corner flares UP-LEFT, top-right UP-RIGHT.
+          Bottom-left flares DOWN-LEFT, bottom-right DOWN-RIGHT.
         -->
-        <svg class="roof-svg" viewBox="0 0 520 172" fill="none" xmlns="http://www.w3.org/2000/svg"
-             style="position:absolute;top:0;left:0;width:520px;height:172px;pointer-events:none;z-index:1;">
-          <!-- Full pentagon outline as a single path -->
-          <path d="M260 2 L518 36 L518 170 L2 170 L2 36 Z"
-                stroke="rgba(255,255,255,0.10)" stroke-width="1" fill="none"/>
-          <!-- Vertical dividers inside rectangle area (y=36 to y=170) -->
-          <line x1="130" y1="70" x2="130" y2="170" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
-          <line x1="260" y1="70" x2="260" y2="170" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
-          <line x1="390" y1="70" x2="390" y2="170" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
-          <!-- Horizontal line separating roof area from number area -->
-          <line x1="2" y1="70" x2="518" y2="70" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
-          <!-- Corner markers -->
-          <rect x="-1" y="33" width="7" height="7" rx="1" fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.16)" stroke-width="1"/>
-          <rect x="514" y="33" width="7" height="7" rx="1" fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.16)" stroke-width="1"/>
-          <rect x="-1" y="166" width="7" height="7" rx="1" fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.16)" stroke-width="1"/>
-          <rect x="514" y="166" width="7" height="7" rx="1" fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.16)" stroke-width="1"/>
+        <svg class="roof-svg" viewBox="0 0 560 280" fill="none" xmlns="http://www.w3.org/2000/svg"
+             style="position:absolute;top:-65px;left:50%;transform:translateX(-50%);width:560px;height:280px;pointer-events:none;z-index:1;overflow:visible;">
+          <!-- Rectangle border (main countdown box) -->
+          <rect x="50" y="70" width="460" height="110" stroke="rgba(255,255,255,0.12)" stroke-width="1" fill="none"/>
+          <!-- Vertical dividers inside rectangle -->
+          <line x1="165" y1="70" x2="165" y2="180" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+          <line x1="280" y1="70" x2="280" y2="180" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+          <line x1="395" y1="70" x2="395" y2="180" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+          <!-- Flared lines from TOP-LEFT corner going UP and LEFT -->
+          <line x1="50" y1="70" x2="-10" y2="0" stroke="rgba(255,255,255,0.10)" stroke-width="1"/>
+          <!-- Flared lines from TOP-RIGHT corner going UP and RIGHT -->
+          <line x1="510" y1="70" x2="570" y2="0" stroke="rgba(255,255,255,0.10)" stroke-width="1"/>
+          <!-- Flared lines from BOTTOM-LEFT corner going DOWN and LEFT -->
+          <line x1="50" y1="180" x2="-10" y2="250" stroke="rgba(255,255,255,0.10)" stroke-width="1"/>
+          <!-- Flared lines from BOTTOM-RIGHT corner going DOWN and RIGHT -->
+          <line x1="510" y1="180" x2="570" y2="250" stroke="rgba(255,255,255,0.10)" stroke-width="1"/>
+          <!-- Small corner tick marks at rectangle corners -->
+          <rect x="46" y="66" width="8" height="8" rx="1" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.20)" stroke-width="0.8"/>
+          <rect x="506" y="66" width="8" height="8" rx="1" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.20)" stroke-width="0.8"/>
+          <rect x="46" y="176" width="8" height="8" rx="1" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.20)" stroke-width="0.8"/>
+          <rect x="506" y="176" width="8" height="8" rx="1" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.20)" stroke-width="0.8"/>
         </svg>
 
-        <!-- Label centered in the roof area -->
-        <div class="countdown-label" style="padding-top:40px;">
-          THIS <span class="red-dot"></span> LIVE EVEN STARTS IN ...
+        <!-- Label centered above rectangle -->
+        <div class="countdown-label">
+          THIS <span class="red-dot"></span> LIVE EVENT STARTS IN ...
         </div>
 
         <!-- Number boxes -->
-        <div class="countdown-container" id="cd-container" style="border:none;">
+        <div class="countdown-container" id="cd-container" style="border:none;width:460px;margin:0 auto;">
           <div class="countdown-box">
             <div class="number" id="cd-days">12</div>
             <div class="unit">Days</div>
