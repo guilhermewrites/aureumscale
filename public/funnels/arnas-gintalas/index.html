@@ -101,37 +101,49 @@ nav {
   border-bottom: 1px solid var(--border);
   backdrop-filter: blur(12px);
 }
-.nav-logo {
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--text);
-}
-.nav-pill {
+.nav-spots-bar {
+  flex: 1;
+  max-width: 480px;
+  margin: 0 auto;
   display: flex;
-  align-items: center;
-  gap: 8px;
+  flex-direction: column;
+  gap: 6px;
+}
+.nav-spots-text {
   font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.14em;
+  font-weight: 700;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--muted);
-  background: var(--card);
-  border: 1px solid var(--border);
-  padding: 7px 16px;
-  border-radius: 100px;
+  text-align: center;
+  font-family: 'JetBrains Mono', monospace;
 }
-.live-dot {
-  width: 6px;
+.nav-spots-text span {
+  color: var(--text);
+  font-weight: 800;
+}
+.nav-spots-track {
+  width: 100%;
   height: 6px;
-  background: var(--purple-2);
-  border-radius: 50%;
-  animation: blink 2s ease-in-out infinite;
+  background: rgba(255,255,255,0.06);
+  border-radius: 100px;
+  overflow: hidden;
 }
-@keyframes blink {
-  0%, 100% { opacity: 1; }
-  50%       { opacity: 0.25; }
+.nav-spots-fill {
+  height: 100%;
+  border-radius: 100px;
+  background: linear-gradient(90deg, var(--purple-1), var(--purple-2));
+  box-shadow: 0 0 12px rgba(124,58,237,0.5), 0 0 24px rgba(124,58,237,0.2);
+  transition: width 0.6s ease;
+  position: relative;
+  overflow: hidden;
+}
+.nav-spots-fill::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.3) 50%, transparent 100%);
+  animation: bar-shimmer 2s ease-in-out infinite;
 }
 
 /* ── HERO BG IMAGE ── */
@@ -1008,6 +1020,59 @@ footer {
   font-family: 'JetBrains Mono', monospace;
 }
 
+/* ── SPOTS BAR ── */
+.spots-bar-wrap {
+  position: relative;
+  z-index: 3;
+  margin-bottom: 16px;
+}
+.spots-bar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+.spots-bar-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: 0.01em;
+}
+.spots-bar-count {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--purple-3);
+  font-family: 'JetBrains Mono', monospace;
+}
+.spots-bar-track {
+  width: 100%;
+  height: 8px;
+  background: rgba(255,255,255,0.06);
+  border-radius: 100px;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.spots-bar-fill {
+  height: 100%;
+  border-radius: 100px;
+  background: linear-gradient(90deg, var(--purple-1), var(--purple-2));
+  box-shadow: 0 0 12px rgba(124,58,237,0.5), 0 0 24px rgba(124,58,237,0.2);
+  transition: width 0.6s ease;
+  position: relative;
+  overflow: hidden;
+}
+.spots-bar-fill::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.3) 50%, transparent 100%);
+  animation: bar-shimmer 2s ease-in-out infinite;
+}
+@keyframes bar-shimmer {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
 /* ── CURSOR CANVAS ── */
 #smokeCanvas {
   position: fixed;
@@ -1058,6 +1123,19 @@ footer {
   }
   .optin-card {
     padding: 32px 24px;
+    text-align: center;
+  }
+  .optin-title {
+    text-align: center;
+  }
+  .countdown-grid {
+    justify-content: center;
+  }
+  .date-badge {
+    justify-content: center;
+  }
+  .form-note {
+    text-align: center;
   }
   .cards-section { padding: 0 24px 60px; }
   .cards-grid { grid-template-columns: 1fr; }
@@ -1107,10 +1185,11 @@ footer {
 
   <!-- NAV -->
   <nav>
-    <div class="nav-logo">Arnas Gintalas</div>
-    <div class="nav-pill">
-      <div class="live-dot"></div>
-      Free Live Event
+    <div class="nav-spots-bar">
+      <div class="nav-spots-text"><span id="nav-spots-num">823</span>/1,000 spots filled</div>
+      <div class="nav-spots-track">
+        <div class="nav-spots-fill" id="nav-spots-fill" style="width: 82.3%"></div>
+      </div>
     </div>
   </nav>
 
@@ -1153,15 +1232,18 @@ footer {
     <div class="optin-wrap">
     <div class="optin-card">
       <div class="optin-inner-glow"></div>
-      <div class="optin-label">Reserve Your Seat</div>
-      <div class="optin-title">Event Starts In</div>
-      <p class="optin-desc">Secure your free spot — limited seats available.</p>
 
-      <div class="date-badge">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-        <span id="event-date-display"><strong>Live Event</strong> · 2:00 PM GMT</span>
+      <!-- SPOTS BAR -->
+      <div class="spots-bar-wrap">
+        <div class="spots-bar-header">
+          <span class="spots-bar-label">🔥 <span id="card-spots-num">823</span>/1,000 spots filled</span>
+        </div>
+        <div class="spots-bar-track">
+          <div class="spots-bar-fill" id="card-spots-fill" style="width: 82.3%"></div>
+        </div>
       </div>
-      <div class="event-tz-note" id="event-tz-note"></div>
+
+      <div class="optin-title" style="text-align:center;">This Live Zoom Event Starts In...</div>
 
       <div class="countdown-grid">
         <div class="countdown-block">
@@ -1182,8 +1264,14 @@ footer {
         </div>
       </div>
 
+      <div class="date-badge" style="justify-content:center;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        <span id="event-date-display"><strong>Live Event</strong> · 2:00 PM GMT</span>
+      </div>
+      <div class="event-tz-note" id="event-tz-note"></div>
+
       <a href="https://form.typeform.com/to/WYXD0GmM?utm_source=aureum_capture_page&utm_medium=paid_social&utm_campaign=reminder_ads" class="btn-submit" style="display:block;text-align:center;text-decoration:none;" onclick="fbq('track','Lead');">
-        Reserve My Free Seat →
+        Click Here To Guarantee Your Free Spot →
       </a>
 
       <p class="form-note">
@@ -1498,12 +1586,29 @@ function getRandomPerson() {
   return people[idx];
 }
 
+var navSpotsNum = document.getElementById('nav-spots-num');
+var navSpotsFill = document.getElementById('nav-spots-fill');
+var cardSpotsNum = document.getElementById('card-spots-num');
+var cardSpotsFill = document.getElementById('card-spots-fill');
+var currentSpots = 823;
+
+function updateSpots() {
+  currentSpots++;
+  if (currentSpots > 999) currentSpots = 999;
+  var pct = (currentSpots / 10) + '%';
+  navSpotsNum.textContent = currentSpots;
+  navSpotsFill.style.width = pct;
+  cardSpotsNum.textContent = currentSpots;
+  cardSpotsFill.style.width = pct;
+}
+
 function showPopup() {
   var person = getRandomPerson();
   var timeAgo = timeAgos[Math.floor(Math.random() * timeAgos.length)];
   spText.innerHTML = '<strong>' + person.name + '</strong> — ' + person.state + ', just joined the Instagram Income Mastery Event';
   spTime.textContent = timeAgo;
   popup.classList.add('visible');
+  updateSpots();
   setTimeout(function() {
     popup.classList.remove('visible');
     setTimeout(showPopup, 2000 + Math.random() * 2000);
