@@ -107,18 +107,19 @@ body {
   width: auto;
 }
 
-/* Eyebrow */
-.headline-eyebrow {
-  font-family: var(--mono);
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--brand-orange-from);
-  text-transform: uppercase;
-  letter-spacing: 0.12rem;
-  text-align: center;
-  margin: 0;
-  opacity: 0.85;
+/* Custom cursor */
+#customCursor {
+  position: fixed;
+  pointer-events: none;
+  z-index: 10000;
+  transform: translate(-50%, -50%);
+  width: 28px;
+  height: 29px;
+  opacity: 0;
+  transition: opacity 0.2s;
+  filter: drop-shadow(0 0 6px rgba(255,136,79,0.7));
 }
+#customCursor.visible { opacity: 1; }
 
 /* Headline */
 .headline {
@@ -480,14 +481,12 @@ footer {
 <section class="hero">
   <div class="hero-inner">
 
-    <!-- Eyebrow -->
-    <p class="headline-eyebrow">Saturday, May 10th &nbsp;·&nbsp; 8PM EST</p>
-
     <!-- Headline -->
     <h1 class="headline">
+      <span class="dim">Saturday 8PM EST</span><br>
       <span class="bold">I'm Going To Show You How To Make</span><br>
-      <span class="gradient-text-orange">$5,000 to $10,000 Every Month</span><br>
-      <span class="dim">(Predictably) </span><span class="bold">With AI</span>
+      <span class="gradient-text-orange">$5,000 to $10,000</span><br>
+      <span class="normal">Every Month </span><span class="dim">(Predictably) </span><span class="bold">With AI</span>
     </h1>
 
     <!-- Body paragraph -->
@@ -657,6 +656,9 @@ footer {
   </div>
 </footer>
 
+<!-- Custom Cursor -->
+<img id="customCursor" src="cursor-logo.svg" alt="" />
+
 <!-- Social Proof Popup -->
 <div class="social-proof-popup" id="socialProof">
   <div class="social-proof-icon">
@@ -694,6 +696,22 @@ function handleSubmit(e) {
   // TODO: Replace with your actual Telegram group link
   window.open('https://t.me/+dcCFigyyz48zODBh', '_blank');
 }
+</script>
+
+<!-- ── CUSTOM SVG CURSOR ── -->
+<script>
+(function() {
+  const el = document.getElementById('customCursor');
+  let visible = false;
+  document.addEventListener('mousemove', function(e) {
+    el.style.left = e.clientX + 'px';
+    el.style.top  = e.clientY + 'px';
+    if (!visible) { el.classList.add('visible'); visible = true; }
+  });
+  document.addEventListener('mouseleave', function() {
+    el.classList.remove('visible'); visible = false;
+  });
+})();
 </script>
 
 <!-- ── SOCIAL PROOF POPUP ── -->
