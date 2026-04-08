@@ -4,238 +4,175 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Live Webinar Opt-In — AI Freelancers</title>
-
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
 :root {
-  --orange: #e8622c;
-  --orange-light: #f0943e;
-  --orange-btn: #f07a2f;
-  --bg: #0a0a0a;
-  --text: #fafafa;
-  --muted: rgba(255,255,255,0.50);
-  --dim: rgba(255,255,255,0.28);
-  --font: 'Plus Jakarta Sans', -apple-system, sans-serif;
-  --mono: 'JetBrains Mono', monospace;
+  --brand-orange-from: rgb(255, 136, 79);
+  --brand-orange-to: rgb(244, 101, 33);
+  --brand-orange-gradient: radial-gradient(79.29% 68.16% at 51.5% 50%, var(--brand-orange-from) 0%, var(--brand-orange-to) 100%);
+  --brand-cream: rgb(255, 233, 223);
+  --brand-cream-60: rgba(255, 233, 223, 0.6);
+  --brand-cream-65: rgba(255, 233, 223, 0.65);
+  --brand-cream-35: rgba(255, 233, 223, 0.35);
+  --font: 'Inter', -apple-system, sans-serif;
+  --mono: 'Courier New', monospace;
 }
 
 html { scroll-behavior: smooth; }
 
 body {
   font-family: var(--font);
-  background: var(--bg);
-  color: var(--text);
+  background: #000;
+  color: var(--brand-cream);
   min-height: 100vh;
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
 }
 
 /* ══════════════════════════════════════
-   TOP ANNOUNCEMENT BAR
+   TOP BAR
    ══════════════════════════════════════ */
 .top-bar {
-  position: relative;
-  z-index: 100;
   width: 100%;
-  padding: 10px 0;
-  text-align: center;
-  background: linear-gradient(90deg,
-    #7a3a10 0%,
-    #c46a20 15%,
-    #e8942a 30%,
-    #f0a838 45%,
-    #e8942a 60%,
-    #c46a20 75%,
-    #7a3a10 100%
-  );
+  height: 40px;
+  background-image: url('bg-barra-writes-2502.webp');
+  background-size: cover;
+  background-position: 50% 0%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 .top-bar-inner {
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  gap: 10px;
-  font-family: var(--mono);
-  font-size: 10px;
-  font-weight: 500;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: rgba(0,0,0,0.55);
+  justify-content: center;
+  gap: 17px;
+  max-width: 1280px;
+  width: 100%;
+  padding: 0 16px;
 }
-.top-bar-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 1px;
-  background: rgba(0,0,0,0.5);
-  display: inline-block;
+.top-bar-text {
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 500;
+  color: #000;
+  text-transform: uppercase;
+  letter-spacing: 0.075rem;
+  white-space: nowrap;
 }
 
 /* ══════════════════════════════════════
    HERO SECTION
    ══════════════════════════════════════ */
 .hero {
-  position: relative;
   width: 100%;
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  overflow: hidden;
-}
-
-/* Background image */
-.hero-bg {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-}
-.hero-bg img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: center 10%;
-  filter: brightness(0.35);
-}
-/* Right-side fade for text readability */
-.hero-bg::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(to right,
-    rgba(10,10,10,0.85) 0%,
-    rgba(10,10,10,0.6) 40%,
-    rgba(10,10,10,0.3) 60%,
-    transparent 100%
-  );
-}
-/* Bottom fade */
-.hero-bg::before {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 200px;
-  background: linear-gradient(to top, var(--bg) 0%, transparent 100%);
-  z-index: 1;
-}
-
-/* Content layout */
-.hero-content {
-  position: relative;
-  z-index: 2;
-  width: 100%;
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 80px 60px 60px;
+  min-height: 1200px;
+  background-image: url('bg-1-writes-2502-v2.webp');
+  background-size: cover;
+  background-position: 50% 0%;
+  background-color: #000;
   display: flex;
   flex-direction: column;
-  gap: 32px;
+  align-items: center;
+  padding-top: 480px;
+}
+.hero-inner {
+  max-width: 1280px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 40px;
+  padding: 0 16px;
 }
 
 /* Logo */
-.logo {
-  font-family: var(--font);
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--text);
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-}
-.logo-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 16px;
-  height: 16px;
-  background: var(--text);
-  color: var(--bg);
-  font-size: 9px;
-  font-weight: 900;
-  border-radius: 3px;
-  letter-spacing: 0;
-}
-.logo sup {
-  font-size: 7px;
-  vertical-align: super;
-  margin-left: 1px;
-  opacity: 0.4;
-  font-weight: 400;
+.logo-img {
+  height: 19px;
+  width: auto;
 }
 
 /* Headline */
 .headline {
-  font-size: 42px;
-  font-weight: 700;
-  line-height: 1.2;
-  letter-spacing: -0.02em;
-  color: var(--text);
-  max-width: 600px;
+  font-family: var(--font);
+  font-size: 48px;
+  text-align: center;
+  line-height: 1.3;
+  font-weight: 400;
+  margin: 0;
 }
-.headline .date {
-  color: var(--orange);
-  font-weight: 700;
+.headline .dim { color: var(--brand-cream-60); }
+.headline .bold { color: var(--brand-cream); font-weight: 700; }
+.headline .normal { color: var(--brand-cream); }
+.gradient-text-orange {
+  background-image: var(--brand-orange-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
-.headline .money {
-  color: var(--orange);
-  font-weight: 700;
-}
-.headline .paren {
-  color: var(--orange);
-  font-weight: 500;
+.clock-img {
+  display: inline-block;
+  vertical-align: middle;
+  width: 87px;
+  height: 43px;
+  margin: 0 4px;
 }
 
-/* Subtext */
-.subtext {
-  font-size: 15px;
-  line-height: 1.7;
-  color: var(--muted);
-  max-width: 520px;
+/* Body paragraph */
+.body-text {
+  font-size: 18px;
+  color: var(--brand-cream-65);
+  text-align: center;
+  line-height: 1.6;
+  max-width: 640px;
+  margin: 0;
+}
+.body-text strong {
+  color: var(--brand-cream);
+  font-weight: 700;
 }
 
 /* ══════════════════════════════════════
-   OPT-IN FORM
+   OPT-IN FORM (replaces countdown + CTA)
    ══════════════════════════════════════ */
 .optin-form {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  max-width: 460px;
-  width: 100%;
+  width: 460px;
+  max-width: 100%;
 }
 .optin-form input {
   width: 100%;
   padding: 14px 18px;
-  background: rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.06);
   border: 1px solid rgba(255,255,255,0.10);
-  border-radius: 6px;
-  color: var(--text);
+  border-radius: 4px;
+  color: var(--brand-cream);
   font-family: var(--font);
   font-size: 14px;
   outline: none;
   transition: border-color 0.2s;
 }
 .optin-form input::placeholder {
-  color: rgba(255,255,255,0.35);
+  color: rgba(255,233,223,0.35);
 }
 .optin-form input:focus {
-  border-color: rgba(232, 98, 44, 0.4);
+  border-color: rgba(244,101,33,0.5);
 }
-
-/* CTA Button */
 .cta-btn {
   display: block;
   width: 100%;
-  max-width: 460px;
-  padding: 16px 32px;
-  background: linear-gradient(180deg, #f08a3a 0%, #e8742c 100%);
+  padding: 14px 40px;
+  background: var(--brand-orange-gradient);
   color: #000;
   font-family: var(--mono);
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.08em;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.075rem;
   text-transform: none;
   text-decoration: none;
   text-align: center;
@@ -245,161 +182,193 @@ body {
   transition: opacity 0.2s;
   margin-top: 4px;
 }
-.cta-btn:hover {
-  opacity: 0.9;
+.cta-btn:hover { opacity: 0.9; }
+
+/* ══════════════════════════════════════
+   WITHOUT TICKER / MARQUEE
+   ══════════════════════════════════════ */
+.ticker-wrap {
+  width: 100%;
+  overflow: hidden;
+  padding: 36px 0;
+  background: #000;
+}
+.ticker-track {
+  display: flex;
+  align-items: center;
+  white-space: nowrap;
+  animation: marquee 30s linear infinite;
+  will-change: transform;
+}
+.ticker-track:hover {
+  animation-play-state: paused;
+}
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+.ticker-item {
+  font-size: 14px;
+  color: rgba(255,233,223,0.5);
+  font-family: var(--font);
+}
+.ticker-dot {
+  padding: 0 40px;
+  color: rgba(255,120,50,0.8);
+  font-size: 10px;
+  line-height: 1;
 }
 
 /* ══════════════════════════════════════
-   TESTIMONIALS CAROUSEL
+   TESTIMONIALS SECTION
    ══════════════════════════════════════ */
-.testimonials-section {
-  position: relative;
-  z-index: 2;
-  padding: 60px 0 80px;
-}
-.testimonials-label {
-  text-align: center;
-  font-family: var(--mono);
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--dim);
-  margin-bottom: 32px;
-}
-.carousel-wrap {
+.testimonials {
+  background: #000;
   width: 100%;
-  overflow: hidden;
-  mask-image: linear-gradient(to right, transparent 0%, black 10%, black 90%, transparent 100%);
-  -webkit-mask-image: linear-gradient(to right, transparent 0%, black 10%, black 90%, transparent 100%);
-}
-.carousel-track {
+  padding-top: 95px;
+  padding-bottom: 150px;
   display: flex;
-  gap: 20px;
-  width: max-content;
-  animation: carousel-scroll 24s linear infinite;
+  flex-direction: column;
+  align-items: center;
 }
-.carousel-track:hover {
-  animation-play-state: paused;
+.testimonials-inner {
+  max-width: 1280px;
+  width: 100%;
+  padding: 0 16px;
 }
-@keyframes carousel-scroll {
-  0%   { transform: translateX(-1800px); }
-  100% { transform: translateX(0px); }
+.testimonials-logo {
+  display: block;
+  margin: 0 auto 32px;
+  height: 19px;
+  width: auto;
+}
+.testimonials-grid-3 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 0 20px;
+}
+.testimonials-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 20px;
 }
 .testimonial-card {
-  position: relative;
-  width: 340px;
-  height: 250px;
-  border-radius: 16px;
-  overflow: hidden;
+  background: rgba(255,255,255,0.02);
+  padding: 20px 24px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.05);
+  margin-bottom: 20px;
+}
+.testimonial-card.full-width {
+  grid-column: 1 / -1;
+}
+.quote-icon {
+  color: rgba(255,233,223,0.3);
   flex-shrink: 0;
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.08);
-  transition: transform 0.4s;
 }
-.testimonial-card:hover {
-  transform: translateY(-6px) scale(1.02);
+.testimonial-text {
+  font-family: var(--font);
+  font-size: 14px;
+  color: rgba(255,233,223,0.7);
+  line-height: 1.7;
+  margin-top: 12px;
+  margin-bottom: 0;
 }
-.testimonial-card img {
-  width: 100%;
-  height: 100%;
+.testimonial-author {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 20px;
+}
+.testimonial-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
   object-fit: cover;
-  display: block;
 }
-.card-overlay {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(to bottom, transparent 50%, rgba(0,0,0,0.5) 100%);
-  border-radius: 16px;
+.testimonial-name {
+  font-family: var(--font);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--brand-cream);
 }
 
 /* ══════════════════════════════════════
    FOOTER
    ══════════════════════════════════════ */
 footer {
-  text-align: center;
-  padding: 48px 40px 60px;
-  background: var(--bg);
+  background: rgba(33,33,33,0.15);
+  padding: 48px 16px;
+  width: 100%;
+}
+.footer-inner {
+  max-width: 1280px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
 }
 .footer-links {
-  display: flex;
-  justify-content: center;
-  gap: 8px;
-  flex-wrap: wrap;
-  margin-bottom: 16px;
+  font-size: 12px;
+  color: var(--brand-cream-35);
 }
 .footer-links a {
-  color: var(--dim);
+  color: #fff;
   text-decoration: none;
-  font-size: 11px;
-  transition: color 0.2s;
+  transition: opacity 0.2s;
 }
-.footer-links a:hover { color: var(--text); }
-.footer-sep { color: rgba(255,255,255,0.15); font-size: 11px; }
-.footer-copy {
-  font-size: 11px;
-  color: rgba(255,255,255,0.2);
-  margin-bottom: 24px;
-}
-.footer-disclaimer {
-  max-width: 700px;
-  margin: 0 auto;
-}
-.footer-disclaimer p {
-  font-size: 9px;
-  color: rgba(255,255,255,0.15);
-  line-height: 1.6;
-  margin-bottom: 8px;
-}
+.footer-links a:hover { text-decoration: underline; }
 
 /* ══════════════════════════════════════
    RESPONSIVE
    ══════════════════════════════════════ */
 @media (max-width: 768px) {
-  .hero-content { padding: 60px 24px 40px; }
+  .hero {
+    padding-top: 200px;
+    min-height: auto;
+  }
   .headline { font-size: 28px; }
-  .subtext { font-size: 13px; }
-  .testimonial-card { width: 280px; height: 200px; }
-}
-@media (max-width: 480px) {
-  .headline { font-size: 24px; }
-  .hero-content { padding: 40px 16px 32px; }
+  .cta-btn { width: 100%; }
+  .top-bar-text { font-size: 0.51rem; letter-spacing: 0.051rem; }
+  .testimonials-grid-3 { grid-template-columns: 1fr; }
+  .testimonials-grid-2 { grid-template-columns: 1fr; }
+  .testimonial-card.full-width { grid-column: auto; }
 }
 </style>
 </head>
 <body>
 
-<!-- Top Announcement Bar -->
+<!-- Top Bar -->
 <div class="top-bar">
   <div class="top-bar-inner">
-    <span>LIVE EVENT</span>
-    <span class="top-bar-dot"></span>
-    <span>STARTING <span id="eventDay">SATURDAY</span>&nbsp;&nbsp;<span id="eventTime">8:00 PM</span> EST</span>
+    <span class="top-bar-text">Live Event</span>
+    <span class="top-bar-text">&#9642;</span>
+    <span class="top-bar-text">Starting Today, <span id="eventDay">Mon</span> at <span id="eventTime">09:00 PM</span></span>
   </div>
 </div>
 
 <!-- Hero Section -->
 <section class="hero">
-  <div class="hero-bg">
-    <img src="../hero.jpg" alt="Background" />
-  </div>
-
-  <div class="hero-content">
+  <div class="hero-inner">
     <!-- Logo -->
-    <div class="logo">
-      <span class="logo-icon">A</span> AI FREELANCERS<sup>&reg;</sup>
-    </div>
+    <img src="logo-ai-free.svg" alt="AI Freelancers" class="logo-img" />
 
     <!-- Headline -->
     <h1 class="headline">
-      <span class="date">Saturday 8PM EST</span> I'm Going To Show You How To Make <span class="money">$5,000 to $10,000</span> Every Month <span class="paren">(Predictably)</span> With AI
+      <span class="dim">Give me </span><span class="bold">30-45</span>
+      <img src="relogio-writes-2502.webp" alt="" class="clock-img" />
+      <span class="normal"> minutes</span><br>
+      <span class="dim">and I'll teach you </span><span class="bold">how to make</span><br>
+      <span class="normal">over </span><span class="gradient-text-orange">$193,901.00 per year.</span>
     </h1>
 
-    <!-- Subtext -->
-    <p class="subtext">
-      This is a free live training where I'm going to literally share
-      my screen and show you how you could be making thousands
-      of dollars by leveraging the biggest opportunity of the century: AI.
+    <!-- Body paragraph -->
+    <p class="body-text">
+      During this live, I'm gonna teach you the same business model
+      that made over $8.9M in my early 20s.
+      <strong>I've done this entirely by myself. But you're going to do it with AI.</strong>
+      Make sure to secure your registration, class starts soon.
     </p>
 
     <!-- Opt-In Form -->
@@ -413,57 +382,133 @@ footer {
   </div>
 </section>
 
-<!-- Testimonials Carousel -->
-<div class="testimonials-section">
-  <div class="testimonials-label">What our students are saying</div>
-  <div class="carousel-wrap">
-    <div class="carousel-track">
-      <div class="testimonial-card"><div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.15);font-size:13px;">Testimonial 1</div></div>
-      <div class="testimonial-card"><div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.15);font-size:13px;">Testimonial 2</div></div>
-      <div class="testimonial-card"><div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.15);font-size:13px;">Testimonial 3</div></div>
-      <div class="testimonial-card"><div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.15);font-size:13px;">Testimonial 4</div></div>
-      <div class="testimonial-card"><div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.15);font-size:13px;">Testimonial 5</div></div>
-      <!-- Duplicated for infinite scroll -->
-      <div class="testimonial-card"><div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.15);font-size:13px;">Testimonial 1</div></div>
-      <div class="testimonial-card"><div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.15);font-size:13px;">Testimonial 2</div></div>
-      <div class="testimonial-card"><div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.15);font-size:13px;">Testimonial 3</div></div>
-      <div class="testimonial-card"><div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.15);font-size:13px;">Testimonial 4</div></div>
-      <div class="testimonial-card"><div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.15);font-size:13px;">Testimonial 5</div></div>
-    </div>
+<!-- Without Ticker / Marquee -->
+<div class="ticker-wrap">
+  <div class="ticker-track">
+    <span class="ticker-item">Without creating content</span><span class="ticker-dot">&#9642;</span>
+    <span class="ticker-item">Without quitting your 9-5</span><span class="ticker-dot">&#9642;</span>
+    <span class="ticker-item">Without hiring employees</span><span class="ticker-dot">&#9642;</span>
+    <span class="ticker-item">Without spending on ads</span><span class="ticker-dot">&#9642;</span>
+    <span class="ticker-item">Without creating content</span><span class="ticker-dot">&#9642;</span>
+    <span class="ticker-item">Without quitting your 9-5</span><span class="ticker-dot">&#9642;</span>
+    <span class="ticker-item">Without hiring employees</span><span class="ticker-dot">&#9642;</span>
+    <span class="ticker-item">Without spending on ads</span><span class="ticker-dot">&#9642;</span>
+    <span class="ticker-item">Without creating content</span><span class="ticker-dot">&#9642;</span>
+    <span class="ticker-item">Without quitting your 9-5</span><span class="ticker-dot">&#9642;</span>
+    <span class="ticker-item">Without hiring employees</span><span class="ticker-dot">&#9642;</span>
+    <span class="ticker-item">Without spending on ads</span><span class="ticker-dot">&#9642;</span>
+    <span class="ticker-item">Without creating content</span><span class="ticker-dot">&#9642;</span>
+    <span class="ticker-item">Without quitting your 9-5</span><span class="ticker-dot">&#9642;</span>
+    <span class="ticker-item">Without hiring employees</span><span class="ticker-dot">&#9642;</span>
+    <span class="ticker-item">Without spending on ads</span><span class="ticker-dot">&#9642;</span>
+    <!-- duplicate for seamless loop -->
+    <span class="ticker-item">Without creating content</span><span class="ticker-dot">&#9642;</span>
+    <span class="ticker-item">Without quitting your 9-5</span><span class="ticker-dot">&#9642;</span>
+    <span class="ticker-item">Without hiring employees</span><span class="ticker-dot">&#9642;</span>
+    <span class="ticker-item">Without spending on ads</span><span class="ticker-dot">&#9642;</span>
+    <span class="ticker-item">Without creating content</span><span class="ticker-dot">&#9642;</span>
+    <span class="ticker-item">Without quitting your 9-5</span><span class="ticker-dot">&#9642;</span>
+    <span class="ticker-item">Without hiring employees</span><span class="ticker-dot">&#9642;</span>
+    <span class="ticker-item">Without spending on ads</span><span class="ticker-dot">&#9642;</span>
+    <span class="ticker-item">Without creating content</span><span class="ticker-dot">&#9642;</span>
+    <span class="ticker-item">Without quitting your 9-5</span><span class="ticker-dot">&#9642;</span>
+    <span class="ticker-item">Without hiring employees</span><span class="ticker-dot">&#9642;</span>
+    <span class="ticker-item">Without spending on ads</span><span class="ticker-dot">&#9642;</span>
+    <span class="ticker-item">Without creating content</span><span class="ticker-dot">&#9642;</span>
+    <span class="ticker-item">Without quitting your 9-5</span><span class="ticker-dot">&#9642;</span>
+    <span class="ticker-item">Without hiring employees</span><span class="ticker-dot">&#9642;</span>
+    <span class="ticker-item">Without spending on ads</span><span class="ticker-dot">&#9642;</span>
   </div>
 </div>
 
+<!-- Testimonials -->
+<section class="testimonials">
+  <div class="testimonials-inner">
+    <img src="logo-writes-2502.svg" alt="AI Freelancers" class="testimonials-logo" />
+
+    <!-- First row: 3 columns -->
+    <div class="testimonials-grid-3">
+      <!-- Tristan -->
+      <div class="testimonial-card">
+        <svg class="quote-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="18" viewBox="0 0 20 18" fill="none"><path d="M1.30053 15.358L6.70453 4.214H7.90853L2.50453 15.358H1.30053ZM12.086 15.358L17.49 4.214H18.694L13.29 15.358H12.086Z" fill="currentColor"/></svg>
+        <p class="testimonial-text">This group gave me the blueprint, knowledge, and systems needed to build my network and taught me how to convert! not only in the info space but also in actual business. Now, I know exactly how to turn traffic into paying customers and maximize every opportunity. It's led to massive wins for my clients and a game-changing income for me.</p>
+        <div class="testimonial-author">
+          <img src="testimonial-d1.webp" alt="Tristan Bannister" class="testimonial-avatar" />
+          <span class="testimonial-name">Tristan Bannister</span>
+        </div>
+      </div>
+
+      <!-- Mihailo -->
+      <div class="testimonial-card">
+        <svg class="quote-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="18" viewBox="0 0 20 18" fill="none"><path d="M1.30053 15.358L6.70453 4.214H7.90853L2.50453 15.358H1.30053ZM12.086 15.358L17.49 4.214H18.694L13.29 15.358H12.086Z" fill="currentColor"/></svg>
+        <p class="testimonial-text">This group taught me everything I know about building a high-performance sales process that converts traffic to the highest degree and squeezes the most money out of every lead. Since joining, I've helped generate millions for my clients and made a serious income for myself too.</p>
+        <div class="testimonial-author">
+          <img src="testimonial-mihailo.png" alt="Mihailo Stojanovic" class="testimonial-avatar" />
+          <span class="testimonial-name">Mihailo Stojanovic</span>
+        </div>
+      </div>
+
+      <!-- Chris -->
+      <div class="testimonial-card">
+        <svg class="quote-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="18" viewBox="0 0 20 18" fill="none"><path d="M1.30053 15.358L6.70453 4.214H7.90853L2.50453 15.358H1.30053ZM12.086 15.358L17.49 4.214H18.694L13.29 15.358H12.086Z" fill="currentColor"/></svg>
+        <p class="testimonial-text">I joined this community around 2 weeks ago and with the blueprint and framework provided I was able to increase the revenue with one of my clients by over $100,000. I had an operational background but lacked sales experience, this taught me exactly what I needed to know to increase my clients sales teams without all the fluff.</p>
+        <div class="testimonial-author">
+          <img src="testimonial-chris.png" alt="Chris Carmona" class="testimonial-avatar" />
+          <span class="testimonial-name">Chris Carmona</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Second row: 2 columns -->
+    <div class="testimonials-grid-2">
+      <!-- Kaden — full width -->
+      <div class="testimonial-card full-width">
+        <svg class="quote-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="18" viewBox="0 0 20 18" fill="none"><path d="M1.30053 15.358L6.70453 4.214H7.90853L2.50453 15.358H1.30053ZM12.086 15.358L17.49 4.214H18.694L13.29 15.358H12.086Z" fill="currentColor"/></svg>
+        <p class="testimonial-text">I joined this as an artist - not a salesman, not a closer. But I came with full presence, full commitment, and full belief in what's possible. This group gave me more than frameworks. It gave me direction, discipline, and a mirror. It allowed me to stay true to my creative nature while learning how to build structure, value, and income around it. The culture, the minds, and the standards in this space are unlike anything I've ever seen. I grew, fast - because I had to. This isn't just a group. It's a system that turns vision into clarity, and clarity into cash. I'm grateful and ready for what's next.</p>
+        <div class="testimonial-author">
+          <img src="testimonial-kaden.png" alt="Kaden Bruce" class="testimonial-avatar" />
+          <span class="testimonial-name">Kaden Bruce</span>
+        </div>
+      </div>
+
+      <!-- Anonymous -->
+      <div class="testimonial-card">
+        <svg class="quote-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="18" viewBox="0 0 20 18" fill="none"><path d="M1.30053 15.358L6.70453 4.214H7.90853L2.50453 15.358H1.30053ZM12.086 15.358L17.49 4.214H18.694L13.29 15.358H12.086Z" fill="currentColor"/></svg>
+        <p class="testimonial-text">Being in the online business space for years now, I never felt early to anything. Started sales after it was popular, missed crypto runs, missed SMMA. And what happens every time with any of these opportunities is that if you're early, it's basically impossible not to make money. With AI Insiders, I actually feel like I'm early to a massive opportunity. Plus, the connections in the group are incredible. I've gotten enough referrals from the group to more than cover the program cost. Don't make the mistakes I made before this and jump in while you're still early.</p>
+        <div class="testimonial-author">
+          <img src="testimonial-d1.webp" alt="Anonymous Member" class="testimonial-avatar" />
+          <span class="testimonial-name">Anonymous Member</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
 <!-- Footer -->
 <footer>
-  <div class="footer-links">
-    <a href="#">Privacy Policy</a>
-    <span class="footer-sep">&middot;</span>
-    <a href="#">Terms of Service</a>
-    <span class="footer-sep">&middot;</span>
-    <a href="#">Earnings Disclaimer</a>
-    <span class="footer-sep">&middot;</span>
-    <a href="#">Contact</a>
-  </div>
-  <p class="footer-copy">&copy; 2026 AI Freelancers &middot; All rights reserved</p>
-  <div class="footer-disclaimer">
-    <p>This site is not a part of the Facebook&trade; website or Facebook&trade; Inc. Additionally, this site is NOT endorsed by Facebook&trade; in any way. FACEBOOK&trade; is a trademark of FACEBOOK&trade;, Inc.</p>
-    <p>This site is not a part of the Instagram&trade; website or Instagram&trade;/Meta Platforms, Inc. Additionally, this site is NOT endorsed by Instagram&trade; or Meta&trade; in any way. INSTAGRAM&trade; is a trademark of META PLATFORMS&trade;, Inc.</p>
-    <p>EARNINGS DISCLAIMER: The results stated on this page and in any of our materials are not typical. Your results will vary and depend on many factors, including but not limited to your background, experience, and work ethic. All business entails risk as well as massive and consistent effort and action.</p>
+  <div class="footer-inner">
+    <img src="logo-writes-2502.svg" alt="AI Freelancers" style="height:19px;width:auto;" />
+    <p class="footer-links">
+      <a href="#">Privacy Policy</a> | <a href="#">Terms &amp; Conditions</a>
+    </p>
   </div>
 </footer>
 
 <script>
-// Dynamic day/time
+// Dynamic day/time in top bar
 (function() {
-  var days = ['SUNDAY','MONDAY','TUESDAY','WEDNESDAY','THURSDAY','FRIDAY','SATURDAY'];
+  var days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  var months = ['01','02','03','04','05','06','07','08','09','10','11','12'];
   var now = new Date();
-  document.getElementById('eventDay').textContent = days[now.getDay()];
+  var dayStr = days[now.getDay()];
+  var dateStr = months[now.getMonth()] + '/' + String(now.getDate()).padStart(2,'0');
+  document.getElementById('eventDay').textContent = dayStr + ' ' + dateStr;
   var nextHour = new Date(now);
   nextHour.setHours(nextHour.getHours() + 1, 0, 0, 0);
   var h = nextHour.getHours();
   var ampm = h >= 12 ? 'PM' : 'AM';
   var h12 = h % 12 || 12;
-  document.getElementById('eventTime').textContent = h12 + ':00 ' + ampm;
+  document.getElementById('eventTime').textContent = String(h12).padStart(2,'0') + ':00 ' + ampm;
 })();
 
 // Form submission → redirect to Telegram
@@ -471,7 +516,6 @@ function handleSubmit(e) {
   e.preventDefault();
   // TODO: Replace with your actual Telegram group link
   window.open('https://t.me/YOUR_TELEGRAM_GROUP', '_blank');
-  // Optional: send form data to your backend/Supabase here
 }
 </script>
 </body>
