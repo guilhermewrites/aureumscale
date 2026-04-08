@@ -68,11 +68,12 @@ body {
 .top-bar-text {
   font-family: var(--mono);
   font-size: 12px;
-  font-weight: 500;
+  font-weight: 800;
   color: #000;
   text-transform: uppercase;
   letter-spacing: 0.075rem;
   white-space: nowrap;
+  -webkit-font-smoothing: auto;
 }
 
 /* ══════════════════════════════════════
@@ -96,8 +97,8 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 40px;
-  padding: 0 16px;
+  gap: 28px;
+  padding: 0 20px;
 }
 
 /* Logo */
@@ -367,6 +368,65 @@ footer {
 }
 
 /* ══════════════════════════════════════
+   SOCIAL PROOF POPUP
+   ══════════════════════════════════════ */
+.social-proof-popup {
+  position: fixed;
+  bottom: 24px;
+  left: 20px;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(15,15,15,0.96);
+  border: 1px solid rgba(255,136,79,0.3);
+  border-left: 3px solid var(--brand-orange-from);
+  border-radius: 8px;
+  padding: 12px 16px;
+  max-width: 300px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  transform: translateY(100px);
+  opacity: 0;
+  transition: transform 0.4s cubic-bezier(0.34,1.56,0.64,1), opacity 0.3s ease;
+  pointer-events: none;
+}
+.social-proof-popup.show {
+  transform: translateY(0);
+  opacity: 1;
+}
+.social-proof-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--brand-orange-gradient);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.social-proof-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.social-proof-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--brand-cream);
+  line-height: 1.2;
+}
+.social-proof-action {
+  font-size: 11px;
+  color: rgba(255,233,223,0.55);
+  line-height: 1.3;
+}
+.social-proof-time {
+  font-size: 10px;
+  color: var(--brand-orange-from);
+  margin-top: 2px;
+}
+
+/* ══════════════════════════════════════
    RESPONSIVE
    ══════════════════════════════════════ */
 @media (max-width: 768px) {
@@ -374,17 +434,21 @@ footer {
     padding-top: 200px;
     min-height: auto;
   }
-  .headline { font-size: 26px; }
-  .body-text { font-size: 15px; }
+  .hero-inner { gap: 20px; }
+  .headline { font-size: 24px; line-height: 1.35; }
+  .body-text { font-size: 14px; line-height: 1.6; max-width: 100%; }
   .cta-btn { font-size: 13px; padding: 16px 16px; }
-  .top-bar-text { font-size: 0.51rem; letter-spacing: 0.051rem; }
+  .top-bar-text { font-size: 0.6rem; letter-spacing: 0.04rem; }
   .testimonial-card { width: 300px; }
-  .optin-form { width: 100%; padding: 0 4px; }
+  .optin-form { width: 100%; padding: 0; }
+  .social-proof-popup { max-width: 260px; bottom: 16px; left: 12px; }
 }
 @media (max-width: 480px) {
-  .headline { font-size: 22px; }
+  .headline { font-size: 21px; }
   .clock-img { width: 60px; height: 30px; }
   .testimonial-card { width: 280px; }
+  .top-bar { height: 44px; }
+  .top-bar-text { font-size: 0.55rem; }
 }
 </style>
 </head>
@@ -395,7 +459,7 @@ footer {
   <div class="top-bar-inner">
     <span class="top-bar-text">Live Event</span>
     <span class="top-bar-text">&#9642;</span>
-    <span class="top-bar-text">Starting Today, <span id="eventDay">Mon</span> at <span id="eventTime">09:00 PM</span></span>
+    <span class="top-bar-text">Sunday, 05/11 at 7 PM EST</span>
   </div>
 </div>
 
@@ -405,19 +469,15 @@ footer {
 
     <!-- Headline -->
     <h1 class="headline">
-      <span class="dim">Give me </span><span class="bold">30-45</span>
-      <img src="relogio-writes-2502.webp" alt="" class="clock-img" />
-      <span class="normal"> minutes</span><br>
-      <span class="dim">and I'll teach you </span><span class="bold">how to make</span><br>
-      <span class="normal">over </span><span class="gradient-text-orange">$193,901.00 per year.</span>
+      <span class="dim">Saturday 8PM EST</span><br>
+      <span class="bold">I'm Going To Show You How To Make</span><br>
+      <span class="gradient-text-orange">$5,000 to $10,000</span><br>
+      <span class="normal">Every Month </span><span class="dim">(Predictably) </span><span class="bold">With AI</span>
     </h1>
 
     <!-- Body paragraph -->
     <p class="body-text">
-      During this live, I'm gonna teach you the same business model
-      that made over $8.9M in my early 20s.
-      <strong>I've done this entirely by myself. But you're going to do it with AI.</strong>
-      Make sure to secure your registration, class starts soon.
+      This is a free live training where I'm going to literally share my screen and show you how you could be making <strong>thousands of dollars</strong> by leveraging the biggest opportunity of the century: <strong>AI.</strong>
     </p>
 
     <!-- Opt-In Form -->
@@ -582,6 +642,18 @@ footer {
   </div>
 </footer>
 
+<!-- Social Proof Popup -->
+<div class="social-proof-popup" id="socialProof">
+  <div class="social-proof-icon">
+    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M11.944 0A12 12 0 1 0 24 12 12 12 0 0 0 11.944 0zm5.992 8.178-2.02 9.52c-.152.67-.55.835-1.114.52l-3.077-2.267-1.484 1.428c-.164.163-.3.3-.615.3l.22-3.106 5.657-5.11c.245-.219-.054-.34-.382-.121L7.89 14.289l-2.997-.938c-.652-.203-.664-.652.135-.966l11.7-4.51c.543-.197 1.018.132.843.966z"/></svg>
+  </div>
+  <div class="social-proof-text">
+    <span class="social-proof-name" id="spName">Marcus Rivera</span>
+    <span class="social-proof-action">just joined the Telegram group</span>
+    <span class="social-proof-time" id="spTime">2 minutes ago</span>
+  </div>
+</div>
+
 <canvas id="smokeCanvas"></canvas>
 
 <script>
@@ -605,8 +677,57 @@ footer {
 function handleSubmit(e) {
   e.preventDefault();
   // TODO: Replace with your actual Telegram group link
-  window.open('https://t.me/YOUR_TELEGRAM_GROUP', '_blank');
+  window.open('https://t.me/+dcCFigyyz48zODBh', '_blank');
 }
+</script>
+
+<!-- ── SOCIAL PROOF POPUP ── -->
+<script>
+(function() {
+  const people = [
+    { name: 'Marcus Rivera', city: 'Austin, TX' },
+    { name: 'Jordan Lee', city: 'Miami, FL' },
+    { name: 'Aisha Thompson', city: 'Atlanta, GA' },
+    { name: 'Tyler Brooks', city: 'Los Angeles, CA' },
+    { name: 'Sofia Mendez', city: 'Chicago, IL' },
+    { name: 'Devon Harris', city: 'New York, NY' },
+    { name: 'Priya Patel', city: 'Dallas, TX' },
+    { name: 'Caleb Wright', city: 'Phoenix, AZ' },
+    { name: 'Natalie Cruz', city: 'San Diego, CA' },
+    { name: 'Elijah Moore', city: 'Houston, TX' },
+    { name: 'Brianna Scott', city: 'Charlotte, NC' },
+    { name: 'Logan Turner', city: 'Denver, CO' },
+    { name: 'Zoe Williams', city: 'Seattle, WA' },
+    { name: 'Isaiah Foster', city: 'Nashville, TN' },
+    { name: 'Camila Reyes', city: 'Orlando, FL' },
+    { name: 'Jayden King', city: 'Las Vegas, NV' },
+    { name: 'Mia Johnson', city: 'Portland, OR' },
+    { name: 'Ethan Barnes', city: 'Boston, MA' },
+    { name: 'Aaliyah Davis', city: 'Philadelphia, PA' },
+    { name: 'Noah Carter', city: 'San Antonio, TX' },
+  ];
+
+  const times = ['just now', '1 minute ago', '2 minutes ago', '3 minutes ago'];
+  const popup = document.getElementById('socialProof');
+  const nameEl = document.getElementById('spName');
+  const timeEl = document.getElementById('spTime');
+  let idx = Math.floor(Math.random() * people.length);
+
+  function showNext() {
+    const p = people[idx % people.length];
+    idx++;
+    nameEl.textContent = p.name + ' from ' + p.city;
+    timeEl.textContent = times[Math.floor(Math.random() * times.length)];
+    popup.classList.add('show');
+    setTimeout(() => popup.classList.remove('show'), 3500);
+  }
+
+  // First show after 4s, then every 5s
+  setTimeout(() => {
+    showNext();
+    setInterval(showNext, 5000);
+  }, 4000);
+})();
 </script>
 
 <!-- ── ORANGE CURSOR EFFECT ── -->
