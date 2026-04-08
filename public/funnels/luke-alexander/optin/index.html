@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Live Webinar Opt-In — AI Freelancers</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --orange: #e8622c;
+  --orange-light: #f0943e;
+  --orange-btn: #f07a2f;
+  --bg: #0a0a0a;
+  --text: #fafafa;
+  --muted: rgba(255,255,255,0.50);
+  --dim: rgba(255,255,255,0.28);
+  --font: 'Plus Jakarta Sans', -apple-system, sans-serif;
+  --mono: 'JetBrains Mono', monospace;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ══════════════════════════════════════
+   TOP ANNOUNCEMENT BAR
+   ══════════════════════════════════════ */
+.top-bar {
+  position: relative;
+  z-index: 100;
+  width: 100%;
+  padding: 10px 0;
+  text-align: center;
+  background: linear-gradient(90deg,
+    #7a3a10 0%,
+    #c46a20 15%,
+    #e8942a 30%,
+    #f0a838 45%,
+    #e8942a 60%,
+    #c46a20 75%,
+    #7a3a10 100%
+  );
+}
+.top-bar-inner {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(0,0,0,0.55);
+}
+.top-bar-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 1px;
+  background: rgba(0,0,0,0.5);
+  display: inline-block;
+}
+
+/* ══════════════════════════════════════
+   HERO SECTION
+   ══════════════════════════════════════ */
+.hero {
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+}
+
+/* Background image */
+.hero-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+.hero-bg img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 10%;
+  filter: brightness(0.35);
+}
+/* Right-side fade for text readability */
+.hero-bg::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to right,
+    rgba(10,10,10,0.85) 0%,
+    rgba(10,10,10,0.6) 40%,
+    rgba(10,10,10,0.3) 60%,
+    transparent 100%
+  );
+}
+/* Bottom fade */
+.hero-bg::before {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 200px;
+  background: linear-gradient(to top, var(--bg) 0%, transparent 100%);
+  z-index: 1;
+}
+
+/* Content layout */
+.hero-content {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 80px 60px 60px;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+/* Logo */
+.logo {
+  font-family: var(--font);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.logo-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  background: var(--text);
+  color: var(--bg);
+  font-size: 9px;
+  font-weight: 900;
+  border-radius: 3px;
+  letter-spacing: 0;
+}
+.logo sup {
+  font-size: 7px;
+  vertical-align: super;
+  margin-left: 1px;
+  opacity: 0.4;
+  font-weight: 400;
+}
+
+/* Headline */
+.headline {
+  font-size: 42px;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  color: var(--text);
+  max-width: 600px;
+}
+.headline .date {
+  color: var(--orange);
+  font-weight: 700;
+}
+.headline .money {
+  color: var(--orange);
+  font-weight: 700;
+}
+.headline .paren {
+  color: var(--orange);
+  font-weight: 500;
+}
+
+/* Subtext */
+.subtext {
+  font-size: 15px;
+  line-height: 1.7;
+  color: var(--muted);
+  max-width: 520px;
+}
+
+/* ══════════════════════════════════════
+   OPT-IN FORM
+   ══════════════════════════════════════ */
+.optin-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 460px;
+  width: 100%;
+}
+.optin-form input {
+  width: 100%;
+  padding: 14px 18px;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.10);
+  border-radius: 6px;
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.optin-form input::placeholder {
+  color: rgba(255,255,255,0.35);
+}
+.optin-form input:focus {
+  border-color: rgba(232, 98, 44, 0.4);
+}
+
+/* CTA Button */
+.cta-btn {
+  display: block;
+  width: 100%;
+  max-width: 460px;
+  padding: 16px 32px;
+  background: linear-gradient(180deg, #f08a3a 0%, #e8742c 100%);
+  color: #000;
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: none;
+  text-decoration: none;
+  text-align: center;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: opacity 0.2s;
+  margin-top: 4px;
+}
+.cta-btn:hover {
+  opacity: 0.9;
+}
+
+/* ══════════════════════════════════════
+   TESTIMONIALS CAROUSEL
+   ══════════════════════════════════════ */
+.testimonials-section {
+  position: relative;
+  z-index: 2;
+  padding: 60px 0 80px;
+}
+.testimonials-label {
+  text-align: center;
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--dim);
+  margin-bottom: 32px;
+}
+.carousel-wrap {
+  width: 100%;
+  overflow: hidden;
+  mask-image: linear-gradient(to right, transparent 0%, black 10%, black 90%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to right, transparent 0%, black 10%, black 90%, transparent 100%);
+}
+.carousel-track {
+  display: flex;
+  gap: 20px;
+  width: max-content;
+  animation: carousel-scroll 24s linear infinite;
+}
+.carousel-track:hover {
+  animation-play-state: paused;
+}
+@keyframes carousel-scroll {
+  0%   { transform: translateX(-1800px); }
+  100% { transform: translateX(0px); }
+}
+.testimonial-card {
+  position: relative;
+  width: 340px;
+  height: 250px;
+  border-radius: 16px;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  transition: transform 0.4s;
+}
+.testimonial-card:hover {
+  transform: translateY(-6px) scale(1.02);
+}
+.testimonial-card img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.card-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, transparent 50%, rgba(0,0,0,0.5) 100%);
+  border-radius: 16px;
+}
+
+/* ══════════════════════════════════════
+   FOOTER
+   ══════════════════════════════════════ */
+footer {
+  text-align: center;
+  padding: 48px 40px 60px;
+  background: var(--bg);
+}
+.footer-links {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+.footer-links a {
+  color: var(--dim);
+  text-decoration: none;
+  font-size: 11px;
+  transition: color 0.2s;
+}
+.footer-links a:hover { color: var(--text); }
+.footer-sep { color: rgba(255,255,255,0.15); font-size: 11px; }
+.footer-copy {
+  font-size: 11px;
+  color: rgba(255,255,255,0.2);
+  margin-bottom: 24px;
+}
+.footer-disclaimer {
+  max-width: 700px;
+  margin: 0 auto;
+}
+.footer-disclaimer p {
+  font-size: 9px;
+  color: rgba(255,255,255,0.15);
+  line-height: 1.6;
+  margin-bottom: 8px;
+}
+
+/* ══════════════════════════════════════
+   RESPONSIVE
+   ══════════════════════════════════════ */
+@media (max-width: 768px) {
+  .hero-content { padding: 60px 24px 40px; }
+  .headline { font-size: 28px; }
+  .subtext { font-size: 13px; }
+  .testimonial-card { width: 280px; height: 200px; }
+}
+@media (max-width: 480px) {
+  .headline { font-size: 24px; }
+  .hero-content { padding: 40px 16px 32px; }
+}
+</style>
+</head>
+<body>
+
+<!-- Top Announcement Bar -->
+<div class="top-bar">
+  <div class="top-bar-inner">
+    <span>LIVE EVENT</span>
+    <span class="top-bar-dot"></span>
+    <span>STARTING <span id="eventDay">SATURDAY</span>&nbsp;&nbsp;<span id="eventTime">8:00 PM</span> EST</span>
+  </div>
+</div>
+
+<!-- Hero Section -->
+<section class="hero">
+  <div class="hero-bg">
+    <img src="../hero.jpg" alt="Background" />
+  </div>
+
+  <div class="hero-content">
+    <!-- Logo -->
+    <div class="logo">
+      <span class="logo-icon">A</span> AI FREELANCERS<sup>&reg;</sup>
+    </div>
+
+    <!-- Headline -->
+    <h1 class="headline">
+      <span class="date">Saturday 8PM EST</span> I'm Going To Show You How To Make <span class="money">$5,000 to $10,000</span> Every Month <span class="paren">(Predictably)</span> With AI
+    </h1>
+
+    <!-- Subtext -->
+    <p class="subtext">
+      This is a free live training where I'm going to literally share
+      my screen and show you how you could be making thousands
+      of dollars by leveraging the biggest opportunity of the century: AI.
+    </p>
+
+    <!-- Opt-In Form -->
+    <form class="optin-form" id="optinForm" onsubmit="handleSubmit(event)">
+      <input type="text" name="instagram" placeholder="@ Instagram" required />
+      <input type="text" name="name" placeholder="Name & Last Name" required />
+      <input type="email" name="email" placeholder="Email" required />
+      <input type="tel" name="phone" placeholder="Phone Number" />
+      <button type="submit" class="cta-btn">Click Here To Confirm Your Registration And Join Our Telegram Channel</button>
+    </form>
+  </div>
+</section>
+
+<!-- Testimonials Carousel -->
+<div class="testimonials-section">
+  <div class="testimonials-label">What our students are saying</div>
+  <div class="carousel-wrap">
+    <div class="carousel-track">
+      <div class="testimonial-card"><div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.15);font-size:13px;">Testimonial 1</div></div>
+      <div class="testimonial-card"><div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.15);font-size:13px;">Testimonial 2</div></div>
+      <div class="testimonial-card"><div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.15);font-size:13px;">Testimonial 3</div></div>
+      <div class="testimonial-card"><div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.15);font-size:13px;">Testimonial 4</div></div>
+      <div class="testimonial-card"><div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.15);font-size:13px;">Testimonial 5</div></div>
+      <!-- Duplicated for infinite scroll -->
+      <div class="testimonial-card"><div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.15);font-size:13px;">Testimonial 1</div></div>
+      <div class="testimonial-card"><div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.15);font-size:13px;">Testimonial 2</div></div>
+      <div class="testimonial-card"><div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.15);font-size:13px;">Testimonial 3</div></div>
+      <div class="testimonial-card"><div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.15);font-size:13px;">Testimonial 4</div></div>
+      <div class="testimonial-card"><div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.15);font-size:13px;">Testimonial 5</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- Footer -->
+<footer>
+  <div class="footer-links">
+    <a href="#">Privacy Policy</a>
+    <span class="footer-sep">&middot;</span>
+    <a href="#">Terms of Service</a>
+    <span class="footer-sep">&middot;</span>
+    <a href="#">Earnings Disclaimer</a>
+    <span class="footer-sep">&middot;</span>
+    <a href="#">Contact</a>
+  </div>
+  <p class="footer-copy">&copy; 2026 AI Freelancers &middot; All rights reserved</p>
+  <div class="footer-disclaimer">
+    <p>This site is not a part of the Facebook&trade; website or Facebook&trade; Inc. Additionally, this site is NOT endorsed by Facebook&trade; in any way. FACEBOOK&trade; is a trademark of FACEBOOK&trade;, Inc.</p>
+    <p>This site is not a part of the Instagram&trade; website or Instagram&trade;/Meta Platforms, Inc. Additionally, this site is NOT endorsed by Instagram&trade; or Meta&trade; in any way. INSTAGRAM&trade; is a trademark of META PLATFORMS&trade;, Inc.</p>
+    <p>EARNINGS DISCLAIMER: The results stated on this page and in any of our materials are not typical. Your results will vary and depend on many factors, including but not limited to your background, experience, and work ethic. All business entails risk as well as massive and consistent effort and action.</p>
+  </div>
+</footer>
+
+<script>
+// Dynamic day/time
+(function() {
+  var days = ['SUNDAY','MONDAY','TUESDAY','WEDNESDAY','THURSDAY','FRIDAY','SATURDAY'];
+  var now = new Date();
+  document.getElementById('eventDay').textContent = days[now.getDay()];
+  var nextHour = new Date(now);
+  nextHour.setHours(nextHour.getHours() + 1, 0, 0, 0);
+  var h = nextHour.getHours();
+  var ampm = h >= 12 ? 'PM' : 'AM';
+  var h12 = h % 12 || 12;
+  document.getElementById('eventTime').textContent = h12 + ':00 ' + ampm;
+})();
+
+// Form submission → redirect to Telegram
+function handleSubmit(e) {
+  e.preventDefault();
+  // TODO: Replace with your actual Telegram group link
+  window.open('https://t.me/YOUR_TELEGRAM_GROUP', '_blank');
+  // Optional: send form data to your backend/Supabase here
+}
+</script>
+</body>
+</html>
