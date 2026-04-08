@@ -382,6 +382,58 @@ footer {
 }
 
 /* ══════════════════════════════════════
+   COUNTDOWN
+   ══════════════════════════════════════ */
+.countdown-section {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 72px 16px 48px;
+  background: #000;
+}
+.countdown-label {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: rgba(255,233,223,0.4);
+  text-transform: uppercase;
+  letter-spacing: 0.14rem;
+}
+.countdown-wrap {
+  display: flex;
+  gap: 10px;
+}
+.countdown-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,136,79,0.18);
+  border-radius: 4px;
+  width: 84px;
+  padding: 18px 8px 14px;
+  gap: 8px;
+}
+.countdown-num {
+  font-family: var(--mono);
+  font-size: 42px;
+  font-weight: 700;
+  color: var(--brand-cream);
+  line-height: 1;
+  text-align: center;
+  min-width: 2ch;
+}
+.countdown-unit {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: rgba(255,136,79,0.75);
+  text-transform: uppercase;
+  letter-spacing: 0.1rem;
+}
+
+/* ══════════════════════════════════════
    SOCIAL PROOF POPUP
    ══════════════════════════════════════ */
 .social-proof-popup {
@@ -444,6 +496,10 @@ footer {
    RESPONSIVE
    ══════════════════════════════════════ */
 @media (max-width: 768px) {
+  .countdown-card { width: 68px; padding: 14px 6px 10px; }
+  .countdown-num { font-size: 32px; }
+  .countdown-wrap { gap: 8px; }
+
   .hero {
     padding-top: 200px;
     min-height: auto;
@@ -483,10 +539,12 @@ footer {
 
     <!-- Headline -->
     <h1 class="headline">
-      <span class="dim">This Sunday, 05/11 at 7PM Eastern</span><br>
-      <span class="bold">I'm Going Live To Teach You How</span><br>
-      <span class="gradient-text-orange">To Make $193,901.00 A Year</span><br>
-      <span class="bold">By Becoming an AI Freelancer.</span>
+      <span class="dim">Give me </span><span class="bold">30-45</span>
+      <img src="relogio-writes-2502.webp" alt="" class="clock-img" />
+      <span class="normal"> minutes</span><br>
+      <span class="dim">and I'll teach you </span><span class="bold">how to make</span><br>
+      <span class="normal">over </span><span class="gradient-text-orange">$193,901.00 per year</span><br>
+      <span class="bold">With AI.</span>
     </h1>
 
     <!-- Body paragraph -->
@@ -544,6 +602,17 @@ footer {
     <span class="ticker-item">Without quitting your 9-5</span><span class="ticker-dot">&#9642;</span>
     <span class="ticker-item">Without hiring employees</span><span class="ticker-dot">&#9642;</span>
     <span class="ticker-item">Without spending on ads</span><span class="ticker-dot">&#9642;</span>
+  </div>
+</div>
+
+<!-- Countdown -->
+<div class="countdown-section">
+  <span class="countdown-label">Live event starts in</span>
+  <div class="countdown-wrap">
+    <div class="countdown-card"><span class="countdown-num" id="cd-days">00</span><span class="countdown-unit">Days</span></div>
+    <div class="countdown-card"><span class="countdown-num" id="cd-hours">00</span><span class="countdown-unit">Hours</span></div>
+    <div class="countdown-card"><span class="countdown-num" id="cd-mins">00</span><span class="countdown-unit">Mins</span></div>
+    <div class="countdown-card"><span class="countdown-num" id="cd-secs">00</span><span class="countdown-unit">Secs</span></div>
   </div>
 </div>
 
@@ -674,20 +743,31 @@ footer {
 <canvas id="smokeCanvas"></canvas>
 
 <script>
-// Dynamic day/time in top bar
+// Countdown to Sunday May 11 2026 7PM EDT (UTC-4 = 23:00 UTC)
 (function() {
-  var days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-  var months = ['01','02','03','04','05','06','07','08','09','10','11','12'];
-  var now = new Date();
-  var dayStr = days[now.getDay()];
-  var dateStr = months[now.getMonth()] + '/' + String(now.getDate()).padStart(2,'0');
-  document.getElementById('eventDay').textContent = dayStr + ' ' + dateStr;
-  var nextHour = new Date(now);
-  nextHour.setHours(nextHour.getHours() + 1, 0, 0, 0);
-  var h = nextHour.getHours();
-  var ampm = h >= 12 ? 'PM' : 'AM';
-  var h12 = h % 12 || 12;
-  document.getElementById('eventTime').textContent = String(h12).padStart(2,'0') + ':00 ' + ampm;
+  var target = new Date('2026-05-11T23:00:00Z');
+  function pad(n) { return String(n).padStart(2, '0'); }
+  function tick() {
+    var now = new Date();
+    var diff = target - now;
+    if (diff <= 0) {
+      document.getElementById('cd-days').textContent  = '00';
+      document.getElementById('cd-hours').textContent = '00';
+      document.getElementById('cd-mins').textContent  = '00';
+      document.getElementById('cd-secs').textContent  = '00';
+      return;
+    }
+    var d = Math.floor(diff / 86400000);
+    var h = Math.floor((diff % 86400000) / 3600000);
+    var m = Math.floor((diff % 3600000)  / 60000);
+    var s = Math.floor((diff % 60000)    / 1000);
+    document.getElementById('cd-days').textContent  = pad(d);
+    document.getElementById('cd-hours').textContent = pad(h);
+    document.getElementById('cd-mins').textContent  = pad(m);
+    document.getElementById('cd-secs').textContent  = pad(s);
+  }
+  tick();
+  setInterval(tick, 1000);
 })();
 
 // Form submission → redirect to Telegram
