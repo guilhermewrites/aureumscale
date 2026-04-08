@@ -100,6 +100,9 @@ body {
   gap: 28px;
   padding: 0 20px;
 }
+.hero-inner .body-text {
+  margin-top: -12px;
+}
 
 /* Logo */
 .logo-img {
@@ -529,7 +532,7 @@ footer {
   <div class="top-bar-inner">
     <span class="top-bar-text">Live Event</span>
     <span class="top-bar-text">&#9642;</span>
-    <span class="top-bar-text">Sunday, 05/11 at 7 PM EST</span>
+    <span class="top-bar-text">Sunday, 04/12 at 7 PM EST</span>
   </div>
 </div>
 
@@ -542,9 +545,8 @@ footer {
       <span class="dim">Give me </span><span class="bold">30-45</span>
       <img src="relogio-writes-2502.webp" alt="" class="clock-img" />
       <span class="normal"> minutes</span><br>
-      <span class="dim">and I'll teach you </span><span class="bold">how to make</span><br>
-      <span class="normal">over </span><span class="gradient-text-orange">$193,901.00 per year</span><br>
-      <span class="bold">With AI.</span>
+      <span class="dim">and I'll teach you how to make</span><br>
+      <span class="normal">over </span><span class="gradient-text-orange">$193,901.00 per year </span><span class="bold">With AI.</span>
     </h1>
 
     <!-- Body paragraph -->
@@ -745,7 +747,7 @@ footer {
 <script>
 // Countdown to Sunday May 11 2026 7PM EDT (UTC-4 = 23:00 UTC)
 (function() {
-  var target = new Date('2026-05-11T23:00:00Z');
+  var target = new Date('2026-04-12T23:00:00Z'); // Sunday Apr 12, 7PM EDT
   function pad(n) { return String(n).padStart(2, '0'); }
   function tick() {
     var now = new Date();
