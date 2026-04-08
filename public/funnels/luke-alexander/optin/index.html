@@ -389,51 +389,87 @@ footer {
    ══════════════════════════════════════ */
 .countdown-section {
   width: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
-  padding: 72px 16px 48px;
   background: #000;
+  padding: 64px 16px 48px;
+  text-align: center;
+  position: relative;
+}
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.3; }
+}
+.countdown-frame {
+  position: relative;
+  display: inline-block;
+  width: 560px;
+  max-width: 100%;
+  padding-top: 60px;
+  padding-bottom: 60px;
 }
 .countdown-label {
-  font-family: var(--mono);
-  font-size: 11px;
-  color: rgba(255,233,223,0.4);
-  text-transform: uppercase;
-  letter-spacing: 0.14rem;
-}
-.countdown-wrap {
-  display: flex;
-  gap: 10px;
-}
-.countdown-card {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  background: rgba(255,255,255,0.03);
-  border: 1px solid rgba(255,136,79,0.18);
-  border-radius: 4px;
-  width: 84px;
-  padding: 18px 8px 14px;
-  gap: 8px;
-}
-.countdown-num {
-  font-family: var(--mono);
-  font-size: 42px;
-  font-weight: 700;
-  color: var(--brand-cream);
-  line-height: 1;
-  text-align: center;
-  min-width: 2ch;
-}
-.countdown-unit {
+  position: relative;
+  z-index: 2;
   font-family: var(--mono);
   font-size: 10px;
-  color: rgba(255,136,79,0.75);
+  letter-spacing: 0.2em;
   text-transform: uppercase;
-  letter-spacing: 0.1rem;
+  color: rgba(255,255,255,0.3);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+}
+.countdown-label .red-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #e53e3e;
+  display: inline-block;
+  flex-shrink: 0;
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+.countdown-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  position: relative;
+  z-index: 2;
+  border: 1px solid rgba(255,255,255,0.12);
+  width: 460px;
+  max-width: 100%;
+  margin: 0 auto;
+}
+.countdown-box {
+  padding: 22px 0;
+  text-align: center;
+  position: relative;
+}
+.countdown-box + .countdown-box {
+  border-left: 1px solid rgba(255,255,255,0.09);
+}
+.countdown-box .number {
+  font-size: 48px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--brand-cream);
+  line-height: 1;
+  font-family: var(--font);
+}
+.countdown-box .unit {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.3);
+  margin-top: 12px;
+}
+.frame-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1;
 }
 
 /* ══════════════════════════════════════
@@ -499,9 +535,10 @@ footer {
    RESPONSIVE
    ══════════════════════════════════════ */
 @media (max-width: 768px) {
-  .countdown-card { width: 68px; padding: 14px 6px 10px; }
-  .countdown-num { font-size: 32px; }
-  .countdown-wrap { gap: 8px; }
+  .countdown-box { padding: 14px 0; }
+  .countdown-box .number { font-size: 28px; }
+  .countdown-container { width: 100%; }
+  .countdown-frame { width: 100%; padding-top: 40px; padding-bottom: 40px; }
 
   .hero {
     padding-top: 200px;
@@ -609,12 +646,24 @@ footer {
 
 <!-- Countdown -->
 <div class="countdown-section">
-  <span class="countdown-label">Live event starts in</span>
-  <div class="countdown-wrap">
-    <div class="countdown-card"><span class="countdown-num" id="cd-days">00</span><span class="countdown-unit">Days</span></div>
-    <div class="countdown-card"><span class="countdown-num" id="cd-hours">00</span><span class="countdown-unit">Hours</span></div>
-    <div class="countdown-card"><span class="countdown-num" id="cd-mins">00</span><span class="countdown-unit">Mins</span></div>
-    <div class="countdown-card"><span class="countdown-num" id="cd-secs">00</span><span class="countdown-unit">Secs</span></div>
+  <div class="countdown-frame">
+    <svg class="frame-svg" viewBox="0 0 560 240" preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <line x1="50" y1="80" x2="0"   y2="10"  stroke="rgba(255,255,255,0.10)" stroke-width="1"/>
+      <line x1="510" y1="80" x2="560" y2="10"  stroke="rgba(255,255,255,0.10)" stroke-width="1"/>
+      <line x1="50" y1="180" x2="0"   y2="240" stroke="rgba(255,255,255,0.10)" stroke-width="1"/>
+      <line x1="510" y1="180" x2="560" y2="240" stroke="rgba(255,255,255,0.10)" stroke-width="1"/>
+      <rect x="46"  y="76"  width="8" height="8" rx="1" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.20)" stroke-width="0.8"/>
+      <rect x="506" y="76"  width="8" height="8" rx="1" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.20)" stroke-width="0.8"/>
+      <rect x="46"  y="176" width="8" height="8" rx="1" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.20)" stroke-width="0.8"/>
+      <rect x="506" y="176" width="8" height="8" rx="1" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.20)" stroke-width="0.8"/>
+    </svg>
+    <div class="countdown-label">THIS <span class="red-dot"></span> LIVE EVENT STARTS IN ...</div>
+    <div class="countdown-container">
+      <div class="countdown-box"><div class="number" id="cd-days">00</div><div class="unit">Days</div></div>
+      <div class="countdown-box"><div class="number" id="cd-hours">00</div><div class="unit">Hours</div></div>
+      <div class="countdown-box"><div class="number" id="cd-mins">00</div><div class="unit">Minutes</div></div>
+      <div class="countdown-box"><div class="number" id="cd-secs">00</div><div class="unit">Seconds</div></div>
+    </div>
   </div>
 </div>
 
