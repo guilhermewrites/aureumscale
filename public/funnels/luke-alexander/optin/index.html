@@ -30,7 +30,10 @@ body {
   min-height: 100vh;
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
-  cursor: none;
+}
+/* Hide default cursor only on real pointer devices */
+@media (hover: hover) and (pointer: fine) {
+  body { cursor: none; }
 }
 
 /* ══════════════════════════════════════
@@ -110,8 +113,9 @@ body {
   width: auto;
 }
 
-/* Custom cursor */
+/* Custom cursor — desktop only */
 #customCursor {
+  display: none; /* hidden by default; enabled below for pointer devices */
   position: fixed;
   pointer-events: none;
   z-index: 10000;
@@ -122,7 +126,10 @@ body {
   transition: opacity 0.2s;
   filter: drop-shadow(0 0 6px rgba(255,136,79,0.7));
 }
-#customCursor.visible { opacity: 1; }
+@media (hover: hover) and (pointer: fine) {
+  #customCursor { display: block; }
+  #customCursor.visible { opacity: 1; }
+}
 
 /* Headline */
 .headline {
