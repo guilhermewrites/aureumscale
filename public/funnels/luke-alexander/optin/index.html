@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Live Webinar Opt-In — AI Freelancers</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
@@ -791,6 +792,49 @@ footer {
 <canvas id="smokeCanvas"></canvas>
 
 <script>
+// ── Supabase lead capture ─────────────────────────────────────
+const _sb = supabase.createClient(
+  'https://fhsppkdkxrlhtjickgxt.supabase.co',
+  'sb_publishable_wQ8R7D7t4Pbxc4qylkutuw_KUIrhuyC'
+);
+
+function getUTMParams() {
+  const p = new URLSearchParams(window.location.search);
+  return {
+    utm_source:   p.get('utm_source')   || null,
+    utm_medium:   p.get('utm_medium')   || null,
+    utm_campaign: p.get('utm_campaign') || null,
+    utm_content:  p.get('utm_content')  || null,
+    utm_term:     p.get('utm_term')     || null,
+    fbclid:       p.get('fbclid')       || null,
+  };
+}
+
+async function handleSubmit(e) {
+  e.preventDefault();
+  const form = e.target;
+  const btn  = form.querySelector('.cta-btn');
+  btn.disabled = true;
+
+  const lead = {
+    instagram:  form.instagram.value.trim() || null,
+    full_name:  form.name.value.trim()      || null,
+    email:      form.email.value.trim()     || null,
+    phone:      form.phone.value.trim()     || null,
+    referrer:   document.referrer           || null,
+    page_url:   window.location.href,
+    user_agent: navigator.userAgent,
+    ...getUTMParams(),
+  };
+
+  try {
+    await _sb.from('luke_alexander_leads').insert(lead);
+  } catch (_) { /* non-blocking — still send to Telegram */ }
+
+  window.open('https://t.me/+dcCFigyyz48zODBh', '_blank');
+  btn.disabled = false;
+}
+
 // Countdown to Sunday May 11 2026 7PM EDT (UTC-4 = 23:00 UTC)
 (function() {
   var target = new Date('2026-04-12T23:00:00Z'); // Sunday Apr 12, 7PM EDT
@@ -818,12 +862,6 @@ footer {
   setInterval(tick, 1000);
 })();
 
-// Form submission → redirect to Telegram
-function handleSubmit(e) {
-  e.preventDefault();
-  // TODO: Replace with your actual Telegram group link
-  window.open('https://t.me/+dcCFigyyz48zODBh', '_blank');
-}
 </script>
 
 <!-- ── CUSTOM SVG CURSOR ── -->
