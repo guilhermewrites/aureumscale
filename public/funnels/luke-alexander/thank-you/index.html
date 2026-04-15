@@ -503,7 +503,7 @@ footer {
 
     <h1 class="headline">
       You're in.<br>
-      See you at the <span class="accent">live webinar.</span>
+      See you at the <span class="accent">live workshop.</span>
     </h1>
 
     <p class="subtext">
@@ -583,7 +583,7 @@ footer {
         </div>
         <div class="detail-text">
           <span class="detail-label">Event</span>
-          <span class="detail-value">AI Freelancers — Live Webinar with Luke Alexander</span>
+          <span class="detail-value">AI Freelancers — Live Workshop with Luke Alexander</span>
         </div>
       </div>
       <div class="divider"></div>
@@ -640,7 +640,7 @@ function downloadICS() {
     'BEGIN:VEVENT',
     'DTSTART:20260419T230000Z',
     'DTEND:20260420T003000Z',
-    'SUMMARY:AI Freelancers — Live Webinar with Luke Alexander',
+    'SUMMARY:AI Freelancers — Live Workshop with Luke Alexander',
     'DESCRIPTION:Join Luke Alexander for a free live training where he reveals how to build a six-figure income as an AI freelancer. No fluff\\, just a proven system you can start applying the same day.',
     'LOCATION:https://event.webinarjam.com/0oqr3/go/live/7p2kxb6hqsmsw',
     'URL:https://event.webinarjam.com/0oqr3/go/live/7p2kxb6hqsmsw',
@@ -650,7 +650,7 @@ function downloadICS() {
   var blob = new Blob([ics], { type: 'text/calendar;charset=utf-8' });
   var link = document.createElement('a');
   link.href = URL.createObjectURL(blob);
-  link.download = 'ai-freelancers-webinar.ics';
+  link.download = 'ai-freelancers-workshop.ics';
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
