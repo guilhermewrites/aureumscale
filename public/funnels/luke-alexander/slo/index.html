@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Special One-Time Offer — AI Freelancers</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --brand-orange-from: rgb(255, 136, 79);
+  --brand-orange-to: rgb(244, 101, 33);
+  --brand-orange-gradient: radial-gradient(79.29% 68.16% at 51.5% 50%, var(--brand-orange-from) 0%, var(--brand-orange-to) 100%);
+  --brand-cream: rgb(255, 233, 223);
+  --brand-cream-60: rgba(255, 233, 223, 0.6);
+  --brand-cream-65: rgba(255, 233, 223, 0.65);
+  --brand-cream-35: rgba(255, 233, 223, 0.35);
+  --font: 'Inter', -apple-system, sans-serif;
+  --mono: 'Courier New', monospace;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--font);
+  background: #000;
+  color: var(--brand-cream);
+  min-height: 100vh;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ══════════════════════════════════════
+   TOP BAR
+   ══════════════════════════════════════ */
+.top-bar {
+  width: 100%;
+  height: 40px;
+  background-image: url('../optin/bg-barra-writes-2502.webp');
+  background-size: cover;
+  background-position: 50% 0%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.top-bar-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 17px;
+  max-width: 860px;
+  width: 100%;
+  padding: 0 20px;
+}
+.top-bar-logo {
+  height: 14px;
+  width: auto;
+}
+
+/* Progress bar */
+.progress-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  justify-content: flex-end;
+}
+.progress-bar-track {
+  flex: 1;
+  max-width: 340px;
+  height: 16px;
+  background: rgba(0,0,0,0.18);
+  border-radius: 3px;
+  overflow: hidden;
+  border: 1px solid rgba(0,0,0,0.12);
+}
+.progress-bar-fill {
+  height: 100%;
+  width: 100%;
+  background: repeating-linear-gradient(
+    90deg,
+    #1a1a1a 0px,
+    #1a1a1a 6px,
+    #2e2e2e 6px,
+    #2e2e2e 9px
+  );
+  border-radius: 3px;
+}
+.progress-label {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 800;
+  color: #111;
+  white-space: nowrap;
+  letter-spacing: 0.04em;
+}
+
+/* ══════════════════════════════════════
+   SUN GLOW HERO
+   ══════════════════════════════════════ */
+.sun-section {
+  position: relative;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 60px;
+  padding-bottom: 80px;
+  background: #000;
+  overflow: hidden;
+}
+
+/* The glowing sun arc */
+.sun-arc {
+  position: absolute;
+  top: -320px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 900px;
+  height: 700px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at 50% 55%,
+    #ff7a1a 0%,
+    #e85a00 28%,
+    #a33200 52%,
+    #5a1500 68%,
+    transparent 82%
+  );
+  filter: blur(2px);
+  z-index: 0;
+}
+
+/* Outer soft glow */
+.sun-arc::before {
+  content: '';
+  position: absolute;
+  inset: -60px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at 50% 55%,
+    rgba(255, 100, 10, 0.35) 0%,
+    rgba(200, 60, 0, 0.15) 45%,
+    transparent 70%
+  );
+  filter: blur(20px);
+}
+
+/* Dark overlay that creates the "cut-off" arc look */
+.sun-mask {
+  position: absolute;
+  bottom: -1px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 1000px;
+  height: 380px;
+  background: #000;
+  border-radius: 50% 50% 0 0 / 100% 100% 0 0;
+  z-index: 1;
+}
+
+.sun-content {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: 720px;
+  width: 100%;
+  padding: 0 24px;
+  gap: 24px;
+  text-align: center;
+}
+
+/* ══════════════════════════════════════
+   HEADLINE
+   ══════════════════════════════════════ */
+.headline {
+  font-size: clamp(32px, 5vw, 52px);
+  font-weight: 400;
+  line-height: 1.2;
+  color: var(--brand-cream);
+}
+.headline .expire {
+  background-image: var(--brand-orange-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-style: italic;
+  font-weight: 700;
+}
+
+/* ══════════════════════════════════════
+   SUBTEXT
+   ══════════════════════════════════════ */
+.subtext {
+  font-size: 15px;
+  color: var(--brand-cream-65);
+  line-height: 1.65;
+  max-width: 560px;
+}
+.subtext strong {
+  color: var(--brand-cream);
+  font-weight: 600;
+}
+
+/* ══════════════════════════════════════
+   WATCH LABEL
+   ══════════════════════════════════════ */
+.watch-label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--brand-orange-from);
+}
+.watch-label svg {
+  flex-shrink: 0;
+}
+
+/* ══════════════════════════════════════
+   VSL PLAYER
+   ══════════════════════════════════════ */
+.vsl-wrap {
+  width: 100%;
+  max-width: 720px;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 120, 40, 0.18);
+  box-shadow: 0 0 60px rgba(255, 100, 20, 0.12);
+  background: #111;
+}
+
+/* ══════════════════════════════════════
+   CTA BUTTONS
+   ══════════════════════════════════════ */
+.cta-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  max-width: 420px;
+}
+
+.btn-upgrade {
+  width: 100%;
+  padding: 18px 32px;
+  border-radius: 100px;
+  background: #fff;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  box-shadow: 0 0 40px rgba(255,255,255,0.12), 0 4px 24px rgba(0,0,0,0.4);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.btn-upgrade:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0 60px rgba(255,255,255,0.18), 0 8px 32px rgba(0,0,0,0.5);
+}
+.btn-upgrade:active {
+  transform: translateY(0);
+}
+.btn-upgrade-top {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-family: var(--font);
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #111;
+}
+.btn-upgrade-top .vip {
+  background-image: linear-gradient(135deg, #b8860b, #f5c518, #b8860b);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.btn-upgrade-sub {
+  font-size: 11px;
+  color: #888;
+  font-weight: 500;
+  letter-spacing: 0.03em;
+}
+
+.btn-decline {
+  width: 100%;
+  padding: 14px 24px;
+  border-radius: 100px;
+  background: transparent;
+  border: 1px solid rgba(255, 233, 223, 0.18);
+  cursor: pointer;
+  font-family: var(--font);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 233, 223, 0.45);
+  transition: color 0.15s, border-color 0.15s;
+}
+.btn-decline:hover {
+  color: rgba(255, 233, 223, 0.7);
+  border-color: rgba(255, 233, 223, 0.3);
+}
+
+/* Gear icon */
+.icon-gear {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="top-bar">
+  <div class="top-bar-inner">
+    <img src="../optin/logo-ai-free.svg" alt="AI Freelancers" class="top-bar-logo">
+    <div class="progress-wrap">
+      <div class="progress-bar-track">
+        <div class="progress-bar-fill"></div>
+      </div>
+      <span class="progress-label">100%</span>
+    </div>
+  </div>
+</div>
+
+<!-- SUN GLOW SECTION -->
+<div class="sun-section">
+  <div class="sun-arc"></div>
+  <div class="sun-mask"></div>
+
+  <div class="sun-content">
+    <h1 class="headline">
+      Wait... This one-time-offer will <span class="expire">expire</span><br>
+      as soon as you leave this page
+    </h1>
+
+    <p class="subtext">
+      <strong>Do you want to speed-up your learning curve by over 200%?</strong> By upgrading your
+      regular ticket to VIP, you're going to get 4 products valued at $99 each and a free strategy
+      call with my team, valued at $999. All of this, for a symbolic price of $27,99
+    </p>
+
+    <div class="watch-label">
+      <!-- info circle icon -->
+      <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
+        <circle cx="7.5" cy="7.5" r="6.75" stroke="#ff7a1a" stroke-width="1.5"/>
+        <rect x="6.75" y="6.5" width="1.5" height="5" rx="0.75" fill="#ff7a1a"/>
+        <circle cx="7.5" cy="4.5" r="0.9" fill="#ff7a1a"/>
+      </svg>
+      Watch this video carefully...
+    </div>
+
+    <!-- VSL -->
+    <div class="vsl-wrap">
+      <vturb-smartplayer id="vid-69b1c50ed04b0a3cfd7b34d5" style="display:block;margin:0 auto;width:100%;"></vturb-smartplayer>
+      <script type="text/javascript">
+        var s = document.createElement("script");
+        s.src = "https://scripts.converteai.net/acfdac5c-7507-41cc-b676-9c14a9a87f1b/players/69b1c50ed04b0a3cfd7b34d5/v4/player.js";
+        s.async = true;
+        document.head.appendChild(s);
+      </script>
+    </div>
+
+    <!-- CTAs -->
+    <div class="cta-stack">
+      <button class="btn-upgrade" onclick="handleUpgrade()">
+        <div class="btn-upgrade-top">
+          <!-- gear icon -->
+          <svg class="icon-gear" viewBox="0 0 24 24" fill="none">
+            <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" stroke="#555" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z" stroke="#555" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Upgrade me to <span class="vip">VIP</span>
+        </div>
+        <div class="btn-upgrade-sub">VIP tickets are limited and might run out at any moment.</div>
+      </button>
+
+      <button class="btn-decline" onclick="handleDecline()">
+        No thank you, I rather miss this one-time-only offer.
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+  function handleUpgrade() {
+    // TODO: wire to payment / next step
+  }
+  function handleDecline() {
+    // TODO: wire to thank-you or next step
+  }
+</script>
+
+</body>
+</html>

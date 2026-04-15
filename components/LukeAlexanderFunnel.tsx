@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 
 const pages = [
   { id: 'optin', label: 'Capture Page', src: '/funnels/luke-alexander/optin/index.html' },
+  { id: 'slo', label: 'SLO Page', src: '/funnels/luke-alexander/slo/index.html' },
 ];
 
 const LukeAlexanderFunnel: React.FC = () => {
@@ -25,7 +26,7 @@ const LukeAlexanderFunnel: React.FC = () => {
         </a>
       </div>
 
-      {/* Page tabs — only shown when there are multiple pages */}
+      {/* Page tabs */}
       {pages.length > 1 && (
         <div className="flex gap-1 mb-3 flex-shrink-0 bg-[#1a1a1a] rounded-lg p-1">
           {pages.map(page => (
