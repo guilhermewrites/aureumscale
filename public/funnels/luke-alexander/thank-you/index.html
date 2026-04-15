@@ -466,8 +466,8 @@ footer {
 
 /* RESPONSIVE */
 @media (max-width: 768px) {
-  .hero { padding-top: 200px; min-height: auto; }
-  .hero-inner { gap: 20px; }
+  .hero { padding-top: 80px; min-height: auto; }
+  .hero-inner { gap: 16px; }
   .headline { font-size: 22px; }
   .subtext { font-size: 13px; line-height: 1.6; }
   .top-bar-text { font-size: 0.6rem; letter-spacing: 0.04rem; }
@@ -475,6 +475,7 @@ footer {
   .details-card { padding: 20px; }
 }
 @media (max-width: 480px) {
+  .hero { padding-top: 60px; }
   .headline { font-size: 19px; }
   .subtext { font-size: 12px; }
   .testimonial-card { width: 280px; }
@@ -498,18 +499,6 @@ footer {
 <section class="hero">
   <div class="hero-inner">
 
-    <div class="check-wrap">
-      <svg viewBox="0 0 32 32" fill="none">
-        <path d="M6 16.5L12.5 23L26 10" stroke="url(#check-grad)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-        <defs>
-          <linearGradient id="check-grad" x1="6" y1="10" x2="26" y2="23" gradientUnits="userSpaceOnUse">
-            <stop stop-color="#FF884F"/>
-            <stop offset="1" stop-color="#F46521"/>
-          </linearGradient>
-        </defs>
-      </svg>
-    </div>
-
     <p class="eyebrow">Registration confirmed</p>
 
     <h1 class="headline">
@@ -518,8 +507,7 @@ footer {
     </h1>
 
     <p class="subtext">
-      Your spot is reserved. <strong>Check your inbox</strong> for a confirmation email with your
-      access link — make sure to add it to your calendar so you don't miss it.
+      Your spot is reserved. <strong>Check your inbox</strong> for the access link — don't miss it.
     </p>
 
     <div class="details-card">
