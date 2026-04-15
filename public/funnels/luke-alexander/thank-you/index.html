@@ -30,8 +30,6 @@ body {
   min-height: 100vh;
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
-  display: flex;
-  flex-direction: column;
 }
 
 /* ══════════════════════════════════════
@@ -46,61 +44,51 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  flex-shrink: 0;
 }
 .top-bar-inner {
   display: flex;
   align-items: center;
   justify-content: center;
-  max-width: 860px;
+  gap: 17px;
+  max-width: 1280px;
   width: 100%;
-  padding: 0 20px;
+  padding: 0 16px;
 }
-.top-bar-logo {
-  height: 14px;
-  width: auto;
+.top-bar-text {
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 800;
+  color: #000;
+  text-transform: uppercase;
+  letter-spacing: 0.075rem;
+  white-space: nowrap;
+  -webkit-font-smoothing: auto;
 }
 
 /* ══════════════════════════════════════
-   MAIN SECTION
+   HERO
    ══════════════════════════════════════ */
-.main {
-  flex: 1;
+.hero {
+  width: 100%;
+  min-height: 1000px;
+  background-image: url('../optin/bg-1-writes-2502-v2.webp');
+  background-size: cover;
+  background-position: 50% 0%;
+  background-color: #000;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  padding: 80px 24px 100px;
-  position: relative;
-  overflow: hidden;
+  padding-top: 480px;
+  padding-bottom: 80px;
 }
-
-/* Subtle ambient glow */
-.main::before {
-  content: '';
-  position: absolute;
-  top: -200px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 700px;
-  height: 500px;
-  border-radius: 50%;
-  background: radial-gradient(ellipse at 50% 50%,
-    rgba(255, 100, 20, 0.12) 0%,
-    transparent 65%
-  );
-  pointer-events: none;
-}
-
-.content {
-  position: relative;
-  z-index: 1;
+.hero-inner {
+  max-width: 640px;
+  width: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 32px;
-  max-width: 640px;
-  width: 100%;
+  padding: 0 24px;
   text-align: center;
 }
 
@@ -118,10 +106,7 @@ body {
   justify-content: center;
   flex-shrink: 0;
 }
-.check-wrap svg {
-  width: 32px;
-  height: 32px;
-}
+.check-wrap svg { width: 32px; height: 32px; }
 
 /* ══════════════════════════════════════
    TYPOGRAPHY
@@ -135,7 +120,6 @@ body {
   color: var(--brand-orange-from);
   margin-bottom: -16px;
 }
-
 .headline {
   font-size: clamp(32px, 5vw, 52px);
   font-weight: 700;
@@ -148,17 +132,13 @@ body {
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
-
 .subtext {
   font-size: 16px;
   color: var(--brand-cream-65);
   line-height: 1.7;
   max-width: 520px;
 }
-.subtext strong {
-  color: var(--brand-cream);
-  font-weight: 600;
-}
+.subtext strong { color: var(--brand-cream); font-weight: 600; }
 
 /* ══════════════════════════════════════
    DETAILS CARD
@@ -173,7 +153,6 @@ body {
   flex-direction: column;
   gap: 18px;
 }
-
 .detail-row {
   display: flex;
   align-items: flex-start;
@@ -191,15 +170,8 @@ body {
   justify-content: center;
   flex-shrink: 0;
 }
-.detail-icon svg {
-  width: 16px;
-  height: 16px;
-}
-.detail-text {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
+.detail-icon svg { width: 16px; height: 16px; }
+.detail-text { display: flex; flex-direction: column; gap: 2px; }
 .detail-label {
   font-size: 11px;
   font-family: var(--mono);
@@ -214,49 +186,171 @@ body {
   font-weight: 500;
   line-height: 1.4;
 }
-
 .divider {
   width: 100%;
   height: 1px;
   background: rgba(255, 233, 223, 0.07);
 }
-
-/* ══════════════════════════════════════
-   ADD TO CALENDAR BUTTON
-   ══════════════════════════════════════ */
-.btn-calendar {
-  display: inline-flex;
-  align-items: center;
-  gap: 9px;
-  padding: 14px 28px;
-  border-radius: 100px;
-  background-image: var(--brand-orange-gradient);
-  border: none;
-  cursor: pointer;
-  font-family: var(--font);
-  font-size: 14px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  color: #fff;
-  text-decoration: none;
-  box-shadow: 0 4px 24px rgba(244, 101, 33, 0.35);
-  transition: transform 0.15s, box-shadow 0.15s;
-}
-.btn-calendar:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 32px rgba(244, 101, 33, 0.45);
-}
-.btn-calendar:active {
-  transform: translateY(0);
-}
-
-/* ══════════════════════════════════════
-   FOOTER NOTE
-   ══════════════════════════════════════ */
 .footer-note {
   font-size: 12px;
   color: var(--brand-cream-35);
   line-height: 1.6;
+}
+
+/* ══════════════════════════════════════
+   TICKER / MARQUEE
+   ══════════════════════════════════════ */
+.ticker-wrap {
+  width: 100%;
+  overflow: hidden;
+  padding: 20px 0;
+  background: #000;
+}
+.ticker-track {
+  display: flex;
+  align-items: center;
+  white-space: nowrap;
+  animation: marquee 22.5s linear infinite;
+  will-change: transform;
+}
+.ticker-track:hover { animation-play-state: paused; }
+@keyframes marquee {
+  from { transform: translateX(-50%); }
+  to   { transform: translateX(0); }
+}
+.ticker-item {
+  font-size: 14px;
+  color: rgba(255,233,223,0.5);
+  font-family: var(--font);
+}
+.ticker-dot {
+  padding: 0 40px;
+  color: rgba(255,120,50,0.8);
+  font-size: 10px;
+  line-height: 1;
+}
+
+/* ══════════════════════════════════════
+   TESTIMONIALS
+   ══════════════════════════════════════ */
+.testimonials {
+  background: #000;
+  width: 100%;
+  padding-top: 40px;
+  padding-bottom: 60px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.testimonials-logo {
+  display: block;
+  margin: 0 auto 40px;
+  height: 19px;
+  width: auto;
+}
+.testimonials-carousel-wrap {
+  width: 100%;
+  overflow: hidden;
+  position: relative;
+}
+.testimonials-carousel-wrap::before,
+.testimonials-carousel-wrap::after {
+  content: '';
+  position: absolute;
+  top: 0; bottom: 0;
+  width: 80px;
+  z-index: 2;
+  pointer-events: none;
+}
+.testimonials-carousel-wrap::before {
+  left: 0;
+  background: linear-gradient(to right, #000 0%, transparent 100%);
+}
+.testimonials-carousel-wrap::after {
+  right: 0;
+  background: linear-gradient(to left, #000 0%, transparent 100%);
+}
+.testimonials-track {
+  display: flex;
+  gap: 20px;
+  width: max-content;
+  animation: testimonialScroll 30s linear infinite;
+  will-change: transform;
+}
+.testimonials-track:hover { animation-play-state: paused; }
+@keyframes testimonialScroll {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+.testimonial-card {
+  background: rgba(255,255,255,0.02);
+  padding: 24px 28px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.05);
+  width: 360px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+}
+.quote-icon { color: rgba(255,233,223,0.3); flex-shrink: 0; }
+.testimonial-text {
+  font-size: 14px;
+  color: rgba(255,233,223,0.7);
+  line-height: 1.7;
+  margin-top: 12px;
+  margin-bottom: 0;
+  flex: 1;
+}
+.testimonial-author {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 20px;
+}
+.testimonial-avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; }
+.testimonial-name { font-size: 14px; font-weight: 600; color: var(--brand-cream); }
+
+/* ══════════════════════════════════════
+   FOOTER
+   ══════════════════════════════════════ */
+footer {
+  background: rgba(33,33,33,0.15);
+  padding: 48px 16px;
+  width: 100%;
+}
+.footer-inner {
+  max-width: 1280px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+}
+.footer-links { font-size: 12px; color: var(--brand-cream-35); }
+.footer-links a { color: #fff; text-decoration: none; transition: opacity 0.2s; }
+.footer-links a:hover { text-decoration: underline; }
+.footer-meta {
+  font-size: 11px;
+  color: rgba(255,233,223,0.25);
+  text-align: center;
+  line-height: 1.7;
+  max-width: 680px;
+}
+
+/* RESPONSIVE */
+@media (max-width: 768px) {
+  .hero { padding-top: 200px; min-height: auto; }
+  .hero-inner { gap: 20px; }
+  .headline { font-size: 24px; }
+  .top-bar-text { font-size: 0.6rem; letter-spacing: 0.04rem; }
+  .testimonial-card { width: 300px; }
+  .details-card { padding: 20px; }
+}
+@media (max-width: 480px) {
+  .headline { font-size: 21px; }
+  .testimonial-card { width: 280px; }
+  .top-bar { height: 44px; }
+  .top-bar-text { font-size: 0.55rem; }
 }
 </style>
 </head>
@@ -265,15 +359,16 @@ body {
 <!-- TOP BAR -->
 <div class="top-bar">
   <div class="top-bar-inner">
-    <img src="../optin/logo-ai-free.svg" alt="AI Freelancers" class="top-bar-logo">
+    <span class="top-bar-text">Live Event</span>
+    <span class="top-bar-text">&#9642;</span>
+    <span class="top-bar-text">Sunday, 04/19 at 7 PM EST</span>
   </div>
 </div>
 
-<!-- MAIN -->
-<div class="main">
-  <div class="content">
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-inner">
 
-    <!-- Check icon -->
     <div class="check-wrap">
       <svg viewBox="0 0 32 32" fill="none">
         <path d="M6 16.5L12.5 23L26 10" stroke="url(#check-grad)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
@@ -298,7 +393,6 @@ body {
       access link — make sure to add it to your calendar so you don't miss it.
     </p>
 
-    <!-- Details card -->
     <div class="details-card">
       <div class="detail-row">
         <div class="detail-icon">
@@ -313,9 +407,7 @@ body {
           <span class="detail-value">AI Freelancers — Live Webinar with Luke Alexander</span>
         </div>
       </div>
-
       <div class="divider"></div>
-
       <div class="detail-row">
         <div class="detail-icon">
           <svg viewBox="0 0 16 16" fill="none">
@@ -324,13 +416,11 @@ body {
           </svg>
         </div>
         <div class="detail-text">
-          <span class="detail-label">Access</span>
-          <span class="detail-value">Your personal link will be sent to your email inbox</span>
+          <span class="detail-label">Date &amp; Time</span>
+          <span class="detail-value">Sunday, April 19 at 7 PM EST</span>
         </div>
       </div>
-
       <div class="divider"></div>
-
       <div class="detail-row">
         <div class="detail-icon">
           <svg viewBox="0 0 16 16" fill="none">
@@ -340,19 +430,161 @@ body {
           </svg>
         </div>
         <div class="detail-text">
-          <span class="detail-label">What you'll learn</span>
-          <span class="detail-value">How to land high-paying clients as an AI freelancer — from zero to your first $10k month</span>
+          <span class="detail-label">Access</span>
+          <span class="detail-value">Your personal link will be sent to your email inbox</span>
         </div>
       </div>
     </div>
 
-    <!-- Footer note -->
     <p class="footer-note">
-      Didn't receive the email? Check your spam folder or contact us at support@aifreelancers.com
+      Didn't receive the email? Check your spam folder or contact support.
     </p>
 
   </div>
+</section>
+
+<!-- TICKER -->
+<div class="ticker-wrap">
+  <div class="ticker-track">
+    <span class="ticker-item">Without creating content</span><span class="ticker-dot">&#9642;</span>
+    <span class="ticker-item">Without quitting your 9-5</span><span class="ticker-dot">&#9642;</span>
+    <span class="ticker-item">Without hiring employees</span><span class="ticker-dot">&#9642;</span>
+    <span class="ticker-item">Without spending on ads</span><span class="ticker-dot">&#9642;</span>
+    <span class="ticker-item">Without creating content</span><span class="ticker-dot">&#9642;</span>
+    <span class="ticker-item">Without quitting your 9-5</span><span class="ticker-dot">&#9642;</span>
+    <span class="ticker-item">Without hiring employees</span><span class="ticker-dot">&#9642;</span>
+    <span class="ticker-item">Without spending on ads</span><span class="ticker-dot">&#9642;</span>
+    <span class="ticker-item">Without creating content</span><span class="ticker-dot">&#9642;</span>
+    <span class="ticker-item">Without quitting your 9-5</span><span class="ticker-dot">&#9642;</span>
+    <span class="ticker-item">Without hiring employees</span><span class="ticker-dot">&#9642;</span>
+    <span class="ticker-item">Without spending on ads</span><span class="ticker-dot">&#9642;</span>
+    <span class="ticker-item">Without creating content</span><span class="ticker-dot">&#9642;</span>
+    <span class="ticker-item">Without quitting your 9-5</span><span class="ticker-dot">&#9642;</span>
+    <span class="ticker-item">Without hiring employees</span><span class="ticker-dot">&#9642;</span>
+    <span class="ticker-item">Without spending on ads</span><span class="ticker-dot">&#9642;</span>
+    <!-- duplicate -->
+    <span class="ticker-item">Without creating content</span><span class="ticker-dot">&#9642;</span>
+    <span class="ticker-item">Without quitting your 9-5</span><span class="ticker-dot">&#9642;</span>
+    <span class="ticker-item">Without hiring employees</span><span class="ticker-dot">&#9642;</span>
+    <span class="ticker-item">Without spending on ads</span><span class="ticker-dot">&#9642;</span>
+    <span class="ticker-item">Without creating content</span><span class="ticker-dot">&#9642;</span>
+    <span class="ticker-item">Without quitting your 9-5</span><span class="ticker-dot">&#9642;</span>
+    <span class="ticker-item">Without hiring employees</span><span class="ticker-dot">&#9642;</span>
+    <span class="ticker-item">Without spending on ads</span><span class="ticker-dot">&#9642;</span>
+    <span class="ticker-item">Without creating content</span><span class="ticker-dot">&#9642;</span>
+    <span class="ticker-item">Without quitting your 9-5</span><span class="ticker-dot">&#9642;</span>
+    <span class="ticker-item">Without hiring employees</span><span class="ticker-dot">&#9642;</span>
+    <span class="ticker-item">Without spending on ads</span><span class="ticker-dot">&#9642;</span>
+    <span class="ticker-item">Without creating content</span><span class="ticker-dot">&#9642;</span>
+    <span class="ticker-item">Without quitting your 9-5</span><span class="ticker-dot">&#9642;</span>
+    <span class="ticker-item">Without hiring employees</span><span class="ticker-dot">&#9642;</span>
+    <span class="ticker-item">Without spending on ads</span><span class="ticker-dot">&#9642;</span>
+  </div>
 </div>
+
+<!-- TESTIMONIALS -->
+<section class="testimonials">
+  <img src="../optin/logo-writes-2502.svg" alt="AI Freelancers" class="testimonials-logo" />
+  <div class="testimonials-carousel-wrap">
+    <div class="testimonials-track">
+      <div class="testimonial-card">
+        <svg class="quote-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="18" viewBox="0 0 20 18" fill="none"><path d="M1.30053 15.358L6.70453 4.214H7.90853L2.50453 15.358H1.30053ZM12.086 15.358L17.49 4.214H18.694L13.29 15.358H12.086Z" fill="currentColor"/></svg>
+        <p class="testimonial-text">This group gave me the blueprint, knowledge, and systems needed to build my network and taught me how to convert! not only in the info space but also in actual business. Now, I know exactly how to turn traffic into paying customers and maximize every opportunity. It's led to massive wins for my clients and a game-changing income for me.</p>
+        <div class="testimonial-author">
+          <img src="../optin/testimonial-d1.webp" alt="Tristan Bannister" class="testimonial-avatar" />
+          <span class="testimonial-name">Tristan Bannister</span>
+        </div>
+      </div>
+      <div class="testimonial-card">
+        <svg class="quote-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="18" viewBox="0 0 20 18" fill="none"><path d="M1.30053 15.358L6.70453 4.214H7.90853L2.50453 15.358H1.30053ZM12.086 15.358L17.49 4.214H18.694L13.29 15.358H12.086Z" fill="currentColor"/></svg>
+        <p class="testimonial-text">This group taught me everything I know about building a high-performance sales process that converts traffic to the highest degree and squeezes the most money out of every lead. Since joining, I've helped generate millions for my clients and made a serious income for myself too.</p>
+        <div class="testimonial-author">
+          <img src="../optin/testimonial-mihailo.png" alt="Mihailo Stojanovic" class="testimonial-avatar" />
+          <span class="testimonial-name">Mihailo Stojanovic</span>
+        </div>
+      </div>
+      <div class="testimonial-card">
+        <svg class="quote-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="18" viewBox="0 0 20 18" fill="none"><path d="M1.30053 15.358L6.70453 4.214H7.90853L2.50453 15.358H1.30053ZM12.086 15.358L17.49 4.214H18.694L13.29 15.358H12.086Z" fill="currentColor"/></svg>
+        <p class="testimonial-text">I joined this community around 2 weeks ago and with the blueprint and framework provided I was able to increase the revenue with one of my clients by over $100,000. I had an operational background but lacked sales experience, this taught me exactly what I needed to know to increase my clients sales teams without all the fluff.</p>
+        <div class="testimonial-author">
+          <img src="../optin/testimonial-chris.png" alt="Chris Carmona" class="testimonial-avatar" />
+          <span class="testimonial-name">Chris Carmona</span>
+        </div>
+      </div>
+      <div class="testimonial-card">
+        <svg class="quote-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="18" viewBox="0 0 20 18" fill="none"><path d="M1.30053 15.358L6.70453 4.214H7.90853L2.50453 15.358H1.30053ZM12.086 15.358L17.49 4.214H18.694L13.29 15.358H12.086Z" fill="currentColor"/></svg>
+        <p class="testimonial-text">I joined this as an artist - not a salesman, not a closer. But I came with full presence, full commitment, and full belief in what's possible. This group gave me more than frameworks. It gave me direction, discipline, and a mirror. The culture, the minds, and the standards in this space are unlike anything I've ever seen. This isn't just a group. It's a system that turns vision into clarity, and clarity into cash.</p>
+        <div class="testimonial-author">
+          <img src="../optin/testimonial-kaden.png" alt="Kaden Bruce" class="testimonial-avatar" />
+          <span class="testimonial-name">Kaden Bruce</span>
+        </div>
+      </div>
+      <div class="testimonial-card">
+        <svg class="quote-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="18" viewBox="0 0 20 18" fill="none"><path d="M1.30053 15.358L6.70453 4.214H7.90853L2.50453 15.358H1.30053ZM12.086 15.358L17.49 4.214H18.694L13.29 15.358H12.086Z" fill="currentColor"/></svg>
+        <p class="testimonial-text">Being in the online business space for years now, I never felt early to anything. Started sales after it was popular, missed crypto runs, missed SMMA. With AI Insiders, I actually feel like I'm early to a massive opportunity. Plus, the connections in the group are incredible. I've gotten enough referrals from the group to more than cover the program cost.</p>
+        <div class="testimonial-author">
+          <img src="../optin/testimonial-d1.webp" alt="Anonymous Member" class="testimonial-avatar" />
+          <span class="testimonial-name">Anonymous Member</span>
+        </div>
+      </div>
+      <!-- duplicate -->
+      <div class="testimonial-card">
+        <svg class="quote-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="18" viewBox="0 0 20 18" fill="none"><path d="M1.30053 15.358L6.70453 4.214H7.90853L2.50453 15.358H1.30053ZM12.086 15.358L17.49 4.214H18.694L13.29 15.358H12.086Z" fill="currentColor"/></svg>
+        <p class="testimonial-text">This group gave me the blueprint, knowledge, and systems needed to build my network and taught me how to convert! not only in the info space but also in actual business. Now, I know exactly how to turn traffic into paying customers and maximize every opportunity. It's led to massive wins for my clients and a game-changing income for me.</p>
+        <div class="testimonial-author">
+          <img src="../optin/testimonial-d1.webp" alt="Tristan Bannister" class="testimonial-avatar" />
+          <span class="testimonial-name">Tristan Bannister</span>
+        </div>
+      </div>
+      <div class="testimonial-card">
+        <svg class="quote-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="18" viewBox="0 0 20 18" fill="none"><path d="M1.30053 15.358L6.70453 4.214H7.90853L2.50453 15.358H1.30053ZM12.086 15.358L17.49 4.214H18.694L13.29 15.358H12.086Z" fill="currentColor"/></svg>
+        <p class="testimonial-text">This group taught me everything I know about building a high-performance sales process that converts traffic to the highest degree and squeezes the most money out of every lead. Since joining, I've helped generate millions for my clients and made a serious income for myself too.</p>
+        <div class="testimonial-author">
+          <img src="../optin/testimonial-mihailo.png" alt="Mihailo Stojanovic" class="testimonial-avatar" />
+          <span class="testimonial-name">Mihailo Stojanovic</span>
+        </div>
+      </div>
+      <div class="testimonial-card">
+        <svg class="quote-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="18" viewBox="0 0 20 18" fill="none"><path d="M1.30053 15.358L6.70453 4.214H7.90853L2.50453 15.358H1.30053ZM12.086 15.358L17.49 4.214H18.694L13.29 15.358H12.086Z" fill="currentColor"/></svg>
+        <p class="testimonial-text">I joined this community around 2 weeks ago and with the blueprint and framework provided I was able to increase the revenue with one of my clients by over $100,000. I had an operational background but lacked sales experience, this taught me exactly what I needed to know to increase my clients sales teams without all the fluff.</p>
+        <div class="testimonial-author">
+          <img src="../optin/testimonial-chris.png" alt="Chris Carmona" class="testimonial-avatar" />
+          <span class="testimonial-name">Chris Carmona</span>
+        </div>
+      </div>
+      <div class="testimonial-card">
+        <svg class="quote-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="18" viewBox="0 0 20 18" fill="none"><path d="M1.30053 15.358L6.70453 4.214H7.90853L2.50453 15.358H1.30053ZM12.086 15.358L17.49 4.214H18.694L13.29 15.358H12.086Z" fill="currentColor"/></svg>
+        <p class="testimonial-text">I joined this as an artist - not a salesman, not a closer. But I came with full presence, full commitment, and full belief in what's possible. This group gave me more than frameworks. It gave me direction, discipline, and a mirror. The culture, the minds, and the standards in this space are unlike anything I've ever seen. This isn't just a group. It's a system that turns vision into clarity, and clarity into cash.</p>
+        <div class="testimonial-author">
+          <img src="../optin/testimonial-kaden.png" alt="Kaden Bruce" class="testimonial-avatar" />
+          <span class="testimonial-name">Kaden Bruce</span>
+        </div>
+      </div>
+      <div class="testimonial-card">
+        <svg class="quote-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="18" viewBox="0 0 20 18" fill="none"><path d="M1.30053 15.358L6.70453 4.214H7.90853L2.50453 15.358H1.30053ZM12.086 15.358L17.49 4.214H18.694L13.29 15.358H12.086Z" fill="currentColor"/></svg>
+        <p class="testimonial-text">Being in the online business space for years now, I never felt early to anything. Started sales after it was popular, missed crypto runs, missed SMMA. With AI Insiders, I actually feel like I'm early to a massive opportunity. Plus, the connections in the group are incredible. I've gotten enough referrals from the group to more than cover the program cost.</p>
+        <div class="testimonial-author">
+          <img src="../optin/testimonial-d1.webp" alt="Anonymous Member" class="testimonial-avatar" />
+          <span class="testimonial-name">Anonymous Member</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-inner">
+    <img src="../optin/logo-writes-2502.svg" alt="AI Freelancers" style="height:19px;width:auto;" />
+    <p class="footer-links">
+      <a href="#">Privacy Policy</a> | <a href="#">Terms &amp; Conditions</a>
+    </p>
+    <p class="footer-meta">
+      This site is not a part of the Facebook&trade; website or Facebook Inc. Additionally, this site is NOT endorsed by Facebook in any way. FACEBOOK is a trademark of META PLATFORMS, INC.<br>
+      DISCLAIMER: Results shown are not typical. Individual results will vary based on effort, experience, and market conditions. This is not a guarantee of income.
+    </p>
+  </div>
+</footer>
 
 </body>
 </html>
