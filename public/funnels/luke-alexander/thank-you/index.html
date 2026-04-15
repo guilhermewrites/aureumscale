@@ -262,7 +262,7 @@ body {
 .cal-dropdown {
   display: none;
   position: absolute;
-  bottom: calc(100% + 10px);
+  top: calc(100% + 8px);
   left: 0;
   right: 0;
   background: #1a1a1a;
@@ -468,13 +468,15 @@ footer {
 @media (max-width: 768px) {
   .hero { padding-top: 200px; min-height: auto; }
   .hero-inner { gap: 20px; }
-  .headline { font-size: 24px; }
+  .headline { font-size: 22px; }
+  .subtext { font-size: 13px; line-height: 1.6; }
   .top-bar-text { font-size: 0.6rem; letter-spacing: 0.04rem; }
   .testimonial-card { width: 300px; }
   .details-card { padding: 20px; }
 }
 @media (max-width: 480px) {
-  .headline { font-size: 21px; }
+  .headline { font-size: 19px; }
+  .subtext { font-size: 12px; }
   .testimonial-card { width: 280px; }
   .top-bar { height: 44px; }
   .top-bar-text { font-size: 0.55rem; }
@@ -521,6 +523,68 @@ footer {
     </p>
 
     <div class="details-card">
+
+      <!-- Step 1: Add to Calendar -->
+      <div>
+        <span class="step-label">Step 1 — Add to your calendar</span>
+        <div class="cal-wrap">
+          <button class="cal-btn" onclick="toggleCalDropdown(event)">
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+              <rect x="1.5" y="3" width="15" height="13.5" rx="2" stroke="white" stroke-width="1.5"/>
+              <path d="M1.5 7h15" stroke="white" stroke-width="1.5"/>
+              <path d="M6 1.5V4.5M12 1.5V4.5" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+              <path d="M5 10.5h3M10 10.5h3M5 13h2" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+            Add to Calendar
+          </button>
+          <div class="cal-dropdown" id="calDropdown">
+            <a class="cal-option" href="https://calendar.google.com/calendar/render?action=TEMPLATE&text=AI+Freelancers+%E2%80%94+Live+Webinar+with+Luke+Alexander&dates=20260419T230000Z/20260420T003000Z&details=Join+Luke+Alexander+for+a+free+live+training+where+he+reveals+how+to+build+a+six-figure+income+as+an+AI+freelancer.+No+fluff%2C+just+a+proven+system+you+can+start+applying+the+same+day.&location=https://event.webinarjam.com/0oqr3/go/live/7p2kxb6hqsmsw" target="_blank">
+              <svg width="16" height="16" viewBox="0 0 48 48" fill="none">
+                <path d="M34.7 7H13.3C9.8 7 7 9.8 7 13.3v21.4C7 38.2 9.8 41 13.3 41h21.4c3.5 0 6.3-2.8 6.3-6.3V13.3C41 9.8 38.2 7 34.7 7z" fill="#fff"/>
+                <path d="M34.7 7H33v34h1.7c3.5 0 6.3-2.8 6.3-6.3V13.3C41 9.8 38.2 7 34.7 7z" fill="#1a73e8"/>
+                <path d="M7 34.7V33H41v1.7C41 38.2 38.2 41 34.7 41H13.3C9.8 41 7 38.2 7 34.7z" fill="#ea4335"/>
+                <path d="M33 7H15v26h18V7z" fill="#fff"/>
+                <path d="M24 18a4 4 0 100 8 4 4 0 000-8z" fill="#4285f4"/>
+                <path d="M7 13.3V15h26V7H13.3C9.8 7 7 9.8 7 13.3z" fill="#34a853"/>
+                <path d="M33 7h-2v8h8v-1.7C39 9.8 36.3 7 33 7z" fill="#fbbc04"/>
+              </svg>
+              Google Calendar
+            </a>
+            <button class="cal-option" onclick="downloadICS()">
+              <svg width="16" height="16" viewBox="0 0 814 1000" fill="currentColor">
+                <path d="M788.1 340.9c-5.8 4.5-108.2 62.2-108.2 190.5 0 148.4 130.3 200.9 134.2 202.2-.6 3.2-20.7 71.9-68.7 141.9-42.8 61.6-87.5 123.1-155.5 123.1s-85.5-39.5-164-39.5c-76 0-103.7 40.8-165.9 40.8s-105-57.8-155.5-127.4C46 790.7 0 663.5 0 541.8 0 347 133.5 243.7 265.2 243.7c70.1 0 128.4 46.2 172.5 46.2 42.4 0 108.5-49 192.6-49 31 0 108.2 2.9 167.7 89.2zm-234-181.5c31.1-36.9 53.1-88.1 53.1-139.3 0-7.1-.6-14.3-1.9-20.1-50.6 1.9-110.8 33.7-147.1 75.8-28.5 32.4-55.1 83.6-55.1 135.5 0 7.8 1.3 15.6 1.9 18.1 3.2.6 8.4 1.3 13.6 1.3 45.4 0 102.5-30.4 135.5-71.3z"/>
+              </svg>
+              Apple Calendar (.ics)
+            </button>
+            <a class="cal-option" href="https://outlook.live.com/calendar/0/deeplink/compose?subject=AI+Freelancers+%E2%80%94+Live+Webinar+with+Luke+Alexander&startdt=2026-04-19T23:00:00Z&enddt=2026-04-20T00:30:00Z&body=Join+Luke+Alexander+for+a+free+live+training+where+he+reveals+how+to+build+a+six-figure+income+as+an+AI+freelancer.&location=https://event.webinarjam.com/0oqr3/go/live/7p2kxb6hqsmsw&path=/calendar/action/compose&rru=addevent" target="_blank">
+              <svg width="16" height="16" viewBox="0 0 48 48" fill="none">
+                <rect width="48" height="48" rx="4" fill="#0078d4"/>
+                <path d="M8 14h20v20H8z" fill="#fff" opacity=".2"/>
+                <path d="M8 14h20v20H8z" stroke="#fff" stroke-width="2"/>
+                <path d="M28 18h12v16H28z" fill="#fff" opacity=".15"/>
+                <path d="M28 18h12v16H28z" stroke="#fff" stroke-width="2"/>
+                <path d="M14 20h8M14 24h8M14 28h5" stroke="#fff" stroke-width="1.5" stroke-linecap="round"/>
+              </svg>
+              Outlook Calendar
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 2: Join Telegram -->
+      <div>
+        <span class="step-label">Step 2 — Join our Telegram group</span>
+        <a class="tg-btn" href="https://t.me/+dcCFigyyz48zODBh" target="_blank" rel="noopener noreferrer">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M11.944 0A12 12 0 1 0 24 12 12 12 0 0 0 11.944 0zm5.992 8.178-2.02 9.52c-.152.67-.55.835-1.114.52l-3.077-2.267-1.484 1.428c-.164.163-.3.3-.615.3l.22-3.106 5.657-5.11c.245-.219-.054-.34-.382-.121L7.89 14.289l-2.997-.938c-.652-.203-.664-.652.135-.966l11.7-4.51c.543-.197 1.018.132.843.966z"/>
+          </svg>
+          Join the Telegram Group
+        </a>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- Event details -->
       <div class="detail-row">
         <div class="detail-icon">
           <svg viewBox="0 0 16 16" fill="none">
@@ -560,76 +624,6 @@ footer {
           <span class="detail-label">Access</span>
           <span class="detail-value">Your personal link will be sent to your email inbox</span>
         </div>
-      </div>
-    </div>
-
-    <!-- Event description + Next Steps -->
-    <p class="event-description">
-      This is a full live training on how to build a six-figure income as an AI freelancer. No fluff, just a proven system you can start applying the same day. Make sure you show up. See you live in the room.
-    </p>
-
-    <div class="next-steps">
-
-      <!-- Step 1: Add to Calendar -->
-      <div>
-        <span class="step-label">Step 1 — Add to your calendar</span>
-        <div class="cal-wrap">
-          <button class="cal-btn" onclick="toggleCalDropdown(event)">
-            <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-              <rect x="1.5" y="3" width="15" height="13.5" rx="2" stroke="white" stroke-width="1.5"/>
-              <path d="M1.5 7h15" stroke="white" stroke-width="1.5"/>
-              <path d="M6 1.5V4.5M12 1.5V4.5" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
-              <path d="M5 10.5h3M10 10.5h3M5 13h2" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
-            </svg>
-            Add to Calendar
-          </button>
-
-          <div class="cal-dropdown" id="calDropdown">
-            <!-- Google Calendar -->
-            <a class="cal-option" href="https://calendar.google.com/calendar/render?action=TEMPLATE&text=AI+Freelancers+%E2%80%94+Live+Webinar+with+Luke+Alexander&dates=20260419T230000Z/20260420T003000Z&details=Join+Luke+Alexander+for+a+free+live+training+where+he+reveals+how+to+build+a+six-figure+income+as+an+AI+freelancer.+No+fluff%2C+just+a+proven+system+you+can+start+applying+the+same+day.&location=https://event.webinarjam.com/0oqr3/go/live/7p2kxb6hqsmsw" target="_blank">
-              <svg width="16" height="16" viewBox="0 0 48 48" fill="none">
-                <path d="M34.7 7H13.3C9.8 7 7 9.8 7 13.3v21.4C7 38.2 9.8 41 13.3 41h21.4c3.5 0 6.3-2.8 6.3-6.3V13.3C41 9.8 38.2 7 34.7 7z" fill="#fff"/>
-                <path d="M34.7 7H33v34h1.7c3.5 0 6.3-2.8 6.3-6.3V13.3C41 9.8 38.2 7 34.7 7z" fill="#1a73e8"/>
-                <path d="M7 34.7V33H41v1.7C41 38.2 38.2 41 34.7 41H13.3C9.8 41 7 38.2 7 34.7z" fill="#ea4335"/>
-                <path d="M33 7H15v26h18V7z" fill="#fff"/>
-                <path d="M24 18a4 4 0 100 8 4 4 0 000-8z" fill="#4285f4"/>
-                <path d="M7 13.3V15h26V7H13.3C9.8 7 7 9.8 7 13.3z" fill="#34a853"/>
-                <path d="M33 7h-2v8h8v-1.7C39 9.8 36.3 7 33 7z" fill="#fbbc04"/>
-              </svg>
-              Google Calendar
-            </a>
-            <!-- Apple / ICS -->
-            <button class="cal-option" onclick="downloadICS()">
-              <svg width="16" height="16" viewBox="0 0 814 1000" fill="currentColor">
-                <path d="M788.1 340.9c-5.8 4.5-108.2 62.2-108.2 190.5 0 148.4 130.3 200.9 134.2 202.2-.6 3.2-20.7 71.9-68.7 141.9-42.8 61.6-87.5 123.1-155.5 123.1s-85.5-39.5-164-39.5c-76 0-103.7 40.8-165.9 40.8s-105-57.8-155.5-127.4C46 790.7 0 663.5 0 541.8 0 347 133.5 243.7 265.2 243.7c70.1 0 128.4 46.2 172.5 46.2 42.4 0 108.5-49 192.6-49 31 0 108.2 2.9 167.7 89.2zm-234-181.5c31.1-36.9 53.1-88.1 53.1-139.3 0-7.1-.6-14.3-1.9-20.1-50.6 1.9-110.8 33.7-147.1 75.8-28.5 32.4-55.1 83.6-55.1 135.5 0 7.8 1.3 15.6 1.9 18.1 3.2.6 8.4 1.3 13.6 1.3 45.4 0 102.5-30.4 135.5-71.3z"/>
-              </svg>
-              Apple Calendar (.ics)
-            </button>
-            <!-- Outlook -->
-            <a class="cal-option" href="https://outlook.live.com/calendar/0/deeplink/compose?subject=AI+Freelancers+%E2%80%94+Live+Webinar+with+Luke+Alexander&startdt=2026-04-19T23:00:00Z&enddt=2026-04-20T00:30:00Z&body=Join+Luke+Alexander+for+a+free+live+training+where+he+reveals+how+to+build+a+six-figure+income+as+an+AI+freelancer.&location=https://event.webinarjam.com/0oqr3/go/live/7p2kxb6hqsmsw&path=/calendar/action/compose&rru=addevent" target="_blank">
-              <svg width="16" height="16" viewBox="0 0 48 48" fill="none">
-                <rect width="48" height="48" rx="4" fill="#0078d4"/>
-                <path d="M8 14h20v20H8z" fill="#fff" opacity=".2"/>
-                <path d="M8 14h20v20H8z" stroke="#fff" stroke-width="2"/>
-                <path d="M28 18h12v16H28z" fill="#fff" opacity=".15"/>
-                <path d="M28 18h12v16H28z" stroke="#fff" stroke-width="2"/>
-                <path d="M14 20h8M14 24h8M14 28h5" stroke="#fff" stroke-width="1.5" stroke-linecap="round"/>
-              </svg>
-              Outlook Calendar
-            </a>
-          </div>
-        </div>
-      </div>
-
-      <!-- Step 2: Join Telegram -->
-      <div>
-        <span class="step-label">Step 2 — Join our Telegram group</span>
-        <a class="tg-btn" href="https://t.me/+dcCFigyyz48zODBh" target="_blank" rel="noopener noreferrer">
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M11.944 0A12 12 0 1 0 24 12 12 12 0 0 0 11.944 0zm5.992 8.178-2.02 9.52c-.152.67-.55.835-1.114.52l-3.077-2.267-1.484 1.428c-.164.163-.3.3-.615.3l.22-3.106 5.657-5.11c.245-.219-.054-.34-.382-.121L7.89 14.289l-2.997-.938c-.652-.203-.664-.652.135-.966l11.7-4.51c.543-.197 1.018.132.843.966z"/>
-          </svg>
-          Join the Telegram Group
-        </a>
       </div>
 
     </div>
