@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Live Workshop — AI Freelancers</title>
+<title>Live Workshop | AI Freelancers</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <!-- intl-tel-input for phone country flag + validation -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/intl-tel-input@24.6.0/build/css/intlTelInput.css">
@@ -1008,7 +1008,7 @@ function validateForm(form) {
   if (!email) {
     errors.email = 'Please enter your email address';
   } else if (!EMAIL_RE.test(email)) {
-    errors.email = 'That email doesn\u2019t look right — check the format';
+    errors.email = 'That email doesn\u2019t look right, check the format';
   }
 
   const phoneRaw = phoneInputEl.value.trim();
@@ -1085,7 +1085,7 @@ async function handleSubmit(e) {
   // Swap to success state
   btn.classList.remove('loading');
   btn.classList.add('success');
-  btnContent.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span>Confirmed — opening Telegram…</span>';
+  btnContent.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span>Confirmed, opening Telegram...</span>';
 
   setTimeout(function () {
     window.open('https://t.me/+dcCFigyyz48zODBh', '_blank');
