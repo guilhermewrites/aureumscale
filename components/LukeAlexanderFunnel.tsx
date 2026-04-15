@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 const pages = [
   { id: 'optin', label: 'Capture Page', src: '/funnels/luke-alexander/optin/index.html' },
   { id: 'slo', label: 'SLO Page', src: '/funnels/luke-alexander/slo/index.html' },
+  { id: 'thank-you', label: 'Thank You', src: '/funnels/luke-alexander/thank-you/index.html' },
 ];
 
 const LukeAlexanderFunnel: React.FC = () => {

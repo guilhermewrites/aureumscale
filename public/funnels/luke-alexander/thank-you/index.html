@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>You're In — AI Freelancers</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --brand-orange-from: rgb(255, 136, 79);
+  --brand-orange-to: rgb(244, 101, 33);
+  --brand-orange-gradient: radial-gradient(79.29% 68.16% at 51.5% 50%, var(--brand-orange-from) 0%, var(--brand-orange-to) 100%);
+  --brand-cream: rgb(255, 233, 223);
+  --brand-cream-60: rgba(255, 233, 223, 0.6);
+  --brand-cream-65: rgba(255, 233, 223, 0.65);
+  --brand-cream-35: rgba(255, 233, 223, 0.35);
+  --font: 'Inter', -apple-system, sans-serif;
+  --mono: 'Courier New', monospace;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--font);
+  background: #000;
+  color: var(--brand-cream);
+  min-height: 100vh;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ══════════════════════════════════════
+   TOP BAR
+   ══════════════════════════════════════ */
+.top-bar {
+  width: 100%;
+  height: 40px;
+  background-image: url('../optin/bg-barra-writes-2502.webp');
+  background-size: cover;
+  background-position: 50% 0%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.top-bar-inner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  max-width: 860px;
+  width: 100%;
+  padding: 0 20px;
+}
+.top-bar-logo {
+  height: 14px;
+  width: auto;
+}
+
+/* ══════════════════════════════════════
+   MAIN SECTION
+   ══════════════════════════════════════ */
+.main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 24px 100px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Subtle ambient glow */
+.main::before {
+  content: '';
+  position: absolute;
+  top: -200px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 700px;
+  height: 500px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at 50% 50%,
+    rgba(255, 100, 20, 0.12) 0%,
+    transparent 65%
+  );
+  pointer-events: none;
+}
+
+.content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 32px;
+  max-width: 640px;
+  width: 100%;
+  text-align: center;
+}
+
+/* ══════════════════════════════════════
+   CHECK ICON
+   ══════════════════════════════════════ */
+.check-wrap {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: rgba(255, 120, 40, 0.1);
+  border: 1px solid rgba(255, 120, 40, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.check-wrap svg {
+  width: 32px;
+  height: 32px;
+}
+
+/* ══════════════════════════════════════
+   TYPOGRAPHY
+   ══════════════════════════════════════ */
+.eyebrow {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--brand-orange-from);
+  margin-bottom: -16px;
+}
+
+.headline {
+  font-size: clamp(32px, 5vw, 52px);
+  font-weight: 700;
+  line-height: 1.15;
+  color: var(--brand-cream);
+}
+.headline .accent {
+  background-image: var(--brand-orange-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.subtext {
+  font-size: 16px;
+  color: var(--brand-cream-65);
+  line-height: 1.7;
+  max-width: 520px;
+}
+.subtext strong {
+  color: var(--brand-cream);
+  font-weight: 600;
+}
+
+/* ══════════════════════════════════════
+   DETAILS CARD
+   ══════════════════════════════════════ */
+.details-card {
+  width: 100%;
+  border: 1px solid rgba(255, 233, 223, 0.1);
+  border-radius: 16px;
+  background: rgba(255, 233, 223, 0.03);
+  padding: 28px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.detail-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  text-align: left;
+}
+.detail-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: rgba(255, 120, 40, 0.1);
+  border: 1px solid rgba(255, 120, 40, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.detail-icon svg {
+  width: 16px;
+  height: 16px;
+}
+.detail-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.detail-label {
+  font-size: 11px;
+  font-family: var(--mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--brand-cream-35);
+  font-weight: 700;
+}
+.detail-value {
+  font-size: 15px;
+  color: var(--brand-cream);
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.divider {
+  width: 100%;
+  height: 1px;
+  background: rgba(255, 233, 223, 0.07);
+}
+
+/* ══════════════════════════════════════
+   ADD TO CALENDAR BUTTON
+   ══════════════════════════════════════ */
+.btn-calendar {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 14px 28px;
+  border-radius: 100px;
+  background-image: var(--brand-orange-gradient);
+  border: none;
+  cursor: pointer;
+  font-family: var(--font);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: #fff;
+  text-decoration: none;
+  box-shadow: 0 4px 24px rgba(244, 101, 33, 0.35);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.btn-calendar:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 32px rgba(244, 101, 33, 0.45);
+}
+.btn-calendar:active {
+  transform: translateY(0);
+}
+
+/* ══════════════════════════════════════
+   FOOTER NOTE
+   ══════════════════════════════════════ */
+.footer-note {
+  font-size: 12px;
+  color: var(--brand-cream-35);
+  line-height: 1.6;
+}
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="top-bar">
+  <div class="top-bar-inner">
+    <img src="../optin/logo-ai-free.svg" alt="AI Freelancers" class="top-bar-logo">
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="content">
+
+    <!-- Check icon -->
+    <div class="check-wrap">
+      <svg viewBox="0 0 32 32" fill="none">
+        <path d="M6 16.5L12.5 23L26 10" stroke="url(#check-grad)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+        <defs>
+          <linearGradient id="check-grad" x1="6" y1="10" x2="26" y2="23" gradientUnits="userSpaceOnUse">
+            <stop stop-color="#FF884F"/>
+            <stop offset="1" stop-color="#F46521"/>
+          </linearGradient>
+        </defs>
+      </svg>
+    </div>
+
+    <p class="eyebrow">Registration confirmed</p>
+
+    <h1 class="headline">
+      You're in.<br>
+      See you at the <span class="accent">live webinar.</span>
+    </h1>
+
+    <p class="subtext">
+      Your spot is reserved. <strong>Check your inbox</strong> for a confirmation email with your
+      access link — make sure to add it to your calendar so you don't miss it.
+    </p>
+
+    <!-- Details card -->
+    <div class="details-card">
+      <div class="detail-row">
+        <div class="detail-icon">
+          <svg viewBox="0 0 16 16" fill="none">
+            <rect x="1.5" y="2.5" width="13" height="12" rx="2" stroke="#FF884F" stroke-width="1.4"/>
+            <path d="M1.5 6h13" stroke="#FF884F" stroke-width="1.4"/>
+            <path d="M5 1.5V3.5M11 1.5V3.5" stroke="#FF884F" stroke-width="1.4" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div class="detail-text">
+          <span class="detail-label">Event</span>
+          <span class="detail-value">AI Freelancers — Live Webinar with Luke Alexander</span>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="detail-row">
+        <div class="detail-icon">
+          <svg viewBox="0 0 16 16" fill="none">
+            <circle cx="8" cy="8" r="6.25" stroke="#FF884F" stroke-width="1.4"/>
+            <path d="M8 4.5V8.5L10.5 10" stroke="#FF884F" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div class="detail-text">
+          <span class="detail-label">Access</span>
+          <span class="detail-value">Your personal link will be sent to your email inbox</span>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="detail-row">
+        <div class="detail-icon">
+          <svg viewBox="0 0 16 16" fill="none">
+            <path d="M2 4.5C2 3.4 2.9 2.5 4 2.5h8c1.1 0 2 .9 2 2v1.5H2V4.5Z" stroke="#FF884F" stroke-width="1.4"/>
+            <rect x="2" y="6" width="12" height="7.5" rx="1.5" stroke="#FF884F" stroke-width="1.4"/>
+            <path d="M5.5 9.5h5M5.5 11.5h3" stroke="#FF884F" stroke-width="1.4" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div class="detail-text">
+          <span class="detail-label">What you'll learn</span>
+          <span class="detail-value">How to land high-paying clients as an AI freelancer — from zero to your first $10k month</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer note -->
+    <p class="footer-note">
+      Didn't receive the email? Check your spam folder or contact us at support@aifreelancers.com
+    </p>
+
+  </div>
+</div>
+
+</body>
+</html>
