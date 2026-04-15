@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 
 const pages = [
-  { id: 'evergreen', label: 'Evergreen Page', src: '/funnels/luke-alexander/index.html' },
-  { id: 'optin', label: 'Live Webinar Opt In', src: '/funnels/luke-alexander/optin/index.html' },
+  { id: 'optin', label: 'Capture Page', src: '/funnels/luke-alexander/optin/index.html' },
 ];
 
 const LukeAlexanderFunnel: React.FC = () => {
@@ -26,22 +25,24 @@ const LukeAlexanderFunnel: React.FC = () => {
         </a>
       </div>
 
-      {/* Page tabs */}
-      <div className="flex gap-1 mb-3 flex-shrink-0 bg-[#1a1a1a] rounded-lg p-1">
-        {pages.map(page => (
-          <button
-            key={page.id}
-            onClick={() => setActivePageId(page.id)}
-            className={`px-4 py-1.5 rounded-md text-xs font-medium transition-none ${
-              activePageId === page.id
-                ? 'bg-[#2a2a2a] text-[#ECECEC]'
-                : 'text-[#666] hover:text-[#999]'
-            }`}
-          >
-            {page.label}
-          </button>
-        ))}
-      </div>
+      {/* Page tabs — only shown when there are multiple pages */}
+      {pages.length > 1 && (
+        <div className="flex gap-1 mb-3 flex-shrink-0 bg-[#1a1a1a] rounded-lg p-1">
+          {pages.map(page => (
+            <button
+              key={page.id}
+              onClick={() => setActivePageId(page.id)}
+              className={`px-4 py-1.5 rounded-md text-xs font-medium transition-none ${
+                activePageId === page.id
+                  ? 'bg-[#2a2a2a] text-[#ECECEC]'
+                  : 'text-[#666] hover:text-[#999]'
+              }`}
+            >
+              {page.label}
+            </button>
+          ))}
+        </div>
+      )}
 
       <div className="flex-1 rounded-xl overflow-hidden border border-[#2a2a2a] min-h-0">
         <iframe
