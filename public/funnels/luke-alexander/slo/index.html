@@ -399,23 +399,25 @@ footer {
    ══════════════════════════════════════ */
 @media (max-width: 768px) {
   .hero {
-    padding-top: 16px;
+    padding-top: 32px;
     padding-bottom: 40px;
     background-position: 50% -30px;
-    min-height: auto;
+    /* Push ticker/testimonials below the fold */
+    min-height: calc(100vh - 40px);
   }
 
   /* Text content gets comfortable side padding */
   .hero-inner {
     gap: 12px;
     padding: 0 24px;
+    width: 100%;
   }
 
-  /* Video breaks out to fill full width */
+  /* Video: full width, centered, no bleed offset issues */
   .vsl-wrap {
-    width: calc(100% + 48px);
-    margin-left: -24px;
+    width: 100%;
     border-radius: 0;
+    margin: 0;
   }
 
   /* Headline: bold, larger → 3 rows */
