@@ -1083,7 +1083,7 @@ const MentorManager: React.FC<MentorManagerProps> = ({ storagePrefix }) => {
           {/* Chat area */}
           <div className="flex-1 flex flex-col min-h-0 bg-[#1c1c1c] rounded-xl border border-[#2a2a2a] overflow-hidden">
             {/* Messages */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
+            <div className="flex-1 overflow-y-auto p-3 space-y-3 custom-scrollbar">
               {messages.length === 0 && (
                 <div className="flex flex-col items-center justify-center h-full text-center">
                   <Brain size={32} className="text-[#333] mb-3" />
@@ -1115,7 +1115,7 @@ const MentorManager: React.FC<MentorManagerProps> = ({ storagePrefix }) => {
                     )
                   )}
                   <div
-                    className={`max-w-[78%] rounded-xl px-4 py-3 text-sm leading-relaxed ${
+                    className={`max-w-[78%] rounded-xl px-3 py-2 text-sm leading-snug ${
                       msg.role === 'user'
                         ? 'bg-[#252525] text-[#ECECEC]'
                         : 'bg-[#171717] text-[#CDCDCD] border border-[#2a2a2a]'
@@ -1159,7 +1159,7 @@ const MentorManager: React.FC<MentorManagerProps> = ({ storagePrefix }) => {
             </div>
 
             {/* Input */}
-            <div className="flex-shrink-0 border-t border-[#2a2a2a] p-3">
+            <div className="flex-shrink-0 border-t border-[#2a2a2a] p-2.5">
               <div className="flex gap-2">
                 <textarea
                   ref={inputRef}

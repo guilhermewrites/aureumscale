@@ -71,12 +71,13 @@ body {
 .floating-paths-wrap path {
   stroke: #fff;
   fill: none;
-  stroke-dasharray: 0.4 0.6;
+  stroke-dasharray: 0.8 0.2;
   animation: pathFlow linear infinite;
 }
 @keyframes pathFlow {
-  0%   { stroke-dashoffset: 0; }
-  100% { stroke-dashoffset: -2; }
+  0%   { stroke-dashoffset: 1; opacity: 0.6; }
+  50%  { opacity: 1; }
+  100% { stroke-dashoffset: -1; opacity: 0.6; }
 }
 
 /* ── SMOKE CURSOR CANVAS ── */

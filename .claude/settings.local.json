@@ -19,7 +19,9 @@
       "Bash(npx vite build)",
       "Bash(git -C \"/Users/guilherme/Aureum App\" remote -v)",
       "mcp__Claude_Preview__preview_start",
-      "Bash(open \"/Users/guilherme/Desktop/[ROAS] - [Webinar Funnel]/registration.html\")"
+      "Bash(open \"/Users/guilherme/Desktop/[ROAS] - [Webinar Funnel]/registration.html\")",
+      "Bash(mkdir -p /Users/guilherme/aifreelancer-funnel/.claude)",
+      "Read(//Users/guilherme/aifreelancer-funnel/**)"
     ]
   }
 }
