@@ -68,17 +68,6 @@ body {
   width: 100%;
   height: 100%;
 }
-.floating-paths-wrap path {
-  stroke: #fff;
-  fill: none;
-  stroke-dasharray: 0.8 0.2;
-  animation: pathFlow linear infinite;
-}
-@keyframes pathFlow {
-  0%   { stroke-dashoffset: 1; opacity: 0.6; }
-  50%  { opacity: 1; }
-  100% { stroke-dashoffset: -1; opacity: 0.6; }
-}
 
 /* ── SMOKE CURSOR CANVAS ── */
 #smokeCanvas {
@@ -1186,7 +1175,7 @@ document.querySelectorAll('.form-input').forEach(input => {
 })();
 </script>
 
-<!-- ── FLOATING PATHS GENERATOR ── -->
+<!-- ── FLOATING PATHS (replicates framer-motion behavior) ── -->
 <script>
 (function() {
   function createPaths(container, position) {
@@ -1195,24 +1184,57 @@ document.querySelectorAll('.form-input').forEach(input => {
     svg.setAttribute('fill', 'none');
     svg.setAttribute('preserveAspectRatio', 'none');
 
+    const pathData = [];
     for (let i = 0; i < 36; i++) {
       const p = position;
       const d = `M-${380 - i * 5 * p} -${189 + i * 6}C-${380 - i * 5 * p} -${189 + i * 6} -${312 - i * 5 * p} ${216 - i * 6} ${152 - i * 5 * p} ${343 - i * 6}C${616 - i * 5 * p} ${470 - i * 6} ${684 - i * 5 * p} ${875 - i * 6} ${684 - i * 5 * p} ${875 - i * 6}`;
-      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-      path.setAttribute('d', d);
-      path.setAttribute('pathLength', '1');
-      path.setAttribute('stroke-width', (0.5 + i * 0.03).toFixed(2));
-      path.setAttribute('stroke-opacity', (0.1 + i * 0.03).toFixed(2));
-      path.style.animationDuration = (20 + Math.random() * 10).toFixed(1) + 's';
-      path.style.animationDelay = (Math.random() * -30).toFixed(1) + 's';
-      svg.appendChild(path);
+
+      const el = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      el.setAttribute('d', d);
+      el.setAttribute('pathLength', '1');
+      el.setAttribute('stroke', '#fff');
+      el.setAttribute('stroke-width', (0.5 + i * 0.03).toFixed(2));
+      el.setAttribute('fill', 'none');
+      svg.appendChild(el);
+
+      pathData.push({
+        el,
+        duration: 20000 + Math.random() * 10000,
+        phase: Math.random() * Math.PI * 2,
+        baseOpacity: 0.1 + i * 0.03,
+      });
     }
 
     container.appendChild(svg);
+    return pathData;
   }
 
-  createPaths(document.getElementById('floatingPathsLeft'), 1);
-  createPaths(document.getElementById('floatingPathsRight'), -1);
+  const allPaths = [
+    ...createPaths(document.getElementById('floatingPathsLeft'), 1),
+    ...createPaths(document.getElementById('floatingPathsRight'), -1),
+  ];
+
+  function animate(now) {
+    for (const p of allPaths) {
+      const t = ((now / p.duration) + p.phase) % 1;
+
+      // pathOffset: slides 0 → 1 (linear)
+      const offset = t;
+
+      // opacity: pulses 0.3 → 0.6 → 0.3 (sine wave)
+      const opacity = p.baseOpacity * (0.5 + 0.5 * Math.sin(t * Math.PI * 2));
+
+      // pathLength: breathes 0.3 → 1 → 0.3 (sine wave, offset phase)
+      const len = 0.3 + 0.7 * (0.5 + 0.5 * Math.sin(t * Math.PI * 2 + 1));
+
+      p.el.setAttribute('stroke-dasharray', len.toFixed(4) + ' ' + (1 - len).toFixed(4));
+      p.el.setAttribute('stroke-dashoffset', offset.toFixed(4));
+      p.el.setAttribute('stroke-opacity', opacity.toFixed(4));
+    }
+    requestAnimationFrame(animate);
+  }
+
+  requestAnimationFrame(animate);
 })();
 </script>
 
