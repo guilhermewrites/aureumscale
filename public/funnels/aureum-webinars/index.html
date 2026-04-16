@@ -106,8 +106,8 @@ body {
   flex-direction: column;
   align-items: center;
   text-align: center;
-  padding: 60px 24px 80px;
-  max-width: 800px;
+  padding: 60px 24px 56px;
+  max-width: 860px;
   margin: 0 auto;
 }
 
@@ -117,7 +117,7 @@ body {
   font-weight: 700;
   font-style: normal;
   line-height: 1.05;
-  margin-bottom: 32px;
+  margin-bottom: clamp(10px, 1.5vw, 20px);
   letter-spacing: -0.03em;
   white-space: nowrap;
   background: linear-gradient(90deg, #555, #fff, #555);
@@ -137,23 +137,23 @@ body {
 }
 
 .hero-subtitle {
-  font-size: 15px;
+  font-size: clamp(16px, 2.2vw, 26px);
   font-weight: 600;
   font-style: italic;
-  line-height: 1.6;
+  line-height: 1.45;
   color: #fff;
-  margin-bottom: 20px;
-  max-width: 620px;
+  margin-bottom: clamp(8px, 1.2vw, 14px);
+  max-width: 760px;
   text-wrap: balance;
 }
 
 .hero-body {
-  font-size: 14px;
+  font-size: clamp(13px, 1.5vw, 18px);
   font-weight: 400;
-  line-height: 1.7;
-  color: rgba(255,255,255,0.75);
-  max-width: 580px;
-  margin-bottom: 48px;
+  line-height: 1.65;
+  color: rgba(255,255,255,0.7);
+  max-width: 700px;
+  margin-bottom: clamp(28px, 3.5vw, 48px);
 }
 .hero-body strong {
   color: #fff;
@@ -416,9 +416,7 @@ footer {
 /* ── RESPONSIVE ── */
 @media (max-width: 600px) {
   .nav { padding: 18px 20px; }
-  .hero { padding: 40px 20px 60px; }
-  .hero-subtitle { font-size: 14px; }
-  .hero-body { font-size: 13px; }
+  .hero { padding: 40px 20px 48px; }
   .video-wrapper { margin-bottom: 36px; }
   .form-container { padding: 32px 24px; }
   .cta-btn { width: 100%; padding: 16px 24px; }
