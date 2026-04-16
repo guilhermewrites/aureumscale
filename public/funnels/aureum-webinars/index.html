@@ -112,19 +112,27 @@ body {
 }
 
 .hero-title {
-  font-family: 'Playfair Display', serif;
-  font-size: clamp(42px, 6vw, 72px);
-  font-weight: 400;
-  font-style: italic;
-  line-height: 1.1;
+  font-family: 'Inter', sans-serif;
+  font-size: clamp(48px, 8vw, 96px);
+  font-weight: 700;
+  font-style: normal;
+  line-height: 1.05;
   margin-bottom: 32px;
-  letter-spacing: -0.01em;
-  color: rgba(255,255,255,0.25);
+  letter-spacing: -0.03em;
+  background: linear-gradient(90deg, #555, #fff, #555);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: shinyText 3s linear infinite;
 }
 .hero-title strong {
-  font-style: normal;
-  font-weight: 700;
-  color: #fff;
+  font-weight: 800;
+  -webkit-text-fill-color: transparent;
+}
+@keyframes shinyText {
+  0% { background-position: 0% center; }
+  100% { background-position: 200% center; }
 }
 
 .hero-subtitle {
@@ -439,7 +447,7 @@ footer {
 
   <!-- HERO -->
   <section class="hero">
-    <h1 class="hero-title"><em>Old Webinars Are</em> <strong>Dead</strong></h1>
+    <h1 class="hero-title">Old Webinars Are <strong>Dead</strong></h1>
 
     <p class="hero-subtitle">Demo-Webinars are outperforming every single funnel in the info-product industry right now.</p>
 
