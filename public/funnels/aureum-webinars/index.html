@@ -1175,67 +1175,71 @@ document.querySelectorAll('.form-input').forEach(input => {
 })();
 </script>
 
-<!-- ── FLOATING PATHS (replicates framer-motion behavior) ── -->
-<script>
-(function() {
-  function createPaths(container, position) {
-    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    svg.setAttribute('viewBox', '0 0 696 316');
-    svg.setAttribute('fill', 'none');
-    svg.setAttribute('preserveAspectRatio', 'none');
+<!-- ── FLOATING PATHS (React + framer-motion motion.path via CDN) ── -->
+<script type="importmap">
+{
+  "imports": {
+    "react": "https://esm.sh/react@19",
+    "react/jsx-runtime": "https://esm.sh/react@19/jsx-runtime",
+    "react-dom/client": "https://esm.sh/react-dom@19/client",
+    "framer-motion": "https://esm.sh/framer-motion@11"
+  }
+}
+</script>
+<script type="module">
+import React from 'react';
+import { createRoot } from 'react-dom/client';
+import { motion } from 'framer-motion';
 
-    const pathData = [];
-    for (let i = 0; i < 36; i++) {
-      const p = position;
-      const d = `M-${380 - i * 5 * p} -${189 + i * 6}C-${380 - i * 5 * p} -${189 + i * 6} -${312 - i * 5 * p} ${216 - i * 6} ${152 - i * 5 * p} ${343 - i * 6}C${616 - i * 5 * p} ${470 - i * 6} ${684 - i * 5 * p} ${875 - i * 6} ${684 - i * 5 * p} ${875 - i * 6}`;
+const h = React.createElement;
 
-      const el = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-      el.setAttribute('d', d);
-      el.setAttribute('pathLength', '1');
-      el.setAttribute('stroke', '#fff');
-      el.setAttribute('stroke-width', (0.5 + i * 0.03).toFixed(2));
-      el.setAttribute('fill', 'none');
-      svg.appendChild(el);
+function FloatingPaths({ position }) {
+  const paths = Array.from({ length: 36 }, (_, i) => ({
+    id: i,
+    d: 'M-' + (380 - i*5*position) + ' -' + (189 + i*6)
+      + 'C-' + (380 - i*5*position) + ' -' + (189 + i*6)
+      + ' -' + (312 - i*5*position) + ' ' + (216 - i*6)
+      + ' ' + (152 - i*5*position) + ' ' + (343 - i*6)
+      + 'C' + (616 - i*5*position) + ' ' + (470 - i*6)
+      + ' ' + (684 - i*5*position) + ' ' + (875 - i*6)
+      + ' ' + (684 - i*5*position) + ' ' + (875 - i*6),
+    width: 0.5 + i * 0.03,
+  }));
 
-      pathData.push({
-        el,
-        duration: 20000 + Math.random() * 10000,
-        phase: Math.random() * Math.PI * 2,
-        baseOpacity: 0.1 + i * 0.03,
+  return h('svg', {
+    style: { width: '100%', height: '100%', color: '#fff' },
+    viewBox: '0 0 696 316',
+    fill: 'none',
+  },
+    paths.map(function(path) {
+      return h(motion.path, {
+        key: path.id,
+        d: path.d,
+        stroke: 'currentColor',
+        strokeWidth: path.width,
+        strokeOpacity: 0.1 + path.id * 0.03,
+        initial: { pathLength: 0.3, opacity: 0.6 },
+        animate: {
+          pathLength: 1,
+          opacity: [0.3, 0.6, 0.3],
+          pathOffset: [0, 1, 0],
+        },
+        transition: {
+          duration: 20 + Math.random() * 10,
+          repeat: Infinity,
+          ease: 'linear',
+        },
       });
-    }
+    })
+  );
+}
 
-    container.appendChild(svg);
-    return pathData;
-  }
-
-  const allPaths = [
-    ...createPaths(document.getElementById('floatingPathsLeft'), 1),
-    ...createPaths(document.getElementById('floatingPathsRight'), -1),
-  ];
-
-  function animate(now) {
-    for (const p of allPaths) {
-      const t = ((now / p.duration) + p.phase) % 1;
-
-      // pathOffset: slides 0 → 1 (linear)
-      const offset = t;
-
-      // opacity: pulses 0.3 → 0.6 → 0.3 (sine wave)
-      const opacity = p.baseOpacity * (0.5 + 0.5 * Math.sin(t * Math.PI * 2));
-
-      // pathLength: breathes 0.3 → 1 → 0.3 (sine wave, offset phase)
-      const len = 0.3 + 0.7 * (0.5 + 0.5 * Math.sin(t * Math.PI * 2 + 1));
-
-      p.el.setAttribute('stroke-dasharray', len.toFixed(4) + ' ' + (1 - len).toFixed(4));
-      p.el.setAttribute('stroke-dashoffset', offset.toFixed(4));
-      p.el.setAttribute('stroke-opacity', opacity.toFixed(4));
-    }
-    requestAnimationFrame(animate);
-  }
-
-  requestAnimationFrame(animate);
-})();
+createRoot(document.getElementById('floatingPathsLeft')).render(
+  h(FloatingPaths, { position: 1 })
+);
+createRoot(document.getElementById('floatingPathsRight')).render(
+  h(FloatingPaths, { position: -1 })
+);
 </script>
 
 </body>
