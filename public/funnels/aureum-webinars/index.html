@@ -56,16 +56,29 @@ body {
   overflow-x: hidden;
 }
 
-/* ── GRID BACKGROUND ── */
-.grid-bg {
+/* ── FLOATING PATHS BACKGROUND ── */
+.floating-paths-wrap {
   position: fixed;
   inset: 0;
-  z-index: 0;
+  z-index: 2;
   pointer-events: none;
-  background-image:
-    linear-gradient(rgba(255,255,255,0.012) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255,255,255,0.012) 1px, transparent 1px);
-  background-size: 60px 60px;
+  overflow: hidden;
+}
+.floating-paths-wrap svg {
+  width: 100%;
+  height: 100%;
+}
+.floating-paths-wrap path {
+  stroke: #fff;
+  fill: none;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 0;
+  animation: pathFlow linear infinite;
+}
+@keyframes pathFlow {
+  0%   { stroke-dashoffset: 0; opacity: 0.3; }
+  50%  { opacity: 0.6; }
+  100% { stroke-dashoffset: 1; opacity: 0.3; }
 }
 
 /* ── SMOKE CURSOR CANVAS ── */
@@ -405,7 +418,6 @@ footer {
 
 /* ── RESPONSIVE ── */
 @media (max-width: 600px) {
-  .grid-bg { background-size: 40px 40px; }
   .nav { padding: 18px 20px; }
   .hero { padding: 40px 20px 60px; }
   .hero-subtitle { font-size: 14px; }
@@ -420,8 +432,11 @@ footer {
 <body>
 
   <!-- GRID + SMOKE -->
-  <div class="grid-bg"></div>
   <canvas id="smokeCanvas"></canvas>
+
+  <!-- FLOATING PATHS -->
+  <div class="floating-paths-wrap" id="floatingPathsLeft"></div>
+  <div class="floating-paths-wrap" id="floatingPathsRight"></div>
 
   <!-- NAV -->
   <nav class="nav">
@@ -1169,6 +1184,36 @@ document.querySelectorAll('.form-input').forEach(input => {
   }
 
   animate();
+})();
+</script>
+
+<!-- ── FLOATING PATHS GENERATOR ── -->
+<script>
+(function() {
+  function createPaths(container, position) {
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('viewBox', '0 0 696 316');
+    svg.setAttribute('fill', 'none');
+    svg.setAttribute('preserveAspectRatio', 'none');
+
+    for (let i = 0; i < 36; i++) {
+      const p = position;
+      const d = `M-${380 - i * 5 * p} -${189 + i * 6}C-${380 - i * 5 * p} -${189 + i * 6} -${312 - i * 5 * p} ${216 - i * 6} ${152 - i * 5 * p} ${343 - i * 6}C${616 - i * 5 * p} ${470 - i * 6} ${684 - i * 5 * p} ${875 - i * 6} ${684 - i * 5 * p} ${875 - i * 6}`;
+      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      path.setAttribute('d', d);
+      path.setAttribute('pathLength', '1');
+      path.setAttribute('stroke-width', (0.5 + i * 0.03).toFixed(2));
+      path.setAttribute('stroke-opacity', (0.1 + i * 0.03).toFixed(2));
+      path.style.animationDuration = (20 + Math.random() * 10).toFixed(1) + 's';
+      path.style.animationDelay = (Math.random() * -30).toFixed(1) + 's';
+      svg.appendChild(path);
+    }
+
+    container.appendChild(svg);
+  }
+
+  createPaths(document.getElementById('floatingPathsLeft'), 1);
+  createPaths(document.getElementById('floatingPathsRight'), -1);
 })();
 </script>
 
