@@ -56,17 +56,16 @@ body {
   overflow-x: hidden;
 }
 
-/* ── FLOATING PATHS BACKGROUND ── */
-.floating-paths-wrap {
+/* ── SHADER BACKGROUND ── */
+#shaderBg {
   position: fixed;
   inset: 0;
-  z-index: 2;
+  z-index: 0;
   pointer-events: none;
-  overflow: hidden;
 }
-.floating-paths-wrap svg {
-  width: 100%;
-  height: 100%;
+#shaderBg canvas {
+  width: 100% !important;
+  height: 100% !important;
 }
 
 /* ── SMOKE CURSOR CANVAS ── */
@@ -422,9 +421,8 @@ footer {
   <!-- GRID + SMOKE -->
   <canvas id="smokeCanvas"></canvas>
 
-  <!-- FLOATING PATHS -->
-  <div class="floating-paths-wrap" id="floatingPathsLeft"></div>
-  <div class="floating-paths-wrap" id="floatingPathsRight"></div>
+  <!-- SHADER BACKGROUND -->
+  <div id="shaderBg"></div>
 
   <!-- NAV -->
   <nav class="nav">
@@ -1175,71 +1173,70 @@ document.querySelectorAll('.form-input').forEach(input => {
 })();
 </script>
 
-<!-- ── FLOATING PATHS (React + framer-motion motion.path via CDN) ── -->
-<script type="importmap">
-{
-  "imports": {
-    "react": "https://esm.sh/react@19",
-    "react/jsx-runtime": "https://esm.sh/react@19/jsx-runtime",
-    "react-dom/client": "https://esm.sh/react-dom@19/client",
-    "framer-motion": "https://esm.sh/framer-motion@11"
-  }
-}
-</script>
-<script type="module">
-import React from 'react';
-import { createRoot } from 'react-dom/client';
-import { motion } from 'framer-motion';
+<!-- ── SHADER LINES BACKGROUND (Three.js WebGL) ── -->
+<script>
+(function() {
+  var script = document.createElement('script');
+  script.src = 'https://cdnjs.cloudflare.com/ajax/libs/three.js/89/three.min.js';
+  script.onload = function() {
+    var THREE = window.THREE;
+    var container = document.getElementById('shaderBg');
+    var camera = new THREE.Camera();
+    camera.position.z = 1;
+    var scene = new THREE.Scene();
+    var geometry = new THREE.PlaneBufferGeometry(2, 2);
+    var uniforms = {
+      time: { type: 'f', value: 1.0 },
+      resolution: { type: 'v2', value: new THREE.Vector2() }
+    };
+    var material = new THREE.ShaderMaterial({
+      uniforms: uniforms,
+      vertexShader: 'void main(){gl_Position=vec4(position,1.0);}',
+      fragmentShader: [
+        'precision highp float;',
+        'uniform vec2 resolution;',
+        'uniform float time;',
+        'float random(in float x){return fract(sin(x)*1e4);}',
+        'void main(void){',
+        '  vec2 uv=(gl_FragCoord.xy*2.0-resolution.xy)/min(resolution.x,resolution.y);',
+        '  vec2 s=vec2(4.0,2.0);',
+        '  vec2 v=vec2(256.0,256.0);',
+        '  uv.x=floor(uv.x*v.x/s.x)/(v.x/s.x);',
+        '  uv.y=floor(uv.y*v.y/s.y)/(v.y/s.y);',
+        '  float t=time*0.06+random(uv.x)*0.4;',
+        '  float lw=0.0008;',
+        '  vec3 c=vec3(0.0);',
+        '  for(int j=0;j<3;j++){',
+        '    for(int i=0;i<5;i++){',
+        '      c[j]+=lw*float(i*i)/abs(fract(t-0.01*float(j)+float(i)*0.01)*1.0-length(uv));',
+        '    }',
+        '  }',
+        '  gl_FragColor=vec4(c[2],c[1],c[0],1.0);',
+        '}'
+      ].join('\n')
+    });
+    var mesh = new THREE.Mesh(geometry, material);
+    scene.add(mesh);
+    var renderer = new THREE.WebGLRenderer();
+    renderer.setPixelRatio(window.devicePixelRatio);
+    container.appendChild(renderer.domElement);
 
-const h = React.createElement;
+    function onResize() {
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      uniforms.resolution.value.x = renderer.domElement.width;
+      uniforms.resolution.value.y = renderer.domElement.height;
+    }
+    onResize();
+    window.addEventListener('resize', onResize);
 
-function FloatingPaths({ position }) {
-  const paths = Array.from({ length: 36 }, (_, i) => ({
-    id: i,
-    d: 'M-' + (380 - i*5*position) + ' -' + (189 + i*6)
-      + 'C-' + (380 - i*5*position) + ' -' + (189 + i*6)
-      + ' -' + (312 - i*5*position) + ' ' + (216 - i*6)
-      + ' ' + (152 - i*5*position) + ' ' + (343 - i*6)
-      + 'C' + (616 - i*5*position) + ' ' + (470 - i*6)
-      + ' ' + (684 - i*5*position) + ' ' + (875 - i*6)
-      + ' ' + (684 - i*5*position) + ' ' + (875 - i*6),
-    width: 0.5 + i * 0.03,
-  }));
-
-  return h('svg', {
-    style: { width: '100%', height: '100%', color: '#fff' },
-    viewBox: '0 0 696 316',
-    fill: 'none',
-  },
-    paths.map(function(path) {
-      return h(motion.path, {
-        key: path.id,
-        d: path.d,
-        stroke: 'currentColor',
-        strokeWidth: path.width,
-        strokeOpacity: 0.1 + path.id * 0.03,
-        initial: { pathLength: 0.3, opacity: 0.6 },
-        animate: {
-          pathLength: 1,
-          opacity: [0.3, 0.6, 0.3],
-          pathOffset: [0, 1, 0],
-        },
-        transition: {
-          duration: 20 + Math.random() * 10,
-          repeat: Infinity,
-          ease: 'linear',
-        },
-      });
-    })
-  );
-}
-
-createRoot(document.getElementById('floatingPathsLeft')).render(
-  h(FloatingPaths, { position: 1 })
-);
-createRoot(document.getElementById('floatingPathsRight')).render(
-  h(FloatingPaths, { position: -1 })
-);
+    (function animate() {
+      requestAnimationFrame(animate);
+      uniforms.time.value += 0.05;
+      renderer.render(scene, camera);
+    })();
+  };
+  document.head.appendChild(script);
+})();
 </script>
 
 </body>
