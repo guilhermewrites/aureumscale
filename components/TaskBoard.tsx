@@ -235,12 +235,15 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storagePrefix, clients }) => {
             return (
               <div
                 key={col}
-                className="flex-shrink-0 rounded-xl flex flex-col"
+                className="flex-shrink-0 rounded-xl flex flex-col backdrop-blur-sm"
                 style={{
-                  width: 220,
-                  background: isDragOver ? '#252525' : '#1c1c1c',
-                  border: isDragOver ? '1px dashed #444' : '1px solid #2a2a2a',
-                  transition: 'background 0.15s, border 0.15s',
+                  width: 320,
+                  background: isDragOver
+                    ? 'linear-gradient(135deg,rgba(255,255,255,0.07) 0%,rgba(255,255,255,0.03) 100%)'
+                    : 'linear-gradient(135deg,rgba(255,255,255,0.04) 0%,rgba(255,255,255,0.015) 100%)',
+                  border: isDragOver ? '1px dashed rgba(255,255,255,0.18)' : '1px solid rgba(255,255,255,0.08)',
+                  boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.06), inset 0 0 60px rgba(255,255,255,0.025), 0 2px 20px rgba(0,0,0,0.25)',
+                  transition: 'background 0.15s, border 0.15s, box-shadow 0.2s',
                 }}
                 onDragOver={e => handleColDragOver(e, col)}
                 onDragLeave={handleDragLeave}
