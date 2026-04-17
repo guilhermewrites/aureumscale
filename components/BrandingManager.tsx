@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { RefreshCw, TrendingUp, TrendingDown, ArrowUpRight, ArrowDownRight, Plus, Trash2, Edit3, Check, X, Eye, Users, FileText, Heart, MessageCircle, Repeat2, ExternalLink } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { supabase } from '../services/supabaseClient';
+import PostingCalendar from './PostingCalendar';
 
 // --- Types ---
 type PlatformType = 'x' | 'instagram' | 'youtube';
@@ -519,6 +520,9 @@ const BrandingManager: React.FC<BrandingManagerProps> = ({ storagePrefix }) => {
           )}
         </div>
       </div>
+
+      {/* ── Posting Calendar ── */}
+      <PostingCalendar storagePrefix={storagePrefix} />
 
       {/* ── Snapshot History ── */}
       <div className="bg-[#1c1c1c] rounded-2xl p-6">
