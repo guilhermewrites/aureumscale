@@ -2,7 +2,8 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { RefreshCw, TrendingUp, TrendingDown, ArrowUpRight, ArrowDownRight, Plus, Trash2, Edit3, Check, X, Eye, Users, FileText, Heart, MessageCircle, Repeat2, ExternalLink } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { supabase } from '../services/supabaseClient';
-import PostingCalendar from './PostingCalendar';
+import PostingCalendar, { ScheduledPost } from './PostingCalendar';
+import ContentIdeas from './ContentIdeas';
 
 // --- Types ---
 type PlatformType = 'x' | 'instagram' | 'youtube';
@@ -43,6 +44,7 @@ interface BrandingManagerProps {
 }
 
 const BrandingManager: React.FC<BrandingManagerProps> = ({ storagePrefix }) => {
+  const [calendarPrefill, setCalendarPrefill] = useState<Partial<ScheduledPost> | null>(null);
   const [accounts, setAccounts] = useState<BrandingAccount[]>([]);
   const [snapshots, setSnapshots] = useState<BrandingSnapshot[]>([]);
   const [chartView, setChartView] = useState<'week' | 'month' | '3months' | 'year' | 'all'>('month');
@@ -521,8 +523,18 @@ const BrandingManager: React.FC<BrandingManagerProps> = ({ storagePrefix }) => {
         </div>
       </div>
 
+      {/* ── Content Ideas ── */}
+      <ContentIdeas
+        storagePrefix={storagePrefix}
+        onScheduleIdea={(draft) => setCalendarPrefill(draft)}
+      />
+
       {/* ── Posting Calendar ── */}
-      <PostingCalendar storagePrefix={storagePrefix} />
+      <PostingCalendar
+        storagePrefix={storagePrefix}
+        prefilledForm={calendarPrefill}
+        onPrefillConsumed={() => setCalendarPrefill(null)}
+      />
 
       {/* ── Snapshot History ── */}
       <div className="bg-[#1c1c1c] rounded-2xl p-6">

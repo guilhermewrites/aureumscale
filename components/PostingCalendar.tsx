@@ -1,11 +1,12 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { ChevronLeft, ChevronRight, Plus, X, Trash2, ExternalLink } from 'lucide-react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { ChevronLeft, ChevronRight, Plus, X, Trash2, ExternalLink, Upload, Film } from 'lucide-react';
 import { supabase } from '../services/supabaseClient';
+import { uploadPostThumbnail, isVideoUrl } from '../services/postMedia';
 
 type PlatformType = 'x' | 'instagram' | 'youtube';
-type StatusType = 'scheduled' | 'published' | 'draft';
+type StatusType = 'unscripted' | 'scripted' | 'scheduled' | 'posted';
 
-interface ScheduledPost {
+export interface ScheduledPost {
   id: string;
   user_id: string;
   platform: PlatformType;
@@ -15,6 +16,7 @@ interface ScheduledPost {
   notes: string;
   status: StatusType;
   link: string;
+  thumbnail_url: string;
 }
 
 const PLATFORM_META: Record<PlatformType, { label: string; icon: string; color: string; bg: string }> = {
@@ -24,9 +26,10 @@ const PLATFORM_META: Record<PlatformType, { label: string; icon: string; color: 
 };
 
 const STATUS_META: Record<StatusType, { label: string; color: string }> = {
-  scheduled: { label: 'Scheduled', color: '#fde68a' },
-  published: { label: 'Published', color: '#86efac' },
-  draft:     { label: 'Draft',     color: '#d4d4d8' },
+  unscripted: { label: 'Unscripted', color: '#d4d4d8' },
+  scripted:   { label: 'Scripted',   color: '#bfdbfe' },
+  scheduled:  { label: 'Scheduled',  color: '#fde68a' },
+  posted:     { label: 'Posted',     color: '#86efac' },
 };
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -36,18 +39,21 @@ const iso = (d: Date) => d.toISOString().split('T')[0];
 
 interface Props {
   storagePrefix: string;
+  prefilledForm?: Partial<ScheduledPost> | null;
+  onPrefillConsumed?: () => void;
 }
 
-const PostingCalendar: React.FC<Props> = ({ storagePrefix }) => {
+const PostingCalendar: React.FC<Props> = ({ storagePrefix, prefilledForm, onPrefillConsumed }) => {
   const today = new Date();
   const [cursor, setCursor] = useState(new Date(today.getFullYear(), today.getMonth(), 1));
   const [posts, setPosts] = useState<ScheduledPost[]>([]);
   const [editing, setEditing] = useState<ScheduledPost | null>(null);
   const [form, setForm] = useState<Partial<ScheduledPost>>({});
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [filter, setFilter] = useState<PlatformType | 'all'>('all');
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Load
   useEffect(() => {
     if (!supabase) return;
     (async () => {
@@ -60,7 +66,18 @@ const PostingCalendar: React.FC<Props> = ({ storagePrefix }) => {
     })();
   }, [storagePrefix]);
 
-  // Calendar grid
+  useEffect(() => {
+    if (prefilledForm) {
+      setForm(prefilledForm);
+      setEditing({} as ScheduledPost);
+      if (prefilledForm.post_date) {
+        const d = new Date(prefilledForm.post_date + 'T00:00');
+        setCursor(new Date(d.getFullYear(), d.getMonth(), 1));
+      }
+      onPrefillConsumed?.();
+    }
+  }, [prefilledForm, onPrefillConsumed]);
+
   const grid = useMemo(() => {
     const y = cursor.getFullYear();
     const m = cursor.getMonth();
@@ -111,8 +128,9 @@ const PostingCalendar: React.FC<Props> = ({ storagePrefix }) => {
       post_time: '09:00',
       title: '',
       notes: '',
-      status: 'scheduled',
+      status: 'unscripted',
       link: '',
+      thumbnail_url: '',
     });
     setEditing({} as ScheduledPost);
   };
@@ -123,6 +141,15 @@ const PostingCalendar: React.FC<Props> = ({ storagePrefix }) => {
   };
 
   const close = () => { setEditing(null); setForm({}); };
+
+  const onFilePicked = async (file: File) => {
+    if (!file) return;
+    setUploading(true);
+    try {
+      const url = await uploadPostThumbnail(file, storagePrefix);
+      if (url) setForm(f => ({ ...f, thumbnail_url: url }));
+    } finally { setUploading(false); }
+  };
 
   const save = useCallback(async () => {
     if (!supabase || !form.platform || !form.post_date) return;
@@ -136,8 +163,9 @@ const PostingCalendar: React.FC<Props> = ({ storagePrefix }) => {
         post_time: form.post_time || '',
         title: form.title || '',
         notes: form.notes || '',
-        status: form.status || 'scheduled',
+        status: form.status || 'unscripted',
         link: form.link || '',
+        thumbnail_url: form.thumbnail_url || '',
         updated_at: new Date().toISOString(),
       };
       if (form.id) {
@@ -166,7 +194,6 @@ const PostingCalendar: React.FC<Props> = ({ storagePrefix }) => {
 
   return (
     <div className="bg-[#1c1c1c] rounded-2xl p-6">
-      {/* Header */}
       <div className="flex items-center justify-between mb-5 flex-wrap gap-3">
         <div>
           <h2 className="text-sm font-bold text-[#ECECEC]">Posting Calendar</h2>
@@ -175,7 +202,6 @@ const PostingCalendar: React.FC<Props> = ({ storagePrefix }) => {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          {/* Platform filter */}
           <div className="flex bg-[#161616] rounded-lg p-0.5 border border-[#252525]">
             <button onClick={() => setFilter('all')}
               className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${filter === 'all' ? 'bg-[#252525] text-[#ECECEC]' : 'text-[#555] hover:text-[#888]'}`}>
@@ -189,7 +215,6 @@ const PostingCalendar: React.FC<Props> = ({ storagePrefix }) => {
             ))}
           </div>
 
-          {/* Month navigation */}
           <div className="flex items-center gap-1 bg-[#161616] rounded-lg p-0.5 border border-[#252525]">
             <button onClick={() => shiftMonth(-1)} className="p-1.5 rounded-md text-[#888] hover:text-[#ECECEC] hover:bg-[#252525] transition-colors">
               <ChevronLeft size={14} />
@@ -209,17 +234,15 @@ const PostingCalendar: React.FC<Props> = ({ storagePrefix }) => {
         </div>
       </div>
 
-      {/* Weekday row */}
-      <div className="grid grid-cols-7 gap-1.5 mb-1.5">
+      <div className="grid grid-cols-7 gap-0 mb-0">
         {WEEKDAYS.map(d => (
-          <div key={d} className="text-[10px] font-medium uppercase tracking-wider text-[#555] px-2 py-1">
+          <div key={d} className="text-[10px] font-medium uppercase tracking-wider text-[#555] px-2 py-2">
             {d}
           </div>
         ))}
       </div>
 
-      {/* Grid */}
-      <div className="grid grid-cols-7 gap-1.5">
+      <div className="grid grid-cols-7 gap-0">
         {grid.map(({ date, inMonth }, i) => {
           const key = iso(date);
           const dayPosts = postsByDate.get(key) || [];
@@ -228,21 +251,22 @@ const PostingCalendar: React.FC<Props> = ({ storagePrefix }) => {
             <div
               key={i}
               onClick={() => openNew(date)}
-              className="group relative rounded-lg cursor-pointer transition-all"
+              className="group relative cursor-pointer transition-colors"
               style={{
-                minHeight: 96,
+                minHeight: 112,
                 padding: 8,
                 background: inMonth
                   ? (todayCell
                       ? 'linear-gradient(135deg,rgba(255,255,255,0.055) 0%,rgba(255,255,255,0.02) 100%)'
-                      : 'linear-gradient(135deg,rgba(255,255,255,0.025) 0%,rgba(255,255,255,0.008) 100%)')
+                      : 'linear-gradient(135deg,rgba(255,255,255,0.022) 0%,rgba(255,255,255,0.008) 100%)')
                   : 'transparent',
-                border: todayCell ? '1px solid rgba(134,239,172,0.35)' : '1px solid rgba(255,255,255,0.05)',
-                boxShadow: inMonth ? 'inset 0 1px 0 rgba(255,255,255,0.04)' : 'none',
+                border: '1px solid rgba(255,255,255,0.06)',
+                outline: todayCell ? '1px solid rgba(134,239,172,0.4)' : 'none',
+                outlineOffset: -1,
                 opacity: inMonth ? 1 : 0.35,
               }}
             >
-              <div className="flex items-center justify-between mb-1">
+              <div className="flex items-center justify-between mb-1.5">
                 <span className={`text-[11px] font-semibold ${todayCell ? 'text-[#86efac]' : inMonth ? 'text-[#ECECEC]' : 'text-[#444]'}`}>
                   {date.getDate()}
                 </span>
@@ -250,40 +274,68 @@ const PostingCalendar: React.FC<Props> = ({ storagePrefix }) => {
               </div>
 
               <div className="space-y-1">
-                {dayPosts.slice(0, 3).map(post => {
+                {dayPosts.map(post => {
                   const meta = PLATFORM_META[post.platform];
+                  const statusMeta = STATUS_META[post.status] || STATUS_META.unscripted;
                   return (
                     <button
                       key={post.id}
                       onClick={(e) => { e.stopPropagation(); openEdit(post); }}
-                      className="w-full text-left rounded px-1.5 py-1 truncate transition-transform hover:translate-x-0.5"
+                      className="w-full text-left px-1.5 py-1 transition-transform hover:translate-x-0.5 flex items-center gap-1.5"
                       style={{
                         background: meta.bg,
                         borderLeft: `2px solid ${meta.color}`,
                       }}
                     >
-                      <div className="flex items-center gap-1 text-[10px]" style={{ color: meta.color }}>
-                        <span className="flex-shrink-0">{meta.icon}</span>
+                      {post.thumbnail_url ? (
+                        isVideoUrl(post.thumbnail_url) ? (
+                          <video
+                            src={post.thumbnail_url}
+                            className="w-5 h-5 object-cover flex-shrink-0"
+                            muted
+                            playsInline
+                            preload="metadata"
+                          />
+                        ) : (
+                          <img src={post.thumbnail_url} alt="" className="w-5 h-5 object-cover flex-shrink-0" />
+                        )
+                      ) : (
+                        <span className="flex-shrink-0 text-[10px]">{meta.icon}</span>
+                      )}
+                      <div className="flex-1 min-w-0 flex items-center gap-1 text-[10px]" style={{ color: meta.color }}>
                         {post.post_time && <span className="opacity-80 flex-shrink-0">{post.post_time}</span>}
                         <span className="truncate opacity-90">{post.title || '(untitled)'}</span>
                       </div>
+                      <span
+                        className="flex-shrink-0 w-1.5 h-1.5 rounded-full"
+                        style={{ background: statusMeta.color }}
+                        title={statusMeta.label}
+                      />
                     </button>
                   );
                 })}
-                {dayPosts.length > 3 && (
-                  <div className="text-[10px] text-[#666] px-1.5">+{dayPosts.length - 3} more</div>
-                )}
               </div>
             </div>
           );
         })}
       </div>
 
+      {/* ── Legend ── */}
+      <div className="mt-4 flex items-center gap-4 text-[10px] text-[#666] flex-wrap">
+        <span className="uppercase tracking-wider text-[#444]">Status</span>
+        {(Object.keys(STATUS_META) as StatusType[]).map(s => (
+          <span key={s} className="flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full" style={{ background: STATUS_META[s].color }} />
+            {STATUS_META[s].label}
+          </span>
+        ))}
+      </div>
+
       {/* Modal */}
       {editing && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={close}>
           <div
-            className="bg-[#1c1c1c] border border-[#2a2a2a] rounded-2xl p-6 w-full max-w-md mx-4"
+            className="bg-[#1c1c1c] border border-[#2a2a2a] rounded-2xl p-6 w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto"
             onClick={e => e.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-4">
@@ -319,6 +371,55 @@ const PostingCalendar: React.FC<Props> = ({ storagePrefix }) => {
                     );
                   })}
                 </div>
+              </div>
+
+              {/* Thumbnail */}
+              <div>
+                <label className="block text-[10px] uppercase tracking-wider text-[#555] mb-1.5">Thumbnail / Media</label>
+                {form.thumbnail_url ? (
+                  <div className="relative rounded-lg overflow-hidden border border-[#252525]" style={{ aspectRatio: '16/9' }}>
+                    {isVideoUrl(form.thumbnail_url) ? (
+                      <video src={form.thumbnail_url} className="w-full h-full object-cover" controls muted playsInline preload="metadata" />
+                    ) : (
+                      <img src={form.thumbnail_url} alt="" className="w-full h-full object-cover" />
+                    )}
+                    <button
+                      onClick={() => setForm(f => ({ ...f, thumbnail_url: '' }))}
+                      className="absolute top-1.5 right-1.5 bg-black/70 hover:bg-black/90 text-[#ECECEC] rounded-md p-1 transition-colors"
+                    >
+                      <X size={12} />
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploading}
+                    className="w-full flex flex-col items-center justify-center gap-1.5 py-5 border border-dashed border-[#2a2a2a] rounded-lg text-[#666] hover:text-[#888] hover:border-[#3a3a3a] transition-colors disabled:opacity-50"
+                  >
+                    {uploading ? (
+                      <span className="text-[11px]">Uploading…</span>
+                    ) : (
+                      <>
+                        <div className="flex items-center gap-2 text-[#888]">
+                          <Upload size={14} />
+                          <Film size={14} />
+                        </div>
+                        <span className="text-[11px]">Upload image or MP4</span>
+                      </>
+                    )}
+                  </button>
+                )}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*,video/mp4,video/quicktime,video/webm"
+                  className="hidden"
+                  onChange={e => {
+                    const f = e.target.files?.[0];
+                    if (f) onFilePicked(f);
+                    e.target.value = '';
+                  }}
+                />
               </div>
 
               {/* Date + Time */}
@@ -357,7 +458,7 @@ const PostingCalendar: React.FC<Props> = ({ storagePrefix }) => {
 
               {/* Notes */}
               <div>
-                <label className="block text-[10px] uppercase tracking-wider text-[#555] mb-1.5">Notes</label>
+                <label className="block text-[10px] uppercase tracking-wider text-[#555] mb-1.5">Notes / Script</label>
                 <textarea
                   value={form.notes || ''}
                   onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
@@ -372,7 +473,7 @@ const PostingCalendar: React.FC<Props> = ({ storagePrefix }) => {
                 <div>
                   <label className="block text-[10px] uppercase tracking-wider text-[#555] mb-1.5">Status</label>
                   <select
-                    value={form.status || 'scheduled'}
+                    value={form.status || 'unscripted'}
                     onChange={e => setForm(f => ({ ...f, status: e.target.value as StatusType }))}
                     className="w-full bg-[#161616] border border-[#252525] rounded-lg px-3 py-2 text-xs text-[#ECECEC] focus:outline-none focus:border-[#86efac]/40"
                   >
@@ -394,7 +495,6 @@ const PostingCalendar: React.FC<Props> = ({ storagePrefix }) => {
               </div>
             </div>
 
-            {/* Actions */}
             <div className="flex items-center justify-between mt-5 pt-4 border-t border-[#2a2a2a]">
               {form.id ? (
                 <button
@@ -418,7 +518,7 @@ const PostingCalendar: React.FC<Props> = ({ storagePrefix }) => {
                 </button>
                 <button
                   onClick={save}
-                  disabled={saving}
+                  disabled={saving || uploading}
                   className="px-3 py-1.5 rounded-lg text-[11px] font-medium transition-colors disabled:opacity-50"
                   style={{ background: 'rgba(134,239,172,0.12)', color: '#86efac', border: '1px solid rgba(134,239,172,0.25)' }}>
                   {saving ? 'Saving…' : form.id ? 'Save changes' : 'Schedule post'}
