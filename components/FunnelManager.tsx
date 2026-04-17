@@ -5,11 +5,11 @@ import {
   Check, X, Megaphone, ZoomIn, ZoomOut, Maximize2,
   ArrowLeft, Package, BookOpen, MonitorPlay, Download, Box,
   MessageCircle, Phone, GitBranch, Database, Users,
-  ChevronsLeft, ChevronsRight, ChevronDown,
+  ChevronsLeft, ChevronsRight, ChevronDown, ChevronUp,
   Clock, Video, CheckCircle2, Eye, Radio, Pause, AlertTriangle, Send,
-  Upload, Image,
+  Upload, Image, ListOrdered,
 } from 'lucide-react';
-import { Funnel, FunnelStep, FunnelStepType, FunnelAdStatus } from '../types';
+import { Funnel, FunnelStep, FunnelStepType, FunnelAdStatus, FunnelSequenceItem, FunnelSequenceChannel } from '../types';
 import useLocalStorage from '../hooks/useLocalStorage';
 import { supabase } from '../services/supabaseClient';
 import EmailBodyEditor from './EmailBodyEditor';
@@ -20,8 +20,11 @@ const STEP_TYPES: { value: FunnelStepType; label: string; icon: React.ElementTyp
   { value: 'thank_you', label: 'Thank You', icon: Check, color: '#10b981', glow: '0 0 20px rgba(16,185,129,0.3)' },
   { value: 'video', label: 'Video Page', icon: Play, color: '#8b5cf6', glow: '0 0 20px rgba(139,92,246,0.3)' },
   { value: 'email', label: 'Email', icon: Mail, color: '#f59e0b', glow: '0 0 20px rgba(245,158,11,0.3)' },
+  { value: 'email_sequence', label: 'Email Sequence', icon: ListOrdered, color: '#d97706', glow: '0 0 20px rgba(217,119,6,0.3)' },
   { value: 'sms', label: 'SMS', icon: MessageCircle, color: '#0ea5e9', glow: '0 0 20px rgba(14,165,233,0.3)' },
+  { value: 'sms_sequence', label: 'SMS Sequence', icon: ListOrdered, color: '#0284c7', glow: '0 0 20px rgba(2,132,199,0.3)' },
   { value: 'whatsapp', label: 'WhatsApp', icon: MessageCircle, color: '#25d366', glow: '0 0 20px rgba(37,211,102,0.3)' },
+  { value: 'group_sequence', label: 'Group Sequence', icon: ListOrdered, color: '#9333ea', glow: '0 0 20px rgba(147,51,234,0.3)' },
   { value: 'call', label: 'Call', icon: Phone, color: '#84cc16', glow: '0 0 20px rgba(132,204,22,0.3)' },
   { value: 'sales_page', label: 'Sales Page', icon: ShoppingCart, color: '#ef4444', glow: '0 0 20px rgba(239,68,68,0.3)' },
   { value: 'checkout', label: 'Checkout', icon: ShoppingCart, color: '#f97316', glow: '0 0 20px rgba(249,115,22,0.3)' },
@@ -1190,6 +1193,35 @@ const FunnelManager: React.FC<FunnelManagerProps> = ({ storagePrefix }) => {
                           </div>
                         </div>
                       </div>
+                    ) : (step.type === 'email_sequence' || step.type === 'sms_sequence' || step.type === 'group_sequence') ? (
+                      <div className="w-full h-full flex flex-col overflow-hidden">
+                        <div className="flex items-center gap-1.5 px-3 py-1.5 border-b border-[rgba(58,58,58,0.6)]" style={{ background: 'rgba(255,255,255,0.02)' }}>
+                          <ListOrdered size={10} className="text-[#9B9B9B]" />
+                          <span className="text-[9px] font-semibold text-[#9B9B9B]">{getStepConfig(step.type).label}</span>
+                          <span className="ml-auto text-[9px] font-medium px-1.5 py-0.5 rounded-full" style={{ background: 'rgba(255,255,255,0.05)', color: '#9B9B9B' }}>
+                            {(step.sequenceItems?.length ?? 0)} msg
+                          </span>
+                        </div>
+                        <div className="flex-1 overflow-hidden p-2 space-y-1">
+                          {(step.sequenceItems ?? []).slice(0, 4).map((item, i) => (
+                            <div key={item.id} className="flex items-center gap-1.5 text-[9px]">
+                              <span className="font-mono text-[#555]">#{i + 1}</span>
+                              <span className="text-[#9B9B9B] truncate flex-1">
+                                {item.subject || item.body?.slice(0, 40) || 'Untitled'}
+                              </span>
+                              {item.delayDays != null && (
+                                <span className="text-[#555]">+{item.delayDays}d</span>
+                              )}
+                            </div>
+                          ))}
+                          {(step.sequenceItems?.length ?? 0) === 0 && (
+                            <p className="text-[9px] text-[#555] italic">Empty sequence — click to add messages</p>
+                          )}
+                          {(step.sequenceItems?.length ?? 0) > 4 && (
+                            <p className="text-[9px] text-[#555] italic">+{(step.sequenceItems!.length - 4)} more…</p>
+                          )}
+                        </div>
+                      </div>
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-xs text-[#666666]">
                         Paste a URL to see a preview
@@ -1427,6 +1459,13 @@ const FunnelManager: React.FC<FunnelManagerProps> = ({ storagePrefix }) => {
               </>
             )}
 
+            {(selectedStep.type === 'email_sequence' || selectedStep.type === 'sms_sequence' || selectedStep.type === 'group_sequence') && (
+              <SequenceEditor
+                step={selectedStep}
+                onUpdate={patch => updateStep(selectedStep.id, patch)}
+              />
+            )}
+
             <div><label className="text-[10px] uppercase tracking-wider text-[#9B9B9B] font-medium">Page URL</label>
               <input value={selectedStep.url || ''} onChange={e => updateStep(selectedStep.id, { url: e.target.value || undefined })} placeholder="https://..."
                 className="w-full mt-1 bg-[#3a3a3a] border border-[#3a3a3a] rounded-lg px-3 py-2 text-sm text-[#ECECEC] placeholder-[#666666] focus:outline-none focus:ring-2 focus:ring-[#555555]" />
@@ -1507,6 +1546,130 @@ const FunnelManager: React.FC<FunnelManagerProps> = ({ storagePrefix }) => {
 
           </div>
         )}
+      </div>
+    </div>
+  );
+};
+
+// ─── Sequence Editor (for email/sms/group sequence steps) ──────
+interface SequenceEditorProps {
+  step: CanvasStep;
+  onUpdate: (patch: Partial<CanvasStep>) => void;
+}
+
+const SEQUENCE_DEFAULT_CHANNEL: Record<string, FunnelSequenceChannel> = {
+  'email_sequence': 'email',
+  'sms_sequence': 'sms',
+  'group_sequence': 'group',
+};
+
+const SequenceEditor: React.FC<SequenceEditorProps> = ({ step, onUpdate }) => {
+  const items = step.sequenceItems ?? [];
+  const defaultChannel = SEQUENCE_DEFAULT_CHANNEL[step.type] ?? 'email';
+
+  const addItem = () => {
+    const next: FunnelSequenceItem = {
+      id: Date.now().toString() + Math.random().toString(36).slice(2, 6),
+      channel: defaultChannel,
+      order: items.length,
+      delayDays: items.length === 0 ? 0 : 1,
+      subject: '',
+      body: '',
+    };
+    onUpdate({ sequenceItems: [...items, next] });
+  };
+
+  const updateItem = (id: string, patch: Partial<FunnelSequenceItem>) => {
+    onUpdate({ sequenceItems: items.map(it => it.id === id ? { ...it, ...patch } : it) });
+  };
+
+  const removeItem = (id: string) => {
+    const next = items.filter(it => it.id !== id).map((it, i) => ({ ...it, order: i }));
+    onUpdate({ sequenceItems: next });
+  };
+
+  const move = (id: string, dir: -1 | 1) => {
+    const idx = items.findIndex(it => it.id === id);
+    if (idx < 0) return;
+    const target = idx + dir;
+    if (target < 0 || target >= items.length) return;
+    const reordered = [...items];
+    [reordered[idx], reordered[target]] = [reordered[target], reordered[idx]];
+    onUpdate({ sequenceItems: reordered.map((it, i) => ({ ...it, order: i })) });
+  };
+
+  const channelLabel = step.type === 'sms_sequence' ? 'SMS' : step.type === 'group_sequence' ? 'Group message' : 'Email';
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <label className="text-[10px] uppercase tracking-wider text-[#9B9B9B] font-medium">Sequence ({items.length})</label>
+        <button
+          onClick={addItem}
+          className="flex items-center gap-1 text-[10px] px-2 py-1 rounded-md bg-[#3a3a3a] text-[#ECECEC] hover:bg-[#454545] transition-colors"
+        >
+          <Plus size={10} /> Add {channelLabel}
+        </button>
+      </div>
+
+      {items.length === 0 && (
+        <p className="text-[10px] text-[#666666] italic text-center py-3 border border-dashed border-[#3a3a3a] rounded-lg">
+          No messages yet. Click "Add {channelLabel}" to start the sequence.
+        </p>
+      )}
+
+      <div className="space-y-2">
+        {items.map((item, i) => (
+          <div key={item.id} className="rounded-lg p-2.5 space-y-1.5" style={{ background: '#232323', border: '1px solid #3a3a3a' }}>
+            <div className="flex items-center gap-1.5">
+              <span className="text-[9px] font-mono font-semibold text-[#666] w-6">#{i + 1}</span>
+              <div className="flex items-center gap-1 text-[10px]">
+                <Clock size={10} className="text-[#666]" />
+                <input
+                  type="number"
+                  min={0}
+                  value={item.delayDays ?? 0}
+                  onChange={e => updateItem(item.id, { delayDays: parseInt(e.target.value) || 0 })}
+                  className="w-10 bg-transparent border-b border-[#3a3a3a] text-[10px] text-[#ECECEC] focus:outline-none focus:border-[#555]"
+                />
+                <span className="text-[9px] text-[#666]">days after</span>
+              </div>
+              <div className="ml-auto flex items-center gap-0.5">
+                <button onClick={() => move(item.id, -1)} disabled={i === 0} className="p-0.5 text-[#555] hover:text-[#ECECEC] disabled:opacity-30 disabled:cursor-not-allowed">
+                  <ChevronUp size={12} />
+                </button>
+                <button onClick={() => move(item.id, 1)} disabled={i === items.length - 1} className="p-0.5 text-[#555] hover:text-[#ECECEC] disabled:opacity-30 disabled:cursor-not-allowed">
+                  <ChevronDown size={12} />
+                </button>
+                <button onClick={() => removeItem(item.id)} className="p-0.5 text-[#555] hover:text-rose-400">
+                  <Trash2 size={11} />
+                </button>
+              </div>
+            </div>
+            {step.type === 'email_sequence' && (
+              <input
+                value={item.subject || ''}
+                onChange={e => updateItem(item.id, { subject: e.target.value })}
+                placeholder="Subject line..."
+                className="w-full bg-[#1c1c1c] border border-[#2a2a2a] rounded px-2 py-1.5 text-[11px] text-[#ECECEC] placeholder-[#555] focus:outline-none focus:border-[#555]"
+              />
+            )}
+            <textarea
+              value={item.body || ''}
+              onChange={e => updateItem(item.id, { body: e.target.value })}
+              placeholder={
+                step.type === 'sms_sequence' ? 'SMS message body...' :
+                step.type === 'group_sequence' ? 'Group chat message...' :
+                'Email body...'
+              }
+              rows={3}
+              className="w-full bg-[#1c1c1c] border border-[#2a2a2a] rounded px-2 py-1.5 text-[11px] text-[#ECECEC] placeholder-[#555] focus:outline-none focus:border-[#555] resize-y leading-relaxed"
+            />
+            {step.type === 'sms_sequence' && (item.body?.length || 0) > 160 && (
+              <p className="text-[9px] text-amber-400">{item.body?.length} chars (multi-part SMS)</p>
+            )}
+          </div>
+        ))}
       </div>
     </div>
   );

@@ -19,16 +19,27 @@ interface TaskBoardProps {
   clients: { id: string; name: string }[];
 }
 
-const COLUMNS = ['Lead', 'Proposal', 'Onboarding', 'In Progress', 'Review', 'Complete'];
+const COLUMNS = ['To Do', 'In Progress', 'Done'];
 
 const COLUMN_COLORS: Record<string, string> = {
-  'Lead': '#6b7280',
-  'Proposal': '#8b5cf6',
-  'Onboarding': '#3b82f6',
+  'To Do': '#6b7280',
   'In Progress': '#f59e0b',
-  'Review': '#ec4899',
-  'Complete': '#10b981',
+  'Done': '#10b981',
 };
+
+// Legacy statuses (from the old 6-column pipeline) mapped to the new 3 columns
+const LEGACY_STATUS_MAP: Record<string, string> = {
+  'Lead': 'To Do',
+  'Proposal': 'To Do',
+  'Onboarding': 'To Do',
+  'Review': 'Done',
+  'Complete': 'Done',
+};
+
+function normalizeStatus(s: string): string {
+  if (COLUMNS.includes(s)) return s;
+  return LEGACY_STATUS_MAP[s] ?? 'To Do';
+}
 
 function newTask(userId: string, status: string, orderNum: number): BoardTask {
   return {
@@ -53,7 +64,7 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storagePrefix, clients }) => {
   const [collapsed, setCollapsed] = useState(false);
   const titleRef = useRef<HTMLInputElement>(null);
 
-  // Load tasks from Supabase
+  // Load tasks from Supabase — migrate legacy statuses into the new 3-column scheme on read
   useEffect(() => {
     if (!supabase) return;
     (async () => {
@@ -62,7 +73,15 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storagePrefix, clients }) => {
         .select('*')
         .eq('user_id', storagePrefix)
         .order('order_num', { ascending: true });
-      if (data) setTasks(data);
+      if (data) {
+        const migrated = (data as BoardTask[]).map(t => ({ ...t, status: normalizeStatus(t.status) }));
+        setTasks(migrated);
+        // Persist any migrations that happened
+        const needsUpdate = migrated.filter((t, i) => t.status !== (data[i] as BoardTask).status);
+        if (needsUpdate.length > 0) {
+          await supabase.from('board_tasks').upsert(needsUpdate, { onConflict: 'id' });
+        }
+      }
     })();
   }, [storagePrefix]);
 
@@ -201,7 +220,7 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storagePrefix, clients }) => {
           </span>
           {totalRevenue > 0 && (
             <span className="text-xs font-medium px-2 py-0.5 rounded-full" style={{ background: '#1a2e1a', color: '#10b981' }}>
-              {formatMoney(totalRevenue)} pipeline
+              {formatMoney(totalRevenue)} total value
             </span>
           )}
         </button>

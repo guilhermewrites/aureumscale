@@ -1,10 +1,11 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Plus, Trash2, ChevronDown, Camera, Loader2, Archive, RotateCcw, GripVertical, Pencil, X, Check, ArrowRightLeft } from 'lucide-react';
+import { Plus, Trash2, ChevronDown, Camera, Loader2, Archive, RotateCcw, GripVertical, Pencil, X, Check, ArrowRightLeft, TrendingUp, DollarSign, Users, Target } from 'lucide-react';
 import { supabase } from '../services/supabaseClient';
 import ClientPanel from './ClientPanel';
 import TaskBoard from './TaskBoard';
+import CRMBoard, { Prospect } from './CRMBoard';
 
 type ClientType = 'recurring' | 'one-time' | 'profit-share';
 
@@ -448,7 +449,7 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
     if (!client) return routeClientId ? { id: routeClientId, name: '', photoUrl: undefined, status: undefined, paymentStatus: undefined, amount: undefined, service: undefined } : null;
     return { id: client.id, name: client.name, photoUrl: client.photoUrl, status: client.status, paymentStatus: client.paymentStatus, amount: client.amount, service: client.service };
   })();
-  const [showActive, setShowActive] = useState(true);
+  const [activeTab, setActiveTab] = useState<'active' | 'inactive' | 'prospects'>('active');
 
   // Custom column options — merged with defaults
   const [columnOptions, setColumnOptions] = useState<ColumnOptionsMap>({
@@ -749,9 +750,46 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
   const activeClients = clients.filter(c => c.active);
   const inactiveClients = clients.filter(c => !c.active);
 
-  const recurringClients = (showActive ? activeClients : inactiveClients).filter(c => c.clientType === 'recurring');
-  const oneTimeClients = (showActive ? activeClients : inactiveClients).filter(c => c.clientType === 'one-time');
-  const profitShareClients = (showActive ? activeClients : inactiveClients).filter(c => c.clientType === 'profit-share');
+  const showingInactive = activeTab === 'inactive';
+  const recurringClients = (showingInactive ? inactiveClients : activeClients).filter(c => c.clientType === 'recurring');
+  const oneTimeClients = (showingInactive ? inactiveClients : activeClients).filter(c => c.clientType === 'one-time');
+  const profitShareClients = (showingInactive ? inactiveClients : activeClients).filter(c => c.clientType === 'profit-share');
+
+  // Monthly recurring revenue calc
+  const cadenceMultiplier = (cadence: string): number => {
+    switch (cadence) {
+      case 'Weekly': return 52 / 12;
+      case 'Bi-weekly': return 26 / 12;
+      case '1x/month': return 1;
+      case '2x/month': return 2;
+      case '3x/month': return 3;
+      default: return 0; // on-demand / one-time-only don't count toward MRR
+    }
+  };
+  const mrr = activeClients
+    .filter(c => c.clientType === 'recurring')
+    .reduce((sum, c) => sum + (c.amount || 0) * cadenceMultiplier(c.cadence), 0);
+  const oneTimeRevenue = activeClients
+    .filter(c => c.clientType === 'one-time')
+    .reduce((sum, c) => sum + (c.amount || 0), 0);
+  const recurringCount = activeClients.filter(c => c.clientType === 'recurring').length;
+
+  const handleConvertProspect = useCallback(async (prospect: Prospect) => {
+    if (!supabase) return;
+    const newC: Client = {
+      ...newClient(clients.length, 'recurring'),
+      name: prospect.name || 'New client',
+      amount: prospect.deal_value || 0,
+    };
+    setClients(prev => [...prev, newC]);
+    setActiveTab('active');
+    try {
+      await supabase.from('clients').insert(toDbRow(newC, storagePrefix));
+      await supabase.from('prospects').delete().eq('id', prospect.id);
+    } catch (err) {
+      console.error('Convert prospect error:', err);
+    }
+  }, [clients.length, storagePrefix]);
 
   const CLIENT_TYPE_LABELS: Record<ClientType, string> = {
     'recurring': 'Recurring',
@@ -950,7 +988,7 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
                       currentType={client.clientType}
                       onMove={type => moveClientToType(client.id, type)}
                     />
-                    {showActive ? (
+                    {!showingInactive ? (
                       <button
                         onClick={e => { e.stopPropagation(); toggleClientActive(client.id, false); }}
                         className="text-[#555] hover:text-[#ECECEC] transition-colors p-1"
@@ -1024,25 +1062,73 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
 
   return (
     <div className="space-y-8">
-      {/* Header — tabs + add button */}
+      {/* ── Revenue Bar ───────────────────────────────────────────────────── */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="rounded-xl p-4" style={{ background: 'linear-gradient(135deg,#1a2f1e 0%,#162018 100%)', border: '1px solid #1f3a25' }}>
+          <div className="flex items-center gap-2 mb-1">
+            <TrendingUp size={12} className="text-emerald-400" />
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-emerald-400/80">Monthly Recurring</span>
+          </div>
+          <p className="text-2xl font-bold text-emerald-400">${mrr.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
+          <p className="text-[10px] mt-0.5 text-[#666]">Projected: ${(mrr * 12).toLocaleString(undefined, { maximumFractionDigits: 0 })}/yr</p>
+        </div>
+        <div className="rounded-xl p-4" style={{ background: '#1c1c1c', border: '1px solid #2a2a2a' }}>
+          <div className="flex items-center gap-2 mb-1">
+            <Users size={12} className="text-[#9B9B9B]" />
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-[#9B9B9B]">Recurring Clients</span>
+          </div>
+          <p className="text-2xl font-bold text-[#ECECEC]">{recurringCount}</p>
+          <p className="text-[10px] mt-0.5 text-[#666]">{activeClients.length} total active</p>
+        </div>
+        <div className="rounded-xl p-4" style={{ background: '#1c1c1c', border: '1px solid #2a2a2a' }}>
+          <div className="flex items-center gap-2 mb-1">
+            <DollarSign size={12} className="text-amber-400" />
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-amber-400/80">One-Time Revenue</span>
+          </div>
+          <p className="text-2xl font-bold text-amber-400">${oneTimeRevenue.toLocaleString()}</p>
+          <p className="text-[10px] mt-0.5 text-[#666]">{activeClients.filter(c => c.clientType === 'one-time').length} project(s)</p>
+        </div>
+        <div className="rounded-xl p-4" style={{ background: '#1c1c1c', border: '1px solid #2a2a2a' }}>
+          <div className="flex items-center gap-2 mb-1">
+            <Target size={12} className="text-[#9B9B9B]" />
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-[#9B9B9B]">Avg. Client Value</span>
+          </div>
+          <p className="text-2xl font-bold text-[#ECECEC]">
+            ${recurringCount > 0 ? Math.round(mrr / recurringCount).toLocaleString() : 0}
+          </p>
+          <p className="text-[10px] mt-0.5 text-[#666]">MRR per recurring client</p>
+        </div>
+      </div>
+
+      {/* Header — tabs */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-1 p-1 rounded-xl" style={{ background: '#1a1a1a' }}>
           <button
-            onClick={() => setShowActive(true)}
+            onClick={() => setActiveTab('active')}
             className="px-4 py-1.5 text-xs font-semibold rounded-lg transition-all"
             style={{
-              background: showActive ? '#2a2a2a' : 'transparent',
-              color: showActive ? '#ECECEC' : '#555',
+              background: activeTab === 'active' ? '#2a2a2a' : 'transparent',
+              color: activeTab === 'active' ? '#ECECEC' : '#555',
             }}
           >
             Active ({activeClients.length})
           </button>
           <button
-            onClick={() => setShowActive(false)}
+            onClick={() => setActiveTab('prospects')}
             className="px-4 py-1.5 text-xs font-semibold rounded-lg transition-all"
             style={{
-              background: !showActive ? '#2a2a2a' : 'transparent',
-              color: !showActive ? '#ECECEC' : '#555',
+              background: activeTab === 'prospects' ? '#2a2a2a' : 'transparent',
+              color: activeTab === 'prospects' ? '#ECECEC' : '#555',
+            }}
+          >
+            Prospects (CRM)
+          </button>
+          <button
+            onClick={() => setActiveTab('inactive')}
+            className="px-4 py-1.5 text-xs font-semibold rounded-lg transition-all"
+            style={{
+              background: activeTab === 'inactive' ? '#2a2a2a' : 'transparent',
+              color: activeTab === 'inactive' ? '#ECECEC' : '#555',
             }}
           >
             Inactive ({inactiveClients.length})
@@ -1050,12 +1136,20 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
         </div>
       </div>
 
-      {/* ── Task Board ──────────────────────────────────────────────────────── */}
-      <TaskBoard
-        storagePrefix={storagePrefix}
-        clients={clients.filter(c => c.active).map(c => ({ id: c.id, name: c.name }))}
-      />
+      {/* ── Prospects / CRM ─────────────────────────────────────────────── */}
+      {activeTab === 'prospects' && (
+        <CRMBoard storagePrefix={storagePrefix} onConvert={handleConvertProspect} />
+      )}
 
+      {/* ── Task Board (only in Active view) ────────────────────────────── */}
+      {activeTab === 'active' && (
+        <TaskBoard
+          storagePrefix={storagePrefix}
+          clients={clients.filter(c => c.active).map(c => ({ id: c.id, name: c.name }))}
+        />
+      )}
+
+      {activeTab !== 'prospects' && (<>
       {/* ── Recurring Clients ──────────────────────────────────────────────── */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
@@ -1106,6 +1200,7 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
         </div>
         {renderTable(profitShareClients, 'profit-share')}
       </div>
+      </>)}
 
       {/* Error toast */}
       {error && (

@@ -78,7 +78,19 @@ export interface AppUser {
 }
 
 // --- Funnel Types ---
-export type FunnelStepType = 'registration' | 'thank_you' | 'video' | 'email' | 'sales_page' | 'checkout' | 'upsell' | 'ad' | 'product' | 'blog' | 'webinar' | 'download' | 'custom' | 'sms' | 'whatsapp' | 'call' | 'pipeline' | 'crm' | 'group_chat';
+export type FunnelStepType = 'registration' | 'thank_you' | 'video' | 'email' | 'sales_page' | 'checkout' | 'upsell' | 'ad' | 'product' | 'blog' | 'webinar' | 'download' | 'custom' | 'sms' | 'whatsapp' | 'call' | 'pipeline' | 'crm' | 'group_chat' | 'email_sequence' | 'sms_sequence' | 'group_sequence';
+
+export type FunnelSequenceChannel = 'email' | 'sms' | 'whatsapp' | 'group';
+
+export interface FunnelSequenceItem {
+  id: string;
+  channel: FunnelSequenceChannel;
+  order: number;
+  delayDays?: number;
+  subject?: string;
+  body?: string;
+  status?: string;
+}
 
 export interface FunnelStepAd {
   id: string;
@@ -108,6 +120,8 @@ export interface FunnelStep {
   emailStatus?: FunnelAdStatus;
   smsBody?: string;
   smsStatus?: FunnelAdStatus;
+  sequenceItems?: FunnelSequenceItem[];
+  sequenceChannel?: FunnelSequenceChannel;
   views: number;
   clicks: number;
   conversions: number;
