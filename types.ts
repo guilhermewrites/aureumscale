@@ -42,6 +42,7 @@ export interface AdMetric {
 
 export enum NavigationItem {
   DASHBOARD = 'Dashboard',
+  CRM = 'CRM',
   CLIENTS = 'Clients',
   SWIPEFILE = 'Swipe File',
   TEAM = 'Team',

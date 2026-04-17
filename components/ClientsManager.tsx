@@ -5,7 +5,6 @@ import { Plus, Trash2, ChevronDown, Camera, Loader2, Archive, RotateCcw, GripVer
 import { supabase } from '../services/supabaseClient';
 import ClientPanel from './ClientPanel';
 import TaskBoard from './TaskBoard';
-import CRMBoard, { Prospect } from './CRMBoard';
 
 type ClientType = 'recurring' | 'one-time' | 'profit-share';
 
@@ -33,28 +32,28 @@ const DEFAULT_CLIENT_STATUSES = ['Happy', 'Moderate', 'Frustrated'];
 const DEFAULT_ACQUISITIONS = ['Inbound — DMs', 'Inbound — Organic', 'Inbound — Funnel', 'Outbound — DMs', 'Outbound — Cold Email', 'Paid Traffic — Ads', 'Social Media', 'Referral', 'Partnership'];
 
 const paymentColors: Record<string, string> = {
-  'Missing Invoice': 'text-red-400',
+  'Missing Invoice': 'text-[#fca5a5]',
   'Pending': 'text-[#9B9B9B]',
-  'Paid': 'text-emerald-400',
-  'Late': 'text-orange-400',
+  'Paid': 'text-[#86efac]',
+  'Late': 'text-[#fed7aa]',
 };
 
 const statusColors: Record<string, string> = {
-  'Happy': 'text-emerald-400',
+  'Happy': 'text-[#86efac]',
   'Moderate': 'text-[#9B9B9B]',
-  'Frustrated': 'text-red-400',
+  'Frustrated': 'text-[#fca5a5]',
 };
 
 const acquisitionColors: Record<string, string> = {
-  'Inbound — DMs': 'text-[#8bb0d0]',
-  'Inbound — Organic': 'text-[#8bb0d0]',
-  'Inbound — Funnel': 'text-[#8bb0d0]',
-  'Outbound — DMs': 'text-[#c0a0d8]',
-  'Outbound — Cold Email': 'text-[#c0a0d8]',
-  'Paid Traffic — Ads': 'text-[#e0a870]',
-  'Social Media': 'text-[#7dd8a8]',
-  'Referral': 'text-[#d4b896]',
-  'Partnership': 'text-[#d4b896]',
+  'Inbound — DMs': 'text-[#bfdbfe]',
+  'Inbound — Organic': 'text-[#bfdbfe]',
+  'Inbound — Funnel': 'text-[#bfdbfe]',
+  'Outbound — DMs': 'text-[#ddd6fe]',
+  'Outbound — Cold Email': 'text-[#ddd6fe]',
+  'Paid Traffic — Ads': 'text-[#fed7aa]',
+  'Social Media': 'text-[#86efac]',
+  'Referral': 'text-[#fde68a]',
+  'Partnership': 'text-[#fde68a]',
 };
 
 function getInitials(name: string) {
@@ -236,7 +235,7 @@ function SelectCell({ value, options, onChange, colorMap, onAddOption, onEditOpt
                     onKeyDown={e => { if (e.key === 'Enter') handleEditSave(o); if (e.key === 'Escape') setEditingItem(null); }}
                     className="flex-1 text-xs bg-[#161616] text-[#ECECEC] rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#444]"
                   />
-                  <button onClick={() => handleEditSave(o)} className="text-emerald-400 p-1 hover:bg-[#2a2a2a] rounded-lg"><Check size={12} /></button>
+                  <button onClick={() => handleEditSave(o)} className="text-[#86efac] p-1 hover:bg-[#2a2a2a] rounded-lg"><Check size={12} /></button>
                   <button onClick={() => setEditingItem(null)} className="text-[#555] p-1 hover:bg-[#2a2a2a] rounded-lg"><X size={12} /></button>
                 </div>
               ) : (
@@ -264,7 +263,7 @@ function SelectCell({ value, options, onChange, colorMap, onAddOption, onEditOpt
                         <button
                           onMouseDown={e => e.stopPropagation()}
                           onClick={() => { onDeleteOption(o); }}
-                          className="text-[#555] hover:text-red-400 p-1 rounded-lg transition-colors"
+                          className="text-[#555] hover:text-[#fca5a5] p-1 rounded-lg transition-colors"
                           title="Delete"
                         ><Trash2 size={11} /></button>
                       )}
@@ -286,7 +285,7 @@ function SelectCell({ value, options, onChange, colorMap, onAddOption, onEditOpt
                 className="flex-1 text-xs bg-[#161616] text-[#ECECEC] rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#444] placeholder-[#444]"
                 placeholder="New option…"
               />
-              <button onClick={handleAdd} className="text-emerald-400 p-1 hover:bg-[#2a2a2a] rounded-lg"><Check size={12} /></button>
+              <button onClick={handleAdd} className="text-[#86efac] p-1 hover:bg-[#2a2a2a] rounded-lg"><Check size={12} /></button>
               <button onClick={() => setAddingNew(false)} className="text-[#555] p-1 hover:bg-[#2a2a2a] rounded-lg"><X size={12} /></button>
             </div>
           )}
@@ -449,7 +448,7 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
     if (!client) return routeClientId ? { id: routeClientId, name: '', photoUrl: undefined, status: undefined, paymentStatus: undefined, amount: undefined, service: undefined } : null;
     return { id: client.id, name: client.name, photoUrl: client.photoUrl, status: client.status, paymentStatus: client.paymentStatus, amount: client.amount, service: client.service };
   })();
-  const [activeTab, setActiveTab] = useState<'active' | 'inactive' | 'prospects'>('active');
+  const [activeTab, setActiveTab] = useState<'active' | 'inactive'>('active');
 
   // Custom column options — merged with defaults
   const [columnOptions, setColumnOptions] = useState<ColumnOptionsMap>({
@@ -774,23 +773,6 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
     .reduce((sum, c) => sum + (c.amount || 0), 0);
   const recurringCount = activeClients.filter(c => c.clientType === 'recurring').length;
 
-  const handleConvertProspect = useCallback(async (prospect: Prospect) => {
-    if (!supabase) return;
-    const newC: Client = {
-      ...newClient(clients.length, 'recurring'),
-      name: prospect.name || 'New client',
-      amount: prospect.deal_value || 0,
-    };
-    setClients(prev => [...prev, newC]);
-    setActiveTab('active');
-    try {
-      await supabase.from('clients').insert(toDbRow(newC, storagePrefix));
-      await supabase.from('prospects').delete().eq('id', prospect.id);
-    } catch (err) {
-      console.error('Convert prospect error:', err);
-    }
-  }, [clients.length, storagePrefix]);
-
   const CLIENT_TYPE_LABELS: Record<ClientType, string> = {
     'recurring': 'Recurring',
     'one-time': 'One-Time',
@@ -856,7 +838,7 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
     ),
     amount: (
       <div className="flex items-center gap-0.5" onClick={e => e.stopPropagation()}>
-        <span className="text-xs text-emerald-500/60">$</span>
+        <span className="text-xs" style={{ color: 'rgba(134,239,172,0.6)' }}>$</span>
         <input
           type="text"
           value={client.amount ? client.amount.toLocaleString() : ''}
@@ -865,7 +847,7 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
             const num = parseFloat(raw) || 0;
             updateClient(client.id, { amount: num });
           }}
-          className="bg-transparent text-xs font-medium text-emerald-400 focus:outline-none w-[80px] placeholder-[#3a3a3a]"
+          className="bg-transparent text-xs font-medium text-[#86efac] focus:outline-none w-[80px] placeholder-[#3a3a3a]"
           placeholder="0"
         />
       </div>
@@ -997,13 +979,13 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
                     ) : (
                       <button
                         onClick={e => { e.stopPropagation(); toggleClientActive(client.id, true); }}
-                        className="text-[#555] hover:text-emerald-400 transition-colors p-1"
+                        className="text-[#555] hover:text-[#86efac] transition-colors p-1"
                         title="Reactivate client"
                       ><RotateCcw size={13} /></button>
                     )}
                     <button
                       onClick={e => { e.stopPropagation(); deleteClient(client.id); }}
-                      className="text-[#555] hover:text-red-400 transition-colors p-1"
+                      className="text-[#555] hover:text-[#fca5a5] transition-colors p-1"
                       title="Delete client"
                     ><Trash2 size={13} /></button>
                   </div>
@@ -1039,7 +1021,7 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
                     <SelectCell value={draft.acquisition} options={columnOptions.acquisition} onChange={v => setDraft(d => ({ ...d, acquisition: v }))} colorMap={acquisitionColors} />
                   </div>
                   <div className="flex items-center gap-2 flex-shrink-0">
-                    <button onClick={handleAddSave} className="text-xs text-emerald-400 hover:text-emerald-300 font-semibold px-3 py-1.5 rounded-lg transition-colors" style={{ background: '#2a2a2a' }}>Save</button>
+                    <button onClick={handleAddSave} className="text-xs text-[#86efac] hover:text-[#bbf7d0] font-semibold px-3 py-1.5 rounded-lg transition-colors" style={{ background: '#2a2a2a' }}>Save</button>
                     <button onClick={handleAddCancel} className="text-xs text-[#555] hover:text-[#ECECEC] px-3 py-1.5 rounded-lg transition-colors">Cancel</button>
                   </div>
                 </div>
@@ -1066,10 +1048,10 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <div className="rounded-xl p-4" style={{ background: 'linear-gradient(135deg,#1a2f1e 0%,#162018 100%)', border: '1px solid #1f3a25' }}>
           <div className="flex items-center gap-2 mb-1">
-            <TrendingUp size={12} className="text-emerald-400" />
-            <span className="text-[10px] font-semibold uppercase tracking-wider text-emerald-400/80">Monthly Recurring</span>
+            <TrendingUp size={12} style={{ color: '#86efac' }} />
+            <span className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'rgba(134,239,172,0.8)' }}>Monthly Recurring</span>
           </div>
-          <p className="text-2xl font-bold text-emerald-400">${mrr.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
+          <p className="text-2xl font-bold" style={{ color: '#86efac' }}>${mrr.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
           <p className="text-[10px] mt-0.5 text-[#666]">Projected: ${(mrr * 12).toLocaleString(undefined, { maximumFractionDigits: 0 })}/yr</p>
         </div>
         <div className="rounded-xl p-4" style={{ background: '#1c1c1c', border: '1px solid #2a2a2a' }}>
@@ -1082,10 +1064,10 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
         </div>
         <div className="rounded-xl p-4" style={{ background: '#1c1c1c', border: '1px solid #2a2a2a' }}>
           <div className="flex items-center gap-2 mb-1">
-            <DollarSign size={12} className="text-amber-400" />
-            <span className="text-[10px] font-semibold uppercase tracking-wider text-amber-400/80">One-Time Revenue</span>
+            <DollarSign size={12} style={{ color: '#fde68a' }} />
+            <span className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'rgba(253,230,138,0.8)' }}>One-Time Revenue</span>
           </div>
-          <p className="text-2xl font-bold text-amber-400">${oneTimeRevenue.toLocaleString()}</p>
+          <p className="text-2xl font-bold" style={{ color: '#fde68a' }}>${oneTimeRevenue.toLocaleString()}</p>
           <p className="text-[10px] mt-0.5 text-[#666]">{activeClients.filter(c => c.clientType === 'one-time').length} project(s)</p>
         </div>
         <div className="rounded-xl p-4" style={{ background: '#1c1c1c', border: '1px solid #2a2a2a' }}>
@@ -1114,16 +1096,6 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
             Active ({activeClients.length})
           </button>
           <button
-            onClick={() => setActiveTab('prospects')}
-            className="px-4 py-1.5 text-xs font-semibold rounded-lg transition-all"
-            style={{
-              background: activeTab === 'prospects' ? '#2a2a2a' : 'transparent',
-              color: activeTab === 'prospects' ? '#ECECEC' : '#555',
-            }}
-          >
-            Prospects (CRM)
-          </button>
-          <button
             onClick={() => setActiveTab('inactive')}
             className="px-4 py-1.5 text-xs font-semibold rounded-lg transition-all"
             style={{
@@ -1136,11 +1108,6 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
         </div>
       </div>
 
-      {/* ── Prospects / CRM ─────────────────────────────────────────────── */}
-      {activeTab === 'prospects' && (
-        <CRMBoard storagePrefix={storagePrefix} onConvert={handleConvertProspect} />
-      )}
-
       {/* ── Task Board (only in Active view) ────────────────────────────── */}
       {activeTab === 'active' && (
         <TaskBoard
@@ -1149,7 +1116,7 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
         />
       )}
 
-      {activeTab !== 'prospects' && (<>
+      {(<>
       {/* ── Recurring Clients ──────────────────────────────────────────────── */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
@@ -1204,7 +1171,7 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
 
       {/* Error toast */}
       {error && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-red-900/90 border border-red-700 text-red-200 text-sm px-4 py-2 rounded-lg shadow-lg">
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-[#4a2b2b]/90 border border-[#fca5a5]/40 text-[#fecaca] text-sm px-4 py-2 rounded-lg shadow-lg">
           {error}
         </div>
       )}

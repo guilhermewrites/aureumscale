@@ -21,6 +21,7 @@ import {
   Globe,
   CalendarDays,
   Brain,
+  Target,
 } from 'lucide-react';
 import { NavigationItem, AppUser } from '../types';
 import useLocalStorage from '../hooks/useLocalStorage';
@@ -31,6 +32,7 @@ const DEFAULT_USERS: AppUser[] = [
 
 const navToRoute: Record<string, string> = {
   [NavigationItem.DASHBOARD]: '/dashboard',
+  [NavigationItem.CRM]: '/crm',
   [NavigationItem.CLIENTS]: '/clients',
   [NavigationItem.SWIPEFILE]: '/swipefile',
   [NavigationItem.TEAM]: '/team',
@@ -47,6 +49,7 @@ const navToRoute: Record<string, string> = {
 
 const routeToNavItem: Record<string, NavigationItem> = {
   '/dashboard': NavigationItem.DASHBOARD,
+  '/crm': NavigationItem.CRM,
   '/clients': NavigationItem.CLIENTS,
   '/swipefile': NavigationItem.SWIPEFILE,
   '/team': NavigationItem.TEAM,
@@ -250,6 +253,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeUserId, onUserChange, collapsed
   const menuItems = [
     { id: NavigationItem.DASHBOARD, icon: LayoutDashboard, label: 'Dashboard' },
     { id: NavigationItem.GENERAL_ROOM, icon: Crosshair, label: 'General Room' },
+    { id: NavigationItem.CRM, icon: Target, label: 'CRM' },
     { id: NavigationItem.CLIENTS, icon: Briefcase, label: 'Clients' },
     { id: NavigationItem.SWIPEFILE, icon: Library, label: 'Swipe File' },
     { id: NavigationItem.TEAM, icon: Users, label: 'Team' },

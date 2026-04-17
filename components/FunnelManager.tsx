@@ -16,28 +16,28 @@ import EmailBodyEditor from './EmailBodyEditor';
 
 // ─── Step type config ───────────────────────────────────────────
 const STEP_TYPES: { value: FunnelStepType; label: string; icon: React.ElementType; color: string; glow: string }[] = [
-  { value: 'registration', label: 'Registration', icon: FileText, color: '#3b82f6', glow: '0 0 20px rgba(59,130,246,0.3)' },
-  { value: 'thank_you', label: 'Thank You', icon: Check, color: '#10b981', glow: '0 0 20px rgba(16,185,129,0.3)' },
-  { value: 'video', label: 'Video Page', icon: Play, color: '#8b5cf6', glow: '0 0 20px rgba(139,92,246,0.3)' },
-  { value: 'email', label: 'Email', icon: Mail, color: '#f59e0b', glow: '0 0 20px rgba(245,158,11,0.3)' },
-  { value: 'email_sequence', label: 'Email Sequence', icon: ListOrdered, color: '#d97706', glow: '0 0 20px rgba(217,119,6,0.3)' },
-  { value: 'sms', label: 'SMS', icon: MessageCircle, color: '#0ea5e9', glow: '0 0 20px rgba(14,165,233,0.3)' },
-  { value: 'sms_sequence', label: 'SMS Sequence', icon: ListOrdered, color: '#0284c7', glow: '0 0 20px rgba(2,132,199,0.3)' },
-  { value: 'whatsapp', label: 'WhatsApp', icon: MessageCircle, color: '#25d366', glow: '0 0 20px rgba(37,211,102,0.3)' },
-  { value: 'group_sequence', label: 'Group Sequence', icon: ListOrdered, color: '#9333ea', glow: '0 0 20px rgba(147,51,234,0.3)' },
-  { value: 'call', label: 'Call', icon: Phone, color: '#84cc16', glow: '0 0 20px rgba(132,204,22,0.3)' },
-  { value: 'sales_page', label: 'Sales Page', icon: ShoppingCart, color: '#ef4444', glow: '0 0 20px rgba(239,68,68,0.3)' },
-  { value: 'checkout', label: 'Checkout', icon: ShoppingCart, color: '#f97316', glow: '0 0 20px rgba(249,115,22,0.3)' },
-  { value: 'upsell', label: 'Upsell', icon: Gift, color: '#ec4899', glow: '0 0 20px rgba(236,72,153,0.3)' },
-  { value: 'ad', label: 'Ad', icon: Megaphone, color: '#06b6d4', glow: '0 0 20px rgba(6,182,212,0.3)' },
-  { value: 'pipeline', label: 'Pipeline', icon: GitBranch, color: '#64748b', glow: '0 0 20px rgba(100,116,139,0.3)' },
-  { value: 'crm', label: 'CRM', icon: Database, color: '#0d9488', glow: '0 0 20px rgba(13,148,136,0.3)' },
-  { value: 'group_chat', label: 'Group Chat', icon: Users, color: '#a855f7', glow: '0 0 20px rgba(168,85,247,0.3)' },
-  { value: 'product', label: 'Product', icon: Package, color: '#a855f7', glow: '0 0 20px rgba(168,85,247,0.3)' },
-  { value: 'blog', label: 'Blog Post', icon: BookOpen, color: '#14b8a6', glow: '0 0 20px rgba(20,184,166,0.3)' },
-  { value: 'webinar', label: 'Webinar', icon: MonitorPlay, color: '#6366f1', glow: '0 0 20px rgba(99,102,241,0.3)' },
-  { value: 'download', label: 'Download', icon: Download, color: '#22c55e', glow: '0 0 20px rgba(34,197,94,0.3)' },
-  { value: 'custom', label: 'Custom', icon: Globe, color: '#6b7280', glow: '0 0 20px rgba(107,114,128,0.3)' },
+  { value: 'registration', label: 'Registration', icon: FileText, color: '#bfdbfe', glow: '0 0 20px rgba(191,219,254,0.3)' },
+  { value: 'thank_you', label: 'Thank You', icon: Check, color: '#86efac', glow: '0 0 20px rgba(134,239,172,0.3)' },
+  { value: 'video', label: 'Video Page', icon: Play, color: '#ddd6fe', glow: '0 0 20px rgba(221,214,254,0.3)' },
+  { value: 'email', label: 'Email', icon: Mail, color: '#fde68a', glow: '0 0 20px rgba(253,230,138,0.3)' },
+  { value: 'email_sequence', label: 'Email Sequence', icon: ListOrdered, color: '#fed7aa', glow: '0 0 20px rgba(254,215,170,0.3)' },
+  { value: 'sms', label: 'SMS', icon: MessageCircle, color: '#a5f3fc', glow: '0 0 20px rgba(165,243,252,0.3)' },
+  { value: 'sms_sequence', label: 'SMS Sequence', icon: ListOrdered, color: '#bae6fd', glow: '0 0 20px rgba(186,230,253,0.3)' },
+  { value: 'whatsapp', label: 'WhatsApp', icon: MessageCircle, color: '#bbf7d0', glow: '0 0 20px rgba(187,247,208,0.3)' },
+  { value: 'group_sequence', label: 'Group Sequence', icon: ListOrdered, color: '#e9d5ff', glow: '0 0 20px rgba(233,213,255,0.3)' },
+  { value: 'call', label: 'Call', icon: Phone, color: '#d9f99d', glow: '0 0 20px rgba(217,249,157,0.3)' },
+  { value: 'sales_page', label: 'Sales Page', icon: ShoppingCart, color: '#fca5a5', glow: '0 0 20px rgba(252,165,165,0.3)' },
+  { value: 'checkout', label: 'Checkout', icon: ShoppingCart, color: '#fed7aa', glow: '0 0 20px rgba(254,215,170,0.3)' },
+  { value: 'upsell', label: 'Upsell', icon: Gift, color: '#fbcfe8', glow: '0 0 20px rgba(251,207,232,0.3)' },
+  { value: 'ad', label: 'Ad', icon: Megaphone, color: '#a5f3fc', glow: '0 0 20px rgba(165,243,252,0.3)' },
+  { value: 'pipeline', label: 'Pipeline', icon: GitBranch, color: '#cbd5e1', glow: '0 0 20px rgba(203,213,225,0.3)' },
+  { value: 'crm', label: 'CRM', icon: Database, color: '#99f6e4', glow: '0 0 20px rgba(153,246,228,0.3)' },
+  { value: 'group_chat', label: 'Group Chat', icon: Users, color: '#e9d5ff', glow: '0 0 20px rgba(233,213,255,0.3)' },
+  { value: 'product', label: 'Product', icon: Package, color: '#e9d5ff', glow: '0 0 20px rgba(233,213,255,0.3)' },
+  { value: 'blog', label: 'Blog Post', icon: BookOpen, color: '#99f6e4', glow: '0 0 20px rgba(153,246,228,0.3)' },
+  { value: 'webinar', label: 'Webinar', icon: MonitorPlay, color: '#c7d2fe', glow: '0 0 20px rgba(199,210,254,0.3)' },
+  { value: 'download', label: 'Download', icon: Download, color: '#bbf7d0', glow: '0 0 20px rgba(187,247,208,0.3)' },
+  { value: 'custom', label: 'Custom', icon: Globe, color: '#d4d4d8', glow: '0 0 20px rgba(212,212,216,0.3)' },
 ];
 
 const getStepConfig = (type: FunnelStepType) => STEP_TYPES.find(s => s.value === type) || STEP_TYPES.find(s => s.value === 'custom')!;
@@ -46,13 +46,13 @@ const getStepConfig = (type: FunnelStepType) => STEP_TYPES.find(s => s.value ===
 const AD_STATUSES: { value: FunnelAdStatus; label: string; color: string; bgColor: string; icon: React.ElementType }[] = [
   { value: 'Unassigned', label: 'Select status', color: 'text-gray-500', bgColor: 'bg-[rgba(255,255,255,0.03)] border-gray-600/30', icon: AlertTriangle },
   { value: 'Pending', label: 'Pending', color: 'text-gray-400', bgColor: 'bg-gray-500/10 border-gray-500/20', icon: Clock },
-  { value: 'Scripted', label: 'Scripted', color: 'text-blue-400', bgColor: 'bg-blue-500/10 border-blue-500/20', icon: FileText },
-  { value: 'Recorded', label: 'Recorded', color: 'text-purple-400', bgColor: 'bg-purple-500/10 border-purple-500/20', icon: Video },
-  { value: 'Edited', label: 'Edited', color: 'text-amber-400', bgColor: 'bg-amber-500/10 border-amber-500/20', icon: CheckCircle2 },
-  { value: 'Needs Review', label: 'Needs Review', color: 'text-orange-400', bgColor: 'bg-orange-500/10 border-orange-500/20', icon: Eye },
-  { value: 'Sent', label: 'Sent', color: 'text-sky-400', bgColor: 'bg-sky-500/10 border-sky-500/20', icon: Send },
-  { value: 'Live', label: 'Live', color: 'text-emerald-400', bgColor: 'bg-emerald-500/10 border-emerald-500/20', icon: Radio },
-  { value: 'Paused', label: 'Paused', color: 'text-rose-400', bgColor: 'bg-rose-500/10 border-rose-500/20', icon: Pause },
+  { value: 'Scripted', label: 'Scripted', color: 'text-[#bfdbfe]', bgColor: 'bg-[#bfdbfe]/10 border-[#bfdbfe]/20', icon: FileText },
+  { value: 'Recorded', label: 'Recorded', color: 'text-[#ddd6fe]', bgColor: 'bg-[#ddd6fe]/10 border-[#ddd6fe]/20', icon: Video },
+  { value: 'Edited', label: 'Edited', color: 'text-[#fde68a]', bgColor: 'bg-[#fde68a]/10 border-[#fde68a]/20', icon: CheckCircle2 },
+  { value: 'Needs Review', label: 'Needs Review', color: 'text-[#fed7aa]', bgColor: 'bg-[#fed7aa]/10 border-[#fed7aa]/20', icon: Eye },
+  { value: 'Sent', label: 'Sent', color: 'text-[#bae6fd]', bgColor: 'bg-[#bae6fd]/10 border-[#bae6fd]/20', icon: Send },
+  { value: 'Live', label: 'Live', color: 'text-[#86efac]', bgColor: 'bg-[#86efac]/10 border-[#86efac]/20', icon: Radio },
+  { value: 'Paused', label: 'Paused', color: 'text-[#fca5a5]', bgColor: 'bg-[#fca5a5]/10 border-[#fca5a5]/20', icon: Pause },
 ];
 const getAdStatusConfig = (status?: FunnelAdStatus) => AD_STATUSES.find(s => s.value === status) || AD_STATUSES[0];
 
@@ -66,7 +66,7 @@ function getMetricColor(actual: number, expected?: number): 'green' | 'yellow' |
 
 function MetricBadge({ label, actual, expected }: { label: string; actual: number; expected?: number }) {
   const color = getMetricColor(actual, expected);
-  const cls = color === 'green' ? 'text-emerald-400' : color === 'yellow' ? 'text-amber-400' : color === 'red' ? 'text-rose-400' : 'text-[#9B9B9B]';
+  const cls = color === 'green' ? 'text-[#86efac]' : color === 'yellow' ? 'text-[#fde68a]' : color === 'red' ? 'text-[#fca5a5]' : 'text-[#9B9B9B]';
   return (
     <span className={cls} title={expected != null ? `Expected: ${expected.toLocaleString()}` : undefined}>
       {label}: {actual.toLocaleString()}{expected != null ? ` / ${expected.toLocaleString()}` : ''}
@@ -856,7 +856,7 @@ const FunnelManager: React.FC<FunnelManagerProps> = ({ storagePrefix }) => {
                         {funnel.name}
                       </h3>
                     )}
-                    <button onClick={e => { e.stopPropagation(); handleDeleteFunnel(funnel.id); }} className="p-1 text-[#666666] hover:text-rose-400 transition-none opacity-0 group-hover:opacity-100"><Trash2 size={14} /></button>
+                    <button onClick={e => { e.stopPropagation(); handleDeleteFunnel(funnel.id); }} className="p-1 text-[#666666] hover:text-[#fca5a5] transition-none opacity-0 group-hover:opacity-100"><Trash2 size={14} /></button>
                   </div>
                   <div className="flex items-center gap-1.5 mb-3 overflow-hidden">
                     {funnel.steps.slice(0, 6).map((step, i) => {
@@ -1296,7 +1296,7 @@ const FunnelManager: React.FC<FunnelManagerProps> = ({ storagePrefix }) => {
                     {panelExpanded ? <ChevronsRight size={14} /> : <ChevronsLeft size={14} />}
                   </button>
                 )}
-                <button onClick={() => setConfirmDeleteStepId(selectedStep.id)} className="p-1 text-[#9B9B9B] hover:text-rose-400" title="Delete step"><Trash2 size={14} /></button>
+                <button onClick={() => setConfirmDeleteStepId(selectedStep.id)} className="p-1 text-[#9B9B9B] hover:text-[#fca5a5]" title="Delete step"><Trash2 size={14} /></button>
                 <button onClick={() => { setSelectedStepId(null); setPanelExpanded(false); }} className="p-1 text-[#9B9B9B] hover:text-white"><X size={14} /></button>
               </div>
             </div>
@@ -1452,7 +1452,7 @@ const FunnelManager: React.FC<FunnelManagerProps> = ({ storagePrefix }) => {
                     rows={6}
                     className="w-full bg-[#3a3a3a] border border-[#3a3a3a] rounded-lg px-3 py-2 text-sm text-[#ECECEC] placeholder-[#666666] focus:outline-none focus:ring-2 focus:ring-[#555555] leading-relaxed resize-y"
                   />
-                  <p className={`text-[10px] mt-1 ${(selectedStep.smsBody?.length || 0) > 160 ? 'text-amber-400' : 'text-[#666666]'}`}>
+                  <p className={`text-[10px] mt-1 ${(selectedStep.smsBody?.length || 0) > 160 ? 'text-[#fde68a]' : 'text-[#666666]'}`}>
                     {selectedStep.smsBody?.length || 0} / 160 characters{(selectedStep.smsBody?.length || 0) > 160 ? ' (multi-part SMS)' : ''}
                   </p>
                 </div>
@@ -1499,7 +1499,7 @@ const FunnelManager: React.FC<FunnelManagerProps> = ({ storagePrefix }) => {
                       <Upload size={10} /> Replace
                     </button>
                     <button onClick={() => { deleteMediaFromStorage(selectedStep.previewMedia); updateStep(selectedStep.id, { previewMedia: undefined, previewMediaType: undefined }); }}
-                      className="flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 text-[10px] text-[#9B9B9B] hover:text-rose-400 bg-[#3a3a3a] rounded-lg transition-none">
+                      className="flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 text-[10px] text-[#9B9B9B] hover:text-[#fca5a5] bg-[#3a3a3a] rounded-lg transition-none">
                       <Trash2 size={10} /> Remove
                     </button>
                   </div>
@@ -1641,7 +1641,7 @@ const SequenceEditor: React.FC<SequenceEditorProps> = ({ step, onUpdate }) => {
                 <button onClick={() => move(item.id, 1)} disabled={i === items.length - 1} className="p-0.5 text-[#555] hover:text-[#ECECEC] disabled:opacity-30 disabled:cursor-not-allowed">
                   <ChevronDown size={12} />
                 </button>
-                <button onClick={() => removeItem(item.id)} className="p-0.5 text-[#555] hover:text-rose-400">
+                <button onClick={() => removeItem(item.id)} className="p-0.5 text-[#555] hover:text-[#fca5a5]">
                   <Trash2 size={11} />
                 </button>
               </div>
@@ -1666,7 +1666,7 @@ const SequenceEditor: React.FC<SequenceEditorProps> = ({ step, onUpdate }) => {
               className="w-full bg-[#1c1c1c] border border-[#2a2a2a] rounded px-2 py-1.5 text-[11px] text-[#ECECEC] placeholder-[#555] focus:outline-none focus:border-[#555] resize-y leading-relaxed"
             />
             {step.type === 'sms_sequence' && (item.body?.length || 0) > 160 && (
-              <p className="text-[9px] text-amber-400">{item.body?.length} chars (multi-part SMS)</p>
+              <p className="text-[9px] text-[#fde68a]">{item.body?.length} chars (multi-part SMS)</p>
             )}
           </div>
         ))}

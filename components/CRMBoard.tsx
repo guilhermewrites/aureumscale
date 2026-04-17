@@ -26,13 +26,13 @@ interface CRMBoardProps {
 const STAGES = ['Interested', 'Contacted', 'Qualified', 'Proposal', 'Negotiation', 'Closed Won', 'Closed Lost'];
 
 const STAGE_COLORS: Record<string, string> = {
-  'Interested': '#9ca3af',
-  'Contacted': '#8b5cf6',
-  'Qualified': '#3b82f6',
-  'Proposal': '#f59e0b',
-  'Negotiation': '#ec4899',
-  'Closed Won': '#10b981',
-  'Closed Lost': '#6b7280',
+  'Interested': '#d4d4d8',
+  'Contacted': '#ddd6fe',
+  'Qualified': '#bfdbfe',
+  'Proposal': '#fde68a',
+  'Negotiation': '#fbcfe8',
+  'Closed Won': '#86efac',
+  'Closed Lost': '#a8a29e',
 };
 
 function newProspect(userId: string, stage: string, orderNum: number): Prospect {
@@ -160,11 +160,11 @@ const CRMBoard: React.FC<CRMBoardProps> = ({ storagePrefix, onConvert }) => {
       <div className="flex items-center gap-6 mb-4 flex-wrap">
         <div className="flex items-center gap-2">
           <span className="text-xs font-semibold uppercase tracking-wider text-[#555]">Total Pipeline</span>
-          <span className="text-lg font-bold text-amber-400">{formatMoney(totalPipeline)}</span>
+          <span className="text-lg font-bold" style={{ color: '#fde68a' }}>{formatMoney(totalPipeline)}</span>
         </div>
         <div className="flex items-center gap-2">
           <span className="text-xs font-semibold uppercase tracking-wider text-[#555]">Closed Won</span>
-          <span className="text-lg font-bold text-emerald-400">{formatMoney(wonRevenue)}</span>
+          <span className="text-lg font-bold" style={{ color: '#86efac' }}>{formatMoney(wonRevenue)}</span>
         </div>
         <div className="flex items-center gap-2">
           <span className="text-xs font-semibold uppercase tracking-wider text-[#555]">Active Prospects</span>
@@ -202,7 +202,7 @@ const CRMBoard: React.FC<CRMBoardProps> = ({ storagePrefix, onConvert }) => {
                   </span>
                 </div>
                 {val > 0 && (
-                  <span className="text-[10px] font-medium" style={{ color: stage === 'Closed Won' ? '#10b981' : '#eab308' }}>
+                  <span className="text-[10px] font-medium" style={{ color: stage === 'Closed Won' ? '#86efac' : '#fde68a' }}>
                     {formatMoney(val)}
                   </span>
                 )}
@@ -302,14 +302,14 @@ const ProspectCard: React.FC<ProspectCardProps> = ({
           style={{ color: '#aaa' }}
         />
         <div className="flex items-center gap-1">
-          <DollarSign size={11} style={{ color: '#10b981' }} />
+          <DollarSign size={11} style={{ color: '#86efac' }} />
           <input
             type="number"
             value={prospect.deal_value || ''}
             onChange={e => onUpdate({ deal_value: parseFloat(e.target.value) || 0 })}
             placeholder="Deal value"
             className="w-24 bg-transparent text-[11px] outline-none"
-            style={{ color: '#10b981' }}
+            style={{ color: '#86efac' }}
           />
         </div>
         <textarea
@@ -333,7 +333,7 @@ const ProspectCard: React.FC<ProspectCardProps> = ({
             <button
               onClick={() => setConfirmDelete(true)}
               className="text-[10px] px-2 py-1 rounded-md transition-colors"
-              style={{ color: '#ef4444' }}
+              style={{ color: '#fca5a5' }}
             >
               Delete
             </button>
@@ -342,7 +342,7 @@ const ProspectCard: React.FC<ProspectCardProps> = ({
               <button
                 onClick={onDelete}
                 className="text-[10px] px-2 py-1 rounded-md"
-                style={{ background: '#3a1a1a', color: '#ef4444' }}
+                style={{ background: '#3a1a1a', color: '#fca5a5' }}
               >
                 Confirm
               </button>
@@ -360,7 +360,7 @@ const ProspectCard: React.FC<ProspectCardProps> = ({
               <button
                 onClick={onConvert}
                 className="flex items-center gap-1 text-[10px] px-2 py-1 rounded-md transition-colors"
-                style={{ background: '#10b98122', color: '#10b981' }}
+                style={{ background: '#86efac22', color: '#86efac' }}
                 title="Convert to client"
               >
                 <ArrowRight size={10} /> Convert
@@ -418,7 +418,7 @@ const ProspectCard: React.FC<ProspectCardProps> = ({
             </p>
           )}
           {prospect.deal_value > 0 && (
-            <p className="text-[10px] mt-1 font-medium" style={{ color: '#10b981' }}>
+            <p className="text-[10px] mt-1 font-medium" style={{ color: '#86efac' }}>
               {formatMoney(prospect.deal_value)}
             </p>
           )}

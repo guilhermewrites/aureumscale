@@ -22,9 +22,9 @@ interface TaskBoardProps {
 const COLUMNS = ['To Do', 'In Progress', 'Done'];
 
 const COLUMN_COLORS: Record<string, string> = {
-  'To Do': '#6b7280',
-  'In Progress': '#f59e0b',
-  'Done': '#10b981',
+  'To Do': '#d4d4d8',
+  'In Progress': '#fde68a',
+  'Done': '#86efac',
 };
 
 // Legacy statuses (from the old 6-column pipeline) mapped to the new 3 columns
@@ -219,7 +219,7 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storagePrefix, clients }) => {
             {tasks.length} tasks
           </span>
           {totalRevenue > 0 && (
-            <span className="text-xs font-medium px-2 py-0.5 rounded-full" style={{ background: '#1a2e1a', color: '#10b981' }}>
+            <span className="text-xs font-medium px-2 py-0.5 rounded-full" style={{ background: '#1a2e1a', color: '#86efac' }}>
               {formatMoney(totalRevenue)} total value
             </span>
           )}
@@ -256,7 +256,7 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storagePrefix, clients }) => {
                     </span>
                   </div>
                   {rev > 0 && (
-                    <span className="text-[10px] font-medium" style={{ color: '#10b981' }}>
+                    <span className="text-[10px] font-medium" style={{ color: '#86efac' }}>
                       {formatMoney(rev)}
                     </span>
                   )}
@@ -396,14 +396,14 @@ const TaskCard: React.FC<TaskCardProps> = ({
 
         {/* Revenue */}
         <div className="flex items-center gap-1">
-          <DollarSign size={11} style={{ color: '#10b981' }} />
+          <DollarSign size={11} style={{ color: '#86efac' }} />
           <input
             type="number"
             value={task.estimated_revenue || ''}
             onChange={e => onUpdate({ estimated_revenue: parseFloat(e.target.value) || 0 })}
             placeholder="0"
             className="w-20 bg-transparent text-[11px] outline-none"
-            style={{ color: '#10b981' }}
+            style={{ color: '#86efac' }}
           />
         </div>
 
@@ -431,7 +431,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
             <button
               onClick={() => setConfirmDelete(true)}
               className="text-[10px] px-2 py-1 rounded-md transition-colors"
-              style={{ color: '#ef4444' }}
+              style={{ color: '#fca5a5' }}
               onMouseEnter={e => (e.currentTarget.style.background = '#2a1a1a')}
               onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
             >
@@ -442,7 +442,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
               <button
                 onClick={onDelete}
                 className="text-[10px] px-2 py-1 rounded-md"
-                style={{ background: '#3a1a1a', color: '#ef4444' }}
+                style={{ background: '#3a1a1a', color: '#fca5a5' }}
               >
                 Delete
               </button>
@@ -498,7 +498,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
             </p>
           )}
           {task.estimated_revenue > 0 && (
-            <p className="text-[10px] mt-0.5 font-medium" style={{ color: '#10b981' }}>
+            <p className="text-[10px] mt-0.5 font-medium" style={{ color: '#86efac' }}>
               ${task.estimated_revenue.toLocaleString()}
             </p>
           )}

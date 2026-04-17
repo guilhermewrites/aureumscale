@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
-import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { User } from '@supabase/supabase-js';
 import Sidebar from './components/Sidebar';
 import LoginPage from './components/LoginPage';
@@ -13,6 +13,7 @@ import FunnelManager from './components/FunnelManager';
 import AdsManager from './components/AdsManager';
 import PlannerManager from './components/PlannerManager';
 import ClientsManager from './components/ClientsManager';
+import CRMBoard, { Prospect } from './components/CRMBoard';
 import BrandingManager from './components/BrandingManager';
 import GeneralRoom from './components/GeneralRoom';
 import ArnasGintalasFunnel from './components/ArnasGintalasFunnel';
@@ -33,6 +34,7 @@ import { supabase } from './services/supabaseClient';
 // Map route paths to NavigationItem labels for the header
 const routeToNav: Record<string, NavigationItem> = {
   '/dashboard': NavigationItem.DASHBOARD,
+  '/crm': NavigationItem.CRM,
   '/clients': NavigationItem.CLIENTS,
   '/swipefile': NavigationItem.SWIPEFILE,
   '/team': NavigationItem.TEAM,
@@ -70,6 +72,37 @@ const App: React.FC = () => {
   }
 
   return <AuthenticatedApp user={user} signOut={signOut} />;
+};
+
+// Standalone CRM page — converting a prospect creates a recurring client and navigates to /clients
+const CRMPage: React.FC<{ storagePrefix: string }> = ({ storagePrefix }) => {
+  const navigate = useNavigate();
+  const handleConvert = async (prospect: Prospect) => {
+    if (!supabase) return;
+    try {
+      await supabase.from('clients').insert({
+        id: crypto.randomUUID(),
+        user_id: storagePrefix,
+        name: prospect.name || 'New client',
+        photo_url: prospect.photo_url ?? null,
+        payment_status: 'Pending',
+        amount: prospect.deal_value || 0,
+        cadence: '1x/month',
+        service: 'Ghostwriting',
+        leader: 'Guilherme Writes',
+        status: 'Happy',
+        acquisition: prospect.source || 'Inbound — DMs',
+        client_type: 'recurring',
+        order_num: 0,
+        active: true,
+      });
+      await supabase.from('prospects').delete().eq('id', prospect.id);
+      navigate('/clients');
+    } catch (err) {
+      console.error('Convert prospect error:', err);
+    }
+  };
+  return <CRMBoard storagePrefix={storagePrefix} onConvert={handleConvert} />;
 };
 
 // Wrapper that passes current client context to AIBubble based on URL
@@ -676,7 +709,7 @@ const AuthenticatedApp: React.FC<{ user: User; signOut: () => Promise<void> }> =
               {isSyncing ? (
                 <Loader2 size={16} className="animate-spin" />
               ) : syncResult?.success ? (
-                <Check size={16} className="text-emerald-400" />
+                <Check size={16} className="text-[#86efac]" />
               ) : (
                 <Save size={16} />
               )}
@@ -688,8 +721,8 @@ const AuthenticatedApp: React.FC<{ user: User; signOut: () => Promise<void> }> =
             {syncResult && (
               <div className={`absolute top-full right-0 mt-2 px-4 py-2 rounded-lg text-sm font-medium shadow-lg border whitespace-nowrap z-50 ${
                 syncResult.success
-                  ? 'bg-[#2f2f2f] border-emerald-500/30 text-emerald-400'
-                  : 'bg-[#2f2f2f] border-rose-500/30 text-rose-400'
+                  ? 'bg-[#2f2f2f] border-[#86efac]/30 text-[#86efac]'
+                  : 'bg-[#2f2f2f] border-[#fca5a5]/30 text-[#fca5a5]'
               }`}>
                 {syncResult.success ? 'Saved successfully!' : syncResult.message}
               </div>
@@ -712,11 +745,11 @@ const AuthenticatedApp: React.FC<{ user: User; signOut: () => Promise<void> }> =
                <div className="bg-[#1c1c1c] p-5 rounded-2xl">
                   <div className="flex items-center justify-between mb-3">
                     <p className="text-[#666] text-xs font-medium uppercase tracking-wider">This Month</p>
-                    <div className="p-1.5 rounded-lg" style={{ background: 'rgba(16,185,129,0.1)' }}><DollarSign size={14} className="text-emerald-400" /></div>
+                    <div className="p-1.5 rounded-lg" style={{ background: 'rgba(134,239,172,0.1)' }}><DollarSign size={14} className="text-[#86efac]" /></div>
                   </div>
                   <h3 className="text-2xl font-bold text-[#ECECEC] mb-1">${projectedMonthlyRevenue.toLocaleString()}</h3>
                   <div className="flex items-center gap-2 text-xs">
-                     <span className="text-emerald-400 font-medium">${paidThisMonth.toLocaleString()} collected</span>
+                     <span className="text-[#86efac] font-medium">${paidThisMonth.toLocaleString()} collected</span>
                      {pendingThisMonth > 0 && <span className="text-[#555]">· ${pendingThisMonth.toLocaleString()} pending</span>}
                   </div>
                </div>
@@ -725,12 +758,12 @@ const AuthenticatedApp: React.FC<{ user: User; signOut: () => Promise<void> }> =
                <div className="bg-[#1c1c1c] p-5 rounded-2xl">
                   <div className="flex items-center justify-between mb-3">
                     <p className="text-[#666] text-xs font-medium uppercase tracking-wider">Total Revenue</p>
-                    <div className="p-1.5 rounded-lg" style={{ background: 'rgba(16,185,129,0.1)' }}><TrendingUp size={14} className="text-emerald-400" /></div>
+                    <div className="p-1.5 rounded-lg" style={{ background: 'rgba(134,239,172,0.1)' }}><TrendingUp size={14} className="text-[#86efac]" /></div>
                   </div>
                   <h3 className="text-2xl font-bold text-[#ECECEC] mb-1">${totalRevenue.toLocaleString()}</h3>
                   <div className="flex items-center gap-1.5 text-xs">
                     {momGrowth !== 0 && (
-                      <span className={`flex items-center gap-0.5 font-medium ${momGrowth > 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                      <span className={`flex items-center gap-0.5 font-medium ${momGrowth > 0 ? 'text-[#86efac]' : 'text-[#fca5a5]'}`}>
                         {momGrowth > 0 ? <ArrowUpRight size={12} /> : <ArrowDownRight size={12} />}
                         {Math.abs(momGrowth)}%
                       </span>
@@ -743,15 +776,15 @@ const AuthenticatedApp: React.FC<{ user: User; signOut: () => Promise<void> }> =
                <div className="bg-[#1c1c1c] p-5 rounded-2xl">
                   <div className="flex items-center justify-between mb-3">
                     <p className="text-[#666] text-xs font-medium uppercase tracking-wider">Outstanding</p>
-                    <div className="p-1.5 rounded-lg" style={{ background: outstandingAmount > 0 ? 'rgba(239,68,68,0.1)' : 'rgba(255,255,255,0.04)' }}>
-                      <DollarSign size={14} className={outstandingAmount > 0 ? 'text-red-400' : 'text-[#555]'} />
+                    <div className="p-1.5 rounded-lg" style={{ background: outstandingAmount > 0 ? 'rgba(252,165,165,0.12)' : 'rgba(255,255,255,0.04)' }}>
+                      <DollarSign size={14} className={outstandingAmount > 0 ? 'text-[#fca5a5]' : 'text-[#555]'} />
                     </div>
                   </div>
-                  <h3 className={`text-2xl font-bold mb-1 ${outstandingAmount > 0 ? 'text-red-400' : 'text-[#ECECEC]'}`}>${outstandingAmount.toLocaleString()}</h3>
+                  <h3 className={`text-2xl font-bold mb-1 ${outstandingAmount > 0 ? 'text-[#fca5a5]' : 'text-[#ECECEC]'}`}>${outstandingAmount.toLocaleString()}</h3>
                   <div className="flex items-center gap-2 text-xs">
-                    {overdueAmount > 0 && <span className="text-red-400 font-medium">${overdueAmount.toLocaleString()} overdue</span>}
+                    {overdueAmount > 0 && <span className="text-[#fca5a5] font-medium">${overdueAmount.toLocaleString()} overdue</span>}
                     {overdueAmount === 0 && outstandingAmount > 0 && <span className="text-[#555]">All within due dates</span>}
-                    {outstandingAmount === 0 && <span className="text-emerald-400 font-medium">All paid</span>}
+                    {outstandingAmount === 0 && <span className="text-[#86efac] font-medium">All paid</span>}
                   </div>
                </div>
 
@@ -790,8 +823,8 @@ const AuthenticatedApp: React.FC<{ user: User; signOut: () => Promise<void> }> =
                   <AreaChart data={chartData}>
                     <defs>
                       <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#10b981" stopOpacity={0.25} />
-                        <stop offset="100%" stopColor="#10b981" stopOpacity={0} />
+                        <stop offset="0%" stopColor="#86efac" stopOpacity={0.25} />
+                        <stop offset="100%" stopColor="#86efac" stopOpacity={0} />
                       </linearGradient>
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" stroke="#252525" vertical={false} />
@@ -805,11 +838,11 @@ const AuthenticatedApp: React.FC<{ user: User; signOut: () => Promise<void> }> =
                     <Area
                       type="monotone"
                       dataKey="revenue"
-                      stroke="#10b981"
+                      stroke="#86efac"
                       strokeWidth={1.5}
                       fill="url(#revenueGradient)"
                       dot={false}
-                      activeDot={{ r: 3, fill: '#10b981', stroke: '#1c1c1c', strokeWidth: 1.5 }}
+                      activeDot={{ r: 3, fill: '#86efac', stroke: '#1c1c1c', strokeWidth: 1.5 }}
                     />
                   </AreaChart>
                 </ResponsiveContainer>
@@ -894,7 +927,7 @@ const AuthenticatedApp: React.FC<{ user: User; signOut: () => Promise<void> }> =
                   {(['Paid', 'Pending', 'Late', 'Missing Invoice'] as const).map(status => {
                     const count = dashClients.filter(c => c.active !== false && c.payment_status === status).length;
                     const pct = activeClients > 0 ? Math.round((count / activeClients) * 100) : 0;
-                    const color = status === 'Paid' ? '#10b981' : status === 'Pending' ? '#eab308' : status === 'Late' ? '#ef4444' : '#666';
+                    const color = status === 'Paid' ? '#86efac' : status === 'Pending' ? '#fde68a' : status === 'Late' ? '#fca5a5' : '#666';
                     return (
                       <div key={status}>
                         <div className="flex items-center justify-between mb-1.5">
@@ -917,7 +950,7 @@ const AuthenticatedApp: React.FC<{ user: User; signOut: () => Promise<void> }> =
                   {(['Happy', 'Moderate', 'Frustrated'] as const).map(status => {
                     const count = dashClients.filter(c => c.active !== false && c.status === status).length;
                     const pct = activeClients > 0 ? Math.round((count / activeClients) * 100) : 0;
-                    const color = status === 'Happy' ? '#10b981' : status === 'Moderate' ? '#eab308' : '#ef4444';
+                    const color = status === 'Happy' ? '#86efac' : status === 'Moderate' ? '#fde68a' : '#fca5a5';
                     return (
                       <div key={status}>
                         <div className="flex items-center justify-between mb-1.5">
@@ -937,6 +970,7 @@ const AuthenticatedApp: React.FC<{ user: User; signOut: () => Promise<void> }> =
           </div>
           } />
 
+          <Route path="/crm" element={<CRMPage storagePrefix={storagePrefix} />} />
           <Route path="/clients/:id" element={<ClientsManager storagePrefix={storagePrefix} />} />
           <Route path="/clients" element={<ClientsManager storagePrefix={storagePrefix} />} />
           <Route path="/swipefile" element={<SwipefileManager storagePrefix={storagePrefix} />} />
