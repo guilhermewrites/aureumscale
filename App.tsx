@@ -994,9 +994,9 @@ const AuthenticatedApp: React.FC<{ user: User; signOut: () => Promise<void> }> =
               </p>
             </div>
           } />
-          <Route path="/arnas-gintalas" element={<ArnasGintalasFunnel />} />
-          <Route path="/aureum-webinars" element={<AureumWebinarsFunnel />} />
-          <Route path="/luke-alexander" element={<LukeAlexanderFunnel />} />
+          <Route path="/arnas-gintalas" element={<ArnasGintalasFunnel storagePrefix={storagePrefix} />} />
+          <Route path="/aureum-webinars" element={<AureumWebinarsFunnel storagePrefix={storagePrefix} />} />
+          <Route path="/luke-alexander" element={<LukeAlexanderFunnel storagePrefix={storagePrefix} />} />
           <Route path="/calendar" element={<CalendarManager storagePrefix={storagePrefix} />} />
           <Route path="/mentor" element={<MentorManager storagePrefix={storagePrefix} />} />
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
