@@ -36,27 +36,52 @@ import {
 } from 'lucide-react';
 
 // =============================================================================
-// Tokens
+// Design tokens
 // =============================================================================
 
+// Colour — neutral first, one accent for money/positive
 const INK = {
   bg:         '#0a0a0a',
-  bgSoft:     '#111',
+  bgSoft:     '#101010',
   surface:    '#141414',
-  surfaceHi:  '#1a1a1a',
-  border:     '#232323',
-  borderHi:   '#2e2e2e',
+  surfaceHi:  '#191919',
+  border:     '#222',
+  borderHi:   '#2b2b2b',
   text:       '#ECECEC',
   textMuted:  '#8a8a8a',
-  textSubtle: '#555',
+  textSubtle: '#5a5a5a',
   accent:     '#9ee6a8',
-  wire:       '#2f2f2f',
+  wire:       '#2e2e2e',
   wireHi:     '#4a4a4a',
 };
+
+// Brand pigments — only inside 12–14px badges, never on chrome
 const BRAND = {
   meta:     '#1877f2',
   telegram: '#6AB3F3',
 };
+
+// Spacing — 4pt scale
+const SP = { xs: 4, sm: 8, md: 12, lg: 16, xl: 24, xxl: 32, xxxl: 48 };
+
+// Type — 5-step scale, ≥1.25 ratio between the two body sizes
+const TYPE = {
+  label:    9,   // uppercase meta
+  body:     11,  // primary body
+  title:    13,  // card titles
+  display:  20,  // stat numbers
+};
+
+// Node widths — two primary sizes, one small
+const W = {
+  primary: 320,  // ad, page, email, webinar
+  phone:   280,  // sms, telegram (phone-shaped on purpose)
+  chip:    220,  // tag, destination
+};
+
+// Column grid — 400px stride (320w card + 80 gutter)
+const STRIDE = 400;
+const col = (i: number) => i * STRIDE;
 
 // =============================================================================
 // Types
@@ -74,8 +99,7 @@ interface AdNodeData {
 interface PageNodeData {
   kind: 'page'; label: string; url: string; openHref: string;
   views: number; clicks: number; conversionPct: number;
-  pixelEvents: PixelEvent[];
-  cta: string;
+  pixelEvents: PixelEvent[]; cta: string;
 }
 interface EmailNodeData {
   kind: 'email'; fromName: string; fromEmail: string; toDisplay: string;
@@ -107,16 +131,25 @@ interface WebinarNodeData {
 // =============================================================================
 
 const labelStyle: React.CSSProperties = {
-  fontSize: 9, fontWeight: 600, letterSpacing: 0.8,
-  textTransform: 'uppercase', color: INK.textMuted,
+  fontSize: TYPE.label,
+  fontWeight: 600,
+  letterSpacing: 0.8,
+  textTransform: 'uppercase',
+  color: INK.textMuted,
+};
+
+const metaText: React.CSSProperties = {
+  fontSize: TYPE.body - 1,
+  color: INK.textMuted,
+  fontVariantNumeric: 'tabular-nums',
 };
 
 const TriggerPill: React.FC<{ trigger: string }> = ({ trigger }) => (
   <span style={{
-    display: 'inline-flex', alignItems: 'center', gap: 3,
-    fontSize: 9, color: INK.textMuted,
+    display: 'inline-flex', alignItems: 'center', gap: SP.xs,
+    fontSize: TYPE.label, color: INK.textMuted,
     background: 'rgba(255,255,255,0.04)',
-    padding: '2px 7px', borderRadius: 999, fontWeight: 500,
+    padding: `2px ${SP.sm - 1}px`, borderRadius: 999, fontWeight: 500,
   }}>
     <Clock size={8} />{trigger}
   </span>
@@ -126,22 +159,41 @@ const NodeShell: React.FC<React.PropsWithChildren<{ width: number }>> = ({ width
   <div style={{
     width, background: INK.surface, border: `1px solid ${INK.border}`,
     borderRadius: 12, overflow: 'hidden', color: INK.text,
-    fontSize: 11, boxShadow: '0 2px 10px rgba(0,0,0,0.3)',
+    fontSize: TYPE.body, boxShadow: '0 1px 2px rgba(0,0,0,0.4)',
+  }}>
+    {children}
+  </div>
+);
+
+const StripRow: React.FC<React.PropsWithChildren<{ emphasis?: boolean }>> = ({ emphasis, children }) => (
+  <div style={{
+    padding: `${SP.sm - 1}px ${SP.md}px`,
+    background: emphasis ? INK.surfaceHi : 'transparent',
+    borderBottom: emphasis ? `1px solid ${INK.border}` : undefined,
+    display: 'flex', alignItems: 'center', gap: SP.sm,
+    minHeight: 28,
   }}>
     {children}
   </div>
 );
 
 const ChannelStrip: React.FC<{ icon: React.ReactNode; title: string; trigger: string }> = ({ icon, title, trigger }) => (
-  <div style={{
-    padding: '6px 12px', background: INK.surfaceHi,
-    borderBottom: `1px solid ${INK.border}`, display: 'flex',
-    alignItems: 'center', gap: 8, color: INK.textMuted,
-    fontSize: 9, fontWeight: 600, letterSpacing: 0.8, textTransform: 'uppercase',
-  }}>
-    {icon}{title}
+  <StripRow emphasis>
+    <span style={{ display: 'flex', alignItems: 'center', gap: SP.sm, ...labelStyle }}>
+      {icon}{title}
+    </span>
     <span style={{ marginLeft: 'auto' }}><TriggerPill trigger={trigger} /></span>
-  </div>
+  </StripRow>
+);
+
+const FooterRow: React.FC<React.PropsWithChildren> = ({ children }) => (
+  <div style={{
+    padding: `${SP.sm}px ${SP.md}px`,
+    display: 'flex', gap: SP.lg,
+    borderTop: `1px solid ${INK.border}`,
+    background: INK.bgSoft,
+    ...metaText,
+  }}>{children}</div>
 );
 
 // =============================================================================
@@ -151,50 +203,66 @@ const ChannelStrip: React.FC<{ icon: React.ReactNode; title: string; trigger: st
 const AdNode = memo<NodeProps<AdNodeData>>(({ data }) => {
   const showMetrics = (data as any).__showMetrics ?? true;
   return (
-    <NodeShell width={320}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', background: INK.surfaceHi }}>
+    <NodeShell width={W.primary}>
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: SP.sm,
+        padding: `${SP.sm}px ${SP.md}px`, background: INK.surfaceHi,
+      }}>
         <div style={{
-          width: 28, height: 28, borderRadius: 14, background: BRAND.meta,
+          width: 26, height: 26, borderRadius: 13, background: BRAND.meta,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
         }}>
-          <Facebook size={14} color="#fff" />
+          <Facebook size={13} color="#fff" />
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 11, fontWeight: 600, color: INK.text }}>Luke Alexander</div>
-          <div style={{ fontSize: 9, color: INK.textMuted }}>Sponsored · {data.platform}</div>
+          <div style={{ fontSize: TYPE.body, fontWeight: 600, color: INK.text }}>Luke Alexander</div>
+          <div style={{ fontSize: TYPE.label, color: INK.textMuted }}>Sponsored · {data.platform}</div>
         </div>
       </div>
-      <div style={{ padding: '10px 12px', fontSize: 11, color: INK.text, lineHeight: 1.45 }}>
+
+      <div style={{
+        padding: `${SP.sm}px ${SP.md}px ${SP.md}px`,
+        fontSize: TYPE.body, color: INK.text, lineHeight: 1.5,
+      }}>
         {data.primaryText}
       </div>
+
       <div style={{
-        height: 170, background: `url(${data.image}) center/cover, #1a1a1a`,
-        borderTop: `1px solid ${INK.border}`, borderBottom: `1px solid ${INK.border}`,
+        height: 170,
+        background: `url(${data.image}) center/cover, #1a1a1a`,
+        borderTop: `1px solid ${INK.border}`,
+        borderBottom: `1px solid ${INK.border}`,
       }} />
-      <div style={{ padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 8, background: INK.surfaceHi }}>
+
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: SP.sm,
+        padding: `${SP.sm + 2}px ${SP.md}px`,
+        background: INK.surfaceHi,
+      }}>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 9, color: INK.textMuted, textTransform: 'uppercase', letterSpacing: 0.5 }}>aiinsiders.com</div>
-          <div style={{ fontSize: 12, fontWeight: 600, color: INK.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          <div style={{ ...labelStyle, marginBottom: 2 }}>aiinsiders.com</div>
+          <div style={{
+            fontSize: TYPE.title - 1, fontWeight: 600, color: INK.text,
+            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+          }}>
             {data.headline}
           </div>
         </div>
         <button style={{
-          fontSize: 11, padding: '5px 12px', borderRadius: 6,
-          background: INK.surface, color: INK.text,
+          fontSize: TYPE.body, padding: `${SP.xs}px ${SP.md}px`,
+          borderRadius: 6, background: INK.surface, color: INK.text,
           border: `1px solid ${INK.borderHi}`, fontWeight: 500,
         }}>
           {data.cta}
         </button>
       </div>
+
       {showMetrics && (
-        <div style={{
-          padding: '8px 12px', display: 'flex', gap: 14,
-          fontSize: 10, color: INK.textMuted, borderTop: `1px solid ${INK.border}`,
-        }}>
-          <span>${data.spend}</span>
+        <FooterRow>
+          <span>${data.spend.toLocaleString()}</span>
           <span>{data.leads} leads</span>
           <span style={{ color: INK.accent, marginLeft: 'auto' }}>CPL ${data.cpl.toFixed(2)}</span>
-        </div>
+        </FooterRow>
       )}
       <Handle type="source" position={Position.Right} style={{ background: INK.wireHi, width: 8, height: 8 }} />
     </NodeShell>
@@ -203,29 +271,30 @@ const AdNode = memo<NodeProps<AdNodeData>>(({ data }) => {
 AdNode.displayName = 'AdNode';
 
 // =============================================================================
-// Page node (with Meta Pixel events inline at bottom)
+// Page node (with Meta Pixel events inline)
 // =============================================================================
 
 const PageNode = memo<NodeProps<PageNodeData>>(({ data }) => {
   const showMetrics = (data as any).__showMetrics ?? true;
   return (
-    <NodeShell width={320}>
+    <NodeShell width={W.primary}>
       <Handle type="target" position={Position.Left} style={{ background: INK.wireHi, width: 8, height: 8 }} />
 
       {/* Browser chrome */}
       <div style={{
-        display: 'flex', alignItems: 'center', gap: 6, padding: '8px 10px',
+        display: 'flex', alignItems: 'center', gap: SP.sm,
+        padding: `${SP.sm - 1}px ${SP.md - 2}px`,
         background: INK.surfaceHi, borderBottom: `1px solid ${INK.border}`,
       }}>
-        <div style={{ display: 'flex', gap: 4 }}>
-          <span style={{ width: 8, height: 8, borderRadius: 4, background: '#333' }} />
-          <span style={{ width: 8, height: 8, borderRadius: 4, background: '#333' }} />
-          <span style={{ width: 8, height: 8, borderRadius: 4, background: '#333' }} />
+        <div style={{ display: 'flex', gap: SP.xs }}>
+          <span style={{ width: 7, height: 7, borderRadius: 4, background: '#333' }} />
+          <span style={{ width: 7, height: 7, borderRadius: 4, background: '#333' }} />
+          <span style={{ width: 7, height: 7, borderRadius: 4, background: '#333' }} />
         </div>
         <div style={{
-          flex: 1, fontSize: 10, color: INK.textMuted, background: INK.bgSoft,
-          padding: '3px 8px', borderRadius: 4, overflow: 'hidden',
-          textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+          flex: 1, fontSize: TYPE.body - 1, color: INK.textMuted, background: INK.bgSoft,
+          padding: `2px ${SP.sm}px`, borderRadius: 4,
+          overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
         }}>
           {data.url}
         </div>
@@ -235,38 +304,42 @@ const PageNode = memo<NodeProps<PageNodeData>>(({ data }) => {
         </a>
       </div>
 
-      {/* Ghost page preview */}
+      {/* Ghost preview */}
       <div style={{
-        height: 150, background: INK.bg, display: 'flex',
-        flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 7,
+        height: 150, background: INK.bg,
+        display: 'flex', flexDirection: 'column',
+        alignItems: 'center', justifyContent: 'center', gap: SP.sm - 1,
       }}>
-        <div style={{ width: 70, height: 4, background: INK.borderHi, borderRadius: 2 }} />
-        <div style={{ width: 200, height: 8, background: INK.border, borderRadius: 3 }} />
-        <div style={{ width: 230, height: 8, background: INK.border, borderRadius: 3 }} />
-        <div style={{ width: 160, height: 8, background: INK.border, borderRadius: 3 }} />
+        <div style={{ width: 68, height: 4, background: INK.borderHi, borderRadius: 2 }} />
+        <div style={{ width: 200, height: 7, background: INK.border, borderRadius: 3 }} />
+        <div style={{ width: 232, height: 7, background: INK.border, borderRadius: 3 }} />
+        <div style={{ width: 160, height: 7, background: INK.border, borderRadius: 3 }} />
         <div style={{
-          marginTop: 4, width: 130, height: 22, borderRadius: 4,
+          marginTop: SP.xs, width: 132, height: 22, borderRadius: 4,
           background: INK.borderHi, display: 'flex', alignItems: 'center',
-          justifyContent: 'center', fontSize: 9, color: INK.text,
-          fontWeight: 600, letterSpacing: 0.5,
+          justifyContent: 'center', fontSize: TYPE.label,
+          color: INK.text, fontWeight: 600, letterSpacing: 0.6,
         }}>
           {data.cta}
         </div>
       </div>
 
-      {/* Page label + metrics */}
-      <div style={{ padding: '10px 12px', background: INK.surfaceHi, borderTop: `1px solid ${INK.border}` }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: showMetrics ? 6 : 0 }}>
+      {/* Label + metrics */}
+      <div style={{
+        padding: `${SP.sm + 2}px ${SP.md}px`, background: INK.surfaceHi,
+        borderTop: `1px solid ${INK.border}`,
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: SP.sm, marginBottom: showMetrics ? SP.sm - 2 : 0 }}>
           <FileText size={11} color={INK.text} />
-          <span style={{ fontSize: 12, fontWeight: 600 }}>{data.label}</span>
+          <span style={{ fontSize: TYPE.title, fontWeight: 600 }}>{data.label}</span>
         </div>
         {showMetrics && (
-          <div style={{ display: 'flex', gap: 14, fontSize: 10, color: INK.textMuted }}>
-            <span style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
-              <Eye size={9} />{data.views}
+          <div style={{ display: 'flex', gap: SP.lg, ...metaText }}>
+            <span style={{ display: 'flex', alignItems: 'center', gap: SP.xs }}>
+              <Eye size={10} />{data.views.toLocaleString()}
             </span>
-            <span style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
-              <MousePointerClick size={9} />{data.clicks}
+            <span style={{ display: 'flex', alignItems: 'center', gap: SP.xs }}>
+              <MousePointerClick size={10} />{data.clicks}
             </span>
             <span style={{ color: INK.accent, marginLeft: 'auto' }}>{data.conversionPct}%</span>
           </div>
@@ -275,8 +348,8 @@ const PageNode = memo<NodeProps<PageNodeData>>(({ data }) => {
 
       {/* Inline Meta Pixel events */}
       {data.pixelEvents.length > 0 && (
-        <div style={{ padding: '8px 12px', borderTop: `1px solid ${INK.border}` }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 5 }}>
+        <div style={{ padding: `${SP.sm}px ${SP.md}px`, borderTop: `1px solid ${INK.border}` }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: SP.sm, marginBottom: SP.xs + 1 }}>
             <div style={{
               width: 12, height: 12, borderRadius: 2, background: BRAND.meta,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -287,12 +360,12 @@ const PageNode = memo<NodeProps<PageNodeData>>(({ data }) => {
           </div>
           {data.pixelEvents.map((px, i) => (
             <div key={i} style={{
-              display: 'flex', alignItems: 'center', gap: 8,
-              fontSize: 10, color: INK.textMuted, padding: '2px 0',
+              display: 'flex', alignItems: 'center', gap: SP.sm,
+              ...metaText, padding: '2px 0',
             }}>
               <span style={{
                 fontFamily: 'ui-monospace, SFMono-Regular, monospace',
-                color: INK.text, fontSize: 10, minWidth: 78,
+                color: INK.text, fontSize: TYPE.body - 1, minWidth: 78,
               }}>
                 {px.name}
               </span>
@@ -311,50 +384,54 @@ const PageNode = memo<NodeProps<PageNodeData>>(({ data }) => {
 PageNode.displayName = 'PageNode';
 
 // =============================================================================
-// Email node
+// Email node — Gmail preview inside neutral chrome
 // =============================================================================
 
 const EmailNode = memo<NodeProps<EmailNodeData>>(({ data }) => {
   const showMetrics = (data as any).__showMetrics ?? true;
   const initial = data.fromName[0]?.toUpperCase() || 'L';
   return (
-    <NodeShell width={320}>
+    <NodeShell width={W.primary}>
       <Handle type="target" position={Position.Left} style={{ background: INK.wireHi, width: 8, height: 8 }} />
       <ChannelStrip icon={<Mail size={11} />} title={`Email · ${data.sendingFrom}`} trigger={data.trigger} />
+
+      {/* Authentic Gmail surface */}
       <div style={{ background: '#fff', color: '#202124' }}>
-        <div style={{ padding: '14px 14px 10px', borderBottom: '1px solid #e8eaed' }}>
-          <div style={{ fontSize: 13, fontWeight: 500, lineHeight: 1.3, marginBottom: 10 }}>
+        <div style={{ padding: `${SP.md + 2}px ${SP.md + 2}px ${SP.sm + 2}px`, borderBottom: '1px solid #e8eaed' }}>
+          <div style={{
+            fontSize: TYPE.title, fontWeight: 500, lineHeight: 1.3,
+            marginBottom: SP.sm + 2, color: '#202124',
+          }}>
             {data.subject}
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: SP.sm + 2 }}>
             <div style={{
-              width: 30, height: 30, borderRadius: 15, background: '#1a73e8',
-              color: '#fff', fontSize: 13, fontWeight: 600,
+              width: 28, height: 28, borderRadius: 14, background: '#1a73e8',
+              color: '#fff', fontSize: TYPE.title - 1, fontWeight: 600,
               display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
             }}>{initial}</div>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 11 }}>
+              <div style={{ fontSize: TYPE.body }}>
                 <span style={{ fontWeight: 600 }}>{data.fromName}</span>{' '}
                 <span style={{ color: '#5f6368' }}>&lt;{data.fromEmail}&gt;</span>
               </div>
-              <div style={{ fontSize: 10, color: '#5f6368' }}>to {data.toDisplay}</div>
+              <div style={{ fontSize: TYPE.body - 1, color: '#5f6368' }}>to {data.toDisplay}</div>
             </div>
           </div>
         </div>
         <div className="nodrag nowheel" style={{
-          padding: '12px 14px', fontSize: 11, lineHeight: 1.55,
+          padding: `${SP.md}px ${SP.md + 2}px`,
+          fontSize: TYPE.body, lineHeight: 1.65,
           whiteSpace: 'pre-wrap', maxHeight: 220, overflow: 'auto',
         }}>{data.body}</div>
       </div>
+
       {showMetrics && (
-        <div style={{
-          padding: '8px 12px', display: 'flex', gap: 14,
-          fontSize: 10, color: INK.textMuted, borderTop: `1px solid ${INK.border}`,
-        }}>
+        <FooterRow>
           <span>{data.sent} sent</span>
           <span>{data.openedPct}% open</span>
-          <span>{data.clickedPct}% click</span>
-        </div>
+          <span style={{ color: INK.accent, marginLeft: 'auto' }}>{data.clickedPct}% click</span>
+        </FooterRow>
       )}
       <Handle type="source" position={Position.Right} style={{ background: INK.wireHi, width: 8, height: 8 }} />
     </NodeShell>
@@ -363,53 +440,53 @@ const EmailNode = memo<NodeProps<EmailNodeData>>(({ data }) => {
 EmailNode.displayName = 'EmailNode';
 
 // =============================================================================
-// SMS node
+// SMS node — iMessage-style preview
 // =============================================================================
 
 const SmsNode = memo<NodeProps<SmsNodeData>>(({ data }) => {
   const showMetrics = (data as any).__showMetrics ?? true;
   return (
-    <NodeShell width={280}>
+    <NodeShell width={W.phone}>
       <Handle type="target" position={Position.Left} style={{ background: INK.wireHi, width: 8, height: 8 }} />
       <ChannelStrip icon={<MessageSquare size={11} />} title={`SMS · ${data.sendingFrom}`} trigger={data.trigger} />
-      <div style={{ background: '#000', padding: '10px 14px 0' }}>
-        <div style={{ display: 'flex', alignItems: 'center', fontSize: 10, color: '#fff', marginBottom: 8 }}>
+
+      <div style={{ background: '#000', padding: `${SP.sm + 2}px ${SP.md + 2}px 0` }}>
+        <div style={{ display: 'flex', alignItems: 'center', fontSize: TYPE.body - 1, color: '#fff', marginBottom: SP.sm }}>
           <span style={{ fontWeight: 600 }}>{data.time}</span>
-          <span style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 4 }}>
+          <span style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: SP.xs }}>
             <Signal size={9} /><Wifi size={9} /><BatteryFull size={10} />
           </span>
         </div>
         <div style={{
           display: 'flex', flexDirection: 'column', alignItems: 'center',
-          paddingBottom: 10, borderBottom: '1px solid #222', position: 'relative',
+          paddingBottom: SP.sm + 2, borderBottom: '1px solid #222', position: 'relative',
         }}>
-          <ChevronLeft size={18} color="#0A84FF" style={{ position: 'absolute', left: 0, top: 4 }} />
+          <ChevronLeft size={18} color="#0A84FF" style={{ position: 'absolute', left: 0, top: SP.xs }} />
           <div style={{
             width: 34, height: 34, borderRadius: 17, background: '#333',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 13, fontWeight: 600, color: '#fff', marginBottom: 3,
+            fontSize: TYPE.title - 1, fontWeight: 600, color: '#fff', marginBottom: 3,
           }}>{data.contactName[0]}</div>
-          <div style={{ fontSize: 10, color: '#fff', fontWeight: 500 }}>{data.contactName}</div>
+          <div style={{ fontSize: TYPE.body - 1, color: '#fff', fontWeight: 500 }}>{data.contactName}</div>
         </div>
       </div>
-      <div className="nodrag nowheel" style={{ background: '#000', padding: '12px 14px 14px', minHeight: 100 }}>
-        <div style={{ fontSize: 8, color: '#8e8e93', textAlign: 'center', marginBottom: 8 }}>
+      <div className="nodrag nowheel" style={{ background: '#000', padding: `${SP.md}px ${SP.md + 2}px ${SP.md + 2}px`, minHeight: 100 }}>
+        <div style={{ fontSize: TYPE.label - 1, color: '#8e8e93', textAlign: 'center', marginBottom: SP.sm }}>
           Text Message · {data.time}
         </div>
         <div style={{
-          background: '#26262a', color: '#fff', fontSize: 11,
-          padding: '8px 12px', borderRadius: '17px 17px 17px 4px',
-          maxWidth: '88%', lineHeight: 1.4, whiteSpace: 'pre-wrap',
+          background: '#26262a', color: '#fff', fontSize: TYPE.body,
+          padding: `${SP.sm}px ${SP.md}px`,
+          borderRadius: '17px 17px 17px 4px',
+          maxWidth: '88%', lineHeight: 1.45, whiteSpace: 'pre-wrap',
         }}>{data.body}</div>
       </div>
+
       {showMetrics && (
-        <div style={{
-          padding: '8px 12px', display: 'flex', gap: 14,
-          fontSize: 10, color: INK.textMuted, borderTop: `1px solid ${INK.border}`,
-        }}>
+        <FooterRow>
           <span>{data.sent} sent</span>
-          <span>{data.clickedPct}% click</span>
-        </div>
+          <span style={{ color: INK.accent, marginLeft: 'auto' }}>{data.clickedPct}% click</span>
+        </FooterRow>
       )}
       <Handle type="source" position={Position.Right} style={{ background: INK.wireHi, width: 8, height: 8 }} />
     </NodeShell>
@@ -424,43 +501,44 @@ SmsNode.displayName = 'SmsNode';
 const TelegramNode = memo<NodeProps<TelegramNodeData>>(({ data }) => {
   const showMetrics = (data as any).__showMetrics ?? true;
   return (
-    <NodeShell width={280}>
+    <NodeShell width={W.phone}>
       <Handle type="target" position={Position.Left} style={{ background: INK.wireHi, width: 8, height: 8 }} />
       <ChannelStrip icon={<Send size={11} />} title="Telegram" trigger={data.trigger} />
+
       <div style={{
-        display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px',
+        display: 'flex', alignItems: 'center', gap: SP.sm + 2,
+        padding: `${SP.sm + 2}px ${SP.md}px`,
         background: '#17212B', borderBottom: '1px solid #0b1017',
       }}>
         <div style={{
-          width: 32, height: 32, borderRadius: 16, background: BRAND.telegram,
+          width: 30, height: 30, borderRadius: 15, background: BRAND.telegram,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: 12, fontWeight: 600, color: '#fff',
+          fontSize: TYPE.body, fontWeight: 600, color: '#fff',
         }}>{data.botName[0]}</div>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 11, fontWeight: 600, color: '#fff' }}>{data.botName}</div>
-          <div style={{ fontSize: 9, color: '#6A7A8C' }}>{data.botSubtitle}</div>
+          <div style={{ fontSize: TYPE.body, fontWeight: 600, color: '#fff' }}>{data.botName}</div>
+          <div style={{ fontSize: TYPE.label, color: '#6A7A8C' }}>{data.botSubtitle}</div>
         </div>
       </div>
-      <div className="nodrag nowheel" style={{ background: '#0E1621', padding: '12px 12px 14px', minHeight: 100 }}>
+      <div className="nodrag nowheel" style={{ background: '#0E1621', padding: `${SP.md}px ${SP.md}px ${SP.md + 2}px`, minHeight: 100 }}>
         <div style={{
-          background: '#182533', color: '#fff', fontSize: 11,
-          padding: '8px 10px 18px', borderRadius: '12px 12px 12px 4px',
-          maxWidth: '90%', lineHeight: 1.45, whiteSpace: 'pre-wrap', position: 'relative',
+          background: '#182533', color: '#fff', fontSize: TYPE.body,
+          padding: `${SP.sm}px ${SP.sm + 2}px 18px`,
+          borderRadius: '12px 12px 12px 4px',
+          maxWidth: '90%', lineHeight: 1.5, whiteSpace: 'pre-wrap', position: 'relative',
         }}>
           {data.body}
-          <span style={{ position: 'absolute', right: 8, bottom: 4, fontSize: 8, color: '#6A7A8C' }}>
+          <span style={{ position: 'absolute', right: SP.sm, bottom: SP.xs, fontSize: TYPE.label - 1, color: '#6A7A8C' }}>
             {data.time}
           </span>
         </div>
       </div>
+
       {showMetrics && (
-        <div style={{
-          padding: '8px 12px', display: 'flex', gap: 14,
-          fontSize: 10, color: INK.textMuted, borderTop: `1px solid ${INK.border}`,
-        }}>
+        <FooterRow>
           <span>{data.sent} sent</span>
-          <span>{data.clickedPct}% click</span>
-        </div>
+          <span style={{ color: INK.accent, marginLeft: 'auto' }}>{data.clickedPct}% click</span>
+        </FooterRow>
       )}
       <Handle type="source" position={Position.Right} style={{ background: INK.wireHi, width: 8, height: 8 }} />
     </NodeShell>
@@ -469,27 +547,27 @@ const TelegramNode = memo<NodeProps<TelegramNodeData>>(({ data }) => {
 TelegramNode.displayName = 'TelegramNode';
 
 // =============================================================================
-// Tag node
+// Tag node — small chip
 // =============================================================================
 
 const TagNode = memo<NodeProps<TagNodeData>>(({ data }) => (
   <div style={{
-    width: 220, background: INK.surface, border: `1px solid ${INK.border}`,
-    borderRadius: 10, padding: '8px 10px', color: INK.text, fontSize: 10,
-    boxShadow: '0 2px 8px rgba(0,0,0,0.25)',
+    width: W.chip, background: INK.surface, border: `1px solid ${INK.border}`,
+    borderRadius: 10, padding: `${SP.sm}px ${SP.md - 2}px`,
+    color: INK.text, boxShadow: '0 1px 2px rgba(0,0,0,0.4)',
   }}>
     <Handle type="target" position={Position.Left} style={{ background: INK.wireHi, width: 7, height: 7 }} />
     <Handle type="source" position={Position.Right} style={{ background: INK.wireHi, width: 7, height: 7 }} />
     <Handle type="source" position={Position.Bottom} id="dest" style={{ background: INK.wireHi, width: 7, height: 7 }} />
-    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: SP.sm - 2, marginBottom: SP.xs }}>
       <TagIcon size={10} color={INK.textMuted} />
       <span style={labelStyle}>{data.platform} · tag added</span>
     </div>
     <div style={{
-      fontSize: 11, fontWeight: 600, color: INK.text,
+      fontSize: TYPE.body, fontWeight: 600, color: INK.text,
       fontFamily: 'ui-monospace, SFMono-Regular, monospace', marginBottom: 2,
     }}>{data.label}</div>
-    <div style={{ fontSize: 9, color: INK.textMuted }}>{data.trigger}</div>
+    <div style={metaText}>{data.trigger}</div>
   </div>
 ));
 TagNode.displayName = 'TagNode';
@@ -501,49 +579,42 @@ TagNode.displayName = 'TagNode';
 const WebinarNode = memo<NodeProps<WebinarNodeData>>(({ data }) => {
   const showMetrics = (data as any).__showMetrics ?? true;
   return (
-    <NodeShell width={320}>
+    <NodeShell width={W.primary}>
       <Handle type="target" position={Position.Left} style={{ background: INK.wireHi, width: 8, height: 8 }} />
-      <div style={{
-        padding: '8px 12px', background: INK.surfaceHi,
-        borderBottom: `1px solid ${INK.border}`, display: 'flex',
-        alignItems: 'center', gap: 8, color: INK.textMuted,
-        fontSize: 9, fontWeight: 600, letterSpacing: 0.8, textTransform: 'uppercase',
-      }}>
-        <Video size={11} />
-        WebinarJam · Live event
-      </div>
+      <StripRow emphasis>
+        <span style={{ display: 'flex', alignItems: 'center', gap: SP.sm, ...labelStyle }}>
+          <Video size={11} />WebinarJam · Live event
+        </span>
+      </StripRow>
 
-      {/* Cover art placeholder */}
       <div style={{
-        height: 140, background: `radial-gradient(circle at 30% 30%, #2a2a2a, ${INK.bg})`,
-        borderBottom: `1px solid ${INK.border}`, display: 'flex',
-        alignItems: 'center', justifyContent: 'center', position: 'relative',
+        height: 140,
+        background: `radial-gradient(circle at 30% 30%, #262626, ${INK.bg})`,
+        borderBottom: `1px solid ${INK.border}`,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
       }}>
         <PlayCircle size={56} color={INK.borderHi} strokeWidth={1} />
       </div>
 
-      <div style={{ padding: '12px 14px' }}>
-        <div style={{ fontSize: 13, fontWeight: 600, color: INK.text, marginBottom: 8 }}>
+      <div style={{ padding: `${SP.md}px ${SP.md + 2}px` }}>
+        <div style={{ fontSize: TYPE.title, fontWeight: 600, color: INK.text, marginBottom: SP.sm }}>
           {data.title}
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 10, color: INK.textMuted, marginBottom: 3 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: SP.xs + 2, ...metaText, marginBottom: 3 }}>
           <Calendar size={10} />
           <span>{data.date} · {data.time}</span>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 10, color: INK.textMuted }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: SP.xs + 2, ...metaText }}>
           <Clock size={10} />
           <span>{data.duration}</span>
         </div>
       </div>
 
       {showMetrics && (
-        <div style={{
-          padding: '8px 14px', display: 'flex', gap: 14,
-          fontSize: 10, color: INK.textMuted, borderTop: `1px solid ${INK.border}`,
-        }}>
+        <FooterRow>
           <span>{data.registered} registered</span>
           <span style={{ color: INK.accent, marginLeft: 'auto' }}>{data.showRate}% show rate</span>
-        </div>
+        </FooterRow>
       )}
       <Handle type="source" position={Position.Right} style={{ background: INK.wireHi, width: 8, height: 8 }} />
     </NodeShell>
@@ -564,26 +635,26 @@ const DEST_ICON: Partial<Record<Platform, React.ReactNode>> = {
 
 const DestinationNode = memo<NodeProps<DestinationNodeData>>(({ data }) => (
   <div style={{
-    width: 240, background: INK.surface, border: `1px solid ${INK.border}`,
-    borderRadius: 12, padding: '12px 14px', color: INK.text,
-    fontSize: 11, boxShadow: '0 2px 10px rgba(0,0,0,0.3)',
+    width: W.chip + 20, background: INK.surface, border: `1px solid ${INK.border}`,
+    borderRadius: 12, padding: `${SP.md}px ${SP.md + 2}px`,
+    color: INK.text, boxShadow: '0 1px 2px rgba(0,0,0,0.4)',
   }}>
     <Handle type="target" position={Position.Left} style={{ background: INK.wireHi, width: 8, height: 8 }} />
-    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: SP.sm + 2, marginBottom: SP.sm - 2 }}>
       <div style={{
-        width: 30, height: 30, borderRadius: 8, background: INK.surfaceHi,
-        border: `1px solid ${INK.border}`, display: 'flex',
-        alignItems: 'center', justifyContent: 'center',
+        width: 28, height: 28, borderRadius: 7, background: INK.surfaceHi,
+        border: `1px solid ${INK.border}`,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
       }}>{DEST_ICON[data.platform]}</div>
       <div>
         <div style={labelStyle}>Destination</div>
-        <div style={{ fontSize: 13, fontWeight: 600, color: INK.text }}>{data.label}</div>
+        <div style={{ fontSize: TYPE.title, fontWeight: 600, color: INK.text }}>{data.label}</div>
       </div>
     </div>
     <div style={{
-      fontSize: 9, color: INK.textMuted,
+      fontSize: TYPE.label, color: INK.textMuted,
       fontFamily: 'ui-monospace, SFMono-Regular, monospace',
-      background: INK.surfaceHi, padding: '4px 7px',
+      background: INK.surfaceHi, padding: `3px ${SP.sm - 1}px`,
       borderRadius: 4, display: 'inline-block',
     }}>{data.action}</div>
   </div>
@@ -606,27 +677,39 @@ const nodeTypes = {
 };
 
 // =============================================================================
-// Layout — strict L→R timeline
+// Layout — strict L→R timeline with rhythm
+//
+// Columns (x) on a 400px stride. Primary nodes anchor at y=0 ("spine row").
+// Vertical gaps follow the SP scale:
+//   - 8–12px: tightly related (two tags firing together)
+//   - 24–32px: siblings in same group
+//   - 48–64px: distinct groups inside a column
 // =============================================================================
-//   C0 Ads → C1 Capture → C2 Opt-in events (tags + welcome) → C3 Reminders
-//   → C4 Webinar → C5 SLO → C6 Purchase events → C7 Thank You
-//   → C8 Replay → C9 Destinations
 
 const AD_IMAGE = '/funnels/luke-alexander/hero.jpg';
 
-const C = { ads: 0, capture: 380, optin: 760, remind: 1140, webinar: 1520, slo: 1900, purchase: 2280, ty: 2660, replay: 3040, dest: 3420 };
-const Y = { base: 40 };
+// Standard row heights for stacking maths
+const R = {
+  ad:      400,
+  page:    440,
+  email:   460,
+  phone:   400,
+  webinar: 330,
+  tag:     70,
+  dest:    100,
+};
 
 const SEED_NODES: any[] = [
-  // ----- Ads -----
-  { id: 'ad-meta',    type: 'ad', position: { x: C.ads, y: 0 },    data: { kind: 'ad', label: 'AI Insiders — Cold', platform: 'Meta', image: AD_IMAGE, headline: 'AI Insiders — Free Briefing', primaryText: 'The 3 AI workflows quietly replacing entire marketing teams. Free 60-min briefing. Seats limited.', cta: 'Sign Up', spend: 420, leads: 68, cpl: 6.18 } },
-  { id: 'ad-ig',      type: 'ad', position: { x: C.ads, y: 460 },  data: { kind: 'ad', label: 'IG Retarget', platform: 'Meta', image: AD_IMAGE, headline: 'Still thinking about it?', primaryText: 'You looked, you left. The AI Insiders briefing starts tomorrow. Last call.', cta: 'Save My Seat', spend: 180, leads: 41, cpl: 4.39 } },
-  { id: 'ad-organic', type: 'ad', position: { x: C.ads, y: 920 },  data: { kind: 'ad', label: 'Kit broadcast', platform: 'Kit', image: AD_IMAGE, headline: 'List broadcast · AI Insiders', primaryText: "Broadcast to Luke's subscriber list announcing the free AI Insiders briefing tomorrow.", cta: 'Open', spend: 0, leads: 112, cpl: 0 } },
+  // ========= C0 · Ads =========
+  { id: 'ad-meta',    type: 'ad', position: { x: col(0), y: 0 },                    data: { kind: 'ad', label: 'AI Insiders — Cold',   platform: 'Meta', image: AD_IMAGE, headline: 'AI Insiders — Free Briefing', primaryText: 'The 3 AI workflows quietly replacing entire marketing teams. Free 60-min briefing. Seats limited.', cta: 'Sign Up',      spend: 420, leads: 68,  cpl: 6.18 } },
+  { id: 'ad-ig',      type: 'ad', position: { x: col(0), y: R.ad + SP.xxl },        data: { kind: 'ad', label: 'IG Retarget',          platform: 'Meta', image: AD_IMAGE, headline: 'Still thinking about it?',     primaryText: 'You looked, you left. The AI Insiders briefing starts tomorrow. Last call.',                   cta: 'Save My Seat', spend: 180, leads: 41,  cpl: 4.39 } },
+  { id: 'ad-organic', type: 'ad', position: { x: col(0), y: (R.ad + SP.xxl) * 2 },  data: { kind: 'ad', label: 'Kit broadcast',        platform: 'Kit',  image: AD_IMAGE, headline: 'List broadcast · AI Insiders', primaryText: "Broadcast to Luke's subscriber list announcing the free AI Insiders briefing tomorrow.",       cta: 'Open',         spend: 0,   leads: 112, cpl: 0    } },
 
-  // ----- Capture Page (pixels inline) -----
-  { id: 'pg-optin', type: 'page', position: { x: C.capture, y: Y.base },
+  // ========= C1 · Capture Page =========
+  { id: 'pg-optin', type: 'page', position: { x: col(1), y: 0 },
     data: {
-      kind: 'page', label: 'Capture Page', url: 'aureumfunnels.com/luke/optin',
+      kind: 'page', label: 'Capture Page',
+      url: 'aureumfunnels.com/luke/optin',
       openHref: '/funnels/luke-alexander/optin/index.html',
       views: 1240, clicks: 221, conversionPct: 17.8, cta: 'SAVE MY SEAT',
       pixelEvents: [
@@ -636,10 +719,13 @@ const SEED_NODES: any[] = [
     },
   },
 
-  // ----- Opt-in events (tags then welcome messages) -----
-  { id: 'tag-lead', type: 'tag', position: { x: C.optin, y: Y.base },       data: { kind: 'tag', platform: 'GHL', label: 'ai-insiders-lead', trigger: 'on opt-in' } },
-  { id: 'tag-kit',  type: 'tag', position: { x: C.optin, y: Y.base + 100 }, data: { kind: 'tag', platform: 'Kit', label: 'AI Insiders',      trigger: 'on opt-in' } },
-  { id: 'msg-welcome-email', type: 'email', position: { x: C.optin, y: 240 }, data: {
+  // ========= C2 · Opt-in events =========
+  // Tags: tight pair at top (8px gap)
+  { id: 'tag-lead', type: 'tag', position: { x: col(2), y: 0 },                   data: { kind: 'tag', platform: 'GHL', label: 'ai-insiders-lead', trigger: 'on opt-in' } },
+  { id: 'tag-kit',  type: 'tag', position: { x: col(2), y: R.tag + SP.sm },       data: { kind: 'tag', platform: 'Kit', label: 'AI Insiders',      trigger: 'on opt-in' } },
+
+  // Welcome messages: generous gap after tags (48px), siblings at 24px
+  { id: 'msg-welcome-email', type: 'email',    position: { x: col(2), y: (R.tag * 2) + SP.sm + SP.xxxl },                         data: {
     kind: 'email', fromName: 'Luke Alexander', fromEmail: 'luke@aiinsiders.com', toDisplay: 'me',
     subject: "You're in — AI Insiders briefing details inside",
     body: `Hey {{first_name}},
@@ -655,7 +741,7 @@ Save this. Add it to your calendar. See you inside.
 — Luke`,
     trigger: 'on opt-in', sendingFrom: 'Kit', sent: 221, openedPct: 68, clickedPct: 42,
   } },
-  { id: 'msg-welcome-sms', type: 'sms', position: { x: C.optin, y: 780 }, data: {
+  { id: 'msg-welcome-sms', type: 'sms',        position: { x: col(2), y: (R.tag * 2) + SP.sm + SP.xxxl + R.email + SP.xl },         data: {
     kind: 'sms', contactName: 'Luke Alexander',
     body: `Hey, Luke here 👋
 
@@ -667,7 +753,7 @@ aiinsiders.com/join
 Reply STOP to opt out.`,
     trigger: 'on opt-in', sendingFrom: 'Twilio', sent: 198, clickedPct: 31, time: '9:41',
   } },
-  { id: 'msg-welcome-tg', type: 'telegram', position: { x: C.optin, y: 1220 }, data: {
+  { id: 'msg-welcome-tg', type: 'telegram',    position: { x: col(2), y: (R.tag * 2) + SP.sm + SP.xxxl + R.email + SP.xl + R.phone + SP.xl }, data: {
     kind: 'telegram', botName: 'AI Insiders', botSubtitle: 'channel · 1 240 subscribers',
     body: `Welcome to AI Insiders 🎯
 
@@ -678,11 +764,8 @@ Briefing kicks off tomorrow at 3pm ET.`,
     trigger: 'on opt-in', sent: 174, clickedPct: 58, time: '9:41',
   } },
 
-  // ----- Reminders -----
-  { id: 'msg-24h', type: 'email', position: { x: C.remind, y: Y.base }, data: {
-    kind: 'email', fromName: 'Luke Alexander', fromEmail: 'luke@aiinsiders.com', toDisplay: 'me',
-    subject: 'Tomorrow · AI Insiders briefing (save your seat)',
-    body: `{{first_name}} —
+  // ========= C3 · Reminders =========
+  { id: 'msg-24h',  type: 'email', position: { x: col(3), y: 0 },                                              data: { kind: 'email', fromName: 'Luke Alexander', fromEmail: 'luke@aiinsiders.com', toDisplay: 'me', subject: 'Tomorrow · AI Insiders briefing (save your seat)', body: `{{first_name}} —
 
 Quick reminder: the AI Insiders briefing is tomorrow at 3pm ET.
 
@@ -690,44 +773,33 @@ If you haven't blocked your calendar, do it now.
 
 Join here: [ AI Insiders Briefing → ]
 
-— Luke`,
-    trigger: 'T-24h', sendingFrom: 'Kit', sent: 221, openedPct: 54, clickedPct: 28,
-  } },
-  { id: 'msg-1h', type: 'email', position: { x: C.remind, y: 580 }, data: {
-    kind: 'email', fromName: 'Luke Alexander', fromEmail: 'luke@aiinsiders.com', toDisplay: 'me',
-    subject: '1 hour · final reminder',
-    body: `{{first_name}} —
+— Luke`, trigger: 'T-24h', sendingFrom: 'Kit', sent: 221, openedPct: 54, clickedPct: 28 } },
+  { id: 'msg-1h',   type: 'email', position: { x: col(3), y: R.email + SP.xl },                                data: { kind: 'email', fromName: 'Luke Alexander', fromEmail: 'luke@aiinsiders.com', toDisplay: 'me', subject: '1 hour · final reminder', body: `{{first_name}} —
 
 60 minutes out. Make sure you're at your desk, bring questions, and grab a notepad.
 
 Join: [ AI Insiders Briefing → ]
 
-— Luke`,
-    trigger: 'T-1h', sendingFrom: 'Kit', sent: 221, openedPct: 62, clickedPct: 36,
-  } },
-  { id: 'msg-live', type: 'sms', position: { x: C.remind, y: 1120 }, data: {
-    kind: 'sms', contactName: 'Luke Alexander',
-    body: `We're LIVE.
+— Luke`, trigger: 'T-1h', sendingFrom: 'Kit', sent: 221, openedPct: 62, clickedPct: 36 } },
+  { id: 'msg-live', type: 'sms',   position: { x: col(3), y: (R.email + SP.xl) * 2 },                          data: { kind: 'sms', contactName: 'Luke Alexander', body: `We're LIVE.
 
 Tap to join:
 aiinsiders.com/join
 
-(Starts in 2 min — don't wait.)`,
-    trigger: 'T-0', sendingFrom: 'Twilio', sent: 198, clickedPct: 71, time: '3:00',
-  } },
+(Starts in 2 min — don't wait.)`, trigger: 'T-0', sendingFrom: 'Twilio', sent: 198, clickedPct: 71, time: '3:00' } },
 
-  // ----- Webinar -----
-  { id: 'webinar', type: 'webinar', position: { x: C.webinar, y: Y.base }, data: {
+  // ========= C4 · Webinar =========
+  { id: 'webinar', type: 'webinar', position: { x: col(4), y: 0 }, data: {
     kind: 'webinar', platform: 'WebinarJam',
     title: 'AI Insiders Briefing',
-    date: 'Apr 19, 2026', time: '3:00 PM ET',
-    duration: '60 min',
+    date: 'Apr 19, 2026', time: '3:00 PM ET', duration: '60 min',
     registered: 221, showRate: 64,
   } },
 
-  // ----- SLO Page (pixel inline) -----
-  { id: 'pg-slo', type: 'page', position: { x: C.slo, y: Y.base }, data: {
-    kind: 'page', label: 'SLO Page', url: 'aureumfunnels.com/luke/slo',
+  // ========= C5 · SLO =========
+  { id: 'pg-slo', type: 'page', position: { x: col(5), y: 0 }, data: {
+    kind: 'page', label: 'SLO Page',
+    url: 'aureumfunnels.com/luke/slo',
     openHref: '/funnels/luke-alexander/slo/index.html',
     views: 221, clicks: 34, conversionPct: 15.4, cta: 'GET ACCESS',
     pixelEvents: [
@@ -736,11 +808,11 @@ aiinsiders.com/join
     ],
   } },
 
-  // ----- Purchase events -----
-  { id: 'tag-buyer', type: 'tag', position: { x: C.purchase, y: Y.base }, data: {
+  // ========= C6 · Purchase events =========
+  { id: 'tag-buyer', type: 'tag', position: { x: col(6), y: 0 }, data: {
     kind: 'tag', platform: 'GHL', label: 'ai-insiders-buyer', trigger: 'on purchase',
   } },
-  { id: 'msg-slo-receipt', type: 'email', position: { x: C.purchase, y: 180 }, data: {
+  { id: 'msg-slo-receipt', type: 'email', position: { x: col(6), y: R.tag + SP.xxxl }, data: {
     kind: 'email', fromName: 'Luke Alexander', fromEmail: 'luke@aiinsiders.com', toDisplay: 'me',
     subject: 'Your AI Insiders access is confirmed',
     body: `{{first_name}} —
@@ -760,9 +832,10 @@ Welcome aboard.
     trigger: 'on purchase', sendingFrom: 'Kit', sent: 34, openedPct: 88, clickedPct: 61,
   } },
 
-  // ----- Thank You -----
-  { id: 'pg-ty', type: 'page', position: { x: C.ty, y: Y.base }, data: {
-    kind: 'page', label: 'Thank You', url: 'aureumfunnels.com/luke/ty',
+  // ========= C7 · Thank You =========
+  { id: 'pg-ty', type: 'page', position: { x: col(7), y: 0 }, data: {
+    kind: 'page', label: 'Thank You',
+    url: 'aureumfunnels.com/luke/ty',
     openHref: '/funnels/luke-alexander/thank-you/index.html',
     views: 221, clicks: 198, conversionPct: 89.6, cta: 'VIEW REPLAY',
     pixelEvents: [
@@ -770,8 +843,8 @@ Welcome aboard.
     ],
   } },
 
-  // ----- Replay -----
-  { id: 'msg-ty-replay', type: 'email', position: { x: C.replay, y: Y.base }, data: {
+  // ========= C8 · Replay =========
+  { id: 'msg-ty-replay', type: 'email', position: { x: col(8), y: 0 }, data: {
     kind: 'email', fromName: 'Luke Alexander', fromEmail: 'luke@aiinsiders.com', toDisplay: 'me',
     subject: 'Replay + resources from AI Insiders',
     body: `Hey {{first_name}} —
@@ -788,11 +861,12 @@ Let me know what lands.
     trigger: 'T+24h post-event', sendingFrom: 'Kit', sent: 0, openedPct: 0, clickedPct: 0,
   } },
 
-  // ----- Destinations -----
-  { id: 'dest-supabase', type: 'destination', position: { x: C.dest, y: Y.base },        data: { kind: 'destination', platform: 'Supabase', label: 'Supabase',      action: 'INSERT funnel_leads' } },
-  { id: 'dest-kit',      type: 'destination', position: { x: C.dest, y: Y.base + 150 },  data: { kind: 'destination', platform: 'Kit',      label: 'Kit',           action: 'POST /subscribers' } },
-  { id: 'dest-close',    type: 'destination', position: { x: C.dest, y: Y.base + 300 },  data: { kind: 'destination', platform: 'Close',    label: 'Close CRM',     action: 'POST /lead → pipeline' } },
-  { id: 'dest-ghl',      type: 'destination', position: { x: C.dest, y: Y.base + 450 },  data: { kind: 'destination', platform: 'GHL',      label: 'GoHighLevel',   action: 'upsert contact + tag' } },
+  // ========= C9 · Destinations =========
+  // Stacked tight (related group)
+  { id: 'dest-supabase', type: 'destination', position: { x: col(9), y: 0 },                        data: { kind: 'destination', platform: 'Supabase', label: 'Supabase',    action: 'INSERT funnel_leads' } },
+  { id: 'dest-kit',      type: 'destination', position: { x: col(9), y: (R.dest + SP.sm) * 1 },     data: { kind: 'destination', platform: 'Kit',      label: 'Kit',         action: 'POST /subscribers' } },
+  { id: 'dest-close',    type: 'destination', position: { x: col(9), y: (R.dest + SP.sm) * 2 },     data: { kind: 'destination', platform: 'Close',    label: 'Close CRM',   action: 'POST /lead → pipeline' } },
+  { id: 'dest-ghl',      type: 'destination', position: { x: col(9), y: (R.dest + SP.sm) * 3 },     data: { kind: 'destination', platform: 'GHL',      label: 'GoHighLevel', action: 'upsert contact + tag' } },
 ];
 
 // =============================================================================
@@ -800,45 +874,43 @@ Let me know what lands.
 // =============================================================================
 
 const labelTheme = {
-  labelStyle: { fill: INK.textMuted, fontSize: 10 },
+  labelStyle: { fill: INK.textMuted, fontSize: TYPE.body - 1 },
   labelBgStyle: { fill: INK.surface },
-  labelBgPadding: [4, 2] as [number, number],
+  labelBgPadding: [SP.xs, 2] as [number, number],
   labelBgBorderRadius: 4,
 };
 const arrow = (c: string) => ({ type: MarkerType.ArrowClosed, color: c });
-const spine      = () => ({ style: { stroke: INK.wireHi, strokeWidth: 1.5 }, animated: true,  markerEnd: arrow(INK.wireHi), ...labelTheme });
-const solid      = () => ({ style: { stroke: INK.wire,   strokeWidth: 1.5 }, animated: false, markerEnd: arrow(INK.wire),   ...labelTheme });
-const triggered  = () => ({ style: { stroke: INK.wire,   strokeWidth: 1.2, strokeDasharray: '4 4' }, animated: false, markerEnd: arrow(INK.wire), ...labelTheme });
+const spine     = () => ({ style: { stroke: INK.wireHi, strokeWidth: 1.5 }, animated: true,  markerEnd: arrow(INK.wireHi), ...labelTheme });
+const solid     = () => ({ style: { stroke: INK.wire,   strokeWidth: 1.3 }, animated: false, markerEnd: arrow(INK.wire),   ...labelTheme });
+const triggered = () => ({ style: { stroke: INK.wire,   strokeWidth: 1.1, strokeDasharray: '4 4' }, animated: false, markerEnd: arrow(INK.wire), ...labelTheme });
 
 const SEED_EDGES: any[] = [
-  // Spine — the actual L→R journey
-  { id: 'sp-ad-meta',    source: 'ad-meta',    target: 'pg-optin', label: 'CPL $6.18', ...spine() },
-  { id: 'sp-ad-ig',      source: 'ad-ig',      target: 'pg-optin', label: 'CPL $4.39', ...spine() },
-  { id: 'sp-ad-organic', source: 'ad-organic', target: 'pg-optin', label: 'organic',   ...spine() },
-  { id: 'sp-optin-webinar', source: 'pg-optin', target: 'webinar', label: 'registers', ...spine() },
-  { id: 'sp-webinar-slo',   source: 'webinar',  target: 'pg-slo',  label: 'post-event offer', ...spine() },
-  { id: 'sp-slo-ty',        source: 'pg-slo',   target: 'pg-ty',   label: '15.4% CVR', ...spine() },
-  { id: 'sp-ty-replay',     source: 'pg-ty',    target: 'msg-ty-replay', label: 'T+24h', ...spine() },
+  // Spine
+  { id: 'sp-ad-meta',       source: 'ad-meta',    target: 'pg-optin',      label: 'CPL $6.18',        ...spine() },
+  { id: 'sp-ad-ig',         source: 'ad-ig',      target: 'pg-optin',      label: 'CPL $4.39',        ...spine() },
+  { id: 'sp-ad-organic',    source: 'ad-organic', target: 'pg-optin',      label: 'organic',          ...spine() },
+  { id: 'sp-optin-webinar', source: 'pg-optin',   target: 'webinar',       label: 'registers',        ...spine() },
+  { id: 'sp-webinar-slo',   source: 'webinar',    target: 'pg-slo',        label: 'post-event offer', ...spine() },
+  { id: 'sp-slo-ty',        source: 'pg-slo',     target: 'pg-ty',         label: '15.4% CVR',        ...spine() },
+  { id: 'sp-ty-replay',     source: 'pg-ty',      target: 'msg-ty-replay', label: 'T+24h',            ...spine() },
 
-  // Capture page fires tags + messages (on opt-in)
+  // Page → Tags
   { id: 'e-optin-tag-lead', source: 'pg-optin', sourceHandle: 'trigger', target: 'tag-lead', ...triggered() },
   { id: 'e-optin-tag-kit',  source: 'pg-optin', sourceHandle: 'trigger', target: 'tag-kit',  ...triggered() },
 
-  // Tags trigger welcome messages
+  // Tags → Messages
   { id: 'e-tag-welcome-email', source: 'tag-kit',  target: 'msg-welcome-email', ...triggered() },
   { id: 'e-tag-welcome-sms',   source: 'tag-lead', target: 'msg-welcome-sms',   ...triggered() },
   { id: 'e-tag-welcome-tg',    source: 'tag-lead', target: 'msg-welcome-tg',    ...triggered() },
+  { id: 'e-tag-24h',           source: 'tag-kit',  target: 'msg-24h',           ...triggered() },
+  { id: 'e-tag-1h',            source: 'tag-kit',  target: 'msg-1h',            ...triggered() },
+  { id: 'e-tag-live',          source: 'tag-lead', target: 'msg-live',          ...triggered() },
 
-  // Welcome → reminder sequence (Kit list drives reminders)
-  { id: 'e-tag-24h',  source: 'tag-kit',  target: 'msg-24h',  ...triggered() },
-  { id: 'e-tag-1h',   source: 'tag-kit',  target: 'msg-1h',   ...triggered() },
-  { id: 'e-tag-live', source: 'tag-lead', target: 'msg-live', ...triggered() },
-
-  // SLO page fires buyer tag + receipt
+  // SLO → Buyer tag → receipt
   { id: 'e-slo-tag-buyer', source: 'pg-slo',    sourceHandle: 'trigger', target: 'tag-buyer',        ...triggered() },
   { id: 'e-tag-receipt',   source: 'tag-buyer', target: 'msg-slo-receipt', ...triggered() },
 
-  // Tags → destinations (where lead data lands)
+  // Destinations
   { id: 'e-taglead-supa',  source: 'tag-lead',  sourceHandle: 'dest', target: 'dest-supabase', ...solid() },
   { id: 'e-tagkit-kit',    source: 'tag-kit',   sourceHandle: 'dest', target: 'dest-kit',      ...solid() },
   { id: 'e-taglead-close', source: 'tag-lead',  sourceHandle: 'dest', target: 'dest-close',    ...solid() },
@@ -848,7 +920,7 @@ const SEED_EDGES: any[] = [
 ];
 
 // =============================================================================
-// Stats (Meta Ads + Whop hook placeholder)
+// Stats — single row, dividers, varied emphasis
 // =============================================================================
 
 interface Stats { adSpend: number; leads: number; cpl: number; sales: number; revenue: number; roas: number }
@@ -862,29 +934,48 @@ const useFunnelStats = (): Stats => {
   return { adSpend, leads, cpl, sales, revenue, roas };
 };
 
-const StatCard: React.FC<{ label: string; value: string; accent?: boolean }> = ({ label, value, accent }) => (
+const StatItem: React.FC<{ label: string; value: string; accent?: boolean }> = ({ label, value, accent }) => (
   <div style={{
-    flex: 1, minWidth: 120, padding: '12px 14px',
-    background: INK.surface, border: `1px solid ${INK.border}`, borderRadius: 10,
+    flex: 1, minWidth: 0,
+    padding: `${SP.md}px ${SP.lg}px`,
+    display: 'flex', flexDirection: 'column', gap: SP.xs,
   }}>
-    <div style={{ ...labelStyle, marginBottom: 4 }}>{label}</div>
+    <div style={{ ...labelStyle }}>{label}</div>
     <div style={{
-      fontSize: 20, fontWeight: 600, color: accent ? INK.accent : INK.text,
+      fontSize: TYPE.display, fontWeight: 600,
+      color: accent ? INK.accent : INK.text,
       fontVariantNumeric: 'tabular-nums', letterSpacing: -0.3,
-    }}>{value}</div>
+      lineHeight: 1,
+    }}>
+      {value}
+    </div>
   </div>
 );
 
-const StatsBar: React.FC<{ stats: Stats }> = ({ stats }) => (
-  <div style={{ display: 'flex', gap: 8 }}>
-    <StatCard label="Ad spend"  value={`$${stats.adSpend.toLocaleString()}`} />
-    <StatCard label="Leads"     value={stats.leads.toLocaleString()} />
-    <StatCard label="CPL"       value={`$${stats.cpl.toFixed(2)}`} />
-    <StatCard label="Sales"     value={stats.sales.toLocaleString()} />
-    <StatCard label="Revenue"   value={`$${stats.revenue.toLocaleString()}`} accent />
-    <StatCard label="ROAS"      value={`${stats.roas.toFixed(2)}x`} accent />
-  </div>
-);
+const StatsBar: React.FC<{ stats: Stats }> = ({ stats }) => {
+  const divider = <div style={{ width: 1, alignSelf: 'stretch', background: INK.border }} />;
+  return (
+    <div style={{
+      display: 'flex',
+      background: INK.surface,
+      border: `1px solid ${INK.border}`,
+      borderRadius: 12,
+      overflow: 'hidden',
+    }}>
+      <StatItem label="Ad spend" value={`$${stats.adSpend.toLocaleString()}`} />
+      {divider}
+      <StatItem label="Leads"    value={stats.leads.toLocaleString()} />
+      {divider}
+      <StatItem label="CPL"      value={`$${stats.cpl.toFixed(2)}`} />
+      {divider}
+      <StatItem label="Sales"    value={stats.sales.toLocaleString()} />
+      {divider}
+      <StatItem label="Revenue"  value={`$${stats.revenue.toLocaleString()}`} accent />
+      {divider}
+      <StatItem label="ROAS"     value={`${stats.roas.toFixed(2)}x`} accent />
+    </div>
+  );
+};
 
 // =============================================================================
 // Main
@@ -914,16 +1005,21 @@ const LukeFlowView: React.FC<Props> = () => {
   }, [setNodes]);
 
   return (
-    <div className="flex-1 min-h-0 flex flex-col gap-3">
+    <div className="flex-1 min-h-0 flex flex-col" style={{ gap: SP.md }}>
       <StatsBar stats={stats} />
 
-      <div className="flex-1 min-h-0 rounded-xl overflow-hidden border relative"
-        style={{ background: INK.bg, borderColor: INK.border }}>
-        <div style={{ position: 'absolute', top: 12, right: 12, zIndex: 10 }}>
+      <div
+        className="flex-1 min-h-0 rounded-xl overflow-hidden border relative"
+        style={{ background: INK.bg, borderColor: INK.border }}
+      >
+        <div style={{ position: 'absolute', top: SP.md, right: SP.md, zIndex: 10 }}>
           <button
             onClick={toggleMetrics}
-            className="px-3 py-1.5 rounded-md text-xs font-medium"
             style={{
+              padding: `${SP.xs + 2}px ${SP.md}px`,
+              borderRadius: 6,
+              fontSize: TYPE.body,
+              fontWeight: 500,
               background: INK.surface,
               color: showMetrics ? INK.text : INK.textMuted,
               border: `1px solid ${INK.border}`,
@@ -952,11 +1048,14 @@ const LukeFlowView: React.FC<Props> = () => {
           elevateNodesOnSelect={false}
         >
           <Background color={INK.border} gap={32} size={1} />
-          <Controls style={{ background: INK.surface, border: `1px solid ${INK.border}` }} showInteractive={false} />
+          <Controls
+            style={{ background: INK.surface, border: `1px solid ${INK.border}` }}
+            showInteractive={false}
+          />
           <MiniMap
             nodeColor={() => INK.borderHi}
             nodeStrokeColor={() => INK.border}
-            maskColor="rgba(0,0,0,0.7)"
+            maskColor="rgba(0,0,0,0.72)"
             style={{ background: INK.surface, border: `1px solid ${INK.border}` }}
           />
         </ReactFlow>
