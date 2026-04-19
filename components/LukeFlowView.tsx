@@ -9,6 +9,7 @@ import ReactFlow, {
   Handle,
   Position,
   NodeProps,
+  Node,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import {
@@ -21,7 +22,6 @@ import {
   MousePointerClick,
   Clock,
   Facebook,
-  Database,
   Target,
   Wifi,
   BatteryFull,
@@ -32,6 +32,14 @@ import {
   PlayCircle,
   Calendar,
   ArrowRight,
+  AlignStartVertical,
+  AlignCenterVertical,
+  AlignEndVertical,
+  AlignStartHorizontal,
+  AlignCenterHorizontal,
+  AlignEndHorizontal,
+  AlignHorizontalDistributeCenter,
+  AlignVerticalDistributeCenter,
 } from 'lucide-react';
 
 // =============================================================================
@@ -51,6 +59,7 @@ const INK = {
   accent:     '#9ee6a8',
   wire:       '#2a2a2a',
   wireHi:     '#4a4a4a',
+  selection:  '#9ee6a8',
 };
 
 const BRAND = {
@@ -58,10 +67,8 @@ const BRAND = {
   telegram: '#6AB3F3',
 };
 
-// 4pt spacing scale
 const SP = { xs: 4, sm: 8, md: 12, lg: 16, xl: 24, xxl: 32, xxxl: 48, huge: 64, jumbo: 96 };
 
-// 5-step type scale
 const TYPE = {
   label:   9,
   body:    11,
@@ -69,43 +76,57 @@ const TYPE = {
   display: 20,
 };
 
-// Node widths
 const W = {
-  primary: 320, // ads, pages, emails, webinar
-  phone:   280, // sms, telegram
-  tag:     260, // tag + destination chips
+  primary: 320,
+  phone:   280,
+  tag:     260,
 };
 
-// Horizontal grid — generous stride so columns breathe
+// Horizontal grid
 const STRIDE = 520;
 const col = (i: number) => i * STRIDE;
 
-// Vertical layout bands
+// Vertical bands
 const Y = {
-  colLabel: -72, // above all cards
-  spine:    0,   // page & ad tops
-  tagBand:  520, // tags sit below the spine band
-  msgBand:  680, // first message beneath tag
+  colLabel: -72,
+  spine:    0,
+  tagBand:  520,
+  msgBand:  680,
 };
 
-// Column headers
+// Row heights (for stacking maths)
+const R = {
+  ad:      400,
+  page:    440,
+  email:   460,
+  phone:   400,
+  webinar: 330,
+  tag:     140,
+};
+
+// Columns
 const COLUMNS: { label: string; i: number }[] = [
-  { label: 'Traffic',         i: 0 },
-  { label: 'Capture',         i: 1 },
-  { label: 'Opt-in · phone',  i: 2 },
-  { label: 'Opt-in · email',  i: 3 },
-  { label: 'Live event',      i: 4 },
-  { label: 'Offer',           i: 5 },
-  { label: 'Purchase',        i: 6 },
-  { label: 'Confirmation',    i: 7 },
-  { label: 'Post-event',      i: 8 },
+  { label: 'Traffic',          i: 0 },
+  { label: 'Capture',          i: 1 },
+  { label: 'Opt-in · phone',   i: 2 },
+  { label: 'Opt-in · email',   i: 3 },
+  { label: 'Reminders',        i: 4 },
+  { label: 'Live event',       i: 5 },
+  { label: 'Offer',            i: 6 },
+  { label: 'Purchase · SLO',   i: 7 },
+  { label: 'Recovery · SLO',   i: 8 },
+  { label: 'Confirmation',     i: 9 },
+  { label: 'Main offer',       i: 10 },
+  { label: 'Purchase · Main',  i: 11 },
+  { label: 'Recovery · Main',  i: 12 },
+  { label: 'Post-event',       i: 13 },
 ];
 
 // =============================================================================
 // Types
 // =============================================================================
 
-type Platform = 'GHL' | 'Kit' | 'Meta' | 'Telegram' | 'Twilio' | 'Supabase' | 'Close' | 'WebinarJam';
+type Platform = 'Close' | 'Kit' | 'Meta' | 'Telegram' | 'Twilio' | 'Supabase' | 'WebinarJam' | 'Calendly';
 
 interface PixelEvent { name: string; trigger: string; value?: string }
 
@@ -113,6 +134,7 @@ interface AdNodeData {
   kind: 'ad'; label: string; platform: Platform; image: string;
   headline: string; primaryText: string; cta: string;
   spend: number; leads: number; cpl: number;
+  variant?: 'reach';
 }
 interface PageNodeData {
   kind: 'page'; label: string; url: string; openHref: string;
@@ -134,7 +156,7 @@ interface TelegramNodeData {
 }
 interface TagNodeData {
   kind: 'tag'; platform: Platform; label: string; trigger: string;
-  syncsTo: Platform[]; // destinations the tagged contact is pushed to
+  syncsTo: Platform[];
 }
 interface WebinarNodeData {
   kind: 'webinar'; platform: 'WebinarJam'; title: string;
@@ -202,6 +224,7 @@ const FooterRow: React.FC<React.PropsWithChildren> = ({ children }) => (
 
 const AdNode = memo<NodeProps<AdNodeData>>(({ data }) => {
   const showMetrics = (data as any).__showMetrics ?? true;
+  const isReach = data.variant === 'reach';
   return (
     <NodeShell width={W.primary}>
       <div style={{
@@ -216,7 +239,9 @@ const AdNode = memo<NodeProps<AdNodeData>>(({ data }) => {
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: TYPE.body, fontWeight: 600, color: INK.text }}>Luke Alexander</div>
-          <div style={{ fontSize: TYPE.label, color: INK.textMuted }}>Sponsored · {data.platform}</div>
+          <div style={{ fontSize: TYPE.label, color: INK.textMuted }}>
+            Sponsored · {data.platform}{isReach ? ' · Reach' : ''}
+          </div>
         </div>
       </div>
 
@@ -260,11 +285,13 @@ const AdNode = memo<NodeProps<AdNodeData>>(({ data }) => {
       {showMetrics && (
         <FooterRow>
           <span>${data.spend.toLocaleString()}</span>
-          <span>{data.leads} leads</span>
-          <span style={{ color: INK.accent, marginLeft: 'auto' }}>CPL ${data.cpl.toFixed(2)}</span>
+          <span>{data.leads} {isReach ? 'reached' : 'leads'}</span>
+          {!isReach && <span style={{ color: INK.accent, marginLeft: 'auto' }}>CPL ${data.cpl.toFixed(2)}</span>}
+          {isReach && <span style={{ color: INK.accent, marginLeft: 'auto' }}>T-48h</span>}
         </FooterRow>
       )}
       <Handle type="source" position={Position.Right} style={{ background: INK.wireHi, width: 8, height: 8 }} />
+      <Handle type="source" position={Position.Bottom} id="trigger" style={{ background: INK.wireHi, width: 8, height: 8 }} />
     </NodeShell>
   );
 });
@@ -380,7 +407,7 @@ const PageNode = memo<NodeProps<PageNodeData>>(({ data }) => {
 PageNode.displayName = 'PageNode';
 
 // =============================================================================
-// Email node — Gmail preview inside neutral chrome
+// Email node
 // =============================================================================
 
 const EmailNode = memo<NodeProps<EmailNodeData>>(({ data }) => {
@@ -542,7 +569,7 @@ const TelegramNode = memo<NodeProps<TelegramNodeData>>(({ data }) => {
 TelegramNode.displayName = 'TelegramNode';
 
 // =============================================================================
-// Tag node — now with inline destination chips (no more cross-canvas edges)
+// Tag node
 // =============================================================================
 
 const TagNode = memo<NodeProps<TagNodeData>>(({ data }) => (
@@ -645,6 +672,7 @@ const WebinarNode = memo<NodeProps<WebinarNodeData>>(({ data }) => {
         </FooterRow>
       )}
       <Handle type="source" position={Position.Right} style={{ background: INK.wireHi, width: 8, height: 8 }} />
+      <Handle type="source" position={Position.Bottom} id="trigger" style={{ background: INK.wireHi, width: 8, height: 8 }} />
     </NodeShell>
   );
 });
@@ -693,26 +721,27 @@ const nodeTypes = {
 };
 
 // =============================================================================
-// Row-height reference values (used for stacking maths)
-// =============================================================================
-
-const R = {
-  ad:      400,
-  page:    440,
-  email:   460,
-  phone:   400,
-  webinar: 330,
-  tag:     140, // includes "Syncs to" footer
-};
-
-const AD_IMAGE = '/funnels/luke-alexander/hero.jpg';
-
-// =============================================================================
 // SEED_NODES
 // =============================================================================
 
+const AD_IMAGE = '/funnels/luke-alexander/hero.jpg';
+
+// Default node sizes used when measured sizes aren't available yet
+const defaultSize = (kind: string) => {
+  switch (kind) {
+    case 'ad':       return { w: W.primary, h: R.ad };
+    case 'page':     return { w: W.primary, h: R.page };
+    case 'email':    return { w: W.primary, h: R.email };
+    case 'sms':      return { w: W.phone,   h: R.phone };
+    case 'telegram': return { w: W.phone,   h: R.phone };
+    case 'tag':      return { w: W.tag,     h: R.tag };
+    case 'webinar':  return { w: W.primary, h: R.webinar };
+    default:         return { w: W.primary, h: 100 };
+  }
+};
+
 const SEED_NODES: any[] = [
-  // ---- Column headers ----
+  // Column headers
   ...COLUMNS.map(c => ({
     id: `col-${c.i}`, type: 'colLabel',
     position: { x: col(c.i), y: Y.colLabel },
@@ -720,28 +749,32 @@ const SEED_NODES: any[] = [
     draggable: false, selectable: false, connectable: false,
   })),
 
-  // ---- C0 · Ads (stacked with huge gaps) ----
-  { id: 'ad-meta',    type: 'ad', position: { x: col(0), y: Y.spine },                          data: { kind: 'ad', label: 'Cold',          platform: 'Meta', image: AD_IMAGE, headline: 'AI Insiders — Free Briefing', primaryText: 'The 3 AI workflows quietly replacing entire marketing teams. Free 60-min briefing. Seats limited.', cta: 'Sign Up',      spend: 420, leads: 68,  cpl: 6.18 } },
-  { id: 'ad-ig',      type: 'ad', position: { x: col(0), y: Y.spine + R.ad + SP.huge },         data: { kind: 'ad', label: 'IG Retarget',   platform: 'Meta', image: AD_IMAGE, headline: 'Still thinking about it?',     primaryText: 'You looked, you left. The AI Insiders briefing starts tomorrow. Last call.',                   cta: 'Save My Seat', spend: 180, leads: 41,  cpl: 4.39 } },
-  { id: 'ad-organic', type: 'ad', position: { x: col(0), y: Y.spine + (R.ad + SP.huge) * 2 },   data: { kind: 'ad', label: 'Kit broadcast', platform: 'Kit',  image: AD_IMAGE, headline: 'List broadcast',               primaryText: "Broadcast to Luke's subscriber list announcing the free AI Insiders briefing.",                cta: 'Open',         spend: 0,   leads: 112, cpl: 0    } },
+  // ==========================================================================
+  // C0 · Traffic — 3 ads
+  // ==========================================================================
+  { id: 'ad-meta',    type: 'ad', position: { x: col(0), y: Y.spine },                         data: { kind: 'ad', label: 'Cold',          platform: 'Meta', image: AD_IMAGE, headline: 'AI Insiders — Free Briefing', primaryText: 'The 3 AI workflows quietly replacing entire marketing teams. Free 60-min briefing.', cta: 'Sign Up',      spend: 420, leads: 68,  cpl: 6.18 } },
+  { id: 'ad-ig',      type: 'ad', position: { x: col(0), y: Y.spine + R.ad + SP.huge },        data: { kind: 'ad', label: 'IG Retarget',   platform: 'Meta', image: AD_IMAGE, headline: 'Still thinking about it?',     primaryText: 'You looked, you left. The AI Insiders briefing starts tomorrow. Last call.',       cta: 'Save My Seat', spend: 180, leads: 41,  cpl: 4.39 } },
+  { id: 'ad-organic', type: 'ad', position: { x: col(0), y: Y.spine + (R.ad + SP.huge) * 2 },  data: { kind: 'ad', label: 'Kit broadcast', platform: 'Kit',  image: AD_IMAGE, headline: 'List broadcast',               primaryText: "Broadcast to Luke's subscriber list announcing the free AI Insiders briefing.",    cta: 'Open',         spend: 0,   leads: 112, cpl: 0    } },
 
-  // ---- C1 · Capture ----
-  { id: 'pg-optin', type: 'page', position: { x: col(1), y: Y.spine },
-    data: {
-      kind: 'page', label: 'Capture Page', url: 'aureumfunnels.com/luke/optin',
-      openHref: '/funnels/luke-alexander/optin/index.html',
-      views: 1240, clicks: 221, conversionPct: 17.8, cta: 'SAVE MY SEAT',
-      pixelEvents: [
-        { name: 'PageView', trigger: 'on load' },
-        { name: 'Lead',     trigger: 'on opt-in', value: '$6' },
-      ],
-    },
-  },
+  // ==========================================================================
+  // C1 · Capture
+  // ==========================================================================
+  { id: 'pg-optin', type: 'page', position: { x: col(1), y: Y.spine }, data: {
+    kind: 'page', label: 'Capture Page', url: 'aureumfunnels.com/luke/optin',
+    openHref: '/funnels/luke-alexander/optin/index.html',
+    views: 1240, clicks: 221, conversionPct: 17.8, cta: 'SAVE MY SEAT',
+    pixelEvents: [
+      { name: 'PageView', trigger: 'on load' },
+      { name: 'Lead',     trigger: 'on opt-in', value: '$6' },
+    ],
+  } },
 
-  // ---- C2 · Opt-in · phone (tag + 3 messages) ----
+  // ==========================================================================
+  // C2 · Opt-in · phone
+  // ==========================================================================
   { id: 'tag-lead', type: 'tag', position: { x: col(2), y: Y.tagBand }, data: {
-    kind: 'tag', platform: 'GHL', label: 'ai-insiders-lead', trigger: 'on opt-in',
-    syncsTo: ['Supabase', 'Close', 'GHL'],
+    kind: 'tag', platform: 'Close', label: 'ai-insiders-lead', trigger: 'on opt-in',
+    syncsTo: ['Supabase', 'Close'],
   } },
   { id: 'msg-welcome-sms', type: 'sms', position: { x: col(2), y: Y.msgBand }, data: {
     kind: 'sms', contactName: 'Luke Alexander',
@@ -765,41 +798,76 @@ t.me/aiinsiders
 Briefing kicks off tomorrow at 3pm ET.`,
     trigger: 'on opt-in', sent: 174, clickedPct: 58, time: '9:41',
   } },
-  { id: 'msg-live', type: 'sms', position: { x: col(2), y: Y.msgBand + (R.phone + SP.xxl) * 2 }, data: {
-    kind: 'sms', contactName: 'Luke Alexander',
-    body: `We're LIVE.
 
-Tap to join:
-aiinsiders.com/join
-
-(Starts in 2 min — don't wait.)`,
-    trigger: 'T-0', sendingFrom: 'Twilio', sent: 198, clickedPct: 71, time: '3:00',
-  } },
-
-  // ---- C3 · Opt-in · email (tag + 3 emails) ----
+  // ==========================================================================
+  // C3 · Opt-in · email — 3-email welcome sequence
+  // ==========================================================================
   { id: 'tag-kit', type: 'tag', position: { x: col(3), y: Y.tagBand }, data: {
     kind: 'tag', platform: 'Kit', label: 'AI Insiders', trigger: 'on opt-in',
     syncsTo: ['Kit', 'Supabase'],
   } },
-  { id: 'msg-welcome-email', type: 'email', position: { x: col(3), y: Y.msgBand }, data: {
+  { id: 'msg-welcome-1', type: 'email', position: { x: col(3), y: Y.msgBand }, data: {
     kind: 'email', fromName: 'Luke Alexander', fromEmail: 'luke@aiinsiders.com', toDisplay: 'me',
     subject: "You're in — AI Insiders briefing details inside",
     body: `Hey {{first_name}},
 
-You're locked in for the AI Insiders briefing tomorrow. Here's everything you need:
+You're locked in for the AI Insiders briefing. Here's everything you need:
 
-📅  When: Tomorrow at 3pm ET
+📅  When: ${'${date}'}
 🔗  Join: [ AI Insiders Briefing → ]
 ⏱   Duration: 60 minutes
 
-Save this. Add it to your calendar. See you inside.
+Save this email. Add it to your calendar.
 
 — Luke`,
-    trigger: 'on opt-in', sendingFrom: 'Kit', sent: 221, openedPct: 68, clickedPct: 42,
+    trigger: 'on opt-in · welcome 1/3', sendingFrom: 'Kit', sent: 221, openedPct: 68, clickedPct: 42,
   } },
-  { id: 'msg-24h', type: 'email', position: { x: col(3), y: Y.msgBand + R.email + SP.xxl }, data: {
+  { id: 'msg-welcome-2', type: 'email', position: { x: col(3), y: Y.msgBand + R.email + SP.xxl }, data: {
     kind: 'email', fromName: 'Luke Alexander', fromEmail: 'luke@aiinsiders.com', toDisplay: 'me',
-    subject: 'Tomorrow · AI Insiders briefing (save your seat)',
+    subject: 'What you\'ll actually learn at AI Insiders',
+    body: `{{first_name}} —
+
+Quick preview of what I'm unpacking at the briefing:
+
+1. The content-to-client workflow that replaced a 6-person team
+2. How to use AI in your sales calls without sounding robotic
+3. The 30-minute daily AI routine that compounds
+
+If any of these feel relevant, you're in the right place.
+
+— Luke`,
+    trigger: 'T+1d · welcome 2/3', sendingFrom: 'Kit', sent: 221, openedPct: 51, clickedPct: 34,
+  } },
+  { id: 'msg-welcome-3', type: 'email', position: { x: col(3), y: Y.msgBand + (R.email + SP.xxl) * 2 }, data: {
+    kind: 'email', fromName: 'Luke Alexander', fromEmail: 'luke@aiinsiders.com', toDisplay: 'me',
+    subject: 'Last prep before the briefing',
+    body: `{{first_name}} —
+
+One more thing before we go live: bring a notepad and a specific question.
+
+I'm keeping the Q&A open at the end and I answer the best questions by name.
+
+Join link: [ AI Insiders Briefing → ]
+
+See you inside.
+
+— Luke`,
+    trigger: 'T+2d · welcome 3/3', sendingFrom: 'Kit', sent: 221, openedPct: 58, clickedPct: 39,
+  } },
+
+  // ==========================================================================
+  // C4 · Reminders — Meta reach ad + 24h email + 1h email + live SMS
+  // ==========================================================================
+  { id: 'ad-retarget', type: 'ad', position: { x: col(4), y: Y.spine }, data: {
+    kind: 'ad', label: 'Reminder (reach)', platform: 'Meta', image: AD_IMAGE, variant: 'reach',
+    headline: 'AI Insiders starts in 48h',
+    primaryText: 'The briefing you registered for is almost here. Quick reminder to block your calendar and save the link.',
+    cta: 'Remind Me',
+    spend: 140, leads: 980, cpl: 0,
+  } },
+  { id: 'msg-24h', type: 'email', position: { x: col(4), y: Y.spine + R.ad + SP.huge }, data: {
+    kind: 'email', fromName: 'Luke Alexander', fromEmail: 'luke@aiinsiders.com', toDisplay: 'me',
+    subject: 'Tomorrow · AI Insiders briefing',
     body: `{{first_name}} —
 
 Quick reminder: the AI Insiders briefing is tomorrow at 3pm ET.
@@ -811,7 +879,7 @@ Join here: [ AI Insiders Briefing → ]
 — Luke`,
     trigger: 'T-24h', sendingFrom: 'Kit', sent: 221, openedPct: 54, clickedPct: 28,
   } },
-  { id: 'msg-1h', type: 'email', position: { x: col(3), y: Y.msgBand + (R.email + SP.xxl) * 2 }, data: {
+  { id: 'msg-1h', type: 'email', position: { x: col(4), y: Y.spine + R.ad + SP.huge + R.email + SP.xxl }, data: {
     kind: 'email', fromName: 'Luke Alexander', fromEmail: 'luke@aiinsiders.com', toDisplay: 'me',
     subject: '1 hour · final reminder',
     body: `{{first_name}} —
@@ -823,81 +891,222 @@ Join: [ AI Insiders Briefing → ]
 — Luke`,
     trigger: 'T-1h', sendingFrom: 'Kit', sent: 221, openedPct: 62, clickedPct: 36,
   } },
+  { id: 'msg-live', type: 'sms', position: { x: col(4), y: Y.spine + R.ad + SP.huge + (R.email + SP.xxl) * 2 }, data: {
+    kind: 'sms', contactName: 'Luke Alexander',
+    body: `We're LIVE.
 
-  // ---- C4 · Live event ----
-  { id: 'webinar', type: 'webinar', position: { x: col(4), y: Y.spine }, data: {
+Tap to join:
+aiinsiders.com/join
+
+(Starts in 2 min.)`,
+    trigger: 'T-0', sendingFrom: 'Twilio', sent: 198, clickedPct: 71, time: '3:00',
+  } },
+
+  // ==========================================================================
+  // C5 · Live event (Webinar + attended tag below)
+  // ==========================================================================
+  { id: 'webinar', type: 'webinar', position: { x: col(5), y: Y.spine }, data: {
     kind: 'webinar', platform: 'WebinarJam', title: 'AI Insiders Briefing',
     date: 'Apr 19, 2026', time: '3:00 PM ET', duration: '60 min',
     registered: 221, showRate: 64,
   } },
+  { id: 'tag-attended', type: 'tag', position: { x: col(5), y: Y.tagBand }, data: {
+    kind: 'tag', platform: 'Close', label: 'webinar-attended', trigger: 'on webinar end',
+    syncsTo: ['Close', 'Supabase'],
+  } },
 
-  // ---- C5 · Offer ----
-  { id: 'pg-slo', type: 'page', position: { x: col(5), y: Y.spine }, data: {
+  // ==========================================================================
+  // C6 · Offer (SLO page)
+  // ==========================================================================
+  { id: 'pg-slo', type: 'page', position: { x: col(6), y: Y.spine }, data: {
     kind: 'page', label: 'SLO Page', url: 'aureumfunnels.com/luke/slo',
     openHref: '/funnels/luke-alexander/slo/index.html',
     views: 221, clicks: 34, conversionPct: 15.4, cta: 'GET ACCESS',
     pixelEvents: [
-      { name: 'PageView', trigger: 'on load' },
-      { name: 'Purchase', trigger: 'on checkout', value: '$47' },
+      { name: 'PageView',         trigger: 'on load' },
+      { name: 'InitiateCheckout', trigger: 'on button click' },
+      { name: 'Purchase',         trigger: 'on checkout', value: '$47' },
     ],
   } },
 
-  // ---- C6 · Purchase (tag + receipt) ----
-  { id: 'tag-buyer', type: 'tag', position: { x: col(6), y: Y.tagBand }, data: {
-    kind: 'tag', platform: 'GHL', label: 'ai-insiders-buyer', trigger: 'on purchase',
-    syncsTo: ['Close', 'GHL', 'Supabase'],
+  // ==========================================================================
+  // C7 · Purchase · SLO — receipt + Calendly booking
+  // ==========================================================================
+  { id: 'tag-buyer', type: 'tag', position: { x: col(7), y: Y.tagBand }, data: {
+    kind: 'tag', platform: 'Close', label: 'ai-insiders-buyer', trigger: 'on purchase',
+    syncsTo: ['Close', 'Supabase', 'Kit'],
   } },
-  { id: 'msg-slo-receipt', type: 'email', position: { x: col(6), y: Y.msgBand }, data: {
+  { id: 'msg-slo-receipt', type: 'email', position: { x: col(7), y: Y.msgBand }, data: {
     kind: 'email', fromName: 'Luke Alexander', fromEmail: 'luke@aiinsiders.com', toDisplay: 'me',
     subject: 'Your AI Insiders access is confirmed',
     body: `{{first_name}} —
 
-You're in. Your AI Insiders access is active and the replay library is now unlocked.
+You're in. Your AI Insiders access is active and the replay library is unlocked.
 
 Access your portal: [ AI Insiders Portal → ]
 
-Inside you'll find:
-•  Full briefing replay
-•  Workflow blueprints
-•  Prompt library + automation templates
-
-Welcome aboard.
+You also got a call with me as part of buying — booking link is in the next email.
 
 — Luke`,
     trigger: 'on purchase', sendingFrom: 'Kit', sent: 34, openedPct: 88, clickedPct: 61,
   } },
+  { id: 'msg-calendly-email', type: 'email', position: { x: col(7), y: Y.msgBand + R.email + SP.xxl }, data: {
+    kind: 'email', fromName: 'Luke Alexander', fromEmail: 'luke@aiinsiders.com', toDisplay: 'me',
+    subject: 'Book your AI Insiders strategy call',
+    body: `{{first_name}} —
 
-  // ---- C7 · Confirmation ----
-  { id: 'pg-ty', type: 'page', position: { x: col(7), y: Y.spine }, data: {
+Time to put your call to use.
+
+Grab a 30-min slot that works for you:
+[ calendly.com/luke/ai-insiders-call ]
+
+On the call we'll map out which AI workflows are actually worth installing in your business first (there's an order that matters).
+
+— Luke`,
+    trigger: 'T+5min post-purchase', sendingFrom: 'Kit', sent: 34, openedPct: 91, clickedPct: 74,
+  } },
+  { id: 'msg-calendly-sms', type: 'sms', position: { x: col(7), y: Y.msgBand + (R.email + SP.xxl) * 2 }, data: {
+    kind: 'sms', contactName: 'Luke Alexander',
+    body: `Congrats on AI Insiders 👊
+
+Book your 30-min strategy call while slots are open:
+calendly.com/luke/ai-insiders-call
+
+— Luke`,
+    trigger: 'T+30min post-purchase', sendingFrom: 'Twilio', sent: 34, clickedPct: 62, time: '3:45',
+  } },
+
+  // ==========================================================================
+  // C8 · Recovery · SLO — abandon tag + recovery email + SMS
+  // ==========================================================================
+  { id: 'tag-slo-abandoned', type: 'tag', position: { x: col(8), y: Y.tagBand }, data: {
+    kind: 'tag', platform: 'Close', label: 'slo-abandoned', trigger: 'InitiateCheckout w/o Purchase',
+    syncsTo: ['Close', 'Supabase'],
+  } },
+  { id: 'msg-slo-recovery-email', type: 'email', position: { x: col(8), y: Y.msgBand }, data: {
+    kind: 'email', fromName: 'Luke Alexander', fromEmail: 'luke@aiinsiders.com', toDisplay: 'me',
+    subject: 'Your order is almost done',
+    body: `{{first_name}} —
+
+Saw you started checkout for AI Insiders but didn't finish. Happens. 🙂
+
+The briefing + workflow templates + the strategy call are all waiting:
+[ Finish your order → ]
+
+If you have a question before you commit, just hit reply.
+
+— Luke`,
+    trigger: 'T+1h abandon', sendingFrom: 'Kit', sent: 18, openedPct: 66, clickedPct: 39,
+  } },
+  { id: 'msg-slo-recovery-sms', type: 'sms', position: { x: col(8), y: Y.msgBand + R.email + SP.xxl }, data: {
+    kind: 'sms', contactName: 'Luke Alexander',
+    body: `Hey, Luke here. Looks like you stopped mid-checkout for AI Insiders — link's still live:
+
+aiinsiders.com/slo
+
+Text back if you had a question.`,
+    trigger: 'T+24h abandon', sendingFrom: 'Twilio', sent: 18, clickedPct: 28, time: '11:20',
+  } },
+
+  // ==========================================================================
+  // C9 · Confirmation (Thank You)
+  // ==========================================================================
+  { id: 'pg-ty', type: 'page', position: { x: col(9), y: Y.spine }, data: {
     kind: 'page', label: 'Thank You', url: 'aureumfunnels.com/luke/ty',
     openHref: '/funnels/luke-alexander/thank-you/index.html',
-    views: 221, clicks: 198, conversionPct: 89.6, cta: 'VIEW REPLAY',
+    views: 34, clicks: 31, conversionPct: 91.2, cta: 'VIEW REPLAY',
+    pixelEvents: [{ name: 'PageView', trigger: 'on load' }],
+  } },
+
+  // ==========================================================================
+  // C10 · Main offer page
+  // ==========================================================================
+  { id: 'pg-main-offer', type: 'page', position: { x: col(10), y: Y.spine }, data: {
+    kind: 'page', label: 'Main Offer', url: 'aureumfunnels.com/luke/program',
+    openHref: '/funnels/luke-alexander/slo/index.html',
+    views: 34, clicks: 8, conversionPct: 23.5, cta: 'JOIN THE PROGRAM',
     pixelEvents: [
-      { name: 'PageView', trigger: 'on load' },
+      { name: 'PageView',         trigger: 'on load' },
+      { name: 'InitiateCheckout', trigger: 'on button click' },
+      { name: 'Purchase',         trigger: 'on checkout', value: '$997' },
     ],
   } },
 
-  // ---- C8 · Post-event ----
-  { id: 'msg-ty-replay', type: 'email', position: { x: col(8), y: Y.spine }, data: {
+  // ==========================================================================
+  // C11 · Purchase · Main — onboarding email
+  // ==========================================================================
+  { id: 'tag-main-buyer', type: 'tag', position: { x: col(11), y: Y.tagBand }, data: {
+    kind: 'tag', platform: 'Close', label: 'ai-insiders-main-buyer', trigger: 'on main purchase',
+    syncsTo: ['Close', 'Supabase', 'Kit'],
+  } },
+  { id: 'msg-main-onboarding', type: 'email', position: { x: col(11), y: Y.msgBand }, data: {
+    kind: 'email', fromName: 'Luke Alexander', fromEmail: 'luke@aiinsiders.com', toDisplay: 'me',
+    subject: 'Welcome to the AI Insiders program',
+    body: `{{first_name}} —
+
+Welcome to the program. You're officially in.
+
+Here's what happens next:
+1. Your portal login is at [ portal.aiinsiders.com ]
+2. Your first kickoff call is scheduled — check your calendar
+3. The week-one materials are unlocked in the portal now
+
+Start with the "Install order" video. It sets the sequence.
+
+— Luke`,
+    trigger: 'on purchase', sendingFrom: 'Kit', sent: 8, openedPct: 100, clickedPct: 88,
+  } },
+
+  // ==========================================================================
+  // C12 · Recovery · Main — abandon tag + recovery email + SMS
+  // ==========================================================================
+  { id: 'tag-main-abandoned', type: 'tag', position: { x: col(12), y: Y.tagBand }, data: {
+    kind: 'tag', platform: 'Close', label: 'main-abandoned', trigger: 'InitiateCheckout w/o Purchase',
+    syncsTo: ['Close', 'Supabase'],
+  } },
+  { id: 'msg-main-recovery-email', type: 'email', position: { x: col(12), y: Y.msgBand }, data: {
+    kind: 'email', fromName: 'Luke Alexander', fromEmail: 'luke@aiinsiders.com', toDisplay: 'me',
+    subject: 'Your enrollment is still open',
+    body: `{{first_name}} —
+
+You stepped into checkout for the AI Insiders program and stopped short. Could be anything — wrong time, needed to think, question still unanswered.
+
+I'm around. Hit reply with the question or pick up where you left off:
+[ Finish enrollment → ]
+
+— Luke`,
+    trigger: 'T+2h abandon', sendingFrom: 'Kit', sent: 3, openedPct: 100, clickedPct: 33,
+  } },
+  { id: 'msg-main-recovery-sms', type: 'sms', position: { x: col(12), y: Y.msgBand + R.email + SP.xxl }, data: {
+    kind: 'sms', contactName: 'Luke Alexander',
+    body: `Hey — Luke here. Enrollment for the program is still open on my end. If it was timing, no rush. If it was a question, just text me back.
+
+Link to finish: aiinsiders.com/program`,
+    trigger: 'T+24h abandon', sendingFrom: 'Twilio', sent: 3, clickedPct: 33, time: '10:15',
+  } },
+
+  // ==========================================================================
+  // C13 · Post-event · Replay email
+  // ==========================================================================
+  { id: 'msg-ty-replay', type: 'email', position: { x: col(13), y: Y.spine }, data: {
     kind: 'email', fromName: 'Luke Alexander', fromEmail: 'luke@aiinsiders.com', toDisplay: 'me',
     subject: 'Replay + resources from AI Insiders',
     body: `Hey {{first_name}} —
 
-Here's the full replay and every resource I promised from yesterday's AI Insiders briefing:
+Here's the full replay and every resource I promised from the briefing:
 
 ▶  Full replay: [ Watch → ]
 📦  Resource pack: [ Download → ]
-📅  Next live drop: next week
 
 Let me know what lands.
 
 — Luke`,
-    trigger: 'T+24h post-event', sendingFrom: 'Kit', sent: 0, openedPct: 0, clickedPct: 0,
+    trigger: 'T+24h post-event', sendingFrom: 'Kit', sent: 221, openedPct: 47, clickedPct: 31,
   } },
 ];
 
 // =============================================================================
-// Edges — minimal, no crossings
+// Edges
 // =============================================================================
 
 const labelTheme = {
@@ -913,32 +1122,112 @@ const triggered = () => ({ style: { stroke: INK.wire,   strokeWidth: 1.1, stroke
 
 const SEED_EDGES: any[] = [
   // Spine L→R
-  { id: 'sp-ad-meta',       source: 'ad-meta',    target: 'pg-optin',      label: 'CPL $6.18',        ...spine() },
-  { id: 'sp-ad-ig',         source: 'ad-ig',      target: 'pg-optin',      label: 'CPL $4.39',        ...spine() },
-  { id: 'sp-ad-organic',    source: 'ad-organic', target: 'pg-optin',      label: 'organic',          ...spine() },
-  { id: 'sp-optin-webinar', source: 'pg-optin',   target: 'webinar',       label: 'registers',        ...spine() },
-  { id: 'sp-webinar-slo',   source: 'webinar',    target: 'pg-slo',        label: 'post-event offer', ...spine() },
-  { id: 'sp-slo-ty',        source: 'pg-slo',     target: 'pg-ty',         label: '15.4% CVR',        ...spine() },
-  { id: 'sp-ty-replay',     source: 'pg-ty',      target: 'msg-ty-replay', label: 'T+24h',            ...spine() },
+  { id: 'sp-ad-meta',       source: 'ad-meta',    target: 'pg-optin',       label: 'CPL $6.18',        ...spine() },
+  { id: 'sp-ad-ig',         source: 'ad-ig',      target: 'pg-optin',       label: 'CPL $4.39',        ...spine() },
+  { id: 'sp-ad-organic',    source: 'ad-organic', target: 'pg-optin',       label: 'organic',          ...spine() },
+  { id: 'sp-optin-webinar', source: 'pg-optin',   target: 'webinar',        label: 'registers',        ...spine() },
+  { id: 'sp-webinar-slo',   source: 'webinar',    target: 'pg-slo',         label: 'post-event offer', ...spine() },
+  { id: 'sp-slo-ty',        source: 'pg-slo',     target: 'pg-ty',          label: 'on purchase',      ...spine() },
+  { id: 'sp-ty-main',       source: 'pg-ty',      target: 'pg-main-offer',  label: 'upsell',           ...spine() },
+  { id: 'sp-ty-replay',     source: 'pg-ty',      target: 'msg-ty-replay',  label: 'T+24h',            ...spine() },
 
-  // Page → Tag (side-effect, straight down)
-  { id: 'e-optin-tag-lead', source: 'pg-optin', sourceHandle: 'trigger', target: 'tag-lead', ...triggered() },
-  { id: 'e-optin-tag-kit',  source: 'pg-optin', sourceHandle: 'trigger', target: 'tag-kit',  ...triggered() },
-  { id: 'e-slo-tag-buyer',  source: 'pg-slo',   sourceHandle: 'trigger', target: 'tag-buyer',...triggered() },
+  // Page → Tag (side-effect)
+  { id: 'e-optin-tag-lead',   source: 'pg-optin',       sourceHandle: 'trigger', target: 'tag-lead',           ...triggered() },
+  { id: 'e-optin-tag-kit',    source: 'pg-optin',       sourceHandle: 'trigger', target: 'tag-kit',            ...triggered() },
+  { id: 'e-webinar-attended', source: 'webinar',        sourceHandle: 'trigger', target: 'tag-attended',       ...triggered() },
+  { id: 'e-slo-buyer',        source: 'pg-slo',         sourceHandle: 'trigger', target: 'tag-buyer',          ...triggered() },
+  { id: 'e-slo-abandoned',    source: 'pg-slo',         sourceHandle: 'trigger', target: 'tag-slo-abandoned',  ...triggered() },
+  { id: 'e-main-buyer',       source: 'pg-main-offer',  sourceHandle: 'trigger', target: 'tag-main-buyer',     ...triggered() },
+  { id: 'e-main-abandoned',   source: 'pg-main-offer',  sourceHandle: 'trigger', target: 'tag-main-abandoned', ...triggered() },
 
-  // Phone chain (C2): tag → welcome-sms → welcome-tg → live-sms
-  { id: 'e-taglead-sms',  source: 'tag-lead',         target: 'msg-welcome-sms', ...triggered() },
-  { id: 'e-sms-tg',       source: 'msg-welcome-sms',  target: 'msg-welcome-tg',  ...triggered() },
-  { id: 'e-tg-live',      source: 'msg-welcome-tg',   target: 'msg-live',        ...triggered() },
+  // Phone chain (C2)
+  { id: 'c2-1', source: 'tag-lead',        target: 'msg-welcome-sms', ...triggered() },
+  { id: 'c2-2', source: 'msg-welcome-sms', target: 'msg-welcome-tg',  ...triggered() },
 
-  // Email chain (C3): tag → welcome-email → 24h → 1h
-  { id: 'e-tagkit-email', source: 'tag-kit',            target: 'msg-welcome-email', ...triggered() },
-  { id: 'e-welcome-24h',  source: 'msg-welcome-email',  target: 'msg-24h',           ...triggered() },
-  { id: 'e-24h-1h',       source: 'msg-24h',            target: 'msg-1h',            ...triggered() },
+  // Email chain (C3) — 3-email welcome
+  { id: 'c3-1', source: 'tag-kit',       target: 'msg-welcome-1', ...triggered() },
+  { id: 'c3-2', source: 'msg-welcome-1', target: 'msg-welcome-2', ...triggered() },
+  { id: 'c3-3', source: 'msg-welcome-2', target: 'msg-welcome-3', ...triggered() },
 
-  // Purchase (C6): tag → receipt
-  { id: 'e-tagbuyer-receipt', source: 'tag-buyer', target: 'msg-slo-receipt', ...triggered() },
+  // Reminders chain (C4)
+  { id: 'c4-1', source: 'ad-retarget', target: 'msg-24h',  ...triggered() },
+  { id: 'c4-2', source: 'msg-24h',     target: 'msg-1h',   ...triggered() },
+  { id: 'c4-3', source: 'msg-1h',      target: 'msg-live', ...triggered() },
+
+  // SLO Purchase chain (C7)
+  { id: 'c7-1', source: 'tag-buyer',          target: 'msg-slo-receipt',    ...triggered() },
+  { id: 'c7-2', source: 'msg-slo-receipt',    target: 'msg-calendly-email', ...triggered() },
+  { id: 'c7-3', source: 'msg-calendly-email', target: 'msg-calendly-sms',   ...triggered() },
+
+  // SLO Recovery chain (C8)
+  { id: 'c8-1', source: 'tag-slo-abandoned',    target: 'msg-slo-recovery-email', ...triggered() },
+  { id: 'c8-2', source: 'msg-slo-recovery-email', target: 'msg-slo-recovery-sms', ...triggered() },
+
+  // Main Purchase (C11)
+  { id: 'c11-1', source: 'tag-main-buyer', target: 'msg-main-onboarding', ...triggered() },
+
+  // Main Recovery chain (C12)
+  { id: 'c12-1', source: 'tag-main-abandoned',       target: 'msg-main-recovery-email', ...triggered() },
+  { id: 'c12-2', source: 'msg-main-recovery-email',  target: 'msg-main-recovery-sms',   ...triggered() },
 ];
+
+// =============================================================================
+// Alignment toolbar
+// =============================================================================
+
+type AlignOp = 'left' | 'centerH' | 'right' | 'top' | 'centerV' | 'bottom' | 'distH' | 'distV';
+
+const AlignButton: React.FC<{ title: string; onClick: () => void; children: React.ReactNode }> = ({ title, onClick, children }) => (
+  <button
+    onClick={onClick}
+    title={title}
+    style={{
+      width: 30, height: 30, borderRadius: 6,
+      background: 'transparent', color: INK.text,
+      border: `1px solid transparent`,
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      cursor: 'pointer',
+    }}
+    onMouseEnter={e => { e.currentTarget.style.background = INK.surfaceHi; e.currentTarget.style.borderColor = INK.border; }}
+    onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = 'transparent'; }}
+  >
+    {children}
+  </button>
+);
+
+const AlignToolbar: React.FC<{ count: number; onAlign: (op: AlignOp) => void }> = ({ count, onAlign }) => {
+  if (count < 2) return null;
+  const divider = <div style={{ width: 1, height: 20, background: INK.border }} />;
+  return (
+    <div style={{
+      display: 'flex', alignItems: 'center', gap: SP.sm,
+      padding: `${SP.xs + 2}px ${SP.sm}px`,
+      background: INK.surface, border: `1px solid ${INK.border}`,
+      borderRadius: 8, boxShadow: '0 2px 10px rgba(0,0,0,0.5)',
+    }}>
+      <span style={{ ...labelStyle, padding: `0 ${SP.xs}px` }}>{count} selected</span>
+      {divider}
+      <AlignButton title="Align left"   onClick={() => onAlign('left')}>   <AlignStartVertical size={14} /></AlignButton>
+      <AlignButton title="Center horiz" onClick={() => onAlign('centerH')}><AlignCenterVertical size={14} /></AlignButton>
+      <AlignButton title="Align right"  onClick={() => onAlign('right')}>  <AlignEndVertical size={14} /></AlignButton>
+      {divider}
+      <AlignButton title="Align top"    onClick={() => onAlign('top')}>    <AlignStartHorizontal size={14} /></AlignButton>
+      <AlignButton title="Center vert"  onClick={() => onAlign('centerV')}><AlignCenterHorizontal size={14} /></AlignButton>
+      <AlignButton title="Align bottom" onClick={() => onAlign('bottom')}> <AlignEndHorizontal size={14} /></AlignButton>
+      {count >= 3 && (
+        <>
+          {divider}
+          <AlignButton title="Distribute horizontally" onClick={() => onAlign('distH')}>
+            <AlignHorizontalDistributeCenter size={14} />
+          </AlignButton>
+          <AlignButton title="Distribute vertically" onClick={() => onAlign('distV')}>
+            <AlignVerticalDistributeCenter size={14} />
+          </AlignButton>
+        </>
+      )}
+    </div>
+  );
+};
 
 // =============================================================================
 // Stats
@@ -948,9 +1237,9 @@ interface Stats { adSpend: number; leads: number; cpl: number; sales: number; re
 
 const useFunnelStats = (): Stats => {
   // TODO: Meta Ads API (spend/leads/CPL) + Whop API (sales/revenue)
-  const adSpend = 600, leads = 221;
+  const adSpend = 740, leads = 221;
   const cpl = +(adSpend / leads).toFixed(2);
-  const sales = 34, revenue = sales * 47;
+  const sales = 34, revenue = sales * 47 + 8 * 997; // SLO + Main
   const roas = +(revenue / adSpend).toFixed(2);
   return { adSpend, leads, cpl, sales, revenue, roas };
 };
@@ -1011,6 +1300,7 @@ const LukeFlowView: React.FC<Props> = () => {
 
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, , onEdgesChange] = useEdgesState(SEED_EDGES);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
   const toggleMetrics = useCallback(() => {
     setShowMetrics(v => {
@@ -1020,6 +1310,79 @@ const LukeFlowView: React.FC<Props> = () => {
     });
   }, [setNodes]);
 
+  const onSelectionChange = useCallback(({ nodes: selected }: { nodes: Node[] }) => {
+    setSelectedIds(selected.filter(n => n.type !== 'colLabel').map(n => n.id));
+  }, []);
+
+  const alignSelected = useCallback((op: AlignOp) => {
+    setNodes(ns => {
+      const selected = ns.filter(n => selectedIds.includes(n.id));
+      if (selected.length < 2) return ns;
+
+      const sizeOf = (n: Node) => {
+        if (n.width && n.height) return { w: n.width, h: n.height };
+        return defaultSize(n.type ?? '');
+      };
+
+      const bounds = selected.map(n => {
+        const { w, h } = sizeOf(n);
+        return {
+          id: n.id,
+          left: n.position.x,
+          right: n.position.x + w,
+          top: n.position.y,
+          bottom: n.position.y + h,
+          w, h,
+          centerX: n.position.x + w / 2,
+          centerY: n.position.y + h / 2,
+        };
+      });
+
+      const minLeft   = Math.min(...bounds.map(b => b.left));
+      const maxRight  = Math.max(...bounds.map(b => b.right));
+      const minTop    = Math.min(...bounds.map(b => b.top));
+      const maxBottom = Math.max(...bounds.map(b => b.bottom));
+      const midX      = (minLeft + maxRight) / 2;
+      const midY      = (minTop + maxBottom) / 2;
+
+      const patch: Record<string, { x?: number; y?: number }> = {};
+
+      if (op === 'left')    selected.forEach(n => { patch[n.id] = { x: minLeft }; });
+      if (op === 'right')   selected.forEach(n => { const w = sizeOf(n).w; patch[n.id] = { x: maxRight - w }; });
+      if (op === 'centerH') selected.forEach(n => { const w = sizeOf(n).w; patch[n.id] = { x: midX - w / 2 }; });
+      if (op === 'top')     selected.forEach(n => { patch[n.id] = { y: minTop }; });
+      if (op === 'bottom')  selected.forEach(n => { const h = sizeOf(n).h; patch[n.id] = { y: maxBottom - h }; });
+      if (op === 'centerV') selected.forEach(n => { const h = sizeOf(n).h; patch[n.id] = { y: midY - h / 2 }; });
+
+      if (op === 'distH' && selected.length >= 3) {
+        const sorted = [...bounds].sort((a, b) => a.centerX - b.centerX);
+        const first = sorted[0].centerX;
+        const last  = sorted[sorted.length - 1].centerX;
+        const step  = (last - first) / (sorted.length - 1);
+        sorted.forEach((b, i) => {
+          const targetCenterX = first + step * i;
+          patch[b.id] = { x: targetCenterX - b.w / 2 };
+        });
+      }
+      if (op === 'distV' && selected.length >= 3) {
+        const sorted = [...bounds].sort((a, b) => a.centerY - b.centerY);
+        const first = sorted[0].centerY;
+        const last  = sorted[sorted.length - 1].centerY;
+        const step  = (last - first) / (sorted.length - 1);
+        sorted.forEach((b, i) => {
+          const targetCenterY = first + step * i;
+          patch[b.id] = { y: targetCenterY - b.h / 2 };
+        });
+      }
+
+      return ns.map(n => {
+        const p = patch[n.id];
+        if (!p) return n;
+        return { ...n, position: { x: p.x ?? n.position.x, y: p.y ?? n.position.y } };
+      });
+    });
+  }, [selectedIds, setNodes]);
+
   return (
     <div className="flex-1 min-h-0 flex flex-col" style={{ gap: SP.md }}>
       <StatsBar stats={stats} />
@@ -1028,7 +1391,11 @@ const LukeFlowView: React.FC<Props> = () => {
         className="flex-1 min-h-0 rounded-xl overflow-hidden border relative"
         style={{ background: INK.bg, borderColor: INK.border }}
       >
-        <div style={{ position: 'absolute', top: SP.md, right: SP.md, zIndex: 10 }}>
+        <div style={{
+          position: 'absolute', top: SP.md, right: SP.md, zIndex: 10,
+          display: 'flex', gap: SP.sm, alignItems: 'flex-start',
+        }}>
+          <AlignToolbar count={selectedIds.length} onAlign={alignSelected} />
           <button
             onClick={toggleMetrics}
             style={{
@@ -1037,6 +1404,7 @@ const LukeFlowView: React.FC<Props> = () => {
               background: INK.surface,
               color: showMetrics ? INK.text : INK.textMuted,
               border: `1px solid ${INK.border}`,
+              height: 38,
             }}
           >
             {showMetrics ? 'Metrics on' : 'Metrics off'}
@@ -1048,10 +1416,11 @@ const LukeFlowView: React.FC<Props> = () => {
           edges={edges}
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
+          onSelectionChange={onSelectionChange}
           nodeTypes={nodeTypes}
           fitView
           fitViewOptions={{ padding: 0.08 }}
-          minZoom={0.05}
+          minZoom={0.04}
           maxZoom={2}
           proOptions={{ hideAttribution: true }}
           onlyRenderVisibleElements
@@ -1064,6 +1433,8 @@ const LukeFlowView: React.FC<Props> = () => {
           zoomActivationKeyCode="Meta"
           panOnDrag
           selectionOnDrag={false}
+          selectionKeyCode="Shift"
+          multiSelectionKeyCode={['Meta', 'Control']}
           zoomOnDoubleClick={false}
           elevateNodesOnSelect={false}
         >
