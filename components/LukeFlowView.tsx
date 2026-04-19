@@ -23,23 +23,21 @@ import {
   Facebook,
   Database,
   Target,
-  Zap,
   Wifi,
   BatteryFull,
   Signal,
   ChevronLeft,
-  Phone,
   ExternalLink,
   Video,
   PlayCircle,
   Calendar,
+  ArrowRight,
 } from 'lucide-react';
 
 // =============================================================================
 // Design tokens
 // =============================================================================
 
-// Colour — neutral first, one accent for money/positive
 const INK = {
   bg:         '#0a0a0a',
   bgSoft:     '#101010',
@@ -51,51 +49,56 @@ const INK = {
   textMuted:  '#8a8a8a',
   textSubtle: '#5a5a5a',
   accent:     '#9ee6a8',
-  wire:       '#2e2e2e',
+  wire:       '#2a2a2a',
   wireHi:     '#4a4a4a',
 };
 
-// Brand pigments — only inside 12–14px badges, never on chrome
 const BRAND = {
   meta:     '#1877f2',
   telegram: '#6AB3F3',
 };
 
-// Spacing — 4pt scale
+// 4pt spacing scale
 const SP = { xs: 4, sm: 8, md: 12, lg: 16, xl: 24, xxl: 32, xxxl: 48, huge: 64, jumbo: 96 };
 
-// Type — 5-step scale, ≥1.25 ratio between the two body sizes
+// 5-step type scale
 const TYPE = {
-  label:    9,   // uppercase meta
-  body:     11,  // primary body
-  title:    13,  // card titles
-  display:  20,  // stat numbers
+  label:   9,
+  body:    11,
+  title:   13,
+  display: 20,
 };
 
-// Node widths — two primary sizes, one small
+// Node widths
 const W = {
-  primary: 320,  // ad, page, email, webinar
-  phone:   280,  // sms, telegram (phone-shaped on purpose)
-  chip:    220,  // tag, destination
+  primary: 320, // ads, pages, emails, webinar
+  phone:   280, // sms, telegram
+  tag:     260, // tag + destination chips
 };
 
-// Column grid — 480px stride (320w card + 160 gutter)
-const STRIDE = 480;
+// Horizontal grid — generous stride so columns breathe
+const STRIDE = 520;
 const col = (i: number) => i * STRIDE;
 
-// Column headers shown at y=COL_LABEL_Y
-const COL_LABEL_Y = -72;
+// Vertical layout bands
+const Y = {
+  colLabel: -72, // above all cards
+  spine:    0,   // page & ad tops
+  tagBand:  520, // tags sit below the spine band
+  msgBand:  680, // first message beneath tag
+};
+
+// Column headers
 const COLUMNS: { label: string; i: number }[] = [
-  { label: 'Traffic',          i: 0 },
-  { label: 'Capture',          i: 1 },
-  { label: 'Opt-in automation',i: 2 },
-  { label: 'Reminders',        i: 3 },
-  { label: 'Live event',       i: 4 },
-  { label: 'Offer',            i: 5 },
-  { label: 'Purchase',         i: 6 },
-  { label: 'Confirmation',     i: 7 },
-  { label: 'Post-event',       i: 8 },
-  { label: 'Destinations',     i: 9 },
+  { label: 'Traffic',         i: 0 },
+  { label: 'Capture',         i: 1 },
+  { label: 'Opt-in · phone',  i: 2 },
+  { label: 'Opt-in · email',  i: 3 },
+  { label: 'Live event',      i: 4 },
+  { label: 'Offer',           i: 5 },
+  { label: 'Purchase',        i: 6 },
+  { label: 'Confirmation',    i: 7 },
+  { label: 'Post-event',      i: 8 },
 ];
 
 // =============================================================================
@@ -131,9 +134,7 @@ interface TelegramNodeData {
 }
 interface TagNodeData {
   kind: 'tag'; platform: Platform; label: string; trigger: string;
-}
-interface DestinationNodeData {
-  kind: 'destination'; platform: Platform; label: string; action: string;
+  syncsTo: Platform[]; // destinations the tagged contact is pushed to
 }
 interface WebinarNodeData {
   kind: 'webinar'; platform: 'WebinarJam'; title: string;
@@ -146,17 +147,11 @@ interface WebinarNodeData {
 // =============================================================================
 
 const labelStyle: React.CSSProperties = {
-  fontSize: TYPE.label,
-  fontWeight: 600,
-  letterSpacing: 0.8,
-  textTransform: 'uppercase',
-  color: INK.textMuted,
+  fontSize: TYPE.label, fontWeight: 600, letterSpacing: 0.8,
+  textTransform: 'uppercase', color: INK.textMuted,
 };
-
 const metaText: React.CSSProperties = {
-  fontSize: TYPE.body - 1,
-  color: INK.textMuted,
-  fontVariantNumeric: 'tabular-nums',
+  fontSize: TYPE.body - 1, color: INK.textMuted, fontVariantNumeric: 'tabular-nums',
 };
 
 const TriggerPill: React.FC<{ trigger: string }> = ({ trigger }) => (
@@ -180,34 +175,24 @@ const NodeShell: React.FC<React.PropsWithChildren<{ width: number }>> = ({ width
   </div>
 );
 
-const StripRow: React.FC<React.PropsWithChildren<{ emphasis?: boolean }>> = ({ emphasis, children }) => (
+const ChannelStrip: React.FC<{ icon: React.ReactNode; title: string; trigger: string }> = ({ icon, title, trigger }) => (
   <div style={{
     padding: `${SP.sm - 1}px ${SP.md}px`,
-    background: emphasis ? INK.surfaceHi : 'transparent',
-    borderBottom: emphasis ? `1px solid ${INK.border}` : undefined,
+    background: INK.surfaceHi,
+    borderBottom: `1px solid ${INK.border}`,
     display: 'flex', alignItems: 'center', gap: SP.sm,
-    minHeight: 28,
   }}>
-    {children}
-  </div>
-);
-
-const ChannelStrip: React.FC<{ icon: React.ReactNode; title: string; trigger: string }> = ({ icon, title, trigger }) => (
-  <StripRow emphasis>
     <span style={{ display: 'flex', alignItems: 'center', gap: SP.sm, ...labelStyle }}>
       {icon}{title}
     </span>
     <span style={{ marginLeft: 'auto' }}><TriggerPill trigger={trigger} /></span>
-  </StripRow>
+  </div>
 );
 
 const FooterRow: React.FC<React.PropsWithChildren> = ({ children }) => (
   <div style={{
-    padding: `${SP.sm}px ${SP.md}px`,
-    display: 'flex', gap: SP.lg,
-    borderTop: `1px solid ${INK.border}`,
-    background: INK.bgSoft,
-    ...metaText,
+    padding: `${SP.sm}px ${SP.md}px`, display: 'flex', gap: SP.lg,
+    borderTop: `1px solid ${INK.border}`, background: INK.bgSoft, ...metaText,
   }}>{children}</div>
 );
 
@@ -245,7 +230,6 @@ const AdNode = memo<NodeProps<AdNodeData>>(({ data }) => {
       <div style={{
         height: 170,
         background: `linear-gradient(145deg, rgba(10,10,10,0.55), rgba(8,8,8,0.85)), url(${data.image}) center/cover, #141414`,
-        backgroundBlendMode: 'normal',
         borderTop: `1px solid ${INK.border}`,
         borderBottom: `1px solid ${INK.border}`,
         filter: 'saturate(0.75)',
@@ -253,8 +237,7 @@ const AdNode = memo<NodeProps<AdNodeData>>(({ data }) => {
 
       <div style={{
         display: 'flex', alignItems: 'center', gap: SP.sm,
-        padding: `${SP.sm + 2}px ${SP.md}px`,
-        background: INK.surfaceHi,
+        padding: `${SP.sm + 2}px ${SP.md}px`, background: INK.surfaceHi,
       }}>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ ...labelStyle, marginBottom: 2 }}>aiinsiders.com</div>
@@ -288,7 +271,7 @@ const AdNode = memo<NodeProps<AdNodeData>>(({ data }) => {
 AdNode.displayName = 'AdNode';
 
 // =============================================================================
-// Page node (with Meta Pixel events inline)
+// Page node
 // =============================================================================
 
 const PageNode = memo<NodeProps<PageNodeData>>(({ data }) => {
@@ -297,7 +280,6 @@ const PageNode = memo<NodeProps<PageNodeData>>(({ data }) => {
     <NodeShell width={W.primary}>
       <Handle type="target" position={Position.Left} style={{ background: INK.wireHi, width: 8, height: 8 }} />
 
-      {/* Browser chrome */}
       <div style={{
         display: 'flex', alignItems: 'center', gap: SP.sm,
         padding: `${SP.sm - 1}px ${SP.md - 2}px`,
@@ -321,7 +303,6 @@ const PageNode = memo<NodeProps<PageNodeData>>(({ data }) => {
         </a>
       </div>
 
-      {/* Ghost preview */}
       <div style={{
         height: 150, background: INK.bg,
         display: 'flex', flexDirection: 'column',
@@ -341,7 +322,6 @@ const PageNode = memo<NodeProps<PageNodeData>>(({ data }) => {
         </div>
       </div>
 
-      {/* Label + metrics */}
       <div style={{
         padding: `${SP.sm + 2}px ${SP.md}px`, background: INK.surfaceHi,
         borderTop: `1px solid ${INK.border}`,
@@ -363,7 +343,6 @@ const PageNode = memo<NodeProps<PageNodeData>>(({ data }) => {
         )}
       </div>
 
-      {/* Inline Meta Pixel events */}
       {data.pixelEvents.length > 0 && (
         <div style={{ padding: `${SP.sm}px ${SP.md}px`, borderTop: `1px solid ${INK.border}` }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: SP.sm, marginBottom: SP.xs + 1 }}>
@@ -409,10 +388,9 @@ const EmailNode = memo<NodeProps<EmailNodeData>>(({ data }) => {
   const initial = data.fromName[0]?.toUpperCase() || 'L';
   return (
     <NodeShell width={W.primary}>
-      <Handle type="target" position={Position.Left} style={{ background: INK.wireHi, width: 8, height: 8 }} />
+      <Handle type="target" position={Position.Top} style={{ background: INK.wireHi, width: 8, height: 8 }} />
       <ChannelStrip icon={<Mail size={11} />} title={`Email · ${data.sendingFrom}`} trigger={data.trigger} />
 
-      {/* Authentic Gmail surface */}
       <div style={{ background: '#fff', color: '#202124' }}>
         <div style={{ padding: `${SP.md + 2}px ${SP.md + 2}px ${SP.sm + 2}px`, borderBottom: '1px solid #e8eaed' }}>
           <div style={{
@@ -450,21 +428,21 @@ const EmailNode = memo<NodeProps<EmailNodeData>>(({ data }) => {
           <span style={{ color: INK.accent, marginLeft: 'auto' }}>{data.clickedPct}% click</span>
         </FooterRow>
       )}
-      <Handle type="source" position={Position.Right} style={{ background: INK.wireHi, width: 8, height: 8 }} />
+      <Handle type="source" position={Position.Bottom} style={{ background: INK.wireHi, width: 8, height: 8 }} />
     </NodeShell>
   );
 });
 EmailNode.displayName = 'EmailNode';
 
 // =============================================================================
-// SMS node — iMessage-style preview
+// SMS node
 // =============================================================================
 
 const SmsNode = memo<NodeProps<SmsNodeData>>(({ data }) => {
   const showMetrics = (data as any).__showMetrics ?? true;
   return (
     <NodeShell width={W.phone}>
-      <Handle type="target" position={Position.Left} style={{ background: INK.wireHi, width: 8, height: 8 }} />
+      <Handle type="target" position={Position.Top} style={{ background: INK.wireHi, width: 8, height: 8 }} />
       <ChannelStrip icon={<MessageSquare size={11} />} title={`SMS · ${data.sendingFrom}`} trigger={data.trigger} />
 
       <div style={{ background: '#000', padding: `${SP.sm + 2}px ${SP.md + 2}px 0` }}>
@@ -505,7 +483,7 @@ const SmsNode = memo<NodeProps<SmsNodeData>>(({ data }) => {
           <span style={{ color: INK.accent, marginLeft: 'auto' }}>{data.clickedPct}% click</span>
         </FooterRow>
       )}
-      <Handle type="source" position={Position.Right} style={{ background: INK.wireHi, width: 8, height: 8 }} />
+      <Handle type="source" position={Position.Bottom} style={{ background: INK.wireHi, width: 8, height: 8 }} />
     </NodeShell>
   );
 });
@@ -519,7 +497,7 @@ const TelegramNode = memo<NodeProps<TelegramNodeData>>(({ data }) => {
   const showMetrics = (data as any).__showMetrics ?? true;
   return (
     <NodeShell width={W.phone}>
-      <Handle type="target" position={Position.Left} style={{ background: INK.wireHi, width: 8, height: 8 }} />
+      <Handle type="target" position={Position.Top} style={{ background: INK.wireHi, width: 8, height: 8 }} />
       <ChannelStrip icon={<Send size={11} />} title="Telegram" trigger={data.trigger} />
 
       <div style={{
@@ -557,40 +535,71 @@ const TelegramNode = memo<NodeProps<TelegramNodeData>>(({ data }) => {
           <span style={{ color: INK.accent, marginLeft: 'auto' }}>{data.clickedPct}% click</span>
         </FooterRow>
       )}
-      <Handle type="source" position={Position.Right} style={{ background: INK.wireHi, width: 8, height: 8 }} />
+      <Handle type="source" position={Position.Bottom} style={{ background: INK.wireHi, width: 8, height: 8 }} />
     </NodeShell>
   );
 });
 TelegramNode.displayName = 'TelegramNode';
 
 // =============================================================================
-// Tag node — small chip
+// Tag node — now with inline destination chips (no more cross-canvas edges)
 // =============================================================================
 
 const TagNode = memo<NodeProps<TagNodeData>>(({ data }) => (
   <div style={{
-    width: W.chip, background: INK.surface, border: `1px solid ${INK.border}`,
-    borderRadius: 10, padding: `${SP.sm}px ${SP.md - 2}px`,
-    color: INK.text, boxShadow: '0 1px 2px rgba(0,0,0,0.4)',
+    width: W.tag, background: INK.surface, border: `1px solid ${INK.border}`,
+    borderRadius: 10, color: INK.text, boxShadow: '0 1px 2px rgba(0,0,0,0.4)',
+    overflow: 'hidden',
   }}>
-    <Handle type="target" position={Position.Left} style={{ background: INK.wireHi, width: 7, height: 7 }} />
-    <Handle type="source" position={Position.Right} style={{ background: INK.wireHi, width: 7, height: 7 }} />
-    <Handle type="source" position={Position.Bottom} id="dest" style={{ background: INK.wireHi, width: 7, height: 7 }} />
-    <div style={{ display: 'flex', alignItems: 'center', gap: SP.sm - 2, marginBottom: SP.xs }}>
-      <TagIcon size={10} color={INK.textMuted} />
-      <span style={labelStyle}>{data.platform} · tag added</span>
+    <Handle type="target" position={Position.Top} style={{ background: INK.wireHi, width: 7, height: 7 }} />
+    <div style={{ padding: `${SP.sm + 2}px ${SP.md}px ${SP.sm}px` }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: SP.sm - 2, marginBottom: SP.xs }}>
+        <TagIcon size={10} color={INK.textMuted} />
+        <span style={labelStyle}>{data.platform} · tag added</span>
+      </div>
+      <div style={{
+        fontSize: TYPE.body, fontWeight: 600, color: INK.text,
+        fontFamily: 'ui-monospace, SFMono-Regular, monospace', marginBottom: 2,
+      }}>{data.label}</div>
+      <div style={metaText}>{data.trigger}</div>
     </div>
-    <div style={{
-      fontSize: TYPE.body, fontWeight: 600, color: INK.text,
-      fontFamily: 'ui-monospace, SFMono-Regular, monospace', marginBottom: 2,
-    }}>{data.label}</div>
-    <div style={metaText}>{data.trigger}</div>
+
+    {data.syncsTo.length > 0 && (
+      <div style={{
+        padding: `${SP.sm}px ${SP.md}px`,
+        borderTop: `1px solid ${INK.border}`,
+        background: INK.bgSoft,
+      }}>
+        <div style={{
+          ...labelStyle, fontSize: TYPE.label - 1,
+          display: 'flex', alignItems: 'center', gap: SP.xs,
+          marginBottom: SP.xs + 1,
+        }}>
+          <ArrowRight size={9} />Syncs to
+        </div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: SP.xs }}>
+          {data.syncsTo.map(p => (
+            <span key={p} style={{
+              fontSize: TYPE.label,
+              padding: `2px ${SP.sm - 1}px`,
+              background: INK.surface,
+              border: `1px solid ${INK.border}`,
+              borderRadius: 4,
+              color: INK.text,
+              fontFamily: 'ui-monospace, SFMono-Regular, monospace',
+            }}>{p}</span>
+          ))}
+        </div>
+      </div>
+    )}
+
+    <Handle type="source" position={Position.Bottom} style={{ background: INK.wireHi, width: 7, height: 7 }} />
   </div>
 ));
 TagNode.displayName = 'TagNode';
 
 // =============================================================================
-// Webinar node (WebinarJam)
+// Webinar node
 // =============================================================================
 
 const WebinarNode = memo<NodeProps<WebinarNodeData>>(({ data }) => {
@@ -598,11 +607,13 @@ const WebinarNode = memo<NodeProps<WebinarNodeData>>(({ data }) => {
   return (
     <NodeShell width={W.primary}>
       <Handle type="target" position={Position.Left} style={{ background: INK.wireHi, width: 8, height: 8 }} />
-      <StripRow emphasis>
-        <span style={{ display: 'flex', alignItems: 'center', gap: SP.sm, ...labelStyle }}>
-          <Video size={11} />WebinarJam · Live event
-        </span>
-      </StripRow>
+      <div style={{
+        padding: `${SP.sm}px ${SP.md}px`, background: INK.surfaceHi,
+        borderBottom: `1px solid ${INK.border}`, display: 'flex',
+        alignItems: 'center', gap: SP.sm, ...labelStyle,
+      }}>
+        <Video size={11} />WebinarJam · Live event
+      </div>
 
       <div style={{
         height: 140,
@@ -640,50 +651,7 @@ const WebinarNode = memo<NodeProps<WebinarNodeData>>(({ data }) => {
 WebinarNode.displayName = 'WebinarNode';
 
 // =============================================================================
-// Destination node
-// =============================================================================
-
-const DEST_ICON: Partial<Record<Platform, React.ReactNode>> = {
-  GHL:      <Zap size={13} color={INK.text} />,
-  Kit:      <Mail size={13} color={INK.text} />,
-  Supabase: <Database size={13} color={INK.text} />,
-  Close:    <Phone size={13} color={INK.text} />,
-};
-
-const DestinationNode = memo<NodeProps<DestinationNodeData>>(({ data }) => (
-  <div style={{
-    width: W.chip + 20, background: INK.surface, border: `1px solid ${INK.border}`,
-    borderRadius: 12, padding: `${SP.md}px ${SP.md + 2}px`,
-    color: INK.text, boxShadow: '0 1px 2px rgba(0,0,0,0.4)',
-  }}>
-    <Handle type="target" position={Position.Left} style={{ background: INK.wireHi, width: 8, height: 8 }} />
-    <div style={{ display: 'flex', alignItems: 'center', gap: SP.sm + 2, marginBottom: SP.sm - 2 }}>
-      <div style={{
-        width: 28, height: 28, borderRadius: 7, background: INK.surfaceHi,
-        border: `1px solid ${INK.border}`,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-      }}>{DEST_ICON[data.platform]}</div>
-      <div>
-        <div style={labelStyle}>Destination</div>
-        <div style={{ fontSize: TYPE.title, fontWeight: 600, color: INK.text }}>{data.label}</div>
-      </div>
-    </div>
-    <div style={{
-      fontSize: TYPE.label, color: INK.textMuted,
-      fontFamily: 'ui-monospace, SFMono-Regular, monospace',
-      background: INK.surfaceHi, padding: `3px ${SP.sm - 1}px`,
-      borderRadius: 4, display: 'inline-block',
-    }}>{data.action}</div>
-  </div>
-));
-DestinationNode.displayName = 'DestinationNode';
-
-// =============================================================================
-// Registry
-// =============================================================================
-
-// =============================================================================
-// Column label node — non-interactive, sits above each column
+// Column label node
 // =============================================================================
 
 const ColumnLabelNode = memo<NodeProps<{ label: string; index: number }>>(({ data }) => (
@@ -704,10 +672,8 @@ const ColumnLabelNode = memo<NodeProps<{ label: string; index: number }>>(({ dat
       {String(data.index + 1).padStart(2, '0')}
     </span>
     <span style={{
-      ...labelStyle,
-      color: INK.text,
-      fontSize: TYPE.label + 1,
-      letterSpacing: 1.2,
+      ...labelStyle, color: INK.text,
+      fontSize: TYPE.label + 1, letterSpacing: 1.2,
     }}>
       {data.label}
     </span>
@@ -723,55 +689,46 @@ const nodeTypes = {
   telegram: TelegramNode,
   tag: TagNode,
   webinar: WebinarNode,
-  destination: DestinationNode,
   colLabel: ColumnLabelNode,
 };
 
 // =============================================================================
-// Layout — strict L→R timeline with rhythm
-//
-// Columns (x) on a 400px stride. Primary nodes anchor at y=0 ("spine row").
-// Vertical gaps follow the SP scale:
-//   - 8–12px: tightly related (two tags firing together)
-//   - 24–32px: siblings in same group
-//   - 48–64px: distinct groups inside a column
+// Row-height reference values (used for stacking maths)
 // =============================================================================
 
-const AD_IMAGE = '/funnels/luke-alexander/hero.jpg';
-
-// Standard row heights for stacking maths
 const R = {
   ad:      400,
   page:    440,
   email:   460,
   phone:   400,
   webinar: 330,
-  tag:     70,
-  dest:    100,
+  tag:     140, // includes "Syncs to" footer
 };
 
+const AD_IMAGE = '/funnels/luke-alexander/hero.jpg';
+
+// =============================================================================
+// SEED_NODES
+// =============================================================================
+
 const SEED_NODES: any[] = [
-  // ========= Column headers =========
+  // ---- Column headers ----
   ...COLUMNS.map(c => ({
-    id: `col-${c.i}`,
-    type: 'colLabel',
-    position: { x: col(c.i), y: COL_LABEL_Y },
+    id: `col-${c.i}`, type: 'colLabel',
+    position: { x: col(c.i), y: Y.colLabel },
     data: { label: c.label, index: c.i },
-    draggable: false,
-    selectable: false,
-    connectable: false,
+    draggable: false, selectable: false, connectable: false,
   })),
 
-  // ========= C0 · Ads =========
-  { id: 'ad-meta',    type: 'ad', position: { x: col(0), y: 0 },                      data: { kind: 'ad', label: 'AI Insiders — Cold',   platform: 'Meta', image: AD_IMAGE, headline: 'AI Insiders — Free Briefing', primaryText: 'The 3 AI workflows quietly replacing entire marketing teams. Free 60-min briefing. Seats limited.', cta: 'Sign Up',      spend: 420, leads: 68,  cpl: 6.18 } },
-  { id: 'ad-ig',      type: 'ad', position: { x: col(0), y: R.ad + SP.huge },         data: { kind: 'ad', label: 'IG Retarget',          platform: 'Meta', image: AD_IMAGE, headline: 'Still thinking about it?',     primaryText: 'You looked, you left. The AI Insiders briefing starts tomorrow. Last call.',                   cta: 'Save My Seat', spend: 180, leads: 41,  cpl: 4.39 } },
-  { id: 'ad-organic', type: 'ad', position: { x: col(0), y: (R.ad + SP.huge) * 2 },   data: { kind: 'ad', label: 'Kit broadcast',        platform: 'Kit',  image: AD_IMAGE, headline: 'List broadcast · AI Insiders', primaryText: "Broadcast to Luke's subscriber list announcing the free AI Insiders briefing tomorrow.",       cta: 'Open',         spend: 0,   leads: 112, cpl: 0    } },
+  // ---- C0 · Ads (stacked with huge gaps) ----
+  { id: 'ad-meta',    type: 'ad', position: { x: col(0), y: Y.spine },                          data: { kind: 'ad', label: 'Cold',          platform: 'Meta', image: AD_IMAGE, headline: 'AI Insiders — Free Briefing', primaryText: 'The 3 AI workflows quietly replacing entire marketing teams. Free 60-min briefing. Seats limited.', cta: 'Sign Up',      spend: 420, leads: 68,  cpl: 6.18 } },
+  { id: 'ad-ig',      type: 'ad', position: { x: col(0), y: Y.spine + R.ad + SP.huge },         data: { kind: 'ad', label: 'IG Retarget',   platform: 'Meta', image: AD_IMAGE, headline: 'Still thinking about it?',     primaryText: 'You looked, you left. The AI Insiders briefing starts tomorrow. Last call.',                   cta: 'Save My Seat', spend: 180, leads: 41,  cpl: 4.39 } },
+  { id: 'ad-organic', type: 'ad', position: { x: col(0), y: Y.spine + (R.ad + SP.huge) * 2 },   data: { kind: 'ad', label: 'Kit broadcast', platform: 'Kit',  image: AD_IMAGE, headline: 'List broadcast',               primaryText: "Broadcast to Luke's subscriber list announcing the free AI Insiders briefing.",                cta: 'Open',         spend: 0,   leads: 112, cpl: 0    } },
 
-  // ========= C1 · Capture Page =========
-  { id: 'pg-optin', type: 'page', position: { x: col(1), y: 0 },
+  // ---- C1 · Capture ----
+  { id: 'pg-optin', type: 'page', position: { x: col(1), y: Y.spine },
     data: {
-      kind: 'page', label: 'Capture Page',
-      url: 'aureumfunnels.com/luke/optin',
+      kind: 'page', label: 'Capture Page', url: 'aureumfunnels.com/luke/optin',
       openHref: '/funnels/luke-alexander/optin/index.html',
       views: 1240, clicks: 221, conversionPct: 17.8, cta: 'SAVE MY SEAT',
       pixelEvents: [
@@ -781,13 +738,50 @@ const SEED_NODES: any[] = [
     },
   },
 
-  // ========= C2 · Opt-in events =========
-  // Tags: tight pair at top (12px gap)
-  { id: 'tag-lead', type: 'tag', position: { x: col(2), y: 0 },                   data: { kind: 'tag', platform: 'GHL', label: 'ai-insiders-lead', trigger: 'on opt-in' } },
-  { id: 'tag-kit',  type: 'tag', position: { x: col(2), y: R.tag + SP.md },       data: { kind: 'tag', platform: 'Kit', label: 'AI Insiders',      trigger: 'on opt-in' } },
+  // ---- C2 · Opt-in · phone (tag + 3 messages) ----
+  { id: 'tag-lead', type: 'tag', position: { x: col(2), y: Y.tagBand }, data: {
+    kind: 'tag', platform: 'GHL', label: 'ai-insiders-lead', trigger: 'on opt-in',
+    syncsTo: ['Supabase', 'Close', 'GHL'],
+  } },
+  { id: 'msg-welcome-sms', type: 'sms', position: { x: col(2), y: Y.msgBand }, data: {
+    kind: 'sms', contactName: 'Luke Alexander',
+    body: `Hey, Luke here 👋
 
-  // Welcome messages: generous gap after tags (64px), siblings at 32px
-  { id: 'msg-welcome-email', type: 'email',    position: { x: col(2), y: (R.tag * 2) + SP.md + SP.huge },                         data: {
+You're in for tomorrow's AI Insiders briefing — 3pm ET.
+
+Save this link:
+aiinsiders.com/join
+
+Reply STOP to opt out.`,
+    trigger: 'on opt-in', sendingFrom: 'Twilio', sent: 198, clickedPct: 31, time: '9:41',
+  } },
+  { id: 'msg-welcome-tg', type: 'telegram', position: { x: col(2), y: Y.msgBand + R.phone + SP.xxl }, data: {
+    kind: 'telegram', botName: 'AI Insiders', botSubtitle: 'channel · 1 240 subscribers',
+    body: `Welcome to AI Insiders 🎯
+
+Join the private channel for behind-the-scenes drops:
+t.me/aiinsiders
+
+Briefing kicks off tomorrow at 3pm ET.`,
+    trigger: 'on opt-in', sent: 174, clickedPct: 58, time: '9:41',
+  } },
+  { id: 'msg-live', type: 'sms', position: { x: col(2), y: Y.msgBand + (R.phone + SP.xxl) * 2 }, data: {
+    kind: 'sms', contactName: 'Luke Alexander',
+    body: `We're LIVE.
+
+Tap to join:
+aiinsiders.com/join
+
+(Starts in 2 min — don't wait.)`,
+    trigger: 'T-0', sendingFrom: 'Twilio', sent: 198, clickedPct: 71, time: '3:00',
+  } },
+
+  // ---- C3 · Opt-in · email (tag + 3 emails) ----
+  { id: 'tag-kit', type: 'tag', position: { x: col(3), y: Y.tagBand }, data: {
+    kind: 'tag', platform: 'Kit', label: 'AI Insiders', trigger: 'on opt-in',
+    syncsTo: ['Kit', 'Supabase'],
+  } },
+  { id: 'msg-welcome-email', type: 'email', position: { x: col(3), y: Y.msgBand }, data: {
     kind: 'email', fromName: 'Luke Alexander', fromEmail: 'luke@aiinsiders.com', toDisplay: 'me',
     subject: "You're in — AI Insiders briefing details inside",
     body: `Hey {{first_name}},
@@ -803,31 +797,10 @@ Save this. Add it to your calendar. See you inside.
 — Luke`,
     trigger: 'on opt-in', sendingFrom: 'Kit', sent: 221, openedPct: 68, clickedPct: 42,
   } },
-  { id: 'msg-welcome-sms', type: 'sms',        position: { x: col(2), y: (R.tag * 2) + SP.md + SP.huge + R.email + SP.xxl },         data: {
-    kind: 'sms', contactName: 'Luke Alexander',
-    body: `Hey, Luke here 👋
-
-You're in for tomorrow's AI Insiders briefing — 3pm ET.
-
-Save this link:
-aiinsiders.com/join
-
-Reply STOP to opt out.`,
-    trigger: 'on opt-in', sendingFrom: 'Twilio', sent: 198, clickedPct: 31, time: '9:41',
-  } },
-  { id: 'msg-welcome-tg', type: 'telegram',    position: { x: col(2), y: (R.tag * 2) + SP.md + SP.huge + R.email + SP.xxl + R.phone + SP.xxl }, data: {
-    kind: 'telegram', botName: 'AI Insiders', botSubtitle: 'channel · 1 240 subscribers',
-    body: `Welcome to AI Insiders 🎯
-
-Join the private channel for behind-the-scenes drops:
-t.me/aiinsiders
-
-Briefing kicks off tomorrow at 3pm ET.`,
-    trigger: 'on opt-in', sent: 174, clickedPct: 58, time: '9:41',
-  } },
-
-  // ========= C3 · Reminders =========
-  { id: 'msg-24h',  type: 'email', position: { x: col(3), y: 0 },                                                 data: { kind: 'email', fromName: 'Luke Alexander', fromEmail: 'luke@aiinsiders.com', toDisplay: 'me', subject: 'Tomorrow · AI Insiders briefing (save your seat)', body: `{{first_name}} —
+  { id: 'msg-24h', type: 'email', position: { x: col(3), y: Y.msgBand + R.email + SP.xxl }, data: {
+    kind: 'email', fromName: 'Luke Alexander', fromEmail: 'luke@aiinsiders.com', toDisplay: 'me',
+    subject: 'Tomorrow · AI Insiders briefing (save your seat)',
+    body: `{{first_name}} —
 
 Quick reminder: the AI Insiders briefing is tomorrow at 3pm ET.
 
@@ -835,33 +808,32 @@ If you haven't blocked your calendar, do it now.
 
 Join here: [ AI Insiders Briefing → ]
 
-— Luke`, trigger: 'T-24h', sendingFrom: 'Kit', sent: 221, openedPct: 54, clickedPct: 28 } },
-  { id: 'msg-1h',   type: 'email', position: { x: col(3), y: R.email + SP.xxl },                                  data: { kind: 'email', fromName: 'Luke Alexander', fromEmail: 'luke@aiinsiders.com', toDisplay: 'me', subject: '1 hour · final reminder', body: `{{first_name}} —
+— Luke`,
+    trigger: 'T-24h', sendingFrom: 'Kit', sent: 221, openedPct: 54, clickedPct: 28,
+  } },
+  { id: 'msg-1h', type: 'email', position: { x: col(3), y: Y.msgBand + (R.email + SP.xxl) * 2 }, data: {
+    kind: 'email', fromName: 'Luke Alexander', fromEmail: 'luke@aiinsiders.com', toDisplay: 'me',
+    subject: '1 hour · final reminder',
+    body: `{{first_name}} —
 
 60 minutes out. Make sure you're at your desk, bring questions, and grab a notepad.
 
 Join: [ AI Insiders Briefing → ]
 
-— Luke`, trigger: 'T-1h', sendingFrom: 'Kit', sent: 221, openedPct: 62, clickedPct: 36 } },
-  { id: 'msg-live', type: 'sms',   position: { x: col(3), y: (R.email + SP.xxl) * 2 },                            data: { kind: 'sms', contactName: 'Luke Alexander', body: `We're LIVE.
+— Luke`,
+    trigger: 'T-1h', sendingFrom: 'Kit', sent: 221, openedPct: 62, clickedPct: 36,
+  } },
 
-Tap to join:
-aiinsiders.com/join
-
-(Starts in 2 min — don't wait.)`, trigger: 'T-0', sendingFrom: 'Twilio', sent: 198, clickedPct: 71, time: '3:00' } },
-
-  // ========= C4 · Webinar =========
-  { id: 'webinar', type: 'webinar', position: { x: col(4), y: 0 }, data: {
-    kind: 'webinar', platform: 'WebinarJam',
-    title: 'AI Insiders Briefing',
+  // ---- C4 · Live event ----
+  { id: 'webinar', type: 'webinar', position: { x: col(4), y: Y.spine }, data: {
+    kind: 'webinar', platform: 'WebinarJam', title: 'AI Insiders Briefing',
     date: 'Apr 19, 2026', time: '3:00 PM ET', duration: '60 min',
     registered: 221, showRate: 64,
   } },
 
-  // ========= C5 · SLO =========
-  { id: 'pg-slo', type: 'page', position: { x: col(5), y: 0 }, data: {
-    kind: 'page', label: 'SLO Page',
-    url: 'aureumfunnels.com/luke/slo',
+  // ---- C5 · Offer ----
+  { id: 'pg-slo', type: 'page', position: { x: col(5), y: Y.spine }, data: {
+    kind: 'page', label: 'SLO Page', url: 'aureumfunnels.com/luke/slo',
     openHref: '/funnels/luke-alexander/slo/index.html',
     views: 221, clicks: 34, conversionPct: 15.4, cta: 'GET ACCESS',
     pixelEvents: [
@@ -870,11 +842,12 @@ aiinsiders.com/join
     ],
   } },
 
-  // ========= C6 · Purchase events =========
-  { id: 'tag-buyer', type: 'tag', position: { x: col(6), y: 0 }, data: {
+  // ---- C6 · Purchase (tag + receipt) ----
+  { id: 'tag-buyer', type: 'tag', position: { x: col(6), y: Y.tagBand }, data: {
     kind: 'tag', platform: 'GHL', label: 'ai-insiders-buyer', trigger: 'on purchase',
+    syncsTo: ['Close', 'GHL', 'Supabase'],
   } },
-  { id: 'msg-slo-receipt', type: 'email', position: { x: col(6), y: R.tag + SP.huge }, data: {
+  { id: 'msg-slo-receipt', type: 'email', position: { x: col(6), y: Y.msgBand }, data: {
     kind: 'email', fromName: 'Luke Alexander', fromEmail: 'luke@aiinsiders.com', toDisplay: 'me',
     subject: 'Your AI Insiders access is confirmed',
     body: `{{first_name}} —
@@ -894,10 +867,9 @@ Welcome aboard.
     trigger: 'on purchase', sendingFrom: 'Kit', sent: 34, openedPct: 88, clickedPct: 61,
   } },
 
-  // ========= C7 · Thank You =========
-  { id: 'pg-ty', type: 'page', position: { x: col(7), y: 0 }, data: {
-    kind: 'page', label: 'Thank You',
-    url: 'aureumfunnels.com/luke/ty',
+  // ---- C7 · Confirmation ----
+  { id: 'pg-ty', type: 'page', position: { x: col(7), y: Y.spine }, data: {
+    kind: 'page', label: 'Thank You', url: 'aureumfunnels.com/luke/ty',
     openHref: '/funnels/luke-alexander/thank-you/index.html',
     views: 221, clicks: 198, conversionPct: 89.6, cta: 'VIEW REPLAY',
     pixelEvents: [
@@ -905,8 +877,8 @@ Welcome aboard.
     ],
   } },
 
-  // ========= C8 · Replay =========
-  { id: 'msg-ty-replay', type: 'email', position: { x: col(8), y: 0 }, data: {
+  // ---- C8 · Post-event ----
+  { id: 'msg-ty-replay', type: 'email', position: { x: col(8), y: Y.spine }, data: {
     kind: 'email', fromName: 'Luke Alexander', fromEmail: 'luke@aiinsiders.com', toDisplay: 'me',
     subject: 'Replay + resources from AI Insiders',
     body: `Hey {{first_name}} —
@@ -922,17 +894,10 @@ Let me know what lands.
 — Luke`,
     trigger: 'T+24h post-event', sendingFrom: 'Kit', sent: 0, openedPct: 0, clickedPct: 0,
   } },
-
-  // ========= C9 · Destinations =========
-  // Stacked tight (related group, 24px apart)
-  { id: 'dest-supabase', type: 'destination', position: { x: col(9), y: 0 },                        data: { kind: 'destination', platform: 'Supabase', label: 'Supabase',    action: 'INSERT funnel_leads' } },
-  { id: 'dest-kit',      type: 'destination', position: { x: col(9), y: (R.dest + SP.xl) * 1 },     data: { kind: 'destination', platform: 'Kit',      label: 'Kit',         action: 'POST /subscribers' } },
-  { id: 'dest-close',    type: 'destination', position: { x: col(9), y: (R.dest + SP.xl) * 2 },     data: { kind: 'destination', platform: 'Close',    label: 'Close CRM',   action: 'POST /lead → pipeline' } },
-  { id: 'dest-ghl',      type: 'destination', position: { x: col(9), y: (R.dest + SP.xl) * 3 },     data: { kind: 'destination', platform: 'GHL',      label: 'GoHighLevel', action: 'upsert contact + tag' } },
 ];
 
 // =============================================================================
-// Edges
+// Edges — minimal, no crossings
 // =============================================================================
 
 const labelTheme = {
@@ -942,12 +907,12 @@ const labelTheme = {
   labelBgBorderRadius: 4,
 };
 const arrow = (c: string) => ({ type: MarkerType.ArrowClosed, color: c });
+
 const spine     = () => ({ style: { stroke: INK.wireHi, strokeWidth: 1.5 }, animated: true,  markerEnd: arrow(INK.wireHi), ...labelTheme });
-const solid     = () => ({ style: { stroke: INK.wire,   strokeWidth: 1.3 }, animated: false, markerEnd: arrow(INK.wire),   ...labelTheme });
 const triggered = () => ({ style: { stroke: INK.wire,   strokeWidth: 1.1, strokeDasharray: '4 4' }, animated: false, markerEnd: arrow(INK.wire), ...labelTheme });
 
 const SEED_EDGES: any[] = [
-  // Spine
+  // Spine L→R
   { id: 'sp-ad-meta',       source: 'ad-meta',    target: 'pg-optin',      label: 'CPL $6.18',        ...spine() },
   { id: 'sp-ad-ig',         source: 'ad-ig',      target: 'pg-optin',      label: 'CPL $4.39',        ...spine() },
   { id: 'sp-ad-organic',    source: 'ad-organic', target: 'pg-optin',      label: 'organic',          ...spine() },
@@ -956,33 +921,27 @@ const SEED_EDGES: any[] = [
   { id: 'sp-slo-ty',        source: 'pg-slo',     target: 'pg-ty',         label: '15.4% CVR',        ...spine() },
   { id: 'sp-ty-replay',     source: 'pg-ty',      target: 'msg-ty-replay', label: 'T+24h',            ...spine() },
 
-  // Page → Tags
+  // Page → Tag (side-effect, straight down)
   { id: 'e-optin-tag-lead', source: 'pg-optin', sourceHandle: 'trigger', target: 'tag-lead', ...triggered() },
   { id: 'e-optin-tag-kit',  source: 'pg-optin', sourceHandle: 'trigger', target: 'tag-kit',  ...triggered() },
+  { id: 'e-slo-tag-buyer',  source: 'pg-slo',   sourceHandle: 'trigger', target: 'tag-buyer',...triggered() },
 
-  // Tags → Messages
-  { id: 'e-tag-welcome-email', source: 'tag-kit',  target: 'msg-welcome-email', ...triggered() },
-  { id: 'e-tag-welcome-sms',   source: 'tag-lead', target: 'msg-welcome-sms',   ...triggered() },
-  { id: 'e-tag-welcome-tg',    source: 'tag-lead', target: 'msg-welcome-tg',    ...triggered() },
-  { id: 'e-tag-24h',           source: 'tag-kit',  target: 'msg-24h',           ...triggered() },
-  { id: 'e-tag-1h',            source: 'tag-kit',  target: 'msg-1h',            ...triggered() },
-  { id: 'e-tag-live',          source: 'tag-lead', target: 'msg-live',          ...triggered() },
+  // Phone chain (C2): tag → welcome-sms → welcome-tg → live-sms
+  { id: 'e-taglead-sms',  source: 'tag-lead',         target: 'msg-welcome-sms', ...triggered() },
+  { id: 'e-sms-tg',       source: 'msg-welcome-sms',  target: 'msg-welcome-tg',  ...triggered() },
+  { id: 'e-tg-live',      source: 'msg-welcome-tg',   target: 'msg-live',        ...triggered() },
 
-  // SLO → Buyer tag → receipt
-  { id: 'e-slo-tag-buyer', source: 'pg-slo',    sourceHandle: 'trigger', target: 'tag-buyer',        ...triggered() },
-  { id: 'e-tag-receipt',   source: 'tag-buyer', target: 'msg-slo-receipt', ...triggered() },
+  // Email chain (C3): tag → welcome-email → 24h → 1h
+  { id: 'e-tagkit-email', source: 'tag-kit',            target: 'msg-welcome-email', ...triggered() },
+  { id: 'e-welcome-24h',  source: 'msg-welcome-email',  target: 'msg-24h',           ...triggered() },
+  { id: 'e-24h-1h',       source: 'msg-24h',            target: 'msg-1h',            ...triggered() },
 
-  // Destinations
-  { id: 'e-taglead-supa',  source: 'tag-lead',  sourceHandle: 'dest', target: 'dest-supabase', ...solid() },
-  { id: 'e-tagkit-kit',    source: 'tag-kit',   sourceHandle: 'dest', target: 'dest-kit',      ...solid() },
-  { id: 'e-taglead-close', source: 'tag-lead',  sourceHandle: 'dest', target: 'dest-close',    ...solid() },
-  { id: 'e-taglead-ghl',   source: 'tag-lead',  sourceHandle: 'dest', target: 'dest-ghl',      ...solid() },
-  { id: 'e-tagbuyer-ghl',  source: 'tag-buyer', sourceHandle: 'dest', target: 'dest-ghl',      ...solid() },
-  { id: 'e-tagbuyer-close',source: 'tag-buyer', sourceHandle: 'dest', target: 'dest-close',    ...solid() },
+  // Purchase (C6): tag → receipt
+  { id: 'e-tagbuyer-receipt', source: 'tag-buyer', target: 'msg-slo-receipt', ...triggered() },
 ];
 
 // =============================================================================
-// Stats — single row, dividers, varied emphasis
+// Stats
 // =============================================================================
 
 interface Stats { adSpend: number; leads: number; cpl: number; sales: number; revenue: number; roas: number }
@@ -998,16 +957,14 @@ const useFunnelStats = (): Stats => {
 
 const StatItem: React.FC<{ label: string; value: string; accent?: boolean }> = ({ label, value, accent }) => (
   <div style={{
-    flex: 1, minWidth: 0,
-    padding: `${SP.md}px ${SP.lg}px`,
+    flex: 1, minWidth: 0, padding: `${SP.md}px ${SP.lg}px`,
     display: 'flex', flexDirection: 'column', gap: SP.xs,
   }}>
-    <div style={{ ...labelStyle }}>{label}</div>
+    <div style={labelStyle}>{label}</div>
     <div style={{
       fontSize: TYPE.display, fontWeight: 600,
       color: accent ? INK.accent : INK.text,
-      fontVariantNumeric: 'tabular-nums', letterSpacing: -0.3,
-      lineHeight: 1,
+      fontVariantNumeric: 'tabular-nums', letterSpacing: -0.3, lineHeight: 1,
     }}>
       {value}
     </div>
@@ -1018,11 +975,8 @@ const StatsBar: React.FC<{ stats: Stats }> = ({ stats }) => {
   const divider = <div style={{ width: 1, alignSelf: 'stretch', background: INK.border }} />;
   return (
     <div style={{
-      display: 'flex',
-      background: INK.surface,
-      border: `1px solid ${INK.border}`,
-      borderRadius: 12,
-      overflow: 'hidden',
+      display: 'flex', background: INK.surface,
+      border: `1px solid ${INK.border}`, borderRadius: 12, overflow: 'hidden',
     }}>
       <StatItem label="Ad spend" value={`$${stats.adSpend.toLocaleString()}`} />
       {divider}
@@ -1078,10 +1032,8 @@ const LukeFlowView: React.FC<Props> = () => {
           <button
             onClick={toggleMetrics}
             style={{
-              padding: `${SP.xs + 2}px ${SP.md}px`,
-              borderRadius: 6,
-              fontSize: TYPE.body,
-              fontWeight: 500,
+              padding: `${SP.xs + 2}px ${SP.md}px`, borderRadius: 6,
+              fontSize: TYPE.body, fontWeight: 500,
               background: INK.surface,
               color: showMetrics ? INK.text : INK.textMuted,
               border: `1px solid ${INK.border}`,
