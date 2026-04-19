@@ -736,6 +736,15 @@ const defaultSize = (kind: string) => {
   }
 };
 
+// Real page sequence of this funnel:
+//   Capture → SLO → Whop checkout → Thank You → Live Webinar → Main Offer Checkout
+//
+// Column layout (L→R):
+//   00 Traffic · 01 Capture · 02 Opt-in · phone · 03 Opt-in · email
+//   04 Offer (SLO) · 05 Whop checkout · 06 Purchase · SLO · 07 Recovery · SLO
+//   08 Confirmation (Thank You) · 09 Reminders · 10 Live event + Replay
+//   11 Main offer checkout · 12 Purchase · Main · 13 Recovery · Main
+
 const SEED_NODES: any[] = [
   // ==========================================================================
   // C0 · Traffic — 3 ads
@@ -844,87 +853,40 @@ See you inside.
   } },
 
   // ==========================================================================
-  // C4 · Reminders — Meta reach ad + 24h email + 1h email + live SMS
+  // C4 · Offer (SLO page) — user opts in, clicks through to SLO
   // ==========================================================================
-  { id: 'ad-retarget', type: 'ad', position: { x: col(4), y: Y.spine }, data: {
-    kind: 'ad', label: 'Reminder (reach)', platform: 'Meta', image: AD_IMAGE, variant: 'reach',
-    headline: 'AI Insiders starts in 48h',
-    primaryText: 'The briefing you registered for is almost here. Quick reminder to block your calendar and save the link.',
-    cta: 'Remind Me',
-    spend: 140, leads: 980, cpl: 0,
-  } },
-  { id: 'msg-24h', type: 'email', position: { x: col(4), y: Y.spine + R.ad + SP.huge }, data: {
-    kind: 'email', fromName: 'Luke Alexander', fromEmail: 'luke@aiinsiders.com', toDisplay: 'me',
-    subject: 'Tomorrow · AI Insiders briefing',
-    body: `{{first_name}} —
-
-Quick reminder: the AI Insiders briefing is tomorrow at 3pm ET.
-
-If you haven't blocked your calendar, do it now.
-
-Join here: [ AI Insiders Briefing → ]
-
-— Luke`,
-    trigger: 'T-24h', sendingFrom: 'Kit', sent: 221, openedPct: 54, clickedPct: 28,
-  } },
-  { id: 'msg-1h', type: 'email', position: { x: col(4), y: Y.spine + R.ad + SP.huge + R.email + SP.xxl }, data: {
-    kind: 'email', fromName: 'Luke Alexander', fromEmail: 'luke@aiinsiders.com', toDisplay: 'me',
-    subject: '1 hour · final reminder',
-    body: `{{first_name}} —
-
-60 minutes out. Make sure you're at your desk, bring questions, and grab a notepad.
-
-Join: [ AI Insiders Briefing → ]
-
-— Luke`,
-    trigger: 'T-1h', sendingFrom: 'Kit', sent: 221, openedPct: 62, clickedPct: 36,
-  } },
-  { id: 'msg-live', type: 'sms', position: { x: col(4), y: Y.spine + R.ad + SP.huge + (R.email + SP.xxl) * 2 }, data: {
-    kind: 'sms', contactName: 'Luke Alexander',
-    body: `We're LIVE.
-
-Tap to join:
-aiinsiders.com/join
-
-(Starts in 2 min.)`,
-    trigger: 'T-0', sendingFrom: 'Twilio', sent: 198, clickedPct: 71, time: '3:00',
-  } },
-
-  // ==========================================================================
-  // C5 · Live event (Webinar + attended tag below)
-  // ==========================================================================
-  { id: 'webinar', type: 'webinar', position: { x: col(5), y: Y.spine }, data: {
-    kind: 'webinar', platform: 'WebinarJam', title: 'AI Insiders Briefing',
-    date: 'Apr 19, 2026', time: '3:00 PM ET', duration: '60 min',
-    registered: 221, showRate: 64,
-  } },
-  { id: 'tag-attended', type: 'tag', position: { x: col(5), y: Y.tagBand }, data: {
-    kind: 'tag', platform: 'Close', label: 'webinar-attended', trigger: 'on webinar end',
-    syncsTo: ['Close', 'Supabase'],
-  } },
-
-  // ==========================================================================
-  // C6 · Offer (SLO page)
-  // ==========================================================================
-  { id: 'pg-slo', type: 'page', position: { x: col(6), y: Y.spine }, data: {
+  { id: 'pg-slo', type: 'page', position: { x: col(4), y: Y.spine }, data: {
     kind: 'page', label: 'SLO Page', url: 'aureumfunnels.com/luke/slo',
     openHref: '/funnels/luke-alexander/slo/index.html',
-    views: 221, clicks: 34, conversionPct: 15.4, cta: 'GET ACCESS',
+    views: 1100, clicks: 221, conversionPct: 20.1, cta: 'CONTINUE TO CHECKOUT',
     pixelEvents: [
-      { name: 'PageView',         trigger: 'on load' },
-      { name: 'InitiateCheckout', trigger: 'on button click' },
-      { name: 'Purchase',         trigger: 'on checkout', value: '$47' },
+      { name: 'PageView',    trigger: 'on load' },
+      { name: 'ViewContent', trigger: 'on scroll to offer' },
     ],
   } },
 
   // ==========================================================================
-  // C7 · Purchase · SLO — receipt + Calendly booking
+  // C5 · Whop checkout — actual payment happens here
   // ==========================================================================
-  { id: 'tag-buyer', type: 'tag', position: { x: col(7), y: Y.tagBand }, data: {
-    kind: 'tag', platform: 'Close', label: 'ai-insiders-buyer', trigger: 'on purchase',
+  { id: 'pg-whop', type: 'page', position: { x: col(5), y: Y.spine }, data: {
+    kind: 'page', label: 'Whop Checkout', url: 'whop.com/ai-insiders-toolkit',
+    openHref: 'https://whop.com',
+    views: 221, clicks: 34, conversionPct: 15.4, cta: 'COMPLETE PURCHASE',
+    pixelEvents: [
+      { name: 'PageView',         trigger: 'on load' },
+      { name: 'InitiateCheckout', trigger: 'on load',              value: '$47' },
+      { name: 'Purchase',         trigger: 'on successful payment', value: '$47' },
+    ],
+  } },
+
+  // ==========================================================================
+  // C6 · Purchase · SLO — receipt + Calendly booking
+  // ==========================================================================
+  { id: 'tag-buyer', type: 'tag', position: { x: col(6), y: Y.tagBand }, data: {
+    kind: 'tag', platform: 'Close', label: 'ai-insiders-buyer', trigger: 'on Whop purchase',
     syncsTo: ['Close', 'Supabase', 'Kit'],
   } },
-  { id: 'msg-slo-receipt', type: 'email', position: { x: col(7), y: Y.msgBand }, data: {
+  { id: 'msg-slo-receipt', type: 'email', position: { x: col(6), y: Y.msgBand }, data: {
     kind: 'email', fromName: 'Luke Alexander', fromEmail: 'luke@aiinsiders.com', toDisplay: 'me',
     subject: 'Your AI Insiders access is confirmed',
     body: `{{first_name}} —
@@ -938,7 +900,7 @@ You also got a call with me as part of buying — booking link is in the next em
 — Luke`,
     trigger: 'on purchase', sendingFrom: 'Kit', sent: 34, openedPct: 88, clickedPct: 61,
   } },
-  { id: 'msg-calendly-email', type: 'email', position: { x: col(7), y: Y.msgBand + R.email + SP.xxl }, data: {
+  { id: 'msg-calendly-email', type: 'email', position: { x: col(6), y: Y.msgBand + R.email + SP.xxl }, data: {
     kind: 'email', fromName: 'Luke Alexander', fromEmail: 'luke@aiinsiders.com', toDisplay: 'me',
     subject: 'Book your AI Insiders strategy session, {{first_name}}',
     body: `{{first_name}} —
@@ -955,7 +917,7 @@ Looking forward to it, {{first_name}}.
 — Luke`,
     trigger: 'T+5min post-purchase', sendingFrom: 'Kit', sent: 34, openedPct: 91, clickedPct: 74,
   } },
-  { id: 'msg-calendly-sms', type: 'sms', position: { x: col(7), y: Y.msgBand + (R.email + SP.xxl) * 2 }, data: {
+  { id: 'msg-calendly-sms', type: 'sms', position: { x: col(6), y: Y.msgBand + (R.email + SP.xxl) * 2 }, data: {
     kind: 'sms', contactName: 'Luke Alexander',
     body: `{{first_name}} — Luke here 👊
 
@@ -968,13 +930,13 @@ Grab an early slot, {{first_name}} — the next 48h will be packed.`,
   } },
 
   // ==========================================================================
-  // C8 · Recovery · SLO — abandon tag + recovery email + SMS
+  // C7 · Recovery · SLO — abandon tag + recovery email + SMS
   // ==========================================================================
-  { id: 'tag-slo-abandoned', type: 'tag', position: { x: col(8), y: Y.tagBand }, data: {
+  { id: 'tag-slo-abandoned', type: 'tag', position: { x: col(7), y: Y.tagBand }, data: {
     kind: 'tag', platform: 'Close', label: 'slo-abandoned', trigger: 'InitiateCheckout w/o Purchase',
     syncsTo: ['Close', 'Supabase'],
   } },
-  { id: 'msg-slo-recovery-email', type: 'email', position: { x: col(8), y: Y.msgBand }, data: {
+  { id: 'msg-slo-recovery-email', type: 'email', position: { x: col(7), y: Y.msgBand }, data: {
     kind: 'email', fromName: 'Luke Alexander', fromEmail: 'luke@aiinsiders.com', toDisplay: 'me',
     subject: 'Your order is almost done',
     body: `{{first_name}} —
@@ -989,7 +951,7 @@ If you have a question before you commit, just hit reply.
 — Luke`,
     trigger: 'T+1h abandon', sendingFrom: 'Kit', sent: 18, openedPct: 66, clickedPct: 39,
   } },
-  { id: 'msg-slo-recovery-sms', type: 'sms', position: { x: col(8), y: Y.msgBand + R.email + SP.xxl }, data: {
+  { id: 'msg-slo-recovery-sms', type: 'sms', position: { x: col(7), y: Y.msgBand + R.email + SP.xxl }, data: {
     kind: 'sms', contactName: 'Luke Alexander',
     body: `Hey, Luke here. Looks like you stopped mid-checkout for AI Insiders — link's still live:
 
@@ -1000,37 +962,112 @@ Text back if you had a question.`,
   } },
 
   // ==========================================================================
-  // C9 · Confirmation (Thank You)
+  // C8 · Confirmation (Thank You) — landed here after Whop success
   // ==========================================================================
-  { id: 'pg-ty', type: 'page', position: { x: col(9), y: Y.spine }, data: {
+  { id: 'pg-ty', type: 'page', position: { x: col(8), y: Y.spine }, data: {
     kind: 'page', label: 'Thank You', url: 'aureumfunnels.com/luke/ty',
     openHref: '/funnels/luke-alexander/thank-you/index.html',
-    views: 34, clicks: 31, conversionPct: 91.2, cta: 'VIEW REPLAY',
+    views: 34, clicks: 34, conversionPct: 100, cta: 'JOIN THE LIVE EVENT',
     pixelEvents: [{ name: 'PageView', trigger: 'on load' }],
   } },
 
   // ==========================================================================
-  // C10 · Main offer page
+  // C9 · Reminders — Meta reach ad + 24h/1h emails + live SMS (pre-webinar)
   // ==========================================================================
-  { id: 'pg-main-offer', type: 'page', position: { x: col(10), y: Y.spine }, data: {
-    kind: 'page', label: 'Main Offer', url: 'aureumfunnels.com/luke/program',
-    openHref: '/funnels/luke-alexander/slo/index.html',
-    views: 34, clicks: 8, conversionPct: 23.5, cta: 'JOIN THE PROGRAM',
+  { id: 'ad-retarget', type: 'ad', position: { x: col(9), y: Y.tagBand }, data: {
+    kind: 'ad', label: 'Reminder (reach)', platform: 'Meta', image: AD_IMAGE, variant: 'reach',
+    headline: 'AI Insiders starts in 48h',
+    primaryText: 'The briefing you registered for is almost here. Quick reminder to block your calendar and save the link.',
+    cta: 'Remind Me',
+    spend: 140, leads: 34, cpl: 0,
+  } },
+  { id: 'msg-24h', type: 'email', position: { x: col(9), y: Y.tagBand + R.ad + SP.xxl }, data: {
+    kind: 'email', fromName: 'Luke Alexander', fromEmail: 'luke@aiinsiders.com', toDisplay: 'me',
+    subject: 'Tomorrow · AI Insiders briefing',
+    body: `{{first_name}} —
+
+Quick reminder: the AI Insiders briefing is tomorrow at 3pm ET.
+
+If you haven't blocked your calendar, do it now.
+
+Join here: [ AI Insiders Briefing → ]
+
+— Luke`,
+    trigger: 'T-24h', sendingFrom: 'Kit', sent: 34, openedPct: 79, clickedPct: 52,
+  } },
+  { id: 'msg-1h', type: 'email', position: { x: col(9), y: Y.tagBand + R.ad + SP.xxl + R.email + SP.xxl }, data: {
+    kind: 'email', fromName: 'Luke Alexander', fromEmail: 'luke@aiinsiders.com', toDisplay: 'me',
+    subject: '1 hour · final reminder',
+    body: `{{first_name}} —
+
+60 minutes out. Make sure you're at your desk, bring questions, and grab a notepad.
+
+Join: [ AI Insiders Briefing → ]
+
+— Luke`,
+    trigger: 'T-1h', sendingFrom: 'Kit', sent: 34, openedPct: 82, clickedPct: 64,
+  } },
+  { id: 'msg-live', type: 'sms', position: { x: col(9), y: Y.tagBand + R.ad + SP.xxl + (R.email + SP.xxl) * 2 }, data: {
+    kind: 'sms', contactName: 'Luke Alexander',
+    body: `{{first_name}} — we're LIVE.
+
+Tap to join:
+aiinsiders.com/join
+
+(Starts in 2 min.)`,
+    trigger: 'T-0', sendingFrom: 'Twilio', sent: 34, clickedPct: 88, time: '3:00',
+  } },
+
+  // ==========================================================================
+  // C10 · Live event — webinar + attended tag + replay email
+  // ==========================================================================
+  { id: 'webinar', type: 'webinar', position: { x: col(10), y: Y.spine }, data: {
+    kind: 'webinar', platform: 'WebinarJam', title: 'AI Insiders Briefing',
+    date: 'Apr 19, 2026', time: '3:00 PM ET', duration: '60 min',
+    registered: 34, showRate: 82,
+  } },
+  { id: 'tag-attended', type: 'tag', position: { x: col(10), y: Y.tagBand }, data: {
+    kind: 'tag', platform: 'Close', label: 'webinar-attended', trigger: 'on webinar end',
+    syncsTo: ['Close', 'Supabase'],
+  } },
+  { id: 'msg-ty-replay', type: 'email', position: { x: col(10), y: Y.msgBand }, data: {
+    kind: 'email', fromName: 'Luke Alexander', fromEmail: 'luke@aiinsiders.com', toDisplay: 'me',
+    subject: 'Replay + resources from AI Insiders',
+    body: `Hey {{first_name}} —
+
+Here's the full replay and every resource I promised from the briefing:
+
+▶  Full replay: [ Watch → ]
+📦  Resource pack: [ Download → ]
+
+Let me know what lands.
+
+— Luke`,
+    trigger: 'T+24h post-event', sendingFrom: 'Kit', sent: 34, openedPct: 71, clickedPct: 44,
+  } },
+
+  // ==========================================================================
+  // C11 · Main offer checkout — pitched during/after the webinar
+  // ==========================================================================
+  { id: 'pg-main-offer', type: 'page', position: { x: col(11), y: Y.spine }, data: {
+    kind: 'page', label: 'Main Offer Checkout', url: 'whop.com/ai-insiders-program',
+    openHref: 'https://whop.com',
+    views: 28, clicks: 8, conversionPct: 28.6, cta: 'JOIN THE PROGRAM',
     pixelEvents: [
       { name: 'PageView',         trigger: 'on load' },
-      { name: 'InitiateCheckout', trigger: 'on button click' },
-      { name: 'Purchase',         trigger: 'on checkout', value: '$997' },
+      { name: 'InitiateCheckout', trigger: 'on load',              value: '$997' },
+      { name: 'Purchase',         trigger: 'on successful payment', value: '$997' },
     ],
   } },
 
   // ==========================================================================
-  // C11 · Purchase · Main — onboarding email
+  // C12 · Purchase · Main — onboarding email
   // ==========================================================================
-  { id: 'tag-main-buyer', type: 'tag', position: { x: col(11), y: Y.tagBand }, data: {
+  { id: 'tag-main-buyer', type: 'tag', position: { x: col(12), y: Y.tagBand }, data: {
     kind: 'tag', platform: 'Close', label: 'ai-insiders-main-buyer', trigger: 'on main purchase',
     syncsTo: ['Close', 'Supabase', 'Kit'],
   } },
-  { id: 'msg-main-onboarding', type: 'email', position: { x: col(11), y: Y.msgBand }, data: {
+  { id: 'msg-main-onboarding', type: 'email', position: { x: col(12), y: Y.msgBand }, data: {
     kind: 'email', fromName: 'Luke Alexander', fromEmail: 'luke@aiinsiders.com', toDisplay: 'me',
     subject: 'Welcome to the AI Insiders program',
     body: `{{first_name}} —
@@ -1049,13 +1086,13 @@ Start with the "Install order" video. It sets the sequence.
   } },
 
   // ==========================================================================
-  // C12 · Recovery · Main — abandon tag + recovery email + SMS
+  // C13 · Recovery · Main — abandon tag + recovery email + SMS
   // ==========================================================================
-  { id: 'tag-main-abandoned', type: 'tag', position: { x: col(12), y: Y.tagBand }, data: {
+  { id: 'tag-main-abandoned', type: 'tag', position: { x: col(13), y: Y.tagBand }, data: {
     kind: 'tag', platform: 'Close', label: 'main-abandoned', trigger: 'InitiateCheckout w/o Purchase',
     syncsTo: ['Close', 'Supabase'],
   } },
-  { id: 'msg-main-recovery-email', type: 'email', position: { x: col(12), y: Y.msgBand }, data: {
+  { id: 'msg-main-recovery-email', type: 'email', position: { x: col(13), y: Y.msgBand }, data: {
     kind: 'email', fromName: 'Luke Alexander', fromEmail: 'luke@aiinsiders.com', toDisplay: 'me',
     subject: 'Your enrollment is still open',
     body: `{{first_name}} —
@@ -1068,7 +1105,7 @@ I'm around. Hit reply with the question or pick up where you left off:
 — Luke`,
     trigger: 'T+2h abandon', sendingFrom: 'Kit', sent: 3, openedPct: 100, clickedPct: 33,
   } },
-  { id: 'msg-main-recovery-sms', type: 'sms', position: { x: col(12), y: Y.msgBand + R.email + SP.xxl }, data: {
+  { id: 'msg-main-recovery-sms', type: 'sms', position: { x: col(13), y: Y.msgBand + R.email + SP.xxl }, data: {
     kind: 'sms', contactName: 'Luke Alexander',
     body: `Hey — Luke here. Enrollment for the program is still open on my end. If it was timing, no rush. If it was a question, just text me back.
 
@@ -1076,24 +1113,6 @@ Link to finish: aiinsiders.com/program`,
     trigger: 'T+24h abandon', sendingFrom: 'Twilio', sent: 3, clickedPct: 33, time: '10:15',
   } },
 
-  // ==========================================================================
-  // C13 · Post-event · Replay email
-  // ==========================================================================
-  { id: 'msg-ty-replay', type: 'email', position: { x: col(13), y: Y.spine }, data: {
-    kind: 'email', fromName: 'Luke Alexander', fromEmail: 'luke@aiinsiders.com', toDisplay: 'me',
-    subject: 'Replay + resources from AI Insiders',
-    body: `Hey {{first_name}} —
-
-Here's the full replay and every resource I promised from the briefing:
-
-▶  Full replay: [ Watch → ]
-📦  Resource pack: [ Download → ]
-
-Let me know what lands.
-
-— Luke`,
-    trigger: 'T+24h post-event', sendingFrom: 'Kit', sent: 221, openedPct: 47, clickedPct: 31,
-  } },
 ];
 
 // =============================================================================
@@ -1112,54 +1131,59 @@ const spine     = () => ({ style: { stroke: INK.wireHi, strokeWidth: 1.5 }, anim
 const triggered = () => ({ style: { stroke: INK.wire,   strokeWidth: 1.1, strokeDasharray: '4 4' }, animated: false, markerEnd: arrow(INK.wire), ...labelTheme });
 
 const SEED_EDGES: any[] = [
-  // Spine L→R
-  { id: 'sp-ad-meta',       source: 'ad-meta',    target: 'pg-optin',       label: 'CPL $6.18',        ...spine() },
-  { id: 'sp-ad-ig',         source: 'ad-ig',      target: 'pg-optin',       label: 'CPL $4.39',        ...spine() },
-  { id: 'sp-ad-organic',    source: 'ad-organic', target: 'pg-optin',       label: 'organic',          ...spine() },
-  { id: 'sp-optin-webinar', source: 'pg-optin',   target: 'webinar',        label: 'registers',        ...spine() },
-  { id: 'sp-webinar-slo',   source: 'webinar',    target: 'pg-slo',         label: 'post-event offer', ...spine() },
-  { id: 'sp-slo-ty',        source: 'pg-slo',     target: 'pg-ty',          label: 'on purchase',      ...spine() },
-  { id: 'sp-ty-main',       source: 'pg-ty',      target: 'pg-main-offer',  label: 'upsell',           ...spine() },
-  { id: 'sp-ty-replay',     source: 'pg-ty',      target: 'msg-ty-replay',  label: 'T+24h',            ...spine() },
+  // Spine L→R — matches the real page sequence:
+  // Ads → Capture → SLO → Whop checkout → Thank You → Webinar → Main Offer Checkout
+  { id: 'sp-ad-meta',    source: 'ad-meta',    target: 'pg-optin',      label: 'CPL $6.18',        ...spine() },
+  { id: 'sp-ad-ig',      source: 'ad-ig',      target: 'pg-optin',      label: 'CPL $4.39',        ...spine() },
+  { id: 'sp-ad-organic', source: 'ad-organic', target: 'pg-optin',      label: 'organic',          ...spine() },
+  { id: 'sp-optin-slo',  source: 'pg-optin',   target: 'pg-slo',        label: '20.1% CTR',        ...spine() },
+  { id: 'sp-slo-whop',   source: 'pg-slo',     target: 'pg-whop',       label: 'to checkout',      ...spine() },
+  { id: 'sp-whop-ty',    source: 'pg-whop',    target: 'pg-ty',         label: 'on purchase',      ...spine() },
+  { id: 'sp-ty-webinar', source: 'pg-ty',      target: 'webinar',       label: 'access granted',   ...spine() },
+  { id: 'sp-webinar-main', source: 'webinar',  target: 'pg-main-offer', label: 'post-event pitch', ...spine() },
 
   // Page → Tag (side-effect)
   { id: 'e-optin-tag-lead',   source: 'pg-optin',       sourceHandle: 'trigger', target: 'tag-lead',           ...triggered() },
   { id: 'e-optin-tag-kit',    source: 'pg-optin',       sourceHandle: 'trigger', target: 'tag-kit',            ...triggered() },
+  { id: 'e-whop-buyer',       source: 'pg-whop',        sourceHandle: 'trigger', target: 'tag-buyer',          ...triggered() },
+  { id: 'e-whop-abandoned',   source: 'pg-whop',        sourceHandle: 'trigger', target: 'tag-slo-abandoned',  ...triggered() },
+  { id: 'e-ty-reminders',     source: 'pg-ty',          sourceHandle: 'trigger', target: 'ad-retarget',        ...triggered() },
   { id: 'e-webinar-attended', source: 'webinar',        sourceHandle: 'trigger', target: 'tag-attended',       ...triggered() },
-  { id: 'e-slo-buyer',        source: 'pg-slo',         sourceHandle: 'trigger', target: 'tag-buyer',          ...triggered() },
-  { id: 'e-slo-abandoned',    source: 'pg-slo',         sourceHandle: 'trigger', target: 'tag-slo-abandoned',  ...triggered() },
   { id: 'e-main-buyer',       source: 'pg-main-offer',  sourceHandle: 'trigger', target: 'tag-main-buyer',     ...triggered() },
   { id: 'e-main-abandoned',   source: 'pg-main-offer',  sourceHandle: 'trigger', target: 'tag-main-abandoned', ...triggered() },
 
-  // Phone chain (C2)
+  // Phone chain (C2) — opt-in
   { id: 'c2-1', source: 'tag-lead',        target: 'msg-welcome-sms', ...triggered() },
   { id: 'c2-2', source: 'msg-welcome-sms', target: 'msg-welcome-tg',  ...triggered() },
 
-  // Email chain (C3) — 3-email welcome
+  // Email chain (C3) — 3-email welcome sequence
   { id: 'c3-1', source: 'tag-kit',       target: 'msg-welcome-1', ...triggered() },
   { id: 'c3-2', source: 'msg-welcome-1', target: 'msg-welcome-2', ...triggered() },
   { id: 'c3-3', source: 'msg-welcome-2', target: 'msg-welcome-3', ...triggered() },
 
-  // Reminders chain (C4)
-  { id: 'c4-1', source: 'ad-retarget', target: 'msg-24h',  ...triggered() },
-  { id: 'c4-2', source: 'msg-24h',     target: 'msg-1h',   ...triggered() },
-  { id: 'c4-3', source: 'msg-1h',      target: 'msg-live', ...triggered() },
+  // SLO Purchase chain (C6) — receipt → Calendly email → Calendly SMS
+  { id: 'c6-1', source: 'tag-buyer',          target: 'msg-slo-receipt',    ...triggered() },
+  { id: 'c6-2', source: 'msg-slo-receipt',    target: 'msg-calendly-email', ...triggered() },
+  { id: 'c6-3', source: 'msg-calendly-email', target: 'msg-calendly-sms',   ...triggered() },
 
-  // SLO Purchase chain (C7)
-  { id: 'c7-1', source: 'tag-buyer',          target: 'msg-slo-receipt',    ...triggered() },
-  { id: 'c7-2', source: 'msg-slo-receipt',    target: 'msg-calendly-email', ...triggered() },
-  { id: 'c7-3', source: 'msg-calendly-email', target: 'msg-calendly-sms',   ...triggered() },
+  // SLO Recovery chain (C7)
+  { id: 'c7-1', source: 'tag-slo-abandoned',      target: 'msg-slo-recovery-email', ...triggered() },
+  { id: 'c7-2', source: 'msg-slo-recovery-email', target: 'msg-slo-recovery-sms',   ...triggered() },
 
-  // SLO Recovery chain (C8)
-  { id: 'c8-1', source: 'tag-slo-abandoned',    target: 'msg-slo-recovery-email', ...triggered() },
-  { id: 'c8-2', source: 'msg-slo-recovery-email', target: 'msg-slo-recovery-sms', ...triggered() },
+  // Reminders chain (C9) — fires after Thank You, pre-webinar
+  { id: 'c9-1', source: 'ad-retarget', target: 'msg-24h',  ...triggered() },
+  { id: 'c9-2', source: 'msg-24h',     target: 'msg-1h',   ...triggered() },
+  { id: 'c9-3', source: 'msg-1h',      target: 'msg-live', ...triggered() },
 
-  // Main Purchase (C11)
-  { id: 'c11-1', source: 'tag-main-buyer', target: 'msg-main-onboarding', ...triggered() },
+  // Live event (C10) — tag-attended fires replay email
+  { id: 'c10-1', source: 'tag-attended', target: 'msg-ty-replay', ...triggered() },
 
-  // Main Recovery chain (C12)
-  { id: 'c12-1', source: 'tag-main-abandoned',       target: 'msg-main-recovery-email', ...triggered() },
-  { id: 'c12-2', source: 'msg-main-recovery-email',  target: 'msg-main-recovery-sms',   ...triggered() },
+  // Main Purchase (C12)
+  { id: 'c12-1', source: 'tag-main-buyer', target: 'msg-main-onboarding', ...triggered() },
+
+  // Main Recovery chain (C13)
+  { id: 'c13-1', source: 'tag-main-abandoned',      target: 'msg-main-recovery-email', ...triggered() },
+  { id: 'c13-2', source: 'msg-main-recovery-email', target: 'msg-main-recovery-sms',   ...triggered() },
 ];
 
 // =============================================================================
