@@ -1106,7 +1106,13 @@ const LukeFlowView: React.FC<Props> = () => {
           nodesDraggable
           nodesConnectable={false}
           panOnScroll
+          panOnScrollSpeed={1.8}
+          zoomOnScroll={false}
           zoomOnPinch
+          zoomActivationKeyCode="Meta"
+          panOnDrag
+          selectionOnDrag={false}
+          zoomOnDoubleClick={false}
           elevateNodesOnSelect={false}
         >
           <Background color={INK.border} gap={32} size={1} />
