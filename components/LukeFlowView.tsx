@@ -88,7 +88,6 @@ const col = (i: number) => i * STRIDE;
 
 // Vertical bands
 const Y = {
-  colLabel: -72,
   spine:    0,
   tagBand:  520,
   msgBand:  680,
@@ -101,26 +100,13 @@ const R = {
   email:   460,
   phone:   400,
   webinar: 330,
-  tag:     140,
+  tag:     150,
 };
 
-// Columns
-const COLUMNS: { label: string; i: number }[] = [
-  { label: 'Traffic',          i: 0 },
-  { label: 'Capture',          i: 1 },
-  { label: 'Opt-in · phone',   i: 2 },
-  { label: 'Opt-in · email',   i: 3 },
-  { label: 'Reminders',        i: 4 },
-  { label: 'Live event',       i: 5 },
-  { label: 'Offer',            i: 6 },
-  { label: 'Purchase · SLO',   i: 7 },
-  { label: 'Recovery · SLO',   i: 8 },
-  { label: 'Confirmation',     i: 9 },
-  { label: 'Main offer',       i: 10 },
-  { label: 'Purchase · Main',  i: 11 },
-  { label: 'Recovery · Main',  i: 12 },
-  { label: 'Post-event',       i: 13 },
-];
+// Column intent (reference only — no longer rendered as headers):
+// 00 Traffic · 01 Capture · 02 Opt-in·phone · 03 Opt-in·email · 04 Reminders
+// 05 Live event · 06 Offer · 07 Purchase·SLO · 08 Recovery·SLO · 09 Confirmation
+// 10 Main offer · 11 Purchase·Main · 12 Recovery·Main · 13 Post-event
 
 // =============================================================================
 // Types
@@ -572,57 +558,99 @@ TelegramNode.displayName = 'TelegramNode';
 // Tag node
 // =============================================================================
 
-const TagNode = memo<NodeProps<TagNodeData>>(({ data }) => (
-  <div style={{
-    width: W.tag, background: INK.surface, border: `1px solid ${INK.border}`,
-    borderRadius: 10, color: INK.text, boxShadow: '0 1px 2px rgba(0,0,0,0.4)',
-    overflow: 'hidden',
-  }}>
-    <Handle type="target" position={Position.Top} style={{ background: INK.wireHi, width: 7, height: 7 }} />
-    <div style={{ padding: `${SP.sm + 2}px ${SP.md}px ${SP.sm}px` }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: SP.sm - 2, marginBottom: SP.xs }}>
-        <TagIcon size={10} color={INK.textMuted} />
-        <span style={labelStyle}>{data.platform} · tag added</span>
-      </div>
-      <div style={{
-        fontSize: TYPE.body, fontWeight: 600, color: INK.text,
-        fontFamily: 'ui-monospace, SFMono-Regular, monospace', marginBottom: 2,
-      }}>{data.label}</div>
-      <div style={metaText}>{data.trigger}</div>
-    </div>
+// Actual price-tag shape: pentagonal body with a pointed left tip and a
+// grommet hole near the tip (drawn via SVG so we get a proper stroked outline
+// that follows the shape)
+const TagNode = memo<NodeProps<TagNodeData>>(({ data }) => {
+  const tipInset = 18;   // how far the V-cut goes in
+  const hole     = 5;    // grommet dot radius * 2 visually
+  const padL     = 26;   // left padding to clear the tip + hole
+  return (
+    <div style={{
+      width: W.tag,
+      position: 'relative',
+      color: INK.text,
+      fontSize: TYPE.body,
+      filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.55))',
+    }}>
+      <Handle type="target" position={Position.Top} style={{ background: INK.wireHi, width: 7, height: 7 }} />
+      <Handle type="source" position={Position.Bottom} style={{ background: INK.wireHi, width: 7, height: 7 }} />
 
-    {data.syncsTo.length > 0 && (
+      {/* Tag body + outline — SVG so the stroke follows the pentagonal shape */}
+      <svg
+        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none' }}
+        preserveAspectRatio="none"
+        viewBox={`0 0 ${W.tag} 100`}
+      >
+        <path
+          d={`M ${tipInset} 1 L ${W.tag - 1} 1 L ${W.tag - 1} 99 L ${tipInset} 99 L 1 50 Z`}
+          fill={INK.surface}
+          stroke={INK.borderHi}
+          strokeWidth={1}
+          vectorEffect="non-scaling-stroke"
+        />
+        {/* Grommet hole */}
+        <circle cx={9} cy={50} r={3} fill={INK.bg} stroke={INK.borderHi} strokeWidth={0.75} vectorEffect="non-scaling-stroke" />
+      </svg>
+
+      {/* Content overlay */}
       <div style={{
-        padding: `${SP.sm}px ${SP.md}px`,
-        borderTop: `1px solid ${INK.border}`,
-        background: INK.bgSoft,
+        position: 'relative',
+        padding: `${SP.sm + 2}px ${SP.md}px ${SP.sm + 2}px ${padL}px`,
       }}>
-        <div style={{
-          ...labelStyle, fontSize: TYPE.label - 1,
-          display: 'flex', alignItems: 'center', gap: SP.xs,
-          marginBottom: SP.xs + 1,
-        }}>
-          <ArrowRight size={9} />Syncs to
+        <div style={{ display: 'flex', alignItems: 'center', gap: SP.xs + 1, marginBottom: SP.xs }}>
+          <TagIcon size={10} color={INK.textMuted} />
+          <span style={{ ...labelStyle, fontSize: TYPE.label - 1 }}>{data.platform} · tag</span>
         </div>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: SP.xs }}>
-          {data.syncsTo.map(p => (
-            <span key={p} style={{
-              fontSize: TYPE.label,
-              padding: `2px ${SP.sm - 1}px`,
-              background: INK.surface,
-              border: `1px solid ${INK.border}`,
-              borderRadius: 4,
-              color: INK.text,
-              fontFamily: 'ui-monospace, SFMono-Regular, monospace',
-            }}>{p}</span>
-          ))}
-        </div>
-      </div>
-    )}
 
-    <Handle type="source" position={Position.Bottom} style={{ background: INK.wireHi, width: 7, height: 7 }} />
-  </div>
-));
+        {/* Tag name — the actual label, rendered like a hashtag */}
+        <div style={{
+          fontSize: TYPE.title,
+          fontWeight: 700,
+          color: INK.text,
+          fontFamily: 'ui-monospace, SFMono-Regular, monospace',
+          letterSpacing: -0.2,
+          lineHeight: 1.2,
+          marginBottom: 3,
+          wordBreak: 'break-word',
+        }}>
+          <span style={{ color: INK.textSubtle, marginRight: 1 }}>#</span>{data.label}
+        </div>
+
+        <div style={{ ...metaText, fontSize: TYPE.label }}>{data.trigger}</div>
+
+        {data.syncsTo.length > 0 && (
+          <div style={{
+            marginTop: SP.sm,
+            paddingTop: SP.sm - 2,
+            borderTop: `1px dashed ${INK.borderHi}`,
+          }}>
+            <div style={{
+              ...labelStyle, fontSize: TYPE.label - 1,
+              display: 'flex', alignItems: 'center', gap: SP.xs,
+              marginBottom: SP.xs + 1,
+            }}>
+              <ArrowRight size={9} />Syncs to
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: SP.xs }}>
+              {data.syncsTo.map(p => (
+                <span key={p} style={{
+                  fontSize: TYPE.label,
+                  padding: `2px ${SP.sm - 1}px`,
+                  background: INK.surfaceHi,
+                  border: `1px solid ${INK.border}`,
+                  borderRadius: 3,
+                  color: INK.text,
+                  fontFamily: 'ui-monospace, SFMono-Regular, monospace',
+                }}>{p}</span>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+});
 TagNode.displayName = 'TagNode';
 
 // =============================================================================
@@ -678,37 +706,6 @@ const WebinarNode = memo<NodeProps<WebinarNodeData>>(({ data }) => {
 });
 WebinarNode.displayName = 'WebinarNode';
 
-// =============================================================================
-// Column label node
-// =============================================================================
-
-const ColumnLabelNode = memo<NodeProps<{ label: string; index: number }>>(({ data }) => (
-  <div style={{
-    width: W.primary,
-    display: 'flex',
-    alignItems: 'center',
-    gap: SP.sm,
-    paddingBottom: SP.sm,
-    borderBottom: `1px solid ${INK.border}`,
-  }}>
-    <span style={{
-      fontSize: TYPE.label - 1,
-      fontVariantNumeric: 'tabular-nums',
-      color: INK.textSubtle,
-      fontFamily: 'ui-monospace, SFMono-Regular, monospace',
-    }}>
-      {String(data.index + 1).padStart(2, '0')}
-    </span>
-    <span style={{
-      ...labelStyle, color: INK.text,
-      fontSize: TYPE.label + 1, letterSpacing: 1.2,
-    }}>
-      {data.label}
-    </span>
-  </div>
-));
-ColumnLabelNode.displayName = 'ColumnLabelNode';
-
 const nodeTypes = {
   ad: AdNode,
   page: PageNode,
@@ -717,7 +714,6 @@ const nodeTypes = {
   telegram: TelegramNode,
   tag: TagNode,
   webinar: WebinarNode,
-  colLabel: ColumnLabelNode,
 };
 
 // =============================================================================
@@ -741,14 +737,6 @@ const defaultSize = (kind: string) => {
 };
 
 const SEED_NODES: any[] = [
-  // Column headers
-  ...COLUMNS.map(c => ({
-    id: `col-${c.i}`, type: 'colLabel',
-    position: { x: col(c.i), y: Y.colLabel },
-    data: { label: c.label, index: c.i },
-    draggable: false, selectable: false, connectable: false,
-  })),
-
   // ==========================================================================
   // C0 · Traffic — 3 ads
   // ==========================================================================
@@ -952,27 +940,30 @@ You also got a call with me as part of buying — booking link is in the next em
   } },
   { id: 'msg-calendly-email', type: 'email', position: { x: col(7), y: Y.msgBand + R.email + SP.xxl }, data: {
     kind: 'email', fromName: 'Luke Alexander', fromEmail: 'luke@aiinsiders.com', toDisplay: 'me',
-    subject: 'Book your AI Insiders strategy call',
+    subject: 'Book your AI Insiders strategy session, {{first_name}}',
     body: `{{first_name}} —
 
-Time to put your call to use.
+You just secured your spot in AI Insiders — which means you've also earned a 1-on-1 strategy session with an expert from our team. It's included with what you paid for.
 
-Grab a 30-min slot that works for you:
-[ calendly.com/luke/ai-insiders-call ]
+Grab your slot here:
+https://calendly.com/d/ctyk-fnj-nr6/ai-toolkit-strategy-session-
 
-On the call we'll map out which AI workflows are actually worth installing in your business first (there's an order that matters).
+Heads up: the team's calendar is going to be slammed over the next week — everyone who just joined is trying to book. If you want a good time (and you want to actually get one this week), lock it in the next 24-48 hours before slots disappear.
+
+Looking forward to it, {{first_name}}.
 
 — Luke`,
     trigger: 'T+5min post-purchase', sendingFrom: 'Kit', sent: 34, openedPct: 91, clickedPct: 74,
   } },
   { id: 'msg-calendly-sms', type: 'sms', position: { x: col(7), y: Y.msgBand + (R.email + SP.xxl) * 2 }, data: {
     kind: 'sms', contactName: 'Luke Alexander',
-    body: `Congrats on AI Insiders 👊
+    body: `{{first_name}} — Luke here 👊
 
-Book your 30-min strategy call while slots are open:
-calendly.com/luke/ai-insiders-call
+Your AI Insiders 1-on-1 strategy session is unlocked. Book it now before the team calendar fills up this week:
 
-— Luke`,
+https://calendly.com/d/ctyk-fnj-nr6/ai-toolkit-strategy-session-
+
+Grab an early slot, {{first_name}} — the next 48h will be packed.`,
     trigger: 'T+30min post-purchase', sendingFrom: 'Twilio', sent: 34, clickedPct: 62, time: '3:45',
   } },
 
@@ -1311,7 +1302,7 @@ const LukeFlowView: React.FC<Props> = () => {
   }, [setNodes]);
 
   const onSelectionChange = useCallback(({ nodes: selected }: { nodes: Node[] }) => {
-    setSelectedIds(selected.filter(n => n.type !== 'colLabel').map(n => n.id));
+    setSelectedIds(selected.map(n => n.id));
   }, []);
 
   const alignSelected = useCallback((op: AlignOp) => {
