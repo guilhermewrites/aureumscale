@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { FileText, Send } from 'lucide-react';
+import { FileText, Send, Workflow } from 'lucide-react';
 import FunnelCommunications from './FunnelCommunications';
+import LukeFlowView from './LukeFlowView';
 
 const pages = [
   { id: 'optin', label: 'Capture Page', src: '/funnels/luke-alexander/optin/index.html' },
@@ -15,7 +16,7 @@ interface Props {
   storagePrefix: string;
 }
 
-type View = 'pages' | 'communications';
+type View = 'pages' | 'flow' | 'communications';
 
 const LukeAlexanderFunnel: React.FC<Props> = ({ storagePrefix }) => {
   const [view, setView] = useState<View>('pages');
@@ -28,7 +29,11 @@ const LukeAlexanderFunnel: React.FC<Props> = ({ storagePrefix }) => {
         <div>
           <h1 className="text-lg font-semibold text-[#ECECEC]">{FUNNEL_NAME}</h1>
           <p className="text-xs text-[#555] mt-0.5">
-            {view === 'pages' ? 'Live funnel preview' : 'Email, SMS & Telegram broadcasts'}
+            {view === 'pages'
+              ? 'Live funnel preview'
+              : view === 'flow'
+                ? 'Ads, pages, messages, triggers & tags'
+                : 'Email, SMS & Telegram broadcasts'}
           </p>
         </div>
         {view === 'pages' && (
@@ -54,6 +59,14 @@ const LukeAlexanderFunnel: React.FC<Props> = ({ storagePrefix }) => {
           <FileText size={12} /> Pages
         </button>
         <button
+          onClick={() => setView('flow')}
+          className={`flex items-center gap-1.5 px-4 py-1.5 rounded-md text-xs font-medium transition-colors ${
+            view === 'flow' ? 'bg-[#2a2a2a] text-[#ECECEC]' : 'text-[#666] hover:text-[#999]'
+          }`}
+        >
+          <Workflow size={12} /> Flow
+        </button>
+        <button
           onClick={() => setView('communications')}
           className={`flex items-center gap-1.5 px-4 py-1.5 rounded-md text-xs font-medium transition-colors ${
             view === 'communications' ? 'bg-[#2a2a2a] text-[#ECECEC]' : 'text-[#666] hover:text-[#999]'
@@ -63,7 +76,9 @@ const LukeAlexanderFunnel: React.FC<Props> = ({ storagePrefix }) => {
         </button>
       </div>
 
-      {view === 'pages' ? (
+      {view === 'flow' ? (
+        <LukeFlowView storagePrefix={storagePrefix} />
+      ) : view === 'pages' ? (
         <>
           {pages.length > 1 && (
             <div className="flex gap-1 mb-3 flex-shrink-0 bg-[#1a1a1a] rounded-lg p-1">
