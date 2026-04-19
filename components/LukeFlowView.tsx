@@ -62,7 +62,7 @@ const BRAND = {
 };
 
 // Spacing — 4pt scale
-const SP = { xs: 4, sm: 8, md: 12, lg: 16, xl: 24, xxl: 32, xxxl: 48 };
+const SP = { xs: 4, sm: 8, md: 12, lg: 16, xl: 24, xxl: 32, xxxl: 48, huge: 64, jumbo: 96 };
 
 // Type — 5-step scale, ≥1.25 ratio between the two body sizes
 const TYPE = {
@@ -79,9 +79,24 @@ const W = {
   chip:    220,  // tag, destination
 };
 
-// Column grid — 400px stride (320w card + 80 gutter)
-const STRIDE = 400;
+// Column grid — 480px stride (320w card + 160 gutter)
+const STRIDE = 480;
 const col = (i: number) => i * STRIDE;
+
+// Column headers shown at y=COL_LABEL_Y
+const COL_LABEL_Y = -72;
+const COLUMNS: { label: string; i: number }[] = [
+  { label: 'Traffic',          i: 0 },
+  { label: 'Capture',          i: 1 },
+  { label: 'Opt-in automation',i: 2 },
+  { label: 'Reminders',        i: 3 },
+  { label: 'Live event',       i: 4 },
+  { label: 'Offer',            i: 5 },
+  { label: 'Purchase',         i: 6 },
+  { label: 'Confirmation',     i: 7 },
+  { label: 'Post-event',       i: 8 },
+  { label: 'Destinations',     i: 9 },
+];
 
 // =============================================================================
 // Types
@@ -229,9 +244,11 @@ const AdNode = memo<NodeProps<AdNodeData>>(({ data }) => {
 
       <div style={{
         height: 170,
-        background: `url(${data.image}) center/cover, #1a1a1a`,
+        background: `linear-gradient(145deg, rgba(10,10,10,0.55), rgba(8,8,8,0.85)), url(${data.image}) center/cover, #141414`,
+        backgroundBlendMode: 'normal',
         borderTop: `1px solid ${INK.border}`,
         borderBottom: `1px solid ${INK.border}`,
+        filter: 'saturate(0.75)',
       }} />
 
       <div style={{
@@ -665,6 +682,39 @@ DestinationNode.displayName = 'DestinationNode';
 // Registry
 // =============================================================================
 
+// =============================================================================
+// Column label node — non-interactive, sits above each column
+// =============================================================================
+
+const ColumnLabelNode = memo<NodeProps<{ label: string; index: number }>>(({ data }) => (
+  <div style={{
+    width: W.primary,
+    display: 'flex',
+    alignItems: 'center',
+    gap: SP.sm,
+    paddingBottom: SP.sm,
+    borderBottom: `1px solid ${INK.border}`,
+  }}>
+    <span style={{
+      fontSize: TYPE.label - 1,
+      fontVariantNumeric: 'tabular-nums',
+      color: INK.textSubtle,
+      fontFamily: 'ui-monospace, SFMono-Regular, monospace',
+    }}>
+      {String(data.index + 1).padStart(2, '0')}
+    </span>
+    <span style={{
+      ...labelStyle,
+      color: INK.text,
+      fontSize: TYPE.label + 1,
+      letterSpacing: 1.2,
+    }}>
+      {data.label}
+    </span>
+  </div>
+));
+ColumnLabelNode.displayName = 'ColumnLabelNode';
+
 const nodeTypes = {
   ad: AdNode,
   page: PageNode,
@@ -674,6 +724,7 @@ const nodeTypes = {
   tag: TagNode,
   webinar: WebinarNode,
   destination: DestinationNode,
+  colLabel: ColumnLabelNode,
 };
 
 // =============================================================================
@@ -700,10 +751,21 @@ const R = {
 };
 
 const SEED_NODES: any[] = [
+  // ========= Column headers =========
+  ...COLUMNS.map(c => ({
+    id: `col-${c.i}`,
+    type: 'colLabel',
+    position: { x: col(c.i), y: COL_LABEL_Y },
+    data: { label: c.label, index: c.i },
+    draggable: false,
+    selectable: false,
+    connectable: false,
+  })),
+
   // ========= C0 · Ads =========
-  { id: 'ad-meta',    type: 'ad', position: { x: col(0), y: 0 },                    data: { kind: 'ad', label: 'AI Insiders — Cold',   platform: 'Meta', image: AD_IMAGE, headline: 'AI Insiders — Free Briefing', primaryText: 'The 3 AI workflows quietly replacing entire marketing teams. Free 60-min briefing. Seats limited.', cta: 'Sign Up',      spend: 420, leads: 68,  cpl: 6.18 } },
-  { id: 'ad-ig',      type: 'ad', position: { x: col(0), y: R.ad + SP.xxl },        data: { kind: 'ad', label: 'IG Retarget',          platform: 'Meta', image: AD_IMAGE, headline: 'Still thinking about it?',     primaryText: 'You looked, you left. The AI Insiders briefing starts tomorrow. Last call.',                   cta: 'Save My Seat', spend: 180, leads: 41,  cpl: 4.39 } },
-  { id: 'ad-organic', type: 'ad', position: { x: col(0), y: (R.ad + SP.xxl) * 2 },  data: { kind: 'ad', label: 'Kit broadcast',        platform: 'Kit',  image: AD_IMAGE, headline: 'List broadcast · AI Insiders', primaryText: "Broadcast to Luke's subscriber list announcing the free AI Insiders briefing tomorrow.",       cta: 'Open',         spend: 0,   leads: 112, cpl: 0    } },
+  { id: 'ad-meta',    type: 'ad', position: { x: col(0), y: 0 },                      data: { kind: 'ad', label: 'AI Insiders — Cold',   platform: 'Meta', image: AD_IMAGE, headline: 'AI Insiders — Free Briefing', primaryText: 'The 3 AI workflows quietly replacing entire marketing teams. Free 60-min briefing. Seats limited.', cta: 'Sign Up',      spend: 420, leads: 68,  cpl: 6.18 } },
+  { id: 'ad-ig',      type: 'ad', position: { x: col(0), y: R.ad + SP.huge },         data: { kind: 'ad', label: 'IG Retarget',          platform: 'Meta', image: AD_IMAGE, headline: 'Still thinking about it?',     primaryText: 'You looked, you left. The AI Insiders briefing starts tomorrow. Last call.',                   cta: 'Save My Seat', spend: 180, leads: 41,  cpl: 4.39 } },
+  { id: 'ad-organic', type: 'ad', position: { x: col(0), y: (R.ad + SP.huge) * 2 },   data: { kind: 'ad', label: 'Kit broadcast',        platform: 'Kit',  image: AD_IMAGE, headline: 'List broadcast · AI Insiders', primaryText: "Broadcast to Luke's subscriber list announcing the free AI Insiders briefing tomorrow.",       cta: 'Open',         spend: 0,   leads: 112, cpl: 0    } },
 
   // ========= C1 · Capture Page =========
   { id: 'pg-optin', type: 'page', position: { x: col(1), y: 0 },
@@ -720,12 +782,12 @@ const SEED_NODES: any[] = [
   },
 
   // ========= C2 · Opt-in events =========
-  // Tags: tight pair at top (8px gap)
+  // Tags: tight pair at top (12px gap)
   { id: 'tag-lead', type: 'tag', position: { x: col(2), y: 0 },                   data: { kind: 'tag', platform: 'GHL', label: 'ai-insiders-lead', trigger: 'on opt-in' } },
-  { id: 'tag-kit',  type: 'tag', position: { x: col(2), y: R.tag + SP.sm },       data: { kind: 'tag', platform: 'Kit', label: 'AI Insiders',      trigger: 'on opt-in' } },
+  { id: 'tag-kit',  type: 'tag', position: { x: col(2), y: R.tag + SP.md },       data: { kind: 'tag', platform: 'Kit', label: 'AI Insiders',      trigger: 'on opt-in' } },
 
-  // Welcome messages: generous gap after tags (48px), siblings at 24px
-  { id: 'msg-welcome-email', type: 'email',    position: { x: col(2), y: (R.tag * 2) + SP.sm + SP.xxxl },                         data: {
+  // Welcome messages: generous gap after tags (64px), siblings at 32px
+  { id: 'msg-welcome-email', type: 'email',    position: { x: col(2), y: (R.tag * 2) + SP.md + SP.huge },                         data: {
     kind: 'email', fromName: 'Luke Alexander', fromEmail: 'luke@aiinsiders.com', toDisplay: 'me',
     subject: "You're in — AI Insiders briefing details inside",
     body: `Hey {{first_name}},
@@ -741,7 +803,7 @@ Save this. Add it to your calendar. See you inside.
 — Luke`,
     trigger: 'on opt-in', sendingFrom: 'Kit', sent: 221, openedPct: 68, clickedPct: 42,
   } },
-  { id: 'msg-welcome-sms', type: 'sms',        position: { x: col(2), y: (R.tag * 2) + SP.sm + SP.xxxl + R.email + SP.xl },         data: {
+  { id: 'msg-welcome-sms', type: 'sms',        position: { x: col(2), y: (R.tag * 2) + SP.md + SP.huge + R.email + SP.xxl },         data: {
     kind: 'sms', contactName: 'Luke Alexander',
     body: `Hey, Luke here 👋
 
@@ -753,7 +815,7 @@ aiinsiders.com/join
 Reply STOP to opt out.`,
     trigger: 'on opt-in', sendingFrom: 'Twilio', sent: 198, clickedPct: 31, time: '9:41',
   } },
-  { id: 'msg-welcome-tg', type: 'telegram',    position: { x: col(2), y: (R.tag * 2) + SP.sm + SP.xxxl + R.email + SP.xl + R.phone + SP.xl }, data: {
+  { id: 'msg-welcome-tg', type: 'telegram',    position: { x: col(2), y: (R.tag * 2) + SP.md + SP.huge + R.email + SP.xxl + R.phone + SP.xxl }, data: {
     kind: 'telegram', botName: 'AI Insiders', botSubtitle: 'channel · 1 240 subscribers',
     body: `Welcome to AI Insiders 🎯
 
@@ -765,7 +827,7 @@ Briefing kicks off tomorrow at 3pm ET.`,
   } },
 
   // ========= C3 · Reminders =========
-  { id: 'msg-24h',  type: 'email', position: { x: col(3), y: 0 },                                              data: { kind: 'email', fromName: 'Luke Alexander', fromEmail: 'luke@aiinsiders.com', toDisplay: 'me', subject: 'Tomorrow · AI Insiders briefing (save your seat)', body: `{{first_name}} —
+  { id: 'msg-24h',  type: 'email', position: { x: col(3), y: 0 },                                                 data: { kind: 'email', fromName: 'Luke Alexander', fromEmail: 'luke@aiinsiders.com', toDisplay: 'me', subject: 'Tomorrow · AI Insiders briefing (save your seat)', body: `{{first_name}} —
 
 Quick reminder: the AI Insiders briefing is tomorrow at 3pm ET.
 
@@ -774,14 +836,14 @@ If you haven't blocked your calendar, do it now.
 Join here: [ AI Insiders Briefing → ]
 
 — Luke`, trigger: 'T-24h', sendingFrom: 'Kit', sent: 221, openedPct: 54, clickedPct: 28 } },
-  { id: 'msg-1h',   type: 'email', position: { x: col(3), y: R.email + SP.xl },                                data: { kind: 'email', fromName: 'Luke Alexander', fromEmail: 'luke@aiinsiders.com', toDisplay: 'me', subject: '1 hour · final reminder', body: `{{first_name}} —
+  { id: 'msg-1h',   type: 'email', position: { x: col(3), y: R.email + SP.xxl },                                  data: { kind: 'email', fromName: 'Luke Alexander', fromEmail: 'luke@aiinsiders.com', toDisplay: 'me', subject: '1 hour · final reminder', body: `{{first_name}} —
 
 60 minutes out. Make sure you're at your desk, bring questions, and grab a notepad.
 
 Join: [ AI Insiders Briefing → ]
 
 — Luke`, trigger: 'T-1h', sendingFrom: 'Kit', sent: 221, openedPct: 62, clickedPct: 36 } },
-  { id: 'msg-live', type: 'sms',   position: { x: col(3), y: (R.email + SP.xl) * 2 },                          data: { kind: 'sms', contactName: 'Luke Alexander', body: `We're LIVE.
+  { id: 'msg-live', type: 'sms',   position: { x: col(3), y: (R.email + SP.xxl) * 2 },                            data: { kind: 'sms', contactName: 'Luke Alexander', body: `We're LIVE.
 
 Tap to join:
 aiinsiders.com/join
@@ -812,7 +874,7 @@ aiinsiders.com/join
   { id: 'tag-buyer', type: 'tag', position: { x: col(6), y: 0 }, data: {
     kind: 'tag', platform: 'GHL', label: 'ai-insiders-buyer', trigger: 'on purchase',
   } },
-  { id: 'msg-slo-receipt', type: 'email', position: { x: col(6), y: R.tag + SP.xxxl }, data: {
+  { id: 'msg-slo-receipt', type: 'email', position: { x: col(6), y: R.tag + SP.huge }, data: {
     kind: 'email', fromName: 'Luke Alexander', fromEmail: 'luke@aiinsiders.com', toDisplay: 'me',
     subject: 'Your AI Insiders access is confirmed',
     body: `{{first_name}} —
@@ -862,11 +924,11 @@ Let me know what lands.
   } },
 
   // ========= C9 · Destinations =========
-  // Stacked tight (related group)
+  // Stacked tight (related group, 24px apart)
   { id: 'dest-supabase', type: 'destination', position: { x: col(9), y: 0 },                        data: { kind: 'destination', platform: 'Supabase', label: 'Supabase',    action: 'INSERT funnel_leads' } },
-  { id: 'dest-kit',      type: 'destination', position: { x: col(9), y: (R.dest + SP.sm) * 1 },     data: { kind: 'destination', platform: 'Kit',      label: 'Kit',         action: 'POST /subscribers' } },
-  { id: 'dest-close',    type: 'destination', position: { x: col(9), y: (R.dest + SP.sm) * 2 },     data: { kind: 'destination', platform: 'Close',    label: 'Close CRM',   action: 'POST /lead → pipeline' } },
-  { id: 'dest-ghl',      type: 'destination', position: { x: col(9), y: (R.dest + SP.sm) * 3 },     data: { kind: 'destination', platform: 'GHL',      label: 'GoHighLevel', action: 'upsert contact + tag' } },
+  { id: 'dest-kit',      type: 'destination', position: { x: col(9), y: (R.dest + SP.xl) * 1 },     data: { kind: 'destination', platform: 'Kit',      label: 'Kit',         action: 'POST /subscribers' } },
+  { id: 'dest-close',    type: 'destination', position: { x: col(9), y: (R.dest + SP.xl) * 2 },     data: { kind: 'destination', platform: 'Close',    label: 'Close CRM',   action: 'POST /lead → pipeline' } },
+  { id: 'dest-ghl',      type: 'destination', position: { x: col(9), y: (R.dest + SP.xl) * 3 },     data: { kind: 'destination', platform: 'GHL',      label: 'GoHighLevel', action: 'upsert contact + tag' } },
 ];
 
 // =============================================================================
