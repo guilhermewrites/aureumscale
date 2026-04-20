@@ -37,6 +37,14 @@ src="https://www.facebook.com/tr?id=1012872378571647&ev=PageView&noscript=1"/></
     root.classList.add('geo-checked');
   }
 
+  // Preview override via URL: ?preview=restricted forces the banned-country view,
+  // ?preview=allowed forces the Skool-CTA view. Real visitors don't pass these params.
+  try {
+    var previewMode = new URLSearchParams(location.search).get('preview');
+    if (previewMode === 'restricted') { apply('IN'); return; }
+    if (previewMode === 'allowed')    { apply('US'); return; }
+  } catch (e) {}
+
   // Fail-open after 3.5s (show Skool CTA if lookup is slow/fails)
   var failsafe = setTimeout(function() { apply(null); }, 3500);
 
