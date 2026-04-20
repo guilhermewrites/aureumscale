@@ -219,7 +219,7 @@ nav {
   display: grid;
   grid-template-columns: 1fr 460px;
   gap: 64px;
-  align-items: center;
+  align-items: stretch;
 }
 
 /* LEFT COLUMN — copy */
@@ -328,6 +328,8 @@ nav {
 .optin-wrap {
   position: relative;
   z-index: 1;
+  display: flex;
+  flex-direction: column;
 }
 .optin-card {
   background: var(--card);
@@ -337,6 +339,10 @@ nav {
   position: relative;
   overflow: hidden;
   backdrop-filter: blur(20px);
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 .optin-card::before {
   content: '';
