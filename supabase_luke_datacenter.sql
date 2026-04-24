@@ -70,9 +70,14 @@ create table if not exists public.luke_people (
   updated_at              timestamptz not null default now()
 );
 
--- Lowercase-email uniqueness. Case-insensitive matches across systems.
-create unique index if not exists luke_people_email_ci_idx
-  on public.luke_people (lower(email));
+-- Email uniqueness. The sync pipeline normalizes every email to lowercase
+-- before insert, so a plain column-level unique constraint is enough and
+-- PostgREST's on_conflict=email upsert works against it.
+alter table public.luke_people
+  drop constraint if exists luke_people_email_key;
+alter table public.luke_people
+  add constraint luke_people_email_key unique (email);
+drop index if exists public.luke_people_email_ci_idx;
 
 create index if not exists luke_people_close_status_idx
   on public.luke_people (close_status);

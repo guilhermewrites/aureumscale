@@ -50,6 +50,7 @@ type Person = {
   calendly_event_name: string | null;
   calendly_booking_time: string | null;
   last_synced_at: string;
+  created_at: string;
 };
 
 type SyncRun = {
@@ -89,6 +90,26 @@ type BucketKey =
 
 type ViewMode = 'people' | 'failed';
 
+type DateRange = 'all' | 'today' | '7d' | '30d' | '90d';
+
+const DATE_RANGES: { key: DateRange; label: string }[] = [
+  { key: 'all',   label: 'All time'     },
+  { key: 'today', label: 'Today'        },
+  { key: '7d',    label: 'Last 7 days'  },
+  { key: '30d',   label: 'Last 30 days' },
+  { key: '90d',   label: 'Last 90 days' },
+];
+
+const rangeStart = (key: DateRange): Date | null => {
+  if (key === 'all') return null;
+  const d = new Date();
+  if (key === 'today') d.setHours(0, 0, 0, 0);
+  else if (key === '7d')  d.setDate(d.getDate() - 7);
+  else if (key === '30d') d.setDate(d.getDate() - 30);
+  else if (key === '90d') d.setDate(d.getDate() - 90);
+  return d;
+};
+
 // ---------------------------------------------------------------- bucket defs
 
 const BUCKETS: {
@@ -121,6 +142,7 @@ const LukeDataTab: React.FC = () => {
   const [activeBucket, setActiveBucket] = useState<BucketKey>('all');
   const [search, setSearch] = useState('');
   const [view, setView] = useState<ViewMode>('people');
+  const [dateRange, setDateRange] = useState<DateRange>('all');
 
   // ---- data load -----------------------------------------------------------
   const load = useCallback(async () => {
@@ -129,17 +151,30 @@ const LukeDataTab: React.FC = () => {
       return;
     }
     setLoading(true);
-    const [peopleRes, attemptsRes, runRes] = await Promise.all([
-      supabase
-        .from('luke_people')
-        .select('*')
-        .order('last_synced_at', { ascending: false })
-        .limit(5000),
-      supabase
-        .from('luke_payment_attempts')
-        .select('*')
-        .order('attempted_at', { ascending: false })
-        .limit(2000),
+    // Supabase's PostgREST caps responses at 1000 rows regardless of .limit(),
+    // so we page through with .range() until we've got everything.
+    const fetchAllPages = async <T,>(
+      table: string,
+      orderBy: string,
+    ): Promise<T[]> => {
+      const pageSize = 1000;
+      const out: T[] = [];
+      for (let from = 0; from < 100000; from += pageSize) {
+        const { data, error } = await supabase!
+          .from(table)
+          .select('*')
+          .order(orderBy, { ascending: false })
+          .range(from, from + pageSize - 1);
+        if (error) throw error;
+        const chunk = (data || []) as T[];
+        out.push(...chunk);
+        if (chunk.length < pageSize) break;
+      }
+      return out;
+    };
+    const [peopleAll, attemptsAll, runRes] = await Promise.all([
+      fetchAllPages<Person>('luke_people', 'last_synced_at'),
+      fetchAllPages<PaymentAttempt>('luke_payment_attempts', 'attempted_at'),
       supabase
         .from('luke_sync_runs')
         .select('*')
@@ -147,8 +182,8 @@ const LukeDataTab: React.FC = () => {
         .limit(1)
         .maybeSingle(),
     ]);
-    setPeople((peopleRes.data || []) as Person[]);
-    setAttempts((attemptsRes.data || []) as PaymentAttempt[]);
+    setPeople(peopleAll);
+    setAttempts(attemptsAll);
     setLastRun((runRes.data || null) as SyncRun | null);
     setLoading(false);
   }, []);
@@ -180,32 +215,58 @@ const LukeDataTab: React.FC = () => {
     }
   }, [canSync, syncUrl, syncToken, load]);
 
+  // ---- date-scoped slice (used by every derived stat below) --------------
+  // Uses created_at as a proxy for "when this person entered the pipeline".
+  // Purchases that happened after the range start keep the person in view
+  // too, so buyers don't drop off the chart when a short range is selected.
+  const dateScopedPeople = useMemo(() => {
+    const start = rangeStart(dateRange);
+    if (!start) return people;
+    const s = start.getTime();
+    return people.filter((p) => {
+      const created = p.created_at ? new Date(p.created_at).getTime() : 0;
+      const sloAt   = p.slo_purchase_date ? new Date(p.slo_purchase_date).getTime() : 0;
+      const mainAt  = p.main_purchase_date ? new Date(p.main_purchase_date).getTime() : 0;
+      return Math.max(created, sloAt, mainAt) >= s;
+    });
+  }, [people, dateRange]);
+
+  const dateScopedAttempts = useMemo(() => {
+    const start = rangeStart(dateRange);
+    if (!start) return attempts;
+    const s = start.getTime();
+    return attempts.filter((a) => {
+      const t = a.attempted_at ? new Date(a.attempted_at).getTime() : 0;
+      return t >= s;
+    });
+  }, [attempts, dateRange]);
+
   // ---- derive counts for each bucket --------------------------------------
   const counts = useMemo(() => {
     const c: Record<BucketKey, number> = {
-      all: people.length, kit: 0, close: 0, registered: 0, attended: 0,
+      all: dateScopedPeople.length, kit: 0, close: 0, registered: 0, attended: 0,
       slo: 0, main: 0, noshow: 0, booked: 0, not_booked: 0,
     };
-    for (const p of people) {
+    for (const p of dateScopedPeople) {
       for (const b of BUCKETS) if (b.filter(p)) c[b.key]++;
     }
     return c;
-  }, [people]);
+  }, [dateScopedPeople]);
 
   const money = useMemo(() => {
     let slo = 0, main = 0;
-    for (const p of people) {
+    for (const p of dateScopedPeople) {
       if (p.bought_slo && p.slo_amount) slo += Number(p.slo_amount);
       if (p.bought_main && p.main_amount) main += Number(p.main_amount);
     }
     return { slo, main, total: slo + main };
-  }, [people]);
+  }, [dateScopedPeople]);
 
   // ---- failed-payments stats ----------------------------------------------
   const attemptsStats = useMemo(() => {
     let lostSlo = 0, lostMain = 0, lostOther = 0;
     const byStatus: Record<string, number> = {};
-    for (const a of attempts) {
+    for (const a of dateScopedAttempts) {
       const amt = Number(a.amount || 0);
       if (a.product_label === 'SLO') lostSlo += amt;
       else if (a.product_label === 'Main') lostMain += amt;
@@ -214,25 +275,25 @@ const LukeDataTab: React.FC = () => {
       byStatus[s] = (byStatus[s] || 0) + 1;
     }
     return { lostSlo, lostMain, lostOther, lostTotal: lostSlo + lostMain + lostOther, byStatus };
-  }, [attempts]);
+  }, [dateScopedAttempts]);
 
   const filteredAttempts = useMemo(() => {
     const q = search.trim().toLowerCase();
-    if (!q) return attempts;
-    return attempts.filter((a) => {
+    if (!q) return dateScopedAttempts;
+    return dateScopedAttempts.filter((a) => {
       const hay = [
         a.email, a.first_name, a.last_name, a.phone, a.instagram_handle,
         a.product_label, a.status, a.failure_reason,
       ].filter(Boolean).join(' ').toLowerCase();
       return hay.includes(q);
     });
-  }, [attempts, search]);
+  }, [dateScopedAttempts, search]);
 
   // ---- filter table --------------------------------------------------------
   const filtered = useMemo(() => {
     const bucket = BUCKETS.find((b) => b.key === activeBucket);
     const q = search.trim().toLowerCase();
-    return people.filter((p) => {
+    return dateScopedPeople.filter((p) => {
       if (bucket && !bucket.filter(p)) return false;
       if (!q) return true;
       const hay = [
@@ -241,7 +302,7 @@ const LukeDataTab: React.FC = () => {
       ].filter(Boolean).join(' ').toLowerCase();
       return hay.includes(q);
     });
-  }, [people, activeBucket, search]);
+  }, [dateScopedPeople, activeBucket, search]);
 
   // ---- csv export ----------------------------------------------------------
   const esc = (v: unknown) => {
@@ -354,23 +415,38 @@ const LukeDataTab: React.FC = () => {
       </div>
 
       {/* view toggle: people vs. failed payments */}
-      <div className="flex gap-1 flex-shrink-0 bg-[#1a1a1a] rounded-lg p-1 self-start">
-        <button
-          onClick={() => setView('people')}
-          className={`flex items-center gap-1.5 px-4 py-1.5 rounded-md text-xs font-medium transition-colors ${
-            view === 'people' ? 'bg-[#2a2a2a] text-[#ECECEC]' : 'text-[#666] hover:text-[#999]'
-          }`}
-        >
-          <Users size={12} /> People <span className="text-[#555]">· {people.length}</span>
-        </button>
-        <button
-          onClick={() => setView('failed')}
-          className={`flex items-center gap-1.5 px-4 py-1.5 rounded-md text-xs font-medium transition-colors ${
-            view === 'failed' ? 'bg-[#2a2a2a] text-[#ECECEC]' : 'text-[#666] hover:text-[#999]'
-          }`}
-        >
-          <XCircle size={12} /> Failed payments <span className={attempts.length > 0 ? 'text-rose-400' : 'text-[#555]'}>· {attempts.length}</span>
-        </button>
+      <div className="flex items-center justify-between gap-3 flex-shrink-0">
+        <div className="flex gap-1 bg-[#1a1a1a] rounded-lg p-1">
+          <button
+            onClick={() => setView('people')}
+            className={`flex items-center gap-1.5 px-4 py-1.5 rounded-md text-xs font-medium transition-colors ${
+              view === 'people' ? 'bg-[#2a2a2a] text-[#ECECEC]' : 'text-[#666] hover:text-[#999]'
+            }`}
+          >
+            <Users size={12} /> People <span className="text-[#555]">· {dateScopedPeople.length}</span>
+          </button>
+          <button
+            onClick={() => setView('failed')}
+            className={`flex items-center gap-1.5 px-4 py-1.5 rounded-md text-xs font-medium transition-colors ${
+              view === 'failed' ? 'bg-[#2a2a2a] text-[#ECECEC]' : 'text-[#666] hover:text-[#999]'
+            }`}
+          >
+            <XCircle size={12} /> Failed payments <span className={dateScopedAttempts.length > 0 ? 'text-rose-400' : 'text-[#555]'}>· {dateScopedAttempts.length}</span>
+          </button>
+        </div>
+        <div className="flex gap-1 bg-[#1a1a1a] rounded-lg p-1">
+          {DATE_RANGES.map((r) => (
+            <button
+              key={r.key}
+              onClick={() => setDateRange(r.key)}
+              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                dateRange === r.key ? 'bg-[#2a2a2a] text-[#ECECEC]' : 'text-[#666] hover:text-[#999]'
+              }`}
+            >
+              {r.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {view === 'people' ? (
@@ -379,7 +455,7 @@ const LukeDataTab: React.FC = () => {
           <div className="grid grid-cols-3 gap-2 flex-shrink-0">
             <RevenueCard label="SLO revenue" value={fmtMoney(money.slo)} sub={`${counts.slo} buyers`} />
             <RevenueCard label="Main revenue" value={fmtMoney(money.main)} sub={`${counts.main} buyers`} />
-            <RevenueCard label="Total" value={fmtMoney(money.total)} sub={`${people.length} people tracked`} emphasized />
+            <RevenueCard label="Total" value={fmtMoney(money.total)} sub={`${dateScopedPeople.length} people tracked`} emphasized />
           </div>
 
           {/* KPI cards — the 9 buckets */}
