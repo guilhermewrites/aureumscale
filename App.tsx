@@ -20,6 +20,8 @@ import ArnasGintalasFunnel from './components/ArnasGintalasFunnel';
 import AureumWebinarsFunnel from './components/AureumWebinarsFunnel';
 import LukeAlexanderFunnel from './components/LukeAlexanderFunnel';
 import LukeDataTab from './components/LukeDataTab';
+import TheresaTheReaderFunnel from './components/TheresaTheReaderFunnel';
+import TheresaDataTab from './components/TheresaDataTab';
 import CalendarManager from './components/CalendarManager';
 import MentorManager from './components/MentorManager';
 import AIBubble from './components/AIBubble';
@@ -47,6 +49,8 @@ const routeToNav: Record<string, NavigationItem> = {
   '/aureum-webinars': NavigationItem.AUREUM_WEBINARS,
   '/luke-alexander': NavigationItem.LUKE_ALEXANDER,
   '/luke-alexander/data': NavigationItem.LUKE_ALEXANDER_DATA,
+  '/theresa-the-reader': NavigationItem.THERESA_THE_READER,
+  '/theresa-the-reader/data': NavigationItem.THERESA_THE_READER_DATA,
   '/calendar': NavigationItem.CALENDAR,
   '/mentor': NavigationItem.MENTOR,
 };
@@ -1006,6 +1010,16 @@ const AuthenticatedApp: React.FC<{ user: User; signOut: () => Promise<void> }> =
                 <p className="text-xs text-[#555] mt-0.5">Leads, buyers, attendance, Calendly & failed payments</p>
               </div>
               <LukeDataTab />
+            </div>
+          } />
+          <Route path="/theresa-the-reader" element={<TheresaTheReaderFunnel storagePrefix={storagePrefix} />} />
+          <Route path="/theresa-the-reader/data" element={
+            <div className="h-full flex flex-col">
+              <div className="mb-3 flex-shrink-0">
+                <h1 className="text-lg font-semibold text-[#ECECEC]">Theresa The Reader — Data</h1>
+                <p className="text-xs text-[#555] mt-0.5">Quiz starts, completions, reveals, offer views & purchases</p>
+              </div>
+              <TheresaDataTab />
             </div>
           } />
           <Route path="/calendar" element={<CalendarManager storagePrefix={storagePrefix} />} />

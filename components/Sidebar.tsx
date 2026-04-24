@@ -45,6 +45,8 @@ const navToRoute: Record<string, string> = {
   [NavigationItem.AUREUM_WEBINARS]: '/aureum-webinars',
   [NavigationItem.LUKE_ALEXANDER]: '/luke-alexander',
   [NavigationItem.LUKE_ALEXANDER_DATA]: '/luke-alexander/data',
+  [NavigationItem.THERESA_THE_READER]: '/theresa-the-reader',
+  [NavigationItem.THERESA_THE_READER_DATA]: '/theresa-the-reader/data',
   [NavigationItem.CALENDAR]: '/calendar',
   [NavigationItem.MENTOR]: '/mentor',
 };
@@ -63,6 +65,8 @@ const routeToNavItem: Record<string, NavigationItem> = {
   '/aureum-webinars': NavigationItem.AUREUM_WEBINARS,
   '/luke-alexander': NavigationItem.LUKE_ALEXANDER,
   '/luke-alexander/data': NavigationItem.LUKE_ALEXANDER_DATA,
+  '/theresa-the-reader': NavigationItem.THERESA_THE_READER,
+  '/theresa-the-reader/data': NavigationItem.THERESA_THE_READER_DATA,
   '/calendar': NavigationItem.CALENDAR,
   '/mentor': NavigationItem.MENTOR,
 };
@@ -138,9 +142,12 @@ const Sidebar: React.FC<SidebarProps> = ({ activeUserId, onUserChange, collapsed
     if (path.startsWith('/clients')) return NavigationItem.CLIENTS;
     if (path === '/luke-alexander/data') return NavigationItem.LUKE_ALEXANDER_DATA;
     if (path.startsWith('/luke-alexander')) return NavigationItem.LUKE_ALEXANDER;
+    if (path === '/theresa-the-reader/data') return NavigationItem.THERESA_THE_READER_DATA;
+    if (path.startsWith('/theresa-the-reader')) return NavigationItem.THERESA_THE_READER;
     return routeToNavItem[path] || NavigationItem.DASHBOARD;
   })();
   const lukeOpen = location.pathname.startsWith('/luke-alexander');
+  const theresaOpen = location.pathname.startsWith('/theresa-the-reader');
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const [users, setUsers] = useLocalStorage<AppUser[]>('writestakeover_users', DEFAULT_USERS);
   const [customLogo, setCustomLogo] = useLocalStorage<string | null>('aureum_custom_logo', null);
@@ -283,6 +290,15 @@ const Sidebar: React.FC<SidebarProps> = ({ activeUserId, onUserChange, collapsed
         open: lukeOpen,
         items: [
           { id: NavigationItem.LUKE_ALEXANDER_DATA, icon: BarChart3, label: 'Data' },
+        ],
+      },
+    },
+    {
+      id: NavigationItem.THERESA_THE_READER, icon: Globe, label: 'Theresa The Reader',
+      children: {
+        open: theresaOpen,
+        items: [
+          { id: NavigationItem.THERESA_THE_READER_DATA, icon: BarChart3, label: 'Data' },
         ],
       },
     },
