@@ -22,6 +22,7 @@ import {
   CalendarDays,
   Brain,
   Target,
+  BarChart3,
 } from 'lucide-react';
 import { NavigationItem, AppUser } from '../types';
 import useLocalStorage from '../hooks/useLocalStorage';
@@ -43,6 +44,7 @@ const navToRoute: Record<string, string> = {
   [NavigationItem.ARNAS_GINTALAS]: '/arnas-gintalas',
   [NavigationItem.AUREUM_WEBINARS]: '/aureum-webinars',
   [NavigationItem.LUKE_ALEXANDER]: '/luke-alexander',
+  [NavigationItem.LUKE_ALEXANDER_DATA]: '/luke-alexander/data',
   [NavigationItem.CALENDAR]: '/calendar',
   [NavigationItem.MENTOR]: '/mentor',
 };
@@ -59,6 +61,8 @@ const routeToNavItem: Record<string, NavigationItem> = {
   '/general-room': NavigationItem.GENERAL_ROOM,
   '/arnas-gintalas': NavigationItem.ARNAS_GINTALAS,
   '/aureum-webinars': NavigationItem.AUREUM_WEBINARS,
+  '/luke-alexander': NavigationItem.LUKE_ALEXANDER,
+  '/luke-alexander/data': NavigationItem.LUKE_ALEXANDER_DATA,
   '/calendar': NavigationItem.CALENDAR,
   '/mentor': NavigationItem.MENTOR,
 };
@@ -132,8 +136,11 @@ const Sidebar: React.FC<SidebarProps> = ({ activeUserId, onUserChange, collapsed
   const activeItem = (() => {
     const path = location.pathname;
     if (path.startsWith('/clients')) return NavigationItem.CLIENTS;
+    if (path === '/luke-alexander/data') return NavigationItem.LUKE_ALEXANDER_DATA;
+    if (path.startsWith('/luke-alexander')) return NavigationItem.LUKE_ALEXANDER;
     return routeToNavItem[path] || NavigationItem.DASHBOARD;
   })();
+  const lukeOpen = location.pathname.startsWith('/luke-alexander');
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const [users, setUsers] = useLocalStorage<AppUser[]>('writestakeover_users', DEFAULT_USERS);
   const [customLogo, setCustomLogo] = useLocalStorage<string | null>('aureum_custom_logo', null);
@@ -264,10 +271,21 @@ const Sidebar: React.FC<SidebarProps> = ({ activeUserId, onUserChange, collapsed
     { id: NavigationItem.MENTOR, icon: Brain, label: 'Mentor' },
   ];
 
-  const funnelItems = [
+  type FunnelChild = { id: NavigationItem; icon: React.ComponentType<{ size?: number; strokeWidth?: number; className?: string }>; label: string };
+  type FunnelItem = FunnelChild & { children?: { items: FunnelChild[]; open: boolean } };
+
+  const funnelItems: FunnelItem[] = [
     { id: NavigationItem.ARNAS_GINTALAS, icon: Globe, label: 'Arnas Gintalas' },
     { id: NavigationItem.AUREUM_WEBINARS, icon: Globe, label: 'Aureum Webinars' },
-    { id: NavigationItem.LUKE_ALEXANDER, icon: Globe, label: 'Luke Alexander' },
+    {
+      id: NavigationItem.LUKE_ALEXANDER, icon: Globe, label: 'Luke Alexander',
+      children: {
+        open: lukeOpen,
+        items: [
+          { id: NavigationItem.LUKE_ALEXANDER_DATA, icon: BarChart3, label: 'Data' },
+        ],
+      },
+    },
   ];
 
   return (
@@ -336,20 +354,44 @@ const Sidebar: React.FC<SidebarProps> = ({ activeUserId, onUserChange, collapsed
               {funnelItems.map((item) => {
                 const isActive = activeItem === item.id;
                 return (
-                  <button
-                    key={item.id}
-                    onClick={() => navigate(navToRoute[item.id] || '/dashboard')}
-                    className={`w-full flex items-center gap-4 px-3 py-3 rounded-lg transition-none group ${
-                      isActive ? 'text-[#ECECEC]' : 'text-[#888] hover:text-[#ECECEC]'
-                    }`}
-                  >
-                    <item.icon
-                      size={18}
-                      strokeWidth={1.75}
-                      className={isActive ? 'text-[#ECECEC]' : 'text-[#888] group-hover:text-[#ECECEC]'}
-                    />
-                    <span className="text-[15px] font-normal tracking-[-0.01em]">{item.label}</span>
-                  </button>
+                  <React.Fragment key={item.id}>
+                    <button
+                      onClick={() => navigate(navToRoute[item.id] || '/dashboard')}
+                      className={`w-full flex items-center gap-4 px-3 py-3 rounded-lg transition-none group ${
+                        isActive ? 'text-[#ECECEC]' : 'text-[#888] hover:text-[#ECECEC]'
+                      }`}
+                    >
+                      <item.icon
+                        size={18}
+                        strokeWidth={1.75}
+                        className={isActive ? 'text-[#ECECEC]' : 'text-[#888] group-hover:text-[#ECECEC]'}
+                      />
+                      <span className="text-[15px] font-normal tracking-[-0.01em]">{item.label}</span>
+                    </button>
+                    {item.children?.open && (
+                      <div className="ml-3 pl-4 border-l border-[#2a2a2a] space-y-0">
+                        {item.children.items.map((child) => {
+                          const childActive = activeItem === child.id;
+                          return (
+                            <button
+                              key={child.id}
+                              onClick={() => navigate(navToRoute[child.id] || '/dashboard')}
+                              className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-none group ${
+                                childActive ? 'text-[#ECECEC]' : 'text-[#777] hover:text-[#ECECEC]'
+                              }`}
+                            >
+                              <child.icon
+                                size={14}
+                                strokeWidth={1.75}
+                                className={childActive ? 'text-[#ECECEC]' : 'text-[#777] group-hover:text-[#ECECEC]'}
+                              />
+                              <span className="text-[13px] font-normal tracking-[-0.01em]">{child.label}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </React.Fragment>
                 );
               })}
             </div>
@@ -358,18 +400,34 @@ const Sidebar: React.FC<SidebarProps> = ({ activeUserId, onUserChange, collapsed
         {collapsed && (
           <div className="mt-4 pt-4 border-t border-[#2a2a2a] space-y-0">
             {funnelItems.map((item) => {
-              const isActive = activeItem === item.id;
+              const isActive = activeItem === item.id || (item.children?.items.some(c => c.id === activeItem) ?? false);
               return (
-                <button
-                  key={item.id}
-                  onClick={() => navigate(navToRoute[item.id] || '/dashboard')}
-                  title={item.label}
-                  className={`w-full flex items-center justify-center px-2 py-3 rounded-lg transition-none ${
-                    isActive ? 'text-[#ECECEC]' : 'text-[#888] hover:text-[#ECECEC]'
-                  }`}
-                >
-                  <item.icon size={18} strokeWidth={1.75} />
-                </button>
+                <React.Fragment key={item.id}>
+                  <button
+                    onClick={() => navigate(navToRoute[item.id] || '/dashboard')}
+                    title={item.label}
+                    className={`w-full flex items-center justify-center px-2 py-3 rounded-lg transition-none ${
+                      isActive ? 'text-[#ECECEC]' : 'text-[#888] hover:text-[#ECECEC]'
+                    }`}
+                  >
+                    <item.icon size={18} strokeWidth={1.75} />
+                  </button>
+                  {item.children?.open && item.children.items.map((child) => {
+                    const childActive = activeItem === child.id;
+                    return (
+                      <button
+                        key={child.id}
+                        onClick={() => navigate(navToRoute[child.id] || '/dashboard')}
+                        title={child.label}
+                        className={`w-full flex items-center justify-center px-2 py-2 rounded-lg transition-none ${
+                          childActive ? 'text-[#ECECEC]' : 'text-[#777] hover:text-[#ECECEC]'
+                        }`}
+                      >
+                        <child.icon size={14} strokeWidth={1.75} />
+                      </button>
+                    );
+                  })}
+                </React.Fragment>
               );
             })}
           </div>

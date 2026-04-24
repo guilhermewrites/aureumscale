@@ -19,6 +19,7 @@ import GeneralRoom from './components/GeneralRoom';
 import ArnasGintalasFunnel from './components/ArnasGintalasFunnel';
 import AureumWebinarsFunnel from './components/AureumWebinarsFunnel';
 import LukeAlexanderFunnel from './components/LukeAlexanderFunnel';
+import LukeDataTab from './components/LukeDataTab';
 import CalendarManager from './components/CalendarManager';
 import MentorManager from './components/MentorManager';
 import AIBubble from './components/AIBubble';
@@ -45,6 +46,7 @@ const routeToNav: Record<string, NavigationItem> = {
   '/arnas-gintalas': NavigationItem.ARNAS_GINTALAS,
   '/aureum-webinars': NavigationItem.AUREUM_WEBINARS,
   '/luke-alexander': NavigationItem.LUKE_ALEXANDER,
+  '/luke-alexander/data': NavigationItem.LUKE_ALEXANDER_DATA,
   '/calendar': NavigationItem.CALENDAR,
   '/mentor': NavigationItem.MENTOR,
 };
@@ -997,6 +999,15 @@ const AuthenticatedApp: React.FC<{ user: User; signOut: () => Promise<void> }> =
           <Route path="/arnas-gintalas" element={<ArnasGintalasFunnel storagePrefix={storagePrefix} />} />
           <Route path="/aureum-webinars" element={<AureumWebinarsFunnel storagePrefix={storagePrefix} />} />
           <Route path="/luke-alexander" element={<LukeAlexanderFunnel storagePrefix={storagePrefix} />} />
+          <Route path="/luke-alexander/data" element={
+            <div className="h-full flex flex-col">
+              <div className="mb-3 flex-shrink-0">
+                <h1 className="text-lg font-semibold text-[#ECECEC]">Luke Alexander — Data</h1>
+                <p className="text-xs text-[#555] mt-0.5">Leads, buyers, attendance, Calendly & failed payments</p>
+              </div>
+              <LukeDataTab />
+            </div>
+          } />
           <Route path="/calendar" element={<CalendarManager storagePrefix={storagePrefix} />} />
           <Route path="/mentor" element={<MentorManager storagePrefix={storagePrefix} />} />
           <Route path="*" element={<Navigate to="/dashboard" replace />} />

@@ -53,6 +53,7 @@ export enum NavigationItem {
   ARNAS_GINTALAS = 'Arnas Gintalas',
   AUREUM_WEBINARS = 'Aureum Webinars',
   LUKE_ALEXANDER = 'Luke Alexander',
+  LUKE_ALEXANDER_DATA = 'Luke Alexander — Data',
   CALENDAR = 'Calendar',
   MENTOR = 'Mentor',
   // Legacy (kept to avoid breaking existing data)
