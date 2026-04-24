@@ -143,6 +143,8 @@ const LukeDataTab: React.FC = () => {
   const [search, setSearch] = useState('');
   const [view, setView] = useState<ViewMode>('people');
   const [dateRange, setDateRange] = useState<DateRange>('all');
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [hideRecovered, setHideRecovered] = useState(true);
 
   // ---- data load -----------------------------------------------------------
   const load = useCallback(async () => {
@@ -216,18 +218,29 @@ const LukeDataTab: React.FC = () => {
   }, [canSync, syncUrl, syncToken, load]);
 
   // ---- date-scoped slice (used by every derived stat below) --------------
-  // Uses created_at as a proxy for "when this person entered the pipeline".
-  // Purchases that happened after the range start keep the person in view
-  // too, so buyers don't drop off the chart when a short range is selected.
+  // A person is "in window" if ANY real activity timestamp falls inside it:
+  //   - SLO / Main purchase
+  //   - Calendly booking
+  //   - WebinarJam event they registered for (latest entry in wj_event_times)
+  // We deliberately ignore luke_people.created_at because that's the sync time,
+  // not the time they entered Luke's pipeline — using it collapses every date
+  // range into "Everyone" right after a sync.
   const dateScopedPeople = useMemo(() => {
     const start = rangeStart(dateRange);
     if (!start) return people;
     const s = start.getTime();
+    const toMs = (v: string | null | undefined) => (v ? new Date(v).getTime() : 0);
     return people.filter((p) => {
-      const created = p.created_at ? new Date(p.created_at).getTime() : 0;
-      const sloAt   = p.slo_purchase_date ? new Date(p.slo_purchase_date).getTime() : 0;
-      const mainAt  = p.main_purchase_date ? new Date(p.main_purchase_date).getTime() : 0;
-      return Math.max(created, sloAt, mainAt) >= s;
+      const sloAt    = toMs(p.slo_purchase_date);
+      const mainAt   = toMs(p.main_purchase_date);
+      const calAt    = toMs(p.calendly_booking_time);
+      let wjAt = 0;
+      for (const t of p.wj_event_times || []) {
+        const v = toMs(t);
+        if (v > wjAt) wjAt = v;
+      }
+      const latest = Math.max(sloAt, mainAt, calAt, wjAt);
+      return latest >= s;
     });
   }, [people, dateRange]);
 
@@ -262,39 +275,113 @@ const LukeDataTab: React.FC = () => {
     return { slo, main, total: slo + main };
   }, [dateScopedPeople]);
 
+  // ---- recovery map: for each buyer email, which products they eventually
+  //       paid for. Used to stamp failed-payment rows as "recovered" when the
+  //       same person later completed the purchase. An SLO attempt only counts
+  //       as recovered if the person has bought_slo; same for Main.
+  const buyersByProduct = useMemo(() => {
+    const slo = new Set<string>();
+    const main = new Set<string>();
+    for (const p of people) {
+      const k = (p.email || '').toLowerCase();
+      if (!k) continue;
+      if (p.bought_slo)  slo.add(k);
+      if (p.bought_main) main.add(k);
+    }
+    return { slo, main };
+  }, [people]);
+
+  const isRecovered = useCallback((a: PaymentAttempt): boolean => {
+    const k = (a.email || '').toLowerCase();
+    if (!k) return false;
+    if (a.product_label === 'SLO')  return buyersByProduct.slo.has(k);
+    if (a.product_label === 'Main') return buyersByProduct.main.has(k);
+    return false;
+  }, [buyersByProduct]);
+
   // ---- failed-payments stats ----------------------------------------------
+  // Lost revenue only counts UNRECOVERED attempts — a failed card that later
+  // succeeded on a second try isn't actually lost money. Recovered count is
+  // reported separately so Luke sees the recovery rate.
   const attemptsStats = useMemo(() => {
     let lostSlo = 0, lostMain = 0, lostOther = 0;
+    let recoveredCount = 0, unrecoveredCount = 0;
     const byStatus: Record<string, number> = {};
     for (const a of dateScopedAttempts) {
       const amt = Number(a.amount || 0);
-      if (a.product_label === 'SLO') lostSlo += amt;
-      else if (a.product_label === 'Main') lostMain += amt;
-      else lostOther += amt;
+      const recovered = isRecovered(a);
+      if (recovered) {
+        recoveredCount++;
+      } else {
+        unrecoveredCount++;
+        if (a.product_label === 'SLO')      lostSlo += amt;
+        else if (a.product_label === 'Main') lostMain += amt;
+        else                                  lostOther += amt;
+      }
       const s = a.status || 'unknown';
       byStatus[s] = (byStatus[s] || 0) + 1;
     }
-    return { lostSlo, lostMain, lostOther, lostTotal: lostSlo + lostMain + lostOther, byStatus };
-  }, [dateScopedAttempts]);
+    return {
+      lostSlo, lostMain, lostOther,
+      lostTotal: lostSlo + lostMain + lostOther,
+      recoveredCount, unrecoveredCount,
+      byStatus,
+    };
+  }, [dateScopedAttempts, isRecovered]);
 
   const filteredAttempts = useMemo(() => {
     const q = search.trim().toLowerCase();
-    if (!q) return dateScopedAttempts;
     return dateScopedAttempts.filter((a) => {
+      if (hideRecovered && isRecovered(a)) return false;
+      if (!q) return true;
       const hay = [
         a.email, a.first_name, a.last_name, a.phone, a.instagram_handle,
         a.product_label, a.status, a.failure_reason,
       ].filter(Boolean).join(' ').toLowerCase();
       return hay.includes(q);
     });
-  }, [dateScopedAttempts, search]);
+  }, [dateScopedAttempts, search, hideRecovered, isRecovered]);
+
+  // ---- tag index -----------------------------------------------------------
+  // Every unique Kit tag seen in the current date slice, with a count of
+  // people carrying it. Sorted by count desc so the noisy tags are at the
+  // front of the strip.
+  const tagIndex = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const p of dateScopedPeople) {
+      for (const t of p.kit_tags || []) {
+        if (!t) continue;
+        counts.set(t, (counts.get(t) || 0) + 1);
+      }
+    }
+    return Array.from(counts.entries())
+      .sort((a, b) => b[1] - a[1])
+      .map(([tag, count]) => ({ tag, count }));
+  }, [dateScopedPeople]);
+
+  // When the date range changes, prune any selected tags that no longer exist
+  // in the slice so the filter doesn't silently zero out the table.
+  useEffect(() => {
+    if (selectedTags.length === 0) return;
+    const present = new Set(tagIndex.map((t) => t.tag));
+    const kept = selectedTags.filter((t) => present.has(t));
+    if (kept.length !== selectedTags.length) setSelectedTags(kept);
+  }, [tagIndex, selectedTags]);
 
   // ---- filter table --------------------------------------------------------
+  // Tag filter uses OR semantics (match any selected tag) — cheaper mental
+  // model than AND for the typical "export everyone tagged SLO Buyer OR
+  // workshop-registered" use case.
   const filtered = useMemo(() => {
     const bucket = BUCKETS.find((b) => b.key === activeBucket);
     const q = search.trim().toLowerCase();
+    const tagSet = selectedTags.length ? new Set(selectedTags) : null;
     return dateScopedPeople.filter((p) => {
       if (bucket && !bucket.filter(p)) return false;
+      if (tagSet) {
+        const has = (p.kit_tags || []).some((t) => tagSet.has(t));
+        if (!has) return false;
+      }
       if (!q) return true;
       const hay = [
         p.email, p.first_name, p.last_name, p.phone, p.close_status,
@@ -302,7 +389,7 @@ const LukeDataTab: React.FC = () => {
       ].filter(Boolean).join(' ').toLowerCase();
       return hay.includes(q);
     });
-  }, [dateScopedPeople, activeBucket, search]);
+  }, [dateScopedPeople, activeBucket, search, selectedTags]);
 
   // ---- csv export ----------------------------------------------------------
   const esc = (v: unknown) => {
@@ -323,7 +410,7 @@ const LukeDataTab: React.FC = () => {
 
   const exportCsv = () => {
     if (view === 'failed') {
-      const cols: { key: keyof PaymentAttempt; label: string }[] = [
+      const cols: { key: keyof PaymentAttempt | 'recovered'; label: string }[] = [
         { key: 'first_name', label: 'First' },
         { key: 'last_name', label: 'Last' },
         { key: 'email', label: 'Email' },
@@ -333,13 +420,17 @@ const LukeDataTab: React.FC = () => {
         { key: 'amount', label: 'Amount' },
         { key: 'currency', label: 'Currency' },
         { key: 'status', label: 'Status' },
+        { key: 'recovered', label: 'Recovered?' },
         { key: 'failure_reason', label: 'Failure reason' },
         { key: 'attempted_at', label: 'Attempted at' },
         { key: 'whop_payment_id', label: 'Whop payment ID' },
       ];
       const lines = [cols.map((c) => c.label).join(',')];
       for (const a of filteredAttempts) {
-        lines.push(cols.map((c) => esc((a as any)[c.key])).join(','));
+        lines.push(cols.map((c) => {
+          if (c.key === 'recovered') return esc(isRecovered(a) ? 'Yes' : 'No');
+          return esc((a as any)[c.key]);
+        }).join(','));
       }
       download(
         `luke-failed-payments-${new Date().toISOString().slice(0, 10)}.csv`,
@@ -347,11 +438,12 @@ const LukeDataTab: React.FC = () => {
       );
       return;
     }
-    const cols: { key: keyof Person | 'full_name'; label: string }[] = [
+    const cols: { key: keyof Person | 'full_name' | 'kit_tags_joined'; label: string }[] = [
       { key: 'first_name', label: 'First' },
       { key: 'last_name', label: 'Last' },
       { key: 'email', label: 'Email' },
       { key: 'phone', label: 'Phone' },
+      { key: 'kit_tags_joined', label: 'Tags' },
       { key: 'in_kit', label: 'In Kit' },
       { key: 'in_close', label: 'In Close' },
       { key: 'close_status', label: 'Close status' },
@@ -366,7 +458,10 @@ const LukeDataTab: React.FC = () => {
     ];
     const lines = [cols.map((c) => c.label).join(',')];
     for (const p of filtered) {
-      lines.push(cols.map((c) => esc((p as any)[c.key])).join(','));
+      lines.push(cols.map((c) => {
+        if (c.key === 'kit_tags_joined') return esc((p.kit_tags || []).join('; '));
+        return esc((p as any)[c.key]);
+      }).join(','));
     }
     download(
       `luke-${activeBucket}-${new Date().toISOString().slice(0, 10)}.csv`,
@@ -503,6 +598,46 @@ const LukeDataTab: React.FC = () => {
             </button>
           </div>
 
+          {/* tag filter strip — every Kit tag seen in the current slice */}
+          {tagIndex.length > 0 && (
+            <div className="flex items-center gap-2 flex-shrink-0 flex-wrap">
+              <span className="text-[10px] uppercase tracking-wider text-[#555] mr-1">Tags</span>
+              {selectedTags.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setSelectedTags([])}
+                  className="text-[10px] px-2 py-0.5 rounded-full bg-[#1a1a1a] border border-[#2a2a2a] text-[#888] hover:text-[#ECECEC] hover:border-[#3a3a3a]"
+                >
+                  Clear ({selectedTags.length})
+                </button>
+              )}
+              {tagIndex.slice(0, 40).map(({ tag, count }) => {
+                const on = selectedTags.includes(tag);
+                return (
+                  <button
+                    key={tag}
+                    type="button"
+                    onClick={() =>
+                      setSelectedTags((prev) =>
+                        prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag],
+                      )
+                    }
+                    className={`text-[10px] px-2 py-0.5 rounded-full border transition-colors ${
+                      on
+                        ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-300'
+                        : 'bg-[#1a1a1a] border-[#2a2a2a] text-[#999] hover:text-[#ECECEC] hover:border-[#3a3a3a]'
+                    }`}
+                  >
+                    {tag} <span className={on ? 'text-emerald-400/70' : 'text-[#555]'}>· {count}</span>
+                  </button>
+                );
+              })}
+              {tagIndex.length > 40 && (
+                <span className="text-[10px] text-[#555]">+{tagIndex.length - 40} more (use search)</span>
+              )}
+            </div>
+          )}
+
           {/* table */}
           <div className="flex-1 min-h-0 overflow-auto rounded-lg border border-[#222]">
             <table className="w-full text-xs text-left">
@@ -510,6 +645,7 @@ const LukeDataTab: React.FC = () => {
                 <tr>
                   <Th>Name</Th>
                   <Th>Email</Th>
+                  <Th>Tags</Th>
                   <Th>Kit</Th>
                   <Th>Close</Th>
                   <Th>Registered</Th>
@@ -521,11 +657,11 @@ const LukeDataTab: React.FC = () => {
               </thead>
               <tbody className="text-[#bdbdbd]">
                 {loading ? (
-                  <tr><td colSpan={9} className="p-6 text-center text-[#555]">
+                  <tr><td colSpan={10} className="p-6 text-center text-[#555]">
                     <Loader2 size={14} className="inline-block animate-spin mr-2" /> Loading…
                   </td></tr>
                 ) : filtered.length === 0 ? (
-                  <tr><td colSpan={9} className="p-6 text-center text-[#555]">
+                  <tr><td colSpan={10} className="p-6 text-center text-[#555]">
                     {people.length === 0
                       ? 'No data yet. Click "Refresh now" to pull from WebinarJam, Close, Kit, and Whop.'
                       : 'No rows match this filter.'}
@@ -535,6 +671,20 @@ const LukeDataTab: React.FC = () => {
                     <tr key={p.id} className="border-b border-[#1a1a1a] hover:bg-[#141414]">
                       <Td>{[p.first_name, p.last_name].filter(Boolean).join(' ') || <span className="text-[#444]">—</span>}</Td>
                       <Td><span className="text-[#888]">{p.email}</span></Td>
+                      <Td>
+                        {(p.kit_tags || []).length === 0 ? (
+                          <span className="text-[#444]">—</span>
+                        ) : (
+                          <div className="flex flex-wrap gap-1">
+                            {(p.kit_tags || []).slice(0, 3).map((t) => (
+                              <span key={t} className="text-[10px] px-1.5 py-0.5 rounded-full bg-[#1a1a1a] border border-[#2a2a2a] text-[#aaa]">{t}</span>
+                            ))}
+                            {(p.kit_tags || []).length > 3 && (
+                              <span className="text-[10px] text-[#555]" title={(p.kit_tags || []).slice(3).join(', ')}>+{(p.kit_tags || []).length - 3}</span>
+                            )}
+                          </div>
+                        )}
+                      </Td>
                       <Td><Flag on={p.in_kit} /></Td>
                       <Td>{p.in_close ? <span className="text-[#bdbdbd]">{p.close_status || 'yes'}</span> : <Flag on={false} />}</Td>
                       <Td><Flag on={p.in_webinarjam} /></Td>
@@ -560,15 +710,14 @@ const LukeDataTab: React.FC = () => {
             )}
           </div>
 
-          {/* calendly notice */}
+          {/* calendly notice — only shows if none of the current buyers have booked a call yet */}
           {counts.booked === 0 && counts.slo + counts.main > 0 && (
             <div className="flex-shrink-0 p-3 rounded-lg bg-[#1a1510] border border-amber-800/40 text-xs text-amber-200/80 flex items-start gap-2">
               <AlertCircle size={14} className="flex-shrink-0 mt-0.5 text-amber-400" />
               <div>
-                <p className="font-medium text-amber-200">Calendly isn't connected yet.</p>
+                <p className="font-medium text-amber-200">No buyers have booked a Calendly call yet.</p>
                 <p className="mt-0.5 text-amber-200/60">
-                  Buckets 8 + 9 (buyers with / without a booked call) will stay at 0 until I wire it.
-                  Send me your Calendly Personal Access Token and the event URI for the booking link and I'll plug it in.
+                  Calendly is connected — as soon as a buyer books, buckets 8 + 9 will split out.
                 </p>
               </div>
             </div>
@@ -576,11 +725,17 @@ const LukeDataTab: React.FC = () => {
         </>
       ) : (
         <>
-          {/* lost-revenue strip */}
+          {/* lost-revenue strip — only UNRECOVERED dollars. Recovered attempts
+              (where the same person later completed the purchase) aren't lost. */}
           <div className="grid grid-cols-3 gap-2 flex-shrink-0">
-            <RevenueCard label="Lost SLO" value={fmtMoney(attemptsStats.lostSlo)} sub="failed $27 attempts" />
-            <RevenueCard label="Lost Main" value={fmtMoney(attemptsStats.lostMain)} sub="failed $1,297 attempts" />
-            <RevenueCard label="Lost total" value={fmtMoney(attemptsStats.lostTotal)} sub={`${attempts.length} attempts to recover`} emphasized />
+            <RevenueCard label="Lost SLO" value={fmtMoney(attemptsStats.lostSlo)} sub="$27 attempts still open" />
+            <RevenueCard label="Lost Main" value={fmtMoney(attemptsStats.lostMain)} sub="$1,297 attempts still open" />
+            <RevenueCard
+              label="Recoverable"
+              value={fmtMoney(attemptsStats.lostTotal)}
+              sub={`${attemptsStats.unrecoveredCount} to recover · ${attemptsStats.recoveredCount} already recovered`}
+              emphasized
+            />
           </div>
 
           {/* status breakdown chips */}
@@ -599,7 +754,7 @@ const LukeDataTab: React.FC = () => {
             </div>
           )}
 
-          {/* search + export */}
+          {/* search + recovered toggle + export */}
           <div className="flex items-center gap-2 flex-shrink-0">
             <div className="relative flex-1">
               <Search size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#555]" />
@@ -610,7 +765,19 @@ const LukeDataTab: React.FC = () => {
                 className="w-full pl-8 pr-3 py-1.5 bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg text-xs text-[#ECECEC] placeholder:text-[#555] focus:outline-none focus:border-[#3a3a3a]"
               />
             </div>
-            <span className="text-xs text-[#555]">{filteredAttempts.length} of {attempts.length}</span>
+            <button
+              type="button"
+              onClick={() => setHideRecovered((v) => !v)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors ${
+                hideRecovered
+                  ? 'bg-emerald-500/10 border-emerald-500/40 text-emerald-300 hover:bg-emerald-500/15'
+                  : 'bg-[#1a1a1a] border-[#2a2a2a] text-[#888] hover:text-[#ECECEC]'
+              }`}
+              title="Hide attempts where the same email eventually bought"
+            >
+              {hideRecovered ? 'Showing unrecovered only' : 'Showing all attempts'}
+            </button>
+            <span className="text-xs text-[#555]">{filteredAttempts.length} of {dateScopedAttempts.length}</span>
             <button
               type="button"
               onClick={exportCsv}
@@ -633,24 +800,29 @@ const LukeDataTab: React.FC = () => {
                   <Th>Product</Th>
                   <Th>Amount</Th>
                   <Th>Status</Th>
+                  <Th>Recovered?</Th>
                   <Th>Reason</Th>
                   <Th>Attempted</Th>
                 </tr>
               </thead>
               <tbody className="text-[#bdbdbd]">
                 {loading ? (
-                  <tr><td colSpan={9} className="p-6 text-center text-[#555]">
+                  <tr><td colSpan={10} className="p-6 text-center text-[#555]">
                     <Loader2 size={14} className="inline-block animate-spin mr-2" /> Loading…
                   </td></tr>
                 ) : filteredAttempts.length === 0 ? (
-                  <tr><td colSpan={9} className="p-6 text-center text-[#555]">
+                  <tr><td colSpan={10} className="p-6 text-center text-[#555]">
                     {attempts.length === 0
                       ? 'No failed payments yet. Click "Refresh now" to pull from Whop.'
-                      : 'No rows match this filter.'}
+                      : hideRecovered
+                        ? 'Everyone already bought. Toggle "Showing unrecovered only" off to see recovered attempts too.'
+                        : 'No rows match this filter.'}
                   </td></tr>
                 ) : (
-                  filteredAttempts.slice(0, 500).map((a) => (
-                    <tr key={a.id} className="border-b border-[#1a1a1a] hover:bg-[#141414]">
+                  filteredAttempts.slice(0, 500).map((a) => {
+                    const recovered = isRecovered(a);
+                    return (
+                    <tr key={a.id} className={`border-b border-[#1a1a1a] hover:bg-[#141414] ${recovered ? 'opacity-60' : ''}`}>
                       <Td>{[a.first_name, a.last_name].filter(Boolean).join(' ') || <span className="text-[#444]">—</span>}</Td>
                       <Td><span className="text-[#888]">{a.email || <span className="text-[#444]">—</span>}</span></Td>
                       <Td>
@@ -682,6 +854,17 @@ const LukeDataTab: React.FC = () => {
                         </span>
                       </Td>
                       <Td>
+                        {recovered ? (
+                          <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-emerald-950/40 text-emerald-300 border border-emerald-900/40">
+                            <CheckCircle2 size={10} /> Yes
+                          </span>
+                        ) : (
+                          <span className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-[#1a1a1a] text-[#888] border border-[#2a2a2a]">
+                            Open
+                          </span>
+                        )}
+                      </Td>
+                      <Td>
                         {a.failure_reason ? (
                           <span className="text-[#888]" title={a.failure_reason}>
                             {a.failure_reason.length > 50 ? a.failure_reason.slice(0, 50) + '…' : a.failure_reason}
@@ -690,7 +873,8 @@ const LukeDataTab: React.FC = () => {
                       </Td>
                       <Td>{a.attempted_at ? <span className="text-[#888]">{formatDate(a.attempted_at)}</span> : <span className="text-[#444]">—</span>}</Td>
                     </tr>
-                  ))
+                    );
+                  })
                 )}
               </tbody>
             </table>
