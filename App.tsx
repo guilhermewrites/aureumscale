@@ -1007,7 +1007,7 @@ const AuthenticatedApp: React.FC<{ user: User; signOut: () => Promise<void> }> =
             <div className="h-full flex flex-col">
               <div className="mb-3 flex-shrink-0">
                 <h1 className="text-lg font-semibold text-[#ECECEC]">Luke Alexander — Data</h1>
-                <p className="text-xs text-[#555] mt-0.5">Leads, buyers, attendance, Calendly & failed payments</p>
+                <p className="text-xs text-[#555] mt-0.5">Leads, buyers, attendance, Calendly, profit & failed payments</p>
               </div>
               <LukeDataTab />
             </div>

@@ -20,9 +20,13 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Users, UserCheck, UserX, DollarSign, Crown, Calendar, CalendarX,
   RefreshCw, CheckCircle2, AlertCircle, Search, Download, Loader2,
-  Mail, XCircle, Instagram,
+  Mail, XCircle, Instagram, TrendingUp, Target, Pencil, Check, X,
 } from 'lucide-react';
 import { supabase } from '../services/supabaseClient';
+
+// Approximate Stripe + Whop fee blend used for net-cash math.
+const PROCESSING_FEE_RATE = 0.05;
+const AD_SPEND_KEY = 'aureum_luke_ad_spend_v2';
 
 // ---------------------------------------------------------------- types
 
@@ -145,6 +149,19 @@ const LukeDataTab: React.FC = () => {
   const [dateRange, setDateRange] = useState<DateRange>('all');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [hideRecovered, setHideRecovered] = useState(true);
+
+  // Per-range ad spend, persisted to localStorage. Meta API token doesn't have
+  // ads_read scope, so this is maintained manually from Luke's Ads Manager.
+  // Default seed values come from the Apr 24, 2026 Ads Manager reconciliation.
+  const [adSpendByRange, setAdSpendByRange] = useState<Record<DateRange, number>>(() => {
+    try {
+      const raw = localStorage.getItem(AD_SPEND_KEY);
+      if (raw) return JSON.parse(raw);
+    } catch { /* ignore */ }
+    return { all: 9896.20, today: 0, '7d': 0, '30d': 9896.20, '90d': 9896.20 };
+  });
+  const [editingSpend, setEditingSpend] = useState(false);
+  const [spendDraft, setSpendDraft] = useState('');
 
   // ---- data load -----------------------------------------------------------
   const load = useCallback(async () => {
@@ -274,6 +291,65 @@ const LukeDataTab: React.FC = () => {
     }
     return { slo, main, total: slo + main };
   }, [dateScopedPeople]);
+
+  // ---- profit breakdown (webinar = in_kit, organic = NOT in_kit) -----------
+  // Webinar revenue is the only revenue we credit ads with — everyone else
+  // came in through some other path (Whop direct, social, etc.).
+  const profit = useMemo(() => {
+    let webSlo = 0, webMain = 0, orgSlo = 0, orgMain = 0;
+    let webSloN = 0, webMainN = 0, orgSloN = 0, orgMainN = 0;
+    const webBuyers = new Set<string>();
+    const orgBuyers = new Set<string>();
+    for (const p of dateScopedPeople) {
+      if (!p.bought_slo && !p.bought_main) continue;
+      const k = (p.email || p.id).toLowerCase();
+      if (p.in_kit) {
+        if (p.bought_slo)  { webSlo  += Number(p.slo_amount  || 0); webSloN++;  webBuyers.add(k); }
+        if (p.bought_main) { webMain += Number(p.main_amount || 0); webMainN++; webBuyers.add(k); }
+      } else {
+        if (p.bought_slo)  { orgSlo  += Number(p.slo_amount  || 0); orgSloN++;  orgBuyers.add(k); }
+        if (p.bought_main) { orgMain += Number(p.main_amount || 0); orgMainN++; orgBuyers.add(k); }
+      }
+    }
+    const webRev = webSlo + webMain;
+    const orgRev = orgSlo + orgMain;
+    return {
+      webSlo, webMain, orgSlo, orgMain,
+      webSloN, webMainN, orgSloN, orgMainN,
+      webRev, orgRev, totalRev: webRev + orgRev,
+      webBuyers: webBuyers.size, orgBuyers: orgBuyers.size,
+    };
+  }, [dateScopedPeople]);
+
+  const adSpend = adSpendByRange[dateRange] ?? 0;
+  const grossProfit = profit.webRev - adSpend;
+  const roas = adSpend > 0 ? profit.webRev / adSpend : 0;
+  const totalCash = grossProfit + profit.orgRev;
+  const fees = totalCash > 0 ? totalCash * PROCESSING_FEE_RATE : 0;
+  const netCash = totalCash - fees;
+  const cpaMain = profit.webMainN > 0 ? adSpend / profit.webMainN : 0;
+  const cpaWebBuyer = profit.webBuyers > 0 ? adSpend / profit.webBuyers : 0;
+  const ltvWebBuyer = profit.webBuyers > 0 ? profit.webRev / profit.webBuyers : 0;
+
+  // ---- ad-spend editor -----------------------------------------------------
+  const startEditSpend = () => {
+    setSpendDraft(String(adSpend.toFixed(2)));
+    setEditingSpend(true);
+  };
+  const cancelEditSpend = () => {
+    setEditingSpend(false);
+    setSpendDraft('');
+  };
+  const saveEditSpend = () => {
+    const n = Number(spendDraft.replace(/[, ]/g, ''));
+    if (Number.isFinite(n) && n >= 0) {
+      const next = { ...adSpendByRange, [dateRange]: n };
+      setAdSpendByRange(next);
+      try { localStorage.setItem(AD_SPEND_KEY, JSON.stringify(next)); } catch { /* ignore */ }
+    }
+    setEditingSpend(false);
+    setSpendDraft('');
+  };
 
   // ---- recovery map: for each buyer email, which products they eventually
   //       paid for. Used to stamp failed-payment rows as "recovered" when the
@@ -473,7 +549,7 @@ const LukeDataTab: React.FC = () => {
   const activeBucketDef = BUCKETS.find((b) => b.key === activeBucket);
 
   return (
-    <div className="flex flex-col gap-4 h-full overflow-hidden">
+    <div className="flex flex-col gap-4 h-full overflow-y-auto">
       {/* header row */}
       <div className="flex items-center justify-between flex-shrink-0">
         <div className="flex items-center gap-3 text-xs text-[#666]">
@@ -546,7 +622,132 @@ const LukeDataTab: React.FC = () => {
 
       {view === 'people' ? (
         <>
-          {/* revenue strip */}
+          {/* PROFIT HERO — net cash, ad spend (editable), webinar revenue, ROAS */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 flex-shrink-0">
+            <ProfitCard
+              icon={TrendingUp}
+              label="Net cash (after fees)"
+              value={fmtMoney(netCash)}
+              sub={`After ~${(PROCESSING_FEE_RATE * 100).toFixed(0)}% processor fees`}
+              accent="emerald"
+              emphasized
+            />
+            <div className="rounded-lg p-3 border bg-[#121212] border-[#1f1f1f]">
+              <div className="flex items-center justify-between mb-1.5">
+                <p className="text-[10px] uppercase tracking-wider text-[#555]">Ad spend</p>
+                <div className="flex items-center gap-1">
+                  <Target size={11} className="text-[#fca5a5]" />
+                  {!editingSpend && (
+                    <button
+                      type="button"
+                      onClick={startEditSpend}
+                      className="p-0.5 rounded hover:bg-[rgba(255,255,255,0.05)] text-[#666] hover:text-[#ECECEC]"
+                      title="Edit ad spend for this period"
+                    >
+                      <Pencil size={10} />
+                    </button>
+                  )}
+                </div>
+              </div>
+              {editingSpend ? (
+                <div className="flex items-center gap-1">
+                  <span className="text-[#666] text-sm">$</span>
+                  <input
+                    autoFocus
+                    type="text"
+                    inputMode="decimal"
+                    value={spendDraft}
+                    onChange={(e) => setSpendDraft(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') saveEditSpend();
+                      if (e.key === 'Escape') cancelEditSpend();
+                    }}
+                    className="flex-1 min-w-0 bg-[#161616] border border-[#2a2a2a] rounded px-1.5 py-0.5 text-lg font-semibold text-[#ECECEC] focus:outline-none focus:border-[#3a3a3a]"
+                  />
+                  <button type="button" onClick={saveEditSpend} className="p-1 rounded bg-emerald-500/10 text-emerald-400">
+                    <Check size={11} />
+                  </button>
+                  <button type="button" onClick={cancelEditSpend} className="p-1 rounded bg-[#2a2a2a] text-[#888]">
+                    <X size={11} />
+                  </button>
+                </div>
+              ) : (
+                <p className="font-semibold text-lg text-[#bdbdbd]">{fmtMoney(adSpend)}</p>
+              )}
+              <p className="text-[10px] text-[#555] mt-0.5">
+                {DATE_RANGES.find((r) => r.key === dateRange)!.label} · click pencil to edit
+              </p>
+            </div>
+            <ProfitCard
+              icon={DollarSign}
+              label="Webinar revenue"
+              value={fmtMoney(profit.webRev)}
+              sub={`${profit.webBuyers} buyers (in Kit)`}
+              accent="emerald"
+            />
+            <ProfitCard
+              icon={TrendingUp}
+              label="ROAS"
+              value={`${roas.toFixed(2)}x`}
+              sub={`Gross profit ${fmtMoney(grossProfit)}`}
+              accent={roas >= 2 ? 'emerald' : roas >= 1 ? 'amber' : 'rose'}
+            />
+          </div>
+
+          {/* attribution split — webinar vs organic */}
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 flex-shrink-0">
+            <ProfitCard
+              icon={Users}
+              label="Webinar (in Kit)"
+              value={fmtMoney(profit.webRev)}
+              sub={`SLO ${fmtMoney(profit.webSlo)} · Main ${fmtMoney(profit.webMain)} · ${profit.webBuyers} buyers`}
+              accent="emerald"
+            />
+            <ProfitCard
+              icon={Users}
+              label="Organic (not in Kit)"
+              value={fmtMoney(profit.orgRev)}
+              sub={`SLO ${fmtMoney(profit.orgSlo)} · Main ${fmtMoney(profit.orgMain)} · ${profit.orgBuyers} buyers`}
+            />
+            <ProfitCard
+              icon={DollarSign}
+              label="Total revenue"
+              value={fmtMoney(profit.totalRev)}
+              sub={`${profit.webBuyers + profit.orgBuyers} unique buyers`}
+              emphasized
+            />
+          </div>
+
+          {/* unit economics row */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 flex-shrink-0">
+            <UnitCard
+              icon={Crown}
+              label="CAC / Accelerator"
+              value={profit.webMainN > 0 ? fmtMoney(cpaMain) : '—'}
+              sub={`${profit.webMainN} from webinar @ $1,297`}
+            />
+            <UnitCard
+              icon={Users}
+              label="CAC / webinar buyer"
+              value={profit.webBuyers > 0 ? fmtMoney(cpaWebBuyer) : '—'}
+              sub="Ads ÷ unique webinar buyers"
+            />
+            <UnitCard
+              icon={DollarSign}
+              label="LTV / webinar buyer"
+              value={profit.webBuyers > 0 ? fmtMoney(ltvWebBuyer) : '—'}
+              sub="Webinar revenue ÷ unique buyers"
+            />
+            <UnitCard
+              icon={TrendingUp}
+              label="Profit / webinar buyer"
+              value={profit.webBuyers > 0 ? fmtMoney(ltvWebBuyer - cpaWebBuyer) : '—'}
+              sub="LTV − CAC"
+              accent={ltvWebBuyer > cpaWebBuyer ? 'emerald' : 'rose'}
+            />
+          </div>
+
+          {/* legacy revenue strip — keep for per-product split */}
           <div className="grid grid-cols-3 gap-2 flex-shrink-0">
             <RevenueCard label="SLO revenue" value={fmtMoney(money.slo)} sub={`${counts.slo} buyers`} />
             <RevenueCard label="Main revenue" value={fmtMoney(money.main)} sub={`${counts.main} buyers`} />
@@ -907,6 +1108,55 @@ const RevenueCard: React.FC<{ label: string; value: string; sub: string; emphasi
     <p className="text-[10px] text-[#555] mt-0.5">{sub}</p>
   </div>
 );
+
+const ProfitCard: React.FC<{
+  icon: React.ComponentType<{ size?: number; className?: string }>;
+  label: string;
+  value: string;
+  sub: string;
+  accent?: 'emerald' | 'amber' | 'rose';
+  emphasized?: boolean;
+}> = ({ icon: Icon, label, value, sub, accent, emphasized }) => {
+  const tint = accent === 'emerald'
+    ? 'text-[#86efac]'
+    : accent === 'amber'
+      ? 'text-[#fde68a]'
+      : accent === 'rose'
+        ? 'text-[#fca5a5]'
+        : 'text-[#888]';
+  return (
+    <div className={`rounded-lg p-3 border ${emphasized ? 'bg-[#151515] border-[#2a2a2a]' : 'bg-[#121212] border-[#1f1f1f]'}`}>
+      <div className="flex items-center justify-between mb-1.5">
+        <p className="text-[10px] uppercase tracking-wider text-[#555]">{label}</p>
+        <Icon size={11} className={tint} />
+      </div>
+      <p className={`font-semibold ${emphasized ? 'text-[#ECECEC] text-xl' : `${tint === 'text-[#888]' ? 'text-[#bdbdbd]' : tint} text-lg`}`}>
+        {value}
+      </p>
+      <p className="text-[10px] text-[#555] mt-0.5">{sub}</p>
+    </div>
+  );
+};
+
+const UnitCard: React.FC<{
+  icon: React.ComponentType<{ size?: number; className?: string }>;
+  label: string;
+  value: string;
+  sub: string;
+  accent?: 'emerald' | 'rose';
+}> = ({ icon: Icon, label, value, sub, accent }) => {
+  const valueClass = accent === 'emerald' ? 'text-emerald-300' : accent === 'rose' ? 'text-rose-300' : 'text-[#ECECEC]';
+  return (
+    <div className="rounded-lg p-3 border bg-[#121212] border-[#1f1f1f]">
+      <div className="flex items-center gap-1.5 mb-1 text-[#666]">
+        <Icon size={11} />
+        <span className="text-[10px] uppercase tracking-wider">{label}</span>
+      </div>
+      <p className={`text-lg font-semibold ${valueClass}`}>{value}</p>
+      <p className="text-[10px] text-[#555] mt-0.5">{sub}</p>
+    </div>
+  );
+};
 
 const KpiCard: React.FC<{
   active: boolean;
