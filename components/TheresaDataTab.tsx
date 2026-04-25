@@ -353,7 +353,10 @@ const TheresaDataTab: React.FC = () => {
   const activeBucketDef = BUCKETS.find((b) => b.key === activeBucket);
 
   return (
-    <div className="flex flex-col gap-4 h-full overflow-hidden">
+    // Page is scrollable now: the KPI dashboard fills the first fold, the
+    // detailed lead profiles render below as a second fold the user scrolls
+    // into.
+    <div className="flex flex-col gap-4 min-h-full pb-8">
       {/* header row */}
       <div className="flex items-center justify-between flex-shrink-0">
         <div className="flex items-center gap-3 text-xs text-[#666]">
@@ -472,7 +475,7 @@ const TheresaDataTab: React.FC = () => {
       </div>
 
       {/* table */}
-      <div className="flex-1 min-h-0 overflow-auto rounded-lg border border-[#222]">
+      <div className="max-h-[60vh] overflow-auto rounded-lg border border-[#222]">
         <table className="w-full text-xs text-left">
           <thead className="sticky top-0 bg-[#181818] border-b border-[#222] text-[#666]">
             <tr>
@@ -562,6 +565,15 @@ const TheresaDataTab: React.FC = () => {
           </p>
         </div>
       </div>
+
+      {/* second fold — full lead profiles. Scroll-down view of every person
+          in the currently-active filter, with their full quiz answers
+          visible. Useful for reading what people actually wrote, picking
+          who to write a personalized reading for, or spotting patterns. */}
+      <LeadProfilesSection
+        leads={filtered}
+        bucketLabel={activeBucketDef ? activeBucketDef.label : 'Everyone'}
+      />
     </div>
   );
 };
@@ -719,6 +731,320 @@ function fmtMoneyBRL(n: number) {
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
+// ---------------------------------------------------------------- lead profiles (second fold)
+
+const LeadProfilesSection: React.FC<{ leads: Lead[]; bucketLabel: string }> = ({
+  leads,
+  bucketLabel,
+}) => {
+  const [showAll, setShowAll] = useState(false);
+
+  // Order so the most actionable rows surface first: paid > clicked checkout
+  // > offer viewed > completed > started > everyone else, then most recent
+  // within each band.
+  const ranked = useMemo(() => {
+    const score = (l: Lead) => {
+      if (l.purchased_at) return 6;
+      if (l.checkout_clicked_at) return 5;
+      if (l.offer_viewed_at) return 4;
+      if (l.reveal_viewed_at) return 3;
+      if (l.quiz_completed_at) return 2;
+      if (l.quiz_started_at) return 1;
+      return 0;
+    };
+    return [...leads].sort((a, b) => {
+      const ds = score(b) - score(a);
+      if (ds !== 0) return ds;
+      const at = a.created_at ? new Date(a.created_at).getTime() : 0;
+      const bt = b.created_at ? new Date(b.created_at).getTime() : 0;
+      return bt - at;
+    });
+  }, [leads]);
+
+  const cap = showAll ? ranked.length : 50;
+  const visible = ranked.slice(0, cap);
+
+  return (
+    <section className="pt-8 mt-2 border-t border-[#1a1a1a]">
+      <div className="flex items-end justify-between mb-5 gap-4 flex-wrap">
+        <div>
+          <h2 className="text-xl font-semibold text-[#ECECEC] tracking-tight">
+            Lead profiles
+          </h2>
+          <p className="text-xs text-[#666] mt-1">
+            Full quiz answers for everyone in{' '}
+            <span className="text-[#999] lowercase">{bucketLabel}</span>{' '}
+            <span className="text-[#444]">·</span> {ranked.length.toLocaleString()} {ranked.length === 1 ? 'person' : 'people'}
+          </p>
+        </div>
+        {ranked.length > 50 && (
+          <button
+            type="button"
+            onClick={() => setShowAll((s) => !s)}
+            className="text-xs px-3 py-1.5 rounded-md bg-[#1a1a1a] border border-[#2a2a2a] hover:border-[#3a3a3a] text-[#bdbdbd] transition-colors"
+          >
+            {showAll ? `Show first 50` : `Show all ${ranked.length}`}
+          </button>
+        )}
+      </div>
+
+      {ranked.length === 0 ? (
+        <div className="rounded-lg border border-dashed border-[#222] bg-[#0d0d0d] py-16 text-center text-sm text-[#555]">
+          No one matches this filter yet.
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+          {visible.map((l) => (
+            <LeadProfileCard key={l.id} lead={l} />
+          ))}
+        </div>
+      )}
+    </section>
+  );
+};
+
+const LeadProfileCard: React.FC<{ lead: Lead }> = ({ lead }) => {
+  const displayName =
+    lead.first_name && lead.first_name.trim() && !lead.first_name.includes('@')
+      ? lead.first_name
+      : lead.email
+        ? lead.email.split('@')[0]
+        : '(unnamed)';
+
+  const contactBits = [lead.email, lead.phone].filter(Boolean) as string[];
+
+  // Status pill — what's the most advanced thing this lead did?
+  const status: { label: string; klass: string } = lead.purchased_at
+    ? { label: 'Paid', klass: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/40' }
+    : lead.checkout_clicked_at
+      ? { label: 'Clicked checkout', klass: 'bg-amber-500/15 text-amber-300 border-amber-500/40' }
+      : lead.offer_viewed_at
+        ? { label: 'Saw offer', klass: 'bg-sky-500/10 text-sky-300 border-sky-500/30' }
+        : lead.quiz_completed_at
+          ? { label: 'Completed quiz', klass: 'bg-[#1a1a1a] text-[#bdbdbd] border-[#2a2a2a]' }
+          : lead.quiz_started_at
+            ? { label: 'Started quiz', klass: 'bg-[#1a1a1a] text-[#888] border-[#2a2a2a]' }
+            : { label: 'Just landed', klass: 'bg-[#1a1a1a] text-[#666] border-[#222]' };
+
+  // BR funnel: time-since-loss codes from the quiz.
+  const timeSinceLossLabel = (() => {
+    if (!lead.time_since_loss) return null;
+    const map: Record<string, string> = {
+      '<6mo': 'less than 6 months ago',
+      '6mo-3yr': '6 months to 3 years ago',
+      '3-10yr': '3 to 10 years ago',
+      '10yr+': 'over 10 years ago',
+    };
+    return map[lead.time_since_loss] || lead.time_since_loss;
+  })();
+
+  return (
+    <article className="rounded-xl border border-[#1f1f1f] bg-gradient-to-b from-[#0e0e0e] to-[#0a0a0a] p-5 md:p-6 transition-colors hover:border-[#2a2a2a]">
+      {/* Identity + status */}
+      <header className="flex items-start justify-between gap-4 mb-5 pb-4 border-b border-[#1a1a1a]">
+        <div className="min-w-0 flex-1">
+          <h3 className="text-lg font-semibold text-[#ECECEC] truncate capitalize">
+            {displayName}
+          </h3>
+          <div className="mt-1 flex flex-col gap-0.5">
+            {contactBits.length === 0 ? (
+              <span className="text-xs text-[#555]">No contact info</span>
+            ) : (
+              contactBits.map((c, i) => (
+                <span key={i} className="text-xs text-[#999] truncate font-mono">
+                  {c}
+                </span>
+              ))
+            )}
+          </div>
+        </div>
+        <span
+          className={`text-[10px] uppercase tracking-wider px-2.5 py-1 rounded-full border whitespace-nowrap font-medium ${status.klass}`}
+        >
+          {status.label}
+        </span>
+      </header>
+
+      <div className="space-y-4">
+        {/* Who they want to hear from */}
+        {(lead.loved_one_name || lead.loved_one_relationship) && (
+          <ProfileField label="Wants to hear from">
+            <p className="text-sm text-[#ECECEC]">
+              <span className="font-medium">{lead.loved_one_name || '(no name)'}</span>
+              {lead.loved_one_relationship && (
+                <span className="text-[#888]"> · {lead.loved_one_relationship}</span>
+              )}
+              {timeSinceLossLabel && (
+                <span className="text-[#666]"> · lost {timeSinceLossLabel}</span>
+              )}
+            </p>
+          </ProfileField>
+        )}
+
+        {/* Topic (BR funnel) */}
+        {lead.message_topic && (
+          <ProfileField label="Message topic (BR)">
+            <span className="inline-block text-xs uppercase tracking-wider px-2 py-1 rounded bg-[#1a1a1a] border border-[#2a2a2a] text-[#ddd]">
+              {lead.message_topic}
+            </span>
+          </ProfileField>
+        )}
+
+        {/* The big one — what they actually wrote */}
+        {lead.question_for_deceased && (
+          <ProfileField label="Their question / message">
+            <blockquote className="text-sm text-[#ddd] italic leading-relaxed bg-[#0a0a0a] rounded-md p-3.5 border border-[#1a1a1a]">
+              "{lead.question_for_deceased}"
+            </blockquote>
+          </ProfileField>
+        )}
+
+        {/* Signs noticed */}
+        {lead.signs_noticed && lead.signs_noticed.length > 0 && (
+          <ProfileField label="Signs noticed">
+            <div className="flex flex-wrap gap-1.5">
+              {lead.signs_noticed.map((s, i) => (
+                <span
+                  key={i}
+                  className="text-xs px-2 py-0.5 rounded-full bg-[#1a1a1a] border border-[#2a2a2a] text-[#bdbdbd]"
+                >
+                  {s}
+                </span>
+              ))}
+            </div>
+          </ProfileField>
+        )}
+
+        {/* Path A — future-focused (less common in BR, kept for EN funnel) */}
+        {lead.focus_area && (
+          <ProfileField label="Focus area">
+            <span className="text-sm text-[#ECECEC]">{lead.focus_area}</span>
+          </ProfileField>
+        )}
+        {lead.decision_weighing && (
+          <ProfileField label="Decision weighing">
+            <p className="text-sm text-[#ddd] leading-relaxed">{lead.decision_weighing}</p>
+          </ProfileField>
+        )}
+        {lead.signs_future && lead.signs_future.length > 0 && (
+          <ProfileField label="Signs (future)">
+            <div className="flex flex-wrap gap-1.5">
+              {lead.signs_future.map((s, i) => (
+                <span
+                  key={i}
+                  className="text-xs px-2 py-0.5 rounded-full bg-[#1a1a1a] border border-[#2a2a2a] text-[#bdbdbd]"
+                >
+                  {s}
+                </span>
+              ))}
+            </div>
+          </ProfileField>
+        )}
+        {lead.tried_so_far && lead.tried_so_far.length > 0 && (
+          <ProfileField label="Tried so far">
+            <div className="flex flex-wrap gap-1.5">
+              {lead.tried_so_far.map((s, i) => (
+                <span
+                  key={i}
+                  className="text-xs px-2 py-0.5 rounded-full bg-[#1a1a1a] border border-[#2a2a2a] text-[#bdbdbd]"
+                >
+                  {s}
+                </span>
+              ))}
+            </div>
+          </ProfileField>
+        )}
+
+        {/* Funnel timeline — visible at a glance */}
+        <ProfileField label="Funnel">
+          <div className="flex flex-wrap gap-x-4 gap-y-1.5 text-[11px]">
+            <FunnelStage label="Started" ts={lead.quiz_started_at} />
+            <FunnelStage label="Completed" ts={lead.quiz_completed_at} />
+            <FunnelStage label="Reveal" ts={lead.reveal_viewed_at} />
+            <FunnelStage label="Offer" ts={lead.offer_viewed_at} />
+            <FunnelStage label="Checkout" ts={lead.checkout_clicked_at} tone="amber" />
+            <FunnelStage label="Paid" ts={lead.purchased_at} tone="emerald" />
+          </div>
+        </ProfileField>
+      </div>
+
+      {/* Source footer */}
+      {(lead.utm_source || lead.utm_campaign || lead.fbclid) && (
+        <footer className="mt-5 pt-4 border-t border-[#1a1a1a] text-[11px] text-[#666] flex flex-wrap gap-x-4 gap-y-1">
+          {lead.utm_source && (
+            <span>
+              Source ·{' '}
+              <span className="text-[#aaa]">
+                {lead.utm_source}
+                {lead.utm_medium ? `/${lead.utm_medium}` : ''}
+              </span>
+            </span>
+          )}
+          {lead.utm_campaign && (
+            <span>
+              Campaign · <span className="text-[#aaa]">{lead.utm_campaign}</span>
+            </span>
+          )}
+          {lead.fbclid && (
+            <span className="text-emerald-500/70">From a Meta ad click</span>
+          )}
+        </footer>
+      )}
+    </article>
+  );
+};
+
+const ProfileField: React.FC<{ label: string; children: React.ReactNode }> = ({
+  label,
+  children,
+}) => (
+  <div>
+    <p className="text-[10px] uppercase tracking-[0.12em] text-[#666] mb-1.5 font-medium">
+      {label}
+    </p>
+    {children}
+  </div>
+);
+
+const FunnelStage: React.FC<{
+  label: string;
+  ts: string | null;
+  tone?: 'amber' | 'emerald';
+}> = ({ label, ts, tone }) => {
+  const dotColor = ts
+    ? tone === 'emerald'
+      ? 'bg-emerald-500'
+      : tone === 'amber'
+        ? 'bg-amber-400'
+        : 'bg-[#666]'
+    : 'bg-[#222]';
+  const textColor = ts
+    ? tone === 'emerald'
+      ? 'text-emerald-300'
+      : tone === 'amber'
+        ? 'text-amber-300'
+        : 'text-[#bdbdbd]'
+    : 'text-[#444]';
+  return (
+    <span className={`inline-flex items-center gap-1.5 ${textColor}`}>
+      <span className={`w-1.5 h-1.5 rounded-full ${dotColor}`} />
+      {label}
+      {ts && <span className="text-[#555] font-mono ml-1">{formatTime(ts)}</span>}
+    </span>
+  );
+};
+
+function formatTime(iso: string) {
+  return new Date(iso).toLocaleTimeString(undefined, {
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
+// ---------------------------------------------------------------- formatters
+
 function formatRelative(iso: string) {
   const ms = Date.now() - new Date(iso).getTime();
   const min = Math.round(ms / 60000);
