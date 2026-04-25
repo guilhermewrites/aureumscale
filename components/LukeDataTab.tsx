@@ -694,57 +694,21 @@ const LukeDataTab: React.FC = () => {
             />
           </div>
 
-          {/* attribution split — webinar vs organic */}
-          <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 flex-shrink-0">
-            <ProfitCard
-              icon={Users}
-              label="Webinar (in Kit)"
-              value={fmtMoney(profit.webRev)}
-              sub={`SLO ${fmtMoney(profit.webSlo)} · Main ${fmtMoney(profit.webMain)} · ${profit.webBuyers} buyers`}
-              accent="emerald"
-            />
-            <ProfitCard
-              icon={Users}
-              label="Organic (not in Kit)"
-              value={fmtMoney(profit.orgRev)}
-              sub={`SLO ${fmtMoney(profit.orgSlo)} · Main ${fmtMoney(profit.orgMain)} · ${profit.orgBuyers} buyers`}
-            />
-            <ProfitCard
-              icon={DollarSign}
-              label="Total revenue"
-              value={fmtMoney(profit.totalRev)}
-              sub={`${profit.webBuyers + profit.orgBuyers} unique buyers`}
-              emphasized
-            />
-          </div>
-
-          {/* unit economics row */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 flex-shrink-0">
-            <UnitCard
-              icon={Crown}
-              label="CAC / Accelerator"
-              value={profit.webMainN > 0 ? fmtMoney(cpaMain) : '—'}
-              sub={`${profit.webMainN} from webinar @ $1,297`}
-            />
-            <UnitCard
-              icon={Users}
-              label="CAC / webinar buyer"
-              value={profit.webBuyers > 0 ? fmtMoney(cpaWebBuyer) : '—'}
-              sub="Ads ÷ unique webinar buyers"
-            />
-            <UnitCard
-              icon={DollarSign}
-              label="LTV / webinar buyer"
-              value={profit.webBuyers > 0 ? fmtMoney(ltvWebBuyer) : '—'}
-              sub="Webinar revenue ÷ unique buyers"
-            />
-            <UnitCard
-              icon={TrendingUp}
-              label="Profit / webinar buyer"
-              value={profit.webBuyers > 0 ? fmtMoney(ltvWebBuyer - cpaWebBuyer) : '—'}
-              sub="LTV − CAC"
-              accent={ltvWebBuyer > cpaWebBuyer ? 'emerald' : 'rose'}
-            />
+          {/* compact unit-economics strip — single line, small text, no card chrome */}
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 px-1 text-[11px] text-[#888] flex-shrink-0">
+            <span><span className="text-[#555]">Webinar</span> {fmtMoney(profit.webRev)} <span className="text-[#555]">· {profit.webBuyers} buyers</span></span>
+            <span className="text-[#333]">|</span>
+            <span><span className="text-[#555]">Organic</span> {fmtMoney(profit.orgRev)} <span className="text-[#555]">· {profit.orgBuyers} buyers</span></span>
+            <span className="text-[#333]">|</span>
+            <span><span className="text-[#555]">CAC / main</span> {profit.webMainN > 0 ? fmtMoney(cpaMain) : '—'}</span>
+            <span className="text-[#333]">|</span>
+            <span><span className="text-[#555]">CAC / buyer</span> {profit.webBuyers > 0 ? fmtMoney(cpaWebBuyer) : '—'}</span>
+            <span className="text-[#333]">|</span>
+            <span><span className="text-[#555]">LTV / buyer</span> {profit.webBuyers > 0 ? fmtMoney(ltvWebBuyer) : '—'}</span>
+            <span className="text-[#333]">|</span>
+            <span className={ltvWebBuyer > cpaWebBuyer ? 'text-emerald-400' : 'text-rose-400'}>
+              <span className="text-[#555]">Profit / buyer</span> {profit.webBuyers > 0 ? fmtMoney(ltvWebBuyer - cpaWebBuyer) : '—'}
+            </span>
           </div>
 
           {/* legacy revenue strip — keep for per-product split */}
@@ -1133,26 +1097,6 @@ const ProfitCard: React.FC<{
       <p className={`font-semibold ${emphasized ? 'text-[#ECECEC] text-xl' : `${tint === 'text-[#888]' ? 'text-[#bdbdbd]' : tint} text-lg`}`}>
         {value}
       </p>
-      <p className="text-[10px] text-[#555] mt-0.5">{sub}</p>
-    </div>
-  );
-};
-
-const UnitCard: React.FC<{
-  icon: React.ComponentType<{ size?: number; className?: string }>;
-  label: string;
-  value: string;
-  sub: string;
-  accent?: 'emerald' | 'rose';
-}> = ({ icon: Icon, label, value, sub, accent }) => {
-  const valueClass = accent === 'emerald' ? 'text-emerald-300' : accent === 'rose' ? 'text-rose-300' : 'text-[#ECECEC]';
-  return (
-    <div className="rounded-lg p-3 border bg-[#121212] border-[#1f1f1f]">
-      <div className="flex items-center gap-1.5 mb-1 text-[#666]">
-        <Icon size={11} />
-        <span className="text-[10px] uppercase tracking-wider">{label}</span>
-      </div>
-      <p className={`text-lg font-semibold ${valueClass}`}>{value}</p>
       <p className="text-[10px] text-[#555] mt-0.5">{sub}</p>
     </div>
   );
