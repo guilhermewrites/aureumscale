@@ -632,8 +632,8 @@ const LukeDataTab: React.FC = () => {
               accent="emerald"
               emphasized
             />
-            <div className="rounded-lg p-3 border bg-[#121212] border-[#1f1f1f]">
-              <div className="flex items-center justify-between mb-1.5">
+            <div className="rounded-md px-3 py-2 border bg-[#121212] border-[#1f1f1f]">
+              <div className="flex items-center justify-between mb-0.5">
                 <p className="text-[10px] uppercase tracking-wider text-[#555]">Ad spend</p>
                 <div className="flex items-center gap-1">
                   <Target size={11} className="text-[#fca5a5]" />
@@ -662,7 +662,7 @@ const LukeDataTab: React.FC = () => {
                       if (e.key === 'Enter') saveEditSpend();
                       if (e.key === 'Escape') cancelEditSpend();
                     }}
-                    className="flex-1 min-w-0 bg-[#161616] border border-[#2a2a2a] rounded px-1.5 py-0.5 text-lg font-semibold text-[#ECECEC] focus:outline-none focus:border-[#3a3a3a]"
+                    className="flex-1 min-w-0 bg-[#161616] border border-[#2a2a2a] rounded px-1.5 py-0.5 text-base font-semibold text-[#ECECEC] focus:outline-none focus:border-[#3a3a3a]"
                   />
                   <button type="button" onClick={saveEditSpend} className="p-1 rounded bg-emerald-500/10 text-emerald-400">
                     <Check size={11} />
@@ -672,9 +672,9 @@ const LukeDataTab: React.FC = () => {
                   </button>
                 </div>
               ) : (
-                <p className="font-semibold text-lg text-[#bdbdbd]">{fmtMoney(adSpend)}</p>
+                <p className="font-semibold text-base text-[#bdbdbd]">{fmtMoney(adSpend)}</p>
               )}
-              <p className="text-[10px] text-[#555] mt-0.5">
+              <p className="text-[10px] text-[#555] leading-tight">
                 {DATE_RANGES.find((r) => r.key === dateRange)!.label} · click pencil to edit
               </p>
             </div>
@@ -711,15 +711,9 @@ const LukeDataTab: React.FC = () => {
             </span>
           </div>
 
-          {/* legacy revenue strip — keep for per-product split */}
-          <div className="grid grid-cols-3 gap-2 flex-shrink-0">
-            <RevenueCard label="SLO revenue" value={fmtMoney(money.slo)} sub={`${counts.slo} buyers`} />
-            <RevenueCard label="Main revenue" value={fmtMoney(money.main)} sub={`${counts.main} buyers`} />
-            <RevenueCard label="Total" value={fmtMoney(money.total)} sub={`${dateScopedPeople.length} people tracked`} emphasized />
-          </div>
-
-          {/* KPI cards — the 9 buckets */}
-          <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-2 flex-shrink-0">
+          {/* KPI cards — the 9 buckets (legacy SLO/Main/Total revenue removed; info is
+              already in the profit hero + Bought SLO / Bought Main buckets below) */}
+          <div className="grid grid-cols-3 md:grid-cols-5 xl:grid-cols-10 gap-1.5 flex-shrink-0">
             <KpiCard
               active={activeBucket === 'all'}
               onClick={() => setActiveBucket('all')}
@@ -1089,15 +1083,15 @@ const ProfitCard: React.FC<{
         ? 'text-[#fca5a5]'
         : 'text-[#888]';
   return (
-    <div className={`rounded-lg p-3 border ${emphasized ? 'bg-[#151515] border-[#2a2a2a]' : 'bg-[#121212] border-[#1f1f1f]'}`}>
-      <div className="flex items-center justify-between mb-1.5">
+    <div className={`rounded-md px-3 py-2 border ${emphasized ? 'bg-[#151515] border-[#2a2a2a]' : 'bg-[#121212] border-[#1f1f1f]'}`}>
+      <div className="flex items-center justify-between mb-0.5">
         <p className="text-[10px] uppercase tracking-wider text-[#555]">{label}</p>
         <Icon size={11} className={tint} />
       </div>
-      <p className={`font-semibold ${emphasized ? 'text-[#ECECEC] text-xl' : `${tint === 'text-[#888]' ? 'text-[#bdbdbd]' : tint} text-lg`}`}>
+      <p className={`font-semibold ${emphasized ? 'text-[#ECECEC] text-lg' : `${tint === 'text-[#888]' ? 'text-[#bdbdbd]' : tint} text-base`}`}>
         {value}
       </p>
-      <p className="text-[10px] text-[#555] mt-0.5">{sub}</p>
+      <p className="text-[10px] text-[#555] leading-tight">{sub}</p>
     </div>
   );
 };
@@ -1114,17 +1108,17 @@ const KpiCard: React.FC<{
     type="button"
     onClick={onClick}
     title={hint}
-    className={`text-left rounded-lg p-3 border transition-colors ${
+    className={`text-left rounded-md px-2 py-1.5 border transition-colors ${
       active
         ? 'bg-[#1c1c1c] border-[#444]'
         : 'bg-[#121212] border-[#1f1f1f] hover:border-[#2a2a2a]'
     }`}
   >
-    <div className="flex items-center gap-1.5 mb-1.5 text-[#666]">
-      <Icon size={11} />
-      <span className="text-[10px] uppercase tracking-wider">{label}</span>
+    <div className="flex items-center gap-1 mb-0.5 text-[#666]">
+      <Icon size={10} />
+      <span className="text-[9px] uppercase tracking-wider truncate">{label}</span>
     </div>
-    <p className={`text-lg font-semibold ${active ? 'text-[#ECECEC]' : 'text-[#bdbdbd]'}`}>{value}</p>
+    <p className={`text-base font-semibold ${active ? 'text-[#ECECEC]' : 'text-[#bdbdbd]'}`}>{value}</p>
   </button>
 );
 
