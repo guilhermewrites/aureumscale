@@ -484,17 +484,19 @@ const TheresaDataTab: React.FC = () => {
               <Th>Completed</Th>
               <Th>Reveal</Th>
               <Th>Offer</Th>
+              <Th>Checkout</Th>
               <Th>Paid</Th>
+              <Th>Outcome</Th>
               <Th>Source</Th>
             </tr>
           </thead>
           <tbody className="text-[#bdbdbd]">
             {loading ? (
-              <tr><td colSpan={10} className="p-6 text-center text-[#555]">
+              <tr><td colSpan={12} className="p-6 text-center text-[#555]">
                 <Loader2 size={14} className="inline-block animate-spin mr-2" /> Loading…
               </td></tr>
             ) : filtered.length === 0 ? (
-              <tr><td colSpan={10} className="p-6 text-center text-[#555]">
+              <tr><td colSpan={12} className="p-6 text-center text-[#555]">
                 {leads.length === 0
                   ? 'No leads yet. The table populates as people start the quiz.'
                   : 'No rows match this filter.'}
@@ -525,9 +527,13 @@ const TheresaDataTab: React.FC = () => {
                   <Td>{l.quiz_completed_at ? <span className="text-emerald-500">{formatDate(l.quiz_completed_at)}</span> : <Flag on={false} />}</Td>
                   <Td><Flag on={!!l.reveal_viewed_at} /></Td>
                   <Td><Flag on={!!l.offer_viewed_at} /></Td>
+                  <Td>{l.checkout_clicked_at ? (
+                    <span className="text-amber-400">{formatDate(l.checkout_clicked_at)}</span>
+                  ) : <Flag on={false} />}</Td>
                   <Td>{l.purchased_at ? (
                     <span className="text-emerald-500">{formatDate(l.purchased_at)}</span>
                   ) : <Flag on={false} />}</Td>
+                  <Td><CheckoutOutcome lead={l} /></Td>
                   <Td>
                     {l.utm_source ? (
                       <span className="text-[#888]">{l.utm_source}</span>
@@ -682,6 +688,28 @@ const Td: React.FC<{ children: React.ReactNode }> = ({ children }) => (
 const Flag: React.FC<{ on: boolean }> = ({ on }) => (
   on ? <span className="text-emerald-500">yes</span> : <span className="text-[#444]">—</span>
 );
+
+// At-a-glance label for the checkout cohort. Three states:
+//   • Paid       — clicked AND purchased (success)
+//   • No payment — clicked but didn't pay (the cart-abandon segment)
+//   • —          — never clicked the CTA (irrelevant to this question)
+// Use the "Clicked checkout" KPI card to filter the table down to just the
+// first two categories.
+const CheckoutOutcome: React.FC<{ lead: Lead }> = ({ lead }) => {
+  const clicked = !!lead.checkout_clicked_at;
+  const paid = !!lead.purchased_at;
+  if (paid && clicked) {
+    return <span className="text-emerald-500 font-medium">Paid</span>;
+  }
+  if (paid && !clicked) {
+    // Bought without our click being captured (pre-keepalive-fix or backfilled).
+    return <span className="text-emerald-500/80 font-medium">Paid <span className="text-[#666] font-normal">(no click)</span></span>;
+  }
+  if (clicked && !paid) {
+    return <span className="text-amber-400 font-medium">No payment</span>;
+  }
+  return <span className="text-[#444]">—</span>;
+};
 
 // ---------------------------------------------------------------- formatters
 
