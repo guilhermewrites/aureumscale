@@ -94,7 +94,24 @@ type BucketKey =
   | 'all' | 'kit' | 'close' | 'registered' | 'attended' | 'slo' | 'main'
   | 'noshow' | 'booked' | 'not_booked';
 
-type ViewMode = 'people' | 'failed';
+type ViewMode = 'people' | 'failed' | 'needs_call' | 'needs_recovery';
+
+// Aggregated row for the Needs Recovery view — one entry per email regardless
+// of how many times the card got declined.
+type RecoveryRow = {
+  email: string;
+  first_name: string | null;
+  last_name: string | null;
+  phone: string | null;
+  instagram_handle: string | null;
+  product_label: string | null;
+  amount: number | null;
+  attempts: number;
+  first_attempt_at: string | null;
+  last_attempt_at: string | null;
+  last_failure_reason: string | null;
+  last_status: string | null;
+};
 
 type DateRange = 'all' | 'today' | '7d' | '30d' | '90d';
 
@@ -269,15 +286,20 @@ const LukeDataTab: React.FC = () => {
     const s = start.getTime();
     const toMs = (v: string | null | undefined) => (v ? new Date(v).getTime() : 0);
     return people.filter((p) => {
-      const sloAt    = toMs(p.slo_purchase_date);
-      const mainAt   = toMs(p.main_purchase_date);
-      const calAt    = toMs(p.calendly_booking_time);
+      const sloAt     = toMs(p.slo_purchase_date);
+      const mainAt    = toMs(p.main_purchase_date);
+      const calAt     = toMs(p.calendly_booking_time);
+      // luke_people.created_at = first-seen timestamp, i.e. the lead date for
+      // fresh opt-ins. Without this, a Kit-only opt-in from today who hadn't
+      // yet bought / booked was invisible in "Today" — which made today look
+      // like 9 SLO buyers instead of ~200 leads.
+      const createdAt = toMs(p.created_at);
       let wjAt = 0;
       for (const t of p.wj_event_times || []) {
         const v = toMs(t);
         if (v > wjAt) wjAt = v;
       }
-      const latest = Math.max(sloAt, mainAt, calAt, wjAt);
+      const latest = Math.max(sloAt, mainAt, calAt, wjAt, createdAt);
       return latest >= s;
     });
   }, [people, dateRange]);
@@ -439,6 +461,96 @@ const LukeDataTab: React.FC = () => {
     });
   }, [dateScopedAttempts, search, hideRecovered, isRecovered]);
 
+  // ---- needs-call list -----------------------------------------------------
+  // Buyers (SLO or Main) who have NOT booked their Calendly call yet.
+  // Sorted by most-recent purchase first so the freshest opportunities lead.
+  const needsCallList = useMemo(() => {
+    const now = Date.now();
+    return dateScopedPeople
+      .filter((p) => (p.bought_slo || p.bought_main) && !p.calendly_booked)
+      .map((p) => {
+        const sloAt  = p.slo_purchase_date  ? new Date(p.slo_purchase_date).getTime()  : 0;
+        const mainAt = p.main_purchase_date ? new Date(p.main_purchase_date).getTime() : 0;
+        const latestPurchaseMs = Math.max(sloAt, mainAt);
+        const daysSince = latestPurchaseMs ? Math.floor((now - latestPurchaseMs) / 86400000) : null;
+        return { person: p, latestPurchaseMs, daysSince };
+      })
+      .sort((a, b) => b.latestPurchaseMs - a.latestPurchaseMs);
+  }, [dateScopedPeople]);
+
+  const filteredNeedsCall = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return needsCallList;
+    return needsCallList.filter(({ person: p }) => {
+      const hay = [p.email, p.first_name, p.last_name, p.phone, p.instagram_handle]
+        .filter(Boolean).join(' ').toLowerCase();
+      return hay.includes(q);
+    });
+  }, [needsCallList, search]);
+
+  // ---- needs-recovery list -------------------------------------------------
+  // One row per email across all failed attempts. Skips emails that already
+  // have a successful purchase of the same product (those are "recovered").
+  const needsRecoveryList = useMemo<RecoveryRow[]>(() => {
+    const byEmail = new Map<string, RecoveryRow>();
+    for (const a of dateScopedAttempts) {
+      const k = (a.email || '').toLowerCase();
+      if (!k) continue;
+      if (isRecovered(a)) continue;
+      const aTime = a.attempted_at ? new Date(a.attempted_at).getTime() : 0;
+      const existing = byEmail.get(k);
+      if (!existing) {
+        byEmail.set(k, {
+          email: a.email!,
+          first_name: a.first_name,
+          last_name: a.last_name,
+          phone: a.phone,
+          instagram_handle: a.instagram_handle,
+          product_label: a.product_label,
+          amount: a.amount,
+          attempts: 1,
+          first_attempt_at: a.attempted_at,
+          last_attempt_at: a.attempted_at,
+          last_failure_reason: a.failure_reason,
+          last_status: a.status,
+        });
+        continue;
+      }
+      existing.attempts++;
+      // keep first/last bounds
+      const firstTime = existing.first_attempt_at ? new Date(existing.first_attempt_at).getTime() : 0;
+      const lastTime  = existing.last_attempt_at  ? new Date(existing.last_attempt_at).getTime()  : 0;
+      if (aTime && (!firstTime || aTime < firstTime)) existing.first_attempt_at = a.attempted_at;
+      if (aTime && aTime > lastTime) {
+        existing.last_attempt_at = a.attempted_at;
+        existing.last_failure_reason = a.failure_reason ?? existing.last_failure_reason;
+        existing.last_status = a.status ?? existing.last_status;
+        // refresh contact details from the most recent attempt where present
+        existing.first_name = a.first_name ?? existing.first_name;
+        existing.last_name  = a.last_name  ?? existing.last_name;
+        existing.phone      = a.phone      ?? existing.phone;
+        existing.instagram_handle = a.instagram_handle ?? existing.instagram_handle;
+        existing.product_label = a.product_label ?? existing.product_label;
+        existing.amount = a.amount ?? existing.amount;
+      }
+    }
+    return Array.from(byEmail.values()).sort((a, b) => {
+      const at = a.last_attempt_at ? new Date(a.last_attempt_at).getTime() : 0;
+      const bt = b.last_attempt_at ? new Date(b.last_attempt_at).getTime() : 0;
+      return bt - at;
+    });
+  }, [dateScopedAttempts, isRecovered]);
+
+  const filteredNeedsRecovery = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return needsRecoveryList;
+    return needsRecoveryList.filter((r) => {
+      const hay = [r.email, r.first_name, r.last_name, r.phone, r.instagram_handle, r.product_label, r.last_failure_reason]
+        .filter(Boolean).join(' ').toLowerCase();
+      return hay.includes(q);
+    });
+  }, [needsRecoveryList, search]);
+
   // ---- tag index -----------------------------------------------------------
   // Every unique Kit tag seen in the current date slice, with a count of
   // people carrying it. Sorted by count desc so the noisy tags are at the
@@ -524,6 +636,44 @@ const LukeDataTab: React.FC = () => {
   };
 
   const exportCsv = () => {
+    if (view === 'needs_call') {
+      const header = ['First', 'Last', 'Email', 'Phone', 'Instagram', 'Product', 'Amount', 'Bought on', 'Days waiting'];
+      const lines = [header.join(',')];
+      for (const { person: p, daysSince, latestPurchaseMs } of filteredNeedsCall) {
+        const product = p.bought_main ? 'Main' : p.bought_slo ? 'SLO' : '';
+        const amount = p.bought_main ? p.main_amount : p.bought_slo ? p.slo_amount : null;
+        lines.push([
+          esc(p.first_name), esc(p.last_name), esc(p.email), esc(p.phone),
+          esc(p.instagram_handle), esc(product), esc(amount),
+          esc(latestPurchaseMs ? new Date(latestPurchaseMs).toISOString().slice(0, 10) : ''),
+          esc(daysSince ?? ''),
+        ].join(','));
+      }
+      download(
+        `luke-needs-to-book-call-${new Date().toISOString().slice(0, 10)}.csv`,
+        lines.join('\n'),
+      );
+      return;
+    }
+    if (view === 'needs_recovery') {
+      const header = ['First', 'Last', 'Email', 'Phone', 'Instagram', 'Product', 'Amount', 'Tries', 'First try', 'Last try', 'Last reason', 'Last status'];
+      const lines = [header.join(',')];
+      for (const r of filteredNeedsRecovery) {
+        lines.push([
+          esc(r.first_name), esc(r.last_name), esc(r.email), esc(r.phone),
+          esc(r.instagram_handle), esc(r.product_label), esc(r.amount),
+          esc(r.attempts),
+          esc(r.first_attempt_at ? r.first_attempt_at.slice(0, 10) : ''),
+          esc(r.last_attempt_at ? r.last_attempt_at.slice(0, 10) : ''),
+          esc(r.last_failure_reason), esc(r.last_status),
+        ].join(','));
+      }
+      download(
+        `luke-needs-recovery-${new Date().toISOString().slice(0, 10)}.csv`,
+        lines.join('\n'),
+      );
+      return;
+    }
     if (view === 'failed') {
       const cols: { key: keyof PaymentAttempt | 'recovered'; label: string }[] = [
         { key: 'first_name', label: 'First' },
@@ -647,9 +797,9 @@ const LukeDataTab: React.FC = () => {
         </button>
       </div>
 
-      {/* view toggle: people vs. failed payments */}
+      {/* view toggle: people / failed / needs-call / needs-recovery */}
       <div className="flex items-center justify-between gap-3 flex-shrink-0">
-        <div className="flex gap-1 bg-[#1a1a1a] rounded-lg p-1">
+        <div className="flex gap-1 bg-[#1a1a1a] rounded-lg p-1 flex-wrap">
           <button
             onClick={() => setView('people')}
             className={`flex items-center gap-1.5 px-4 py-1.5 rounded-md text-xs font-medium transition-colors ${
@@ -659,12 +809,28 @@ const LukeDataTab: React.FC = () => {
             <Users size={12} /> People <span className="text-[#555]">· {dateScopedPeople.length}</span>
           </button>
           <button
+            onClick={() => setView('needs_call')}
+            className={`flex items-center gap-1.5 px-4 py-1.5 rounded-md text-xs font-medium transition-colors ${
+              view === 'needs_call' ? 'bg-[#2a2a2a] text-[#ECECEC]' : 'text-[#666] hover:text-[#999]'
+            }`}
+          >
+            <Calendar size={12} /> Needs to book call <span className={needsCallList.length > 0 ? 'text-amber-300' : 'text-[#555]'}>· {needsCallList.length}</span>
+          </button>
+          <button
+            onClick={() => setView('needs_recovery')}
+            className={`flex items-center gap-1.5 px-4 py-1.5 rounded-md text-xs font-medium transition-colors ${
+              view === 'needs_recovery' ? 'bg-[#2a2a2a] text-[#ECECEC]' : 'text-[#666] hover:text-[#999]'
+            }`}
+          >
+            <DollarSign size={12} /> Needs recovery <span className={needsRecoveryList.length > 0 ? 'text-rose-400' : 'text-[#555]'}>· {needsRecoveryList.length}</span>
+          </button>
+          <button
             onClick={() => setView('failed')}
             className={`flex items-center gap-1.5 px-4 py-1.5 rounded-md text-xs font-medium transition-colors ${
               view === 'failed' ? 'bg-[#2a2a2a] text-[#ECECEC]' : 'text-[#666] hover:text-[#999]'
             }`}
           >
-            <XCircle size={12} /> Failed payments <span className={dateScopedAttempts.length > 0 ? 'text-rose-400' : 'text-[#555]'}>· {dateScopedAttempts.length}</span>
+            <XCircle size={12} /> Failed payments (raw) <span className="text-[#555]">· {dateScopedAttempts.length}</span>
           </button>
         </div>
         <div className="flex gap-1 bg-[#1a1a1a] rounded-lg p-1">
@@ -1029,6 +1195,264 @@ const LukeDataTab: React.FC = () => {
               </div>
             </div>
           )}
+        </>
+      ) : view === 'needs_call' ? (
+        <>
+          {/* needs-call header strip */}
+          <div className="grid grid-cols-3 gap-2 flex-shrink-0">
+            <RevenueCard
+              label="Buyers needing a call"
+              value={String(needsCallList.length)}
+              sub={`${counts.slo + counts.main} buyers total · ${counts.booked} already booked`}
+              emphasized
+            />
+            <RevenueCard
+              label="Oldest waiting"
+              value={
+                needsCallList[needsCallList.length - 1]?.daysSince != null
+                  ? `${needsCallList[needsCallList.length - 1]!.daysSince}d`
+                  : '—'
+              }
+              sub="Days since their oldest unbooked purchase"
+            />
+            <RevenueCard
+              label="Avg wait"
+              value={
+                needsCallList.length > 0
+                  ? `${Math.round(
+                      needsCallList.reduce((s, r) => s + (r.daysSince || 0), 0) / needsCallList.length,
+                    )}d`
+                  : '—'
+              }
+              sub="Across the whole list"
+            />
+          </div>
+
+          {/* search + export */}
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <div className="relative flex-1">
+              <Search size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#555]" />
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search buyers needing a call…"
+                className="w-full pl-8 pr-3 py-1.5 bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg text-xs text-[#ECECEC] placeholder:text-[#555] focus:outline-none focus:border-[#3a3a3a]"
+              />
+            </div>
+            <span className="text-xs text-[#555]">{filteredNeedsCall.length} of {needsCallList.length}</span>
+            <button
+              type="button"
+              onClick={exportCsv}
+              disabled={filteredNeedsCall.length === 0}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#2a2a2a] hover:bg-[#333] text-[#ECECEC] text-xs font-medium disabled:opacity-40"
+            >
+              <Download size={12} /> CSV
+            </button>
+          </div>
+
+          {/* needs-call table */}
+          <div className="flex-1 min-h-0 overflow-auto rounded-lg border border-[#222]">
+            <table className="w-full text-xs text-left">
+              <thead className="sticky top-0 bg-[#181818] border-b border-[#222] text-[#666]">
+                <tr>
+                  <Th>Name</Th>
+                  <Th>Email</Th>
+                  <Th>Instagram</Th>
+                  <Th>Phone</Th>
+                  <Th>Bought</Th>
+                  <Th>Bought on</Th>
+                  <Th>Waiting</Th>
+                </tr>
+              </thead>
+              <tbody className="text-[#bdbdbd]">
+                {loading ? (
+                  <tr><td colSpan={7} className="p-6 text-center text-[#555]">
+                    <Loader2 size={14} className="inline-block animate-spin mr-2" /> Loading…
+                  </td></tr>
+                ) : filteredNeedsCall.length === 0 ? (
+                  <tr><td colSpan={7} className="p-6 text-center text-[#555]">
+                    {needsCallList.length === 0
+                      ? 'Every buyer has booked a Calendly call. 🎉'
+                      : 'No rows match this search.'}
+                  </td></tr>
+                ) : (
+                  filteredNeedsCall.slice(0, 500).map(({ person: p, daysSince, latestPurchaseMs }) => {
+                    const tone = daysSince == null ? 'text-[#888]'
+                      : daysSince > 14 ? 'text-rose-300'
+                      : daysSince > 7  ? 'text-amber-300'
+                      : 'text-[#bdbdbd]';
+                    return (
+                      <tr key={p.id} className="border-b border-[#1a1a1a] hover:bg-[#141414]">
+                        <Td>{[p.first_name, p.last_name].filter(Boolean).join(' ') || <span className="text-[#444]">—</span>}</Td>
+                        <Td><span className="text-[#888]">{p.email}</span></Td>
+                        <Td>
+                          {p.instagram_handle ? (
+                            <a
+                              href={`https://instagram.com/${p.instagram_handle.replace(/^@/, '')}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 text-[#bdbdbd] hover:text-[#ECECEC]"
+                            >
+                              <Instagram size={11} /> {p.instagram_handle}
+                            </a>
+                          ) : <span className="text-[#444]">—</span>}
+                        </Td>
+                        <Td>{p.phone || <span className="text-[#444]">—</span>}</Td>
+                        <Td>
+                          {p.bought_main ? (
+                            <span className="text-purple-300">Main {fmtMoney(p.main_amount || 0)}</span>
+                          ) : p.bought_slo ? (
+                            <span className="text-amber-300">SLO {fmtMoney(p.slo_amount || 0)}</span>
+                          ) : <span className="text-[#444]">—</span>}
+                        </Td>
+                        <Td>
+                          <span className="text-[#888]">
+                            {latestPurchaseMs ? formatDate(new Date(latestPurchaseMs).toISOString()) : '—'}
+                          </span>
+                        </Td>
+                        <Td>
+                          <span className={tone}>{daysSince != null ? `${daysSince} day${daysSince === 1 ? '' : 's'}` : '—'}</span>
+                        </Td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+            {filteredNeedsCall.length > 500 && (
+              <div className="py-2 text-center text-[11px] text-[#555] bg-[#101010]">
+                Showing first 500 of {filteredNeedsCall.length} — use search to narrow, or export full CSV.
+              </div>
+            )}
+          </div>
+        </>
+      ) : view === 'needs_recovery' ? (
+        <>
+          {/* needs-recovery header strip */}
+          <div className="grid grid-cols-3 gap-2 flex-shrink-0">
+            <RevenueCard
+              label="People to recover"
+              value={String(needsRecoveryList.length)}
+              sub={`${needsRecoveryList.reduce((s, r) => s + r.attempts, 0)} total declines across them`}
+              emphasized
+            />
+            <RevenueCard
+              label="Recoverable revenue"
+              value={fmtMoney(needsRecoveryList.reduce((s, r) => s + (r.amount || 0), 0))}
+              sub="Sum of latest amounts (one per email)"
+            />
+            <RevenueCard
+              label="Repeat offenders"
+              value={String(needsRecoveryList.filter((r) => r.attempts > 1).length)}
+              sub="Tried more than once with same email"
+            />
+          </div>
+
+          {/* search + export */}
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <div className="relative flex-1">
+              <Search size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#555]" />
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search by name, email, Instagram, reason…"
+                className="w-full pl-8 pr-3 py-1.5 bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg text-xs text-[#ECECEC] placeholder:text-[#555] focus:outline-none focus:border-[#3a3a3a]"
+              />
+            </div>
+            <span className="text-xs text-[#555]">{filteredNeedsRecovery.length} of {needsRecoveryList.length}</span>
+            <button
+              type="button"
+              onClick={exportCsv}
+              disabled={filteredNeedsRecovery.length === 0}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#2a2a2a] hover:bg-[#333] text-[#ECECEC] text-xs font-medium disabled:opacity-40"
+            >
+              <Download size={12} /> CSV
+            </button>
+          </div>
+
+          {/* needs-recovery table */}
+          <div className="flex-1 min-h-0 overflow-auto rounded-lg border border-[#222]">
+            <table className="w-full text-xs text-left">
+              <thead className="sticky top-0 bg-[#181818] border-b border-[#222] text-[#666]">
+                <tr>
+                  <Th>Name</Th>
+                  <Th>Email</Th>
+                  <Th>Instagram</Th>
+                  <Th>Phone</Th>
+                  <Th>Product</Th>
+                  <Th>Tries</Th>
+                  <Th>Last try</Th>
+                  <Th>Reason</Th>
+                </tr>
+              </thead>
+              <tbody className="text-[#bdbdbd]">
+                {loading ? (
+                  <tr><td colSpan={8} className="p-6 text-center text-[#555]">
+                    <Loader2 size={14} className="inline-block animate-spin mr-2" /> Loading…
+                  </td></tr>
+                ) : filteredNeedsRecovery.length === 0 ? (
+                  <tr><td colSpan={8} className="p-6 text-center text-[#555]">
+                    {needsRecoveryList.length === 0
+                      ? 'No outstanding declines. 🎉'
+                      : 'No rows match this search.'}
+                  </td></tr>
+                ) : (
+                  filteredNeedsRecovery.slice(0, 500).map((r) => {
+                    const triesLabel = r.attempts === 1
+                      ? `1 try`
+                      : `${r.attempts} tries`;
+                    const triesTone = r.attempts >= 3 ? 'text-rose-300'
+                      : r.attempts === 2 ? 'text-amber-300'
+                      : 'text-[#bdbdbd]';
+                    return (
+                      <tr key={r.email} className="border-b border-[#1a1a1a] hover:bg-[#141414]">
+                        <Td>{[r.first_name, r.last_name].filter(Boolean).join(' ') || <span className="text-[#444]">—</span>}</Td>
+                        <Td><span className="text-[#888]">{r.email}</span></Td>
+                        <Td>
+                          {r.instagram_handle ? (
+                            <a
+                              href={`https://instagram.com/${r.instagram_handle.replace(/^@/, '')}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 text-[#bdbdbd] hover:text-[#ECECEC]"
+                            >
+                              <Instagram size={11} /> {r.instagram_handle}
+                            </a>
+                          ) : <span className="text-[#444]">—</span>}
+                        </Td>
+                        <Td>{r.phone || <span className="text-[#444]">—</span>}</Td>
+                        <Td>
+                          {r.product_label === 'SLO' ? (
+                            <span className="text-amber-300">SLO {r.amount ? fmtMoney(Number(r.amount)) : ''}</span>
+                          ) : r.product_label === 'Main' ? (
+                            <span className="text-purple-300">Main {r.amount ? fmtMoney(Number(r.amount)) : ''}</span>
+                          ) : <span className="text-[#888]">{r.product_label || '—'}</span>}
+                        </Td>
+                        <Td><span className={triesTone}>{triesLabel}</span></Td>
+                        <Td>
+                          <span className="text-[#888]">
+                            {r.last_attempt_at ? formatDate(r.last_attempt_at) : '—'}
+                          </span>
+                        </Td>
+                        <Td>
+                          {r.last_failure_reason ? (
+                            <span className="text-[#888]" title={r.last_failure_reason}>
+                              {r.last_failure_reason.length > 50 ? r.last_failure_reason.slice(0, 50) + '…' : r.last_failure_reason}
+                            </span>
+                          ) : <span className="text-[#444]">—</span>}
+                        </Td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+            {filteredNeedsRecovery.length > 500 && (
+              <div className="py-2 text-center text-[11px] text-[#555] bg-[#101010]">
+                Showing first 500 of {filteredNeedsRecovery.length} — use search to narrow, or export full CSV.
+              </div>
+            )}
+          </div>
         </>
       ) : (
         <>
