@@ -373,7 +373,7 @@ const LukeDataTab: React.FC = () => {
   const counts = useMemo(() => {
     const c: Record<BucketKey, number> = {
       all: dateScopedPeople.length, kit: 0, close: 0, registered: 0, attended: 0,
-      slo: 0, main: 0, noshow: 0, booked: 0, not_booked: 0,
+      slo: 0, main: 0, ascended: 0, noshow: 0, booked: 0, not_booked: 0,
     };
     for (const p of dateScopedPeople) {
       for (const b of BUCKETS) if (b.filter(p)) c[b.key]++;
@@ -779,6 +779,25 @@ const LukeDataTab: React.FC = () => {
       }
       download(
         `luke-needs-recovery-${new Date().toISOString().slice(0, 10)}.csv`,
+        lines.join('\n'),
+      );
+      return;
+    }
+    if (view === 'affiliate') {
+      const header = ['Name', 'Email', 'Phone', 'Wix receipt', 'Base44 receipt', 'In AIF', 'Status', 'Status notes', 'Submitted at'];
+      const lines = [header.join(',')];
+      for (const r of filteredReceipts) {
+        lines.push([
+          esc(r.name), esc(r.email), esc(r.phone),
+          esc(r.wix_receipt_url), esc(r.base44_receipt_url),
+          esc(r.has_aif_access ? 'yes' : 'no'),
+          esc(r.status || 'pending'),
+          esc(r.status_notes),
+          esc(r.submitted_at),
+        ].join(','));
+      }
+      download(
+        `luke-affiliate-receipts-${new Date().toISOString().slice(0, 10)}.csv`,
         lines.join('\n'),
       );
       return;
@@ -1241,6 +1260,7 @@ const LukeDataTab: React.FC = () => {
                   <Th>Attended</Th>
                   <Th>SLO</Th>
                   <Th>Main</Th>
+                  <Th>Ascended</Th>
                   <Th>Calendly</Th>
                 </tr>
               </thead>
@@ -1294,6 +1314,7 @@ const LukeDataTab: React.FC = () => {
                       ) : <Flag on={false} />}</Td>
                       <Td>{p.bought_slo ? <span className="text-emerald-500">{fmtMoney(p.slo_amount || 0)}</span> : <Flag on={false} />}</Td>
                       <Td>{p.bought_main ? <span className="text-emerald-500">{fmtMoney(p.main_amount || 0)}</span> : <Flag on={false} />}</Td>
+                      <Td>{p.bought_ascended ? <span className="text-amber-400 font-semibold">{fmtMoney(p.ascended_amount || 0)}</span> : <Flag on={false} />}</Td>
                       <Td>{p.calendly_booked ? (
                         <span className="text-emerald-500">
                           {p.calendly_booking_time ? formatDate(p.calendly_booking_time) : 'booked'}
@@ -1580,6 +1601,122 @@ const LukeDataTab: React.FC = () => {
                 Showing first 500 of {filteredNeedsRecovery.length} — use search to narrow, or export full CSV.
               </div>
             )}
+          </div>
+        </>
+      ) : view === 'affiliate' ? (
+        <>
+          {/* affiliate header strip */}
+          <div className="grid grid-cols-3 gap-2 flex-shrink-0">
+            <RevenueCard
+              label="Affiliate revenue"
+              value={fmtMoney(affiliateRevenue)}
+              sub={`${dateScopedReceipts.length} receipts × ${fmtMoney(AFFILIATE_AOV)}`}
+              emphasized
+            />
+            <RevenueCard
+              label="Status breakdown"
+              value={`${receiptStatusCounts.approved} approved`}
+              sub={`${receiptStatusCounts.pending} pending · ${receiptStatusCounts.rejected} rejected`}
+            />
+            <RevenueCard
+              label="Also in AIF"
+              value={String(affiliateAifOverlap)}
+              sub={`Of ${dateScopedReceipts.length} affiliate buyers, also bought AIF`}
+            />
+          </div>
+
+          {/* search + export */}
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <div className="relative flex-1">
+              <Search size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#555]" />
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search by name, email, phone, status…"
+                className="w-full pl-8 pr-3 py-1.5 bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg text-xs text-[#ECECEC] placeholder:text-[#555] focus:outline-none focus:border-[#3a3a3a]"
+              />
+            </div>
+            <span className="text-xs text-[#555]">{filteredReceipts.length} of {dateScopedReceipts.length}</span>
+            <button
+              type="button"
+              onClick={exportCsv}
+              disabled={filteredReceipts.length === 0}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#2a2a2a] hover:bg-[#333] text-[#ECECEC] text-xs font-medium disabled:opacity-40"
+            >
+              <Download size={12} /> CSV
+            </button>
+          </div>
+
+          {/* receipts table */}
+          <div className="flex-1 min-h-0 overflow-auto rounded-lg border border-[#222]">
+            <table className="w-full text-xs text-left">
+              <thead className="sticky top-0 bg-[#181818] border-b border-[#222] text-[#666]">
+                <tr>
+                  <Th>Name</Th>
+                  <Th>Email</Th>
+                  <Th>Phone</Th>
+                  <Th>Receipts</Th>
+                  <Th>In AIF?</Th>
+                  <Th>Status</Th>
+                  <Th>Submitted</Th>
+                </tr>
+              </thead>
+              <tbody className="text-[#bdbdbd]">
+                {loading ? (
+                  <tr><td colSpan={7} className="p-6 text-center text-[#555]">
+                    <Loader2 size={14} className="inline-block animate-spin mr-2" /> Loading…
+                  </td></tr>
+                ) : filteredReceipts.length === 0 ? (
+                  <tr><td colSpan={7} className="p-6 text-center text-[#555]">
+                    {dateScopedReceipts.length === 0
+                      ? 'No affiliate receipts yet — when buyers submit at /receipt they show up here.'
+                      : 'No rows match this search.'}
+                  </td></tr>
+                ) : (
+                  filteredReceipts.slice(0, 500).map((r) => {
+                    const status = (r.status || 'pending').toLowerCase();
+                    const statusClass = status === 'approved' ? 'bg-emerald-950/40 text-emerald-300 border-emerald-900/40'
+                      : status === 'rejected' ? 'bg-rose-950/40 text-rose-300 border-rose-900/40'
+                      : 'bg-amber-950/40 text-amber-300 border-amber-900/40';
+                    return (
+                      <tr key={r.id} className="border-b border-[#1a1a1a] hover:bg-[#141414]">
+                        <Td>{r.name || <span className="text-[#444]">—</span>}</Td>
+                        <Td><span className="text-[#888]">{r.email}</span></Td>
+                        <Td>{r.phone || <span className="text-[#444]">—</span>}</Td>
+                        <Td>
+                          <div className="flex flex-wrap gap-1">
+                            {r.wix_receipt_url && (
+                              <a href={r.wix_receipt_url} target="_blank" rel="noopener noreferrer" className="text-[10px] px-1.5 py-0.5 rounded bg-[#1a1a1a] border border-[#2a2a2a] text-[#bdbdbd] hover:text-[#ECECEC] hover:border-[#3a3a3a]">Wix ↗</a>
+                            )}
+                            {r.base44_receipt_url && (
+                              <a href={r.base44_receipt_url} target="_blank" rel="noopener noreferrer" className="text-[10px] px-1.5 py-0.5 rounded bg-[#1a1a1a] border border-[#2a2a2a] text-[#bdbdbd] hover:text-[#ECECEC] hover:border-[#3a3a3a]">Base44 ↗</a>
+                            )}
+                            {!r.wix_receipt_url && !r.base44_receipt_url && (<span className="text-[#444]">—</span>)}
+                          </div>
+                        </Td>
+                        <Td>{r.has_aif_access ? <span className="text-emerald-400">yes</span> : <span className="text-[#555]">no</span>}</Td>
+                        <Td>
+                          <span className={`text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded border ${statusClass}`} title={r.status_notes || ''}>
+                            {status}
+                          </span>
+                        </Td>
+                        <Td><span className="text-[#888]">{r.submitted_at ? formatDate(r.submitted_at) : '—'}</span></Td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+            {filteredReceipts.length > 500 && (
+              <div className="py-2 text-center text-[11px] text-[#555] bg-[#101010]">
+                Showing first 500 of {filteredReceipts.length} — use search to narrow, or export full CSV.
+              </div>
+            )}
+          </div>
+
+          {/* admin overview link */}
+          <div className="flex-shrink-0 text-[11px] text-[#555]">
+            Need to approve / reject receipts? Use the admin page at <a href="https://aifreelancer.ai/adminreceiptsoverview" target="_blank" rel="noopener noreferrer" className="text-emerald-400 hover:text-emerald-300">aifreelancer.ai/adminreceiptsoverview</a>.
           </div>
         </>
       ) : (
