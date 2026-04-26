@@ -21,13 +21,17 @@ import {
   Users, UserCheck, UserX, DollarSign, Crown, Calendar, CalendarX,
   RefreshCw, CheckCircle2, AlertCircle, Search, Download, Loader2,
   Mail, XCircle, Instagram, TrendingUp, Target, Pencil, Check, X,
-  Filter as FilterIcon, ChevronDown,
+  Filter as FilterIcon, ChevronDown, Trophy,
 } from 'lucide-react';
 import { supabase } from '../services/supabaseClient';
 
 // Approximate Stripe + Whop fee blend used for net-cash math.
 const PROCESSING_FEE_RATE = 0.05;
 const AD_SPEND_KEY = 'aureum_luke_ad_spend_v2';
+
+// Each /receipt submission counts as $500 of affiliate revenue (Wix + Base44
+// commission blend). Set per Guilherme's spec; if Luke renegotiates, update here.
+const AFFILIATE_AOV = 500;
 
 // ---------------------------------------------------------------- types
 
@@ -52,6 +56,11 @@ type Person = {
   bought_main: boolean;
   main_amount: number | null;
   main_purchase_date: string | null;
+  // "Ascended" — bought AI Insiders on Whop (the high-ticket recurring
+  // community that's the actual end goal of the funnel).
+  bought_ascended: boolean;
+  ascended_amount: number | null;
+  ascended_purchase_date: string | null;
   calendly_booked: boolean;
   calendly_event_name: string | null;
   calendly_booking_time: string | null;
@@ -90,11 +99,25 @@ type PaymentAttempt = {
   attempted_at: string | null;
 };
 
+// One row per /receipt submission. Counted as $500 affiliate revenue.
+type Receipt = {
+  id: string;
+  name: string | null;
+  email: string;
+  phone: string | null;
+  wix_receipt_url: string | null;
+  base44_receipt_url: string | null;
+  has_aif_access: boolean | null;
+  status: string | null;
+  status_notes: string | null;
+  submitted_at: string;
+};
+
 type BucketKey =
   | 'all' | 'kit' | 'close' | 'registered' | 'attended' | 'slo' | 'main'
-  | 'noshow' | 'booked' | 'not_booked';
+  | 'ascended' | 'noshow' | 'booked' | 'not_booked';
 
-type ViewMode = 'people' | 'failed' | 'needs_call' | 'needs_recovery';
+type ViewMode = 'people' | 'failed' | 'needs_call' | 'needs_recovery' | 'affiliate';
 
 // Aggregated row for the Needs Recovery view — one entry per email regardless
 // of how many times the card got declined.
@@ -149,8 +172,12 @@ const BUCKETS: {
   { key: 'noshow',     label: 'No-shows',         icon: UserX,       hint: 'Registered but did not join', filter: (p) => p.in_webinarjam && !p.wj_attended_live },
   { key: 'slo',        label: 'Bought SLO',       icon: DollarSign,  hint: '$27 Toolkit purchase',       filter: (p) => p.bought_slo },
   { key: 'main',       label: 'Bought Main',      icon: Crown,       hint: '$1,297 Accelerator',          filter: (p) => p.bought_main },
+  { key: 'ascended',   label: 'Ascended',         icon: TrendingUp,  hint: 'Bought AI Insiders (high-ticket)', filter: (p) => p.bought_ascended },
   { key: 'booked',     label: 'Buyers + booked',  icon: Calendar,    hint: 'Bought something + Calendly', filter: (p) => (p.bought_slo || p.bought_main) && p.calendly_booked },
-  { key: 'not_booked', label: 'Buyers, no call',  icon: CalendarX,   hint: 'Bought something, no Calendly yet', filter: (p) => (p.bought_slo || p.bought_main) && !p.calendly_booked },
+  // "Buyers, no call" excludes people who already ASCENDED — they're past the
+  // funnel; chasing them for a call would waste time. Eddie is the canonical
+  // example: bought Main, never booked, then went straight to AI Insiders.
+  { key: 'not_booked', label: 'Buyers, no call',  icon: CalendarX,   hint: 'Bought, no Calendly, not yet ascended', filter: (p) => (p.bought_slo || p.bought_main) && !p.calendly_booked && !p.bought_ascended },
 ];
 
 // ---------------------------------------------------------------- component
@@ -158,6 +185,7 @@ const BUCKETS: {
 const LukeDataTab: React.FC = () => {
   const [people, setPeople] = useState<Person[]>([]);
   const [attempts, setAttempts] = useState<PaymentAttempt[]>([]);
+  const [receipts, setReceipts] = useState<Receipt[]>([]);
   const [lastRun, setLastRun] = useState<SyncRun | null>(null);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
@@ -212,9 +240,12 @@ const LukeDataTab: React.FC = () => {
       }
       return out;
     };
-    const [peopleAll, attemptsAll, runRes] = await Promise.all([
+    const [peopleAll, attemptsAll, receiptsAll, runRes] = await Promise.all([
       fetchAllPages<Person>('luke_people', 'last_synced_at'),
       fetchAllPages<PaymentAttempt>('luke_payment_attempts', 'attempted_at'),
+      // lukes_receipts may not exist yet on dev DBs — swallow the error so the
+      // rest of the dashboard still loads. Affiliate revenue just shows $0.
+      fetchAllPages<Receipt>('lukes_receipts', 'submitted_at').catch(() => [] as Receipt[]),
       supabase
         .from('luke_sync_runs')
         .select('*')
@@ -224,6 +255,7 @@ const LukeDataTab: React.FC = () => {
     ]);
     setPeople(peopleAll);
     setAttempts(attemptsAll);
+    setReceipts(receiptsAll);
     setLastRun((runRes.data || null) as SyncRun | null);
     setLoading(false);
   }, []);
@@ -314,6 +346,29 @@ const LukeDataTab: React.FC = () => {
     });
   }, [attempts, dateRange]);
 
+  const dateScopedReceipts = useMemo(() => {
+    const start = rangeStart(dateRange);
+    if (!start) return receipts;
+    const s = start.getTime();
+    return receipts.filter((r) => {
+      const t = r.submitted_at ? new Date(r.submitted_at).getTime() : 0;
+      return t >= s;
+    });
+  }, [receipts, dateRange]);
+
+  // Map email → list of that person's receipts (for the per-row table column).
+  const receiptsByEmail = useMemo(() => {
+    const m = new Map<string, Receipt[]>();
+    for (const r of receipts) {
+      const k = (r.email || '').trim().toLowerCase();
+      if (!k) continue;
+      const arr = m.get(k) || [];
+      arr.push(r);
+      m.set(k, arr);
+    }
+    return m;
+  }, [receipts]);
+
   // ---- derive counts for each bucket --------------------------------------
   const counts = useMemo(() => {
     const c: Record<BucketKey, number> = {
@@ -364,12 +419,44 @@ const LukeDataTab: React.FC = () => {
     };
   }, [dateScopedPeople]);
 
+  // Affiliate revenue: every /receipt submission within the window = $500.
+  // Treated as its own income stream alongside webinar + organic.
+  const affiliateCount = dateScopedReceipts.length;
+  const affiliateRevenue = affiliateCount * AFFILIATE_AOV;
+  // Buyers who already had AIF Whop access at submission time — useful signal
+  // for "are these net-new customers or upsells of existing AIF buyers".
+  const affiliateAifOverlap = dateScopedReceipts.filter((r) => r.has_aif_access).length;
+
+  // Ascended revenue (AI Insiders / high-ticket Whop) — actual end goal of the
+  // funnel. Date-filtered by ascended_purchase_date so it lands in the right
+  // window. Uses raw `people` since this scope is purchase-date, not activity.
+  const ascendedStats = useMemo(() => {
+    const start = rangeStart(dateRange);
+    const s = start ? start.getTime() : null;
+    let total = 0; let count = 0;
+    for (const p of people) {
+      if (!p.bought_ascended) continue;
+      if (s) {
+        const t = p.ascended_purchase_date ? new Date(p.ascended_purchase_date).getTime() : 0;
+        if (t < s) continue;
+      }
+      count++;
+      total += Number(p.ascended_amount || 0);
+    }
+    return { count, total };
+  }, [people, dateRange]);
+  const ascendedRevenue = ascendedStats.total;
+  const ascendedCount   = ascendedStats.count;
+
   const adSpend = adSpendByRange[dateRange] ?? 0;
   const grossProfit = profit.webRev - adSpend;
   const roas = adSpend > 0 ? profit.webRev / adSpend : 0;
-  const totalCash = grossProfit + profit.orgRev;
+  // Net cash = (webinar - ad spend) + organic + affiliate + ascended, minus fees.
+  // Ascended is high-margin recurring; same blended fee haircut as the rest.
+  const totalCash = grossProfit + profit.orgRev + affiliateRevenue + ascendedRevenue;
   const fees = totalCash > 0 ? totalCash * PROCESSING_FEE_RATE : 0;
   const netCash = totalCash - fees;
+  const totalRevenue = profit.webRev + profit.orgRev + affiliateRevenue + ascendedRevenue;
   const cpaMain = profit.webMainN > 0 ? adSpend / profit.webMainN : 0;
   const cpaWebBuyer = profit.webBuyers > 0 ? adSpend / profit.webBuyers : 0;
   const ltvWebBuyer = profit.webBuyers > 0 ? profit.webRev / profit.webBuyers : 0;
@@ -462,12 +549,14 @@ const LukeDataTab: React.FC = () => {
   }, [dateScopedAttempts, search, hideRecovered, isRecovered]);
 
   // ---- needs-call list -----------------------------------------------------
-  // Buyers (SLO or Main) who have NOT booked their Calendly call yet.
+  // Buyers (SLO or Main) who have NOT booked their Calendly call yet AND
+  // haven't already ascended to AI Insiders. Anyone who's ascended is past
+  // the call-followup stage — chasing them would waste Luke's time.
   // Sorted by most-recent purchase first so the freshest opportunities lead.
   const needsCallList = useMemo(() => {
     const now = Date.now();
     return dateScopedPeople
-      .filter((p) => (p.bought_slo || p.bought_main) && !p.calendly_booked)
+      .filter((p) => (p.bought_slo || p.bought_main) && !p.calendly_booked && !p.bought_ascended)
       .map((p) => {
         const sloAt  = p.slo_purchase_date  ? new Date(p.slo_purchase_date).getTime()  : 0;
         const mainAt = p.main_purchase_date ? new Date(p.main_purchase_date).getTime() : 0;
@@ -550,6 +639,26 @@ const LukeDataTab: React.FC = () => {
       return hay.includes(q);
     });
   }, [needsRecoveryList, search]);
+
+  // ---- affiliate receipts filtered + status counts -------------------------
+  const filteredReceipts = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return dateScopedReceipts.filter((r) => {
+      if (!q) return true;
+      const hay = [r.name, r.email, r.phone, r.status, r.status_notes]
+        .filter(Boolean).join(' ').toLowerCase();
+      return hay.includes(q);
+    });
+  }, [dateScopedReceipts, search]);
+
+  const receiptStatusCounts = useMemo(() => {
+    const c: Record<'pending' | 'approved' | 'rejected', number> = { pending: 0, approved: 0, rejected: 0 };
+    for (const r of dateScopedReceipts) {
+      const s = (r.status || 'pending').toLowerCase();
+      if (s === 'pending' || s === 'approved' || s === 'rejected') c[s]++;
+    }
+    return c;
+  }, [dateScopedReceipts]);
 
   // ---- tag index -----------------------------------------------------------
   // Every unique Kit tag seen in the current date slice, with a count of
@@ -825,6 +934,14 @@ const LukeDataTab: React.FC = () => {
             <DollarSign size={12} /> Needs recovery <span className={needsRecoveryList.length > 0 ? 'text-rose-400' : 'text-[#555]'}>· {needsRecoveryList.length}</span>
           </button>
           <button
+            onClick={() => setView('affiliate')}
+            className={`flex items-center gap-1.5 px-4 py-1.5 rounded-md text-xs font-medium transition-colors ${
+              view === 'affiliate' ? 'bg-[#2a2a2a] text-[#ECECEC]' : 'text-[#666] hover:text-[#999]'
+            }`}
+          >
+            <DollarSign size={12} /> Affiliate <span className={dateScopedReceipts.length > 0 ? 'text-emerald-400' : 'text-[#555]'}>· {dateScopedReceipts.length}</span>
+          </button>
+          <button
             onClick={() => setView('failed')}
             className={`flex items-center gap-1.5 px-4 py-1.5 rounded-md text-xs font-medium transition-colors ${
               view === 'failed' ? 'bg-[#2a2a2a] text-[#ECECEC]' : 'text-[#666] hover:text-[#999]'
@@ -850,13 +967,13 @@ const LukeDataTab: React.FC = () => {
 
       {view === 'people' ? (
         <>
-          {/* PROFIT HERO — net cash, ad spend (editable), webinar revenue, ROAS */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 flex-shrink-0">
+          {/* PROFIT HERO — net cash, ad spend (editable), webinar revenue, affiliate revenue, ROAS */}
+          <div className="grid grid-cols-2 lg:grid-cols-5 gap-2 flex-shrink-0">
             <ProfitCard
               icon={TrendingUp}
               label="Net cash (after fees)"
               value={fmtMoney(netCash)}
-              sub={`After ~${(PROCESSING_FEE_RATE * 100).toFixed(0)}% processor fees`}
+              sub={`Total rev ${fmtMoney(totalRevenue)} · ~${(PROCESSING_FEE_RATE * 100).toFixed(0)}% fees`}
               accent="emerald"
               emphasized
             />
@@ -914,6 +1031,13 @@ const LukeDataTab: React.FC = () => {
               accent="emerald"
             />
             <ProfitCard
+              icon={DollarSign}
+              label="Affiliate revenue"
+              value={fmtMoney(affiliateRevenue)}
+              sub={`${affiliateCount} receipts × ${fmtMoney(AFFILIATE_AOV)}${affiliateAifOverlap > 0 ? ` · ${affiliateAifOverlap} also in AIF` : ''}`}
+              accent="emerald"
+            />
+            <ProfitCard
               icon={TrendingUp}
               label="ROAS"
               value={`${roas.toFixed(2)}x`}
@@ -925,6 +1049,10 @@ const LukeDataTab: React.FC = () => {
           {/* compact unit-economics strip — single line, small text, no card chrome */}
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1 px-1 text-[11px] text-[#888] flex-shrink-0">
             <span><span className="text-[#555]">Webinar</span> {fmtMoney(profit.webRev)} <span className="text-[#555]">· {profit.webBuyers} buyers</span></span>
+            <span className="text-[#333]">|</span>
+            <span><span className="text-[#555]">Affiliate</span> {fmtMoney(affiliateRevenue)} <span className="text-[#555]">· {affiliateCount} receipts</span></span>
+            <span className="text-[#333]">|</span>
+            <span><span className="text-[#555]">Ascended</span> {fmtMoney(ascendedRevenue)} <span className="text-[#555]">· {ascendedCount} buyers</span></span>
             <span className="text-[#333]">|</span>
             <span><span className="text-[#555]">Organic</span> {fmtMoney(profit.orgRev)} <span className="text-[#555]">· {profit.orgBuyers} buyers</span></span>
             <span className="text-[#333]">|</span>
