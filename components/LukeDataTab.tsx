@@ -21,6 +21,7 @@ import {
   Users, UserCheck, UserX, DollarSign, Crown, Calendar, CalendarX,
   RefreshCw, CheckCircle2, AlertCircle, Search, Download, Loader2,
   Mail, XCircle, Instagram, TrendingUp, Target, Pencil, Check, X,
+  Filter as FilterIcon, ChevronDown,
 } from 'lucide-react';
 import { supabase } from '../services/supabaseClient';
 
@@ -36,6 +37,7 @@ type Person = {
   first_name: string | null;
   last_name: string | null;
   phone: string | null;
+  instagram_handle: string | null;
   in_webinarjam: boolean;
   in_close: boolean;
   in_kit: boolean;
@@ -149,6 +151,8 @@ const LukeDataTab: React.FC = () => {
   const [dateRange, setDateRange] = useState<DateRange>('all');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [hideRecovered, setHideRecovered] = useState(true);
+  const [filterOpen, setFilterOpen] = useState(false);
+  const filterRef = React.useRef<HTMLDivElement | null>(null);
 
   // Per-range ad spend, persisted to localStorage. Meta API token doesn't have
   // ads_read scope, so this is maintained manually from Luke's Ads Manager.
@@ -214,6 +218,21 @@ const LukeDataTab: React.FC = () => {
   const syncToken = (import.meta as any).env.VITE_LUKE_SYNC_TOKEN as string | undefined;
   const canSync = Boolean(syncUrl && syncToken);
 
+  // Elapsed-second counter while syncing — gives the user a live "still
+  // working" signal so the spinner doesn't feel frozen.
+  const [syncStartedAt, setSyncStartedAt] = useState<number | null>(null);
+  const [syncElapsed, setSyncElapsed] = useState(0);
+  useEffect(() => {
+    if (!syncing || !syncStartedAt) {
+      setSyncElapsed(0);
+      return;
+    }
+    const tick = () => setSyncElapsed(Math.round((Date.now() - syncStartedAt) / 1000));
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [syncing, syncStartedAt]);
+
   const refresh = useCallback(async () => {
     if (!canSync) {
       setSyncError('Sync URL not configured. Set VITE_LUKE_SYNC_URL + VITE_LUKE_SYNC_TOKEN in .env.');
@@ -221,6 +240,7 @@ const LukeDataTab: React.FC = () => {
     }
     setSyncing(true);
     setSyncError(null);
+    setSyncStartedAt(Date.now());
     try {
       const url = `${syncUrl}?token=${encodeURIComponent(syncToken!)}`;
       const r = await fetch(url);
@@ -231,6 +251,7 @@ const LukeDataTab: React.FC = () => {
       setSyncError(e?.message || 'Sync failed');
     } finally {
       setSyncing(false);
+      setSyncStartedAt(null);
     }
   }, [canSync, syncUrl, syncToken, load]);
 
@@ -444,6 +465,23 @@ const LukeDataTab: React.FC = () => {
     if (kept.length !== selectedTags.length) setSelectedTags(kept);
   }, [tagIndex, selectedTags]);
 
+  // Close the filter dropdown when clicking outside it.
+  useEffect(() => {
+    if (!filterOpen) return;
+    const onClick = (e: MouseEvent) => {
+      if (filterRef.current && !filterRef.current.contains(e.target as Node)) {
+        setFilterOpen(false);
+      }
+    };
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setFilterOpen(false); };
+    document.addEventListener('mousedown', onClick);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onClick);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [filterOpen]);
+
   // ---- filter table --------------------------------------------------------
   // Tag filter uses OR semantics (match any selected tag) — cheaper mental
   // model than AND for the typical "export everyone tagged SLO Buyer OR
@@ -461,6 +499,7 @@ const LukeDataTab: React.FC = () => {
       if (!q) return true;
       const hay = [
         p.email, p.first_name, p.last_name, p.phone, p.close_status,
+        p.instagram_handle,
         (p.kit_tags || []).join(' '),
       ].filter(Boolean).join(' ').toLowerCase();
       return hay.includes(q);
@@ -519,6 +558,7 @@ const LukeDataTab: React.FC = () => {
       { key: 'last_name', label: 'Last' },
       { key: 'email', label: 'Email' },
       { key: 'phone', label: 'Phone' },
+      { key: 'instagram_handle', label: 'Instagram' },
       { key: 'kit_tags_joined', label: 'Tags' },
       { key: 'in_kit', label: 'In Kit' },
       { key: 'in_close', label: 'In Close' },
@@ -549,11 +589,33 @@ const LukeDataTab: React.FC = () => {
   const activeBucketDef = BUCKETS.find((b) => b.key === activeBucket);
 
   return (
-    <div className="flex flex-col gap-4 h-full overflow-y-auto">
+    <div className="flex flex-col gap-4 h-full overflow-y-auto relative">
+      {/* indeterminate progress bar — only visible while syncing */}
+      {syncing && (
+        <div className="absolute top-0 left-0 right-0 h-0.5 overflow-hidden bg-emerald-500/10 z-50">
+          <div className="luke-sync-progress h-full bg-emerald-400/80" />
+          <style>{`
+            @keyframes lukeSyncSlide {
+              0%   { transform: translateX(-100%); width: 30%; }
+              50%  { transform: translateX(50%);   width: 60%; }
+              100% { transform: translateX(200%);  width: 30%; }
+            }
+            .luke-sync-progress {
+              animation: lukeSyncSlide 1.6s ease-in-out infinite;
+            }
+          `}</style>
+        </div>
+      )}
+
       {/* header row */}
       <div className="flex items-center justify-between flex-shrink-0">
         <div className="flex items-center gap-3 text-xs text-[#666]">
-          {lastRun ? (
+          {syncing ? (
+            <span className="flex items-center gap-1.5 text-emerald-300">
+              <Loader2 size={12} className="animate-spin" />
+              Refreshing… {syncElapsed}s · pulling WebinarJam, Close, Kit, Whop & Calendly
+            </span>
+          ) : lastRun ? (
             lastRun.status === 'ok' ? (
               <span className="flex items-center gap-1.5 text-[#888]">
                 <CheckCircle2 size={12} className="text-emerald-500" />
@@ -581,7 +643,7 @@ const LukeDataTab: React.FC = () => {
           className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#2a2a2a] hover:bg-[#333] text-[#ECECEC] text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <RefreshCw size={12} className={syncing ? 'animate-spin' : ''} />
-          {syncing ? 'Refreshing…' : 'Refresh now'}
+          {syncing ? `Refreshing… ${syncElapsed}s` : 'Refresh now'}
         </button>
       </div>
 
@@ -757,42 +819,115 @@ const LukeDataTab: React.FC = () => {
             </button>
           </div>
 
-          {/* tag filter strip — every Kit tag seen in the current slice */}
+          {/* tag filter — explicit Filter button + checkbox dropdown + active chips */}
           {tagIndex.length > 0 && (
             <div className="flex items-center gap-2 flex-shrink-0 flex-wrap">
-              <span className="text-[10px] uppercase tracking-wider text-[#555] mr-1">Tags</span>
+              {/* Filter trigger */}
+              <div className="relative" ref={filterRef}>
+                <button
+                  type="button"
+                  onClick={() => setFilterOpen((o) => !o)}
+                  className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border transition-colors ${
+                    selectedTags.length > 0
+                      ? 'bg-emerald-500/10 border-emerald-500/40 text-emerald-200 hover:bg-emerald-500/15'
+                      : 'bg-[#1a1a1a] border-[#2a2a2a] text-[#999] hover:text-[#ECECEC] hover:border-[#3a3a3a]'
+                  }`}
+                  aria-expanded={filterOpen}
+                  aria-haspopup="listbox"
+                >
+                  <FilterIcon size={12} />
+                  <span>Filter by tag</span>
+                  {selectedTags.length > 0 && (
+                    <span className="ml-1 px-1.5 rounded-full bg-emerald-500/30 text-emerald-100 text-[10px] font-semibold leading-tight">
+                      {selectedTags.length}
+                    </span>
+                  )}
+                  <ChevronDown size={12} className={`transition-transform ${filterOpen ? 'rotate-180' : ''}`} />
+                </button>
+
+                {/* Popover panel */}
+                {filterOpen && (
+                  <div className="absolute z-50 left-0 top-full mt-2 w-72 rounded-lg border border-[#2a2a2a] bg-[#141414] shadow-xl shadow-black/50 overflow-hidden">
+                    <div className="flex items-center justify-between px-3 py-2 border-b border-[#222] bg-[#181818]">
+                      <span className="text-[10px] uppercase tracking-wider text-[#888] font-semibold">
+                        Filter by Kit tag
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedTags([])}
+                        disabled={selectedTags.length === 0}
+                        className="text-[10px] text-[#888] hover:text-[#ECECEC] disabled:opacity-30 disabled:cursor-not-allowed underline-offset-2 hover:underline"
+                      >
+                        Clear all
+                      </button>
+                    </div>
+                    <div className="max-h-72 overflow-y-auto py-1">
+                      {tagIndex.map(({ tag, count }) => {
+                        const on = selectedTags.includes(tag);
+                        return (
+                          <button
+                            key={tag}
+                            type="button"
+                            onClick={() =>
+                              setSelectedTags((prev) =>
+                                prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag],
+                              )
+                            }
+                            className="w-full flex items-center justify-between gap-2 px-3 py-2 text-xs text-left hover:bg-[#1c1c1c]"
+                            role="option"
+                            aria-selected={on}
+                          >
+                            <span className="flex items-center gap-2 min-w-0">
+                              <span
+                                className={`flex items-center justify-center w-4 h-4 rounded border flex-shrink-0 ${
+                                  on
+                                    ? 'bg-emerald-500 border-emerald-500'
+                                    : 'bg-transparent border-[#3a3a3a]'
+                                }`}
+                              >
+                                {on && <Check size={10} className="text-black" strokeWidth={3} />}
+                              </span>
+                              <span className={`truncate ${on ? 'text-emerald-200' : 'text-[#ECECEC]'}`}>
+                                {tag}
+                              </span>
+                            </span>
+                            <span className="text-[10px] text-[#666] flex-shrink-0">{count}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <div className="px-3 py-2 border-t border-[#222] bg-[#181818] text-[10px] text-[#666]">
+                      Matches people with <span className="text-[#999]">any</span> selected tag.
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Active-filter chips — always visible when a filter is on */}
+              {selectedTags.map((tag) => (
+                <span
+                  key={tag}
+                  className="inline-flex items-center gap-1 text-[11px] pl-2 pr-1 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/40 text-emerald-200"
+                >
+                  {tag}
+                  <button
+                    type="button"
+                    onClick={() => setSelectedTags((prev) => prev.filter((t) => t !== tag))}
+                    className="flex items-center justify-center w-4 h-4 rounded-full hover:bg-emerald-500/30 hover:text-white"
+                    aria-label={`Remove filter ${tag}`}
+                  >
+                    <X size={11} />
+                  </button>
+                </span>
+              ))}
               {selectedTags.length > 0 && (
                 <button
                   type="button"
                   onClick={() => setSelectedTags([])}
-                  className="text-[10px] px-2 py-0.5 rounded-full bg-[#1a1a1a] border border-[#2a2a2a] text-[#888] hover:text-[#ECECEC] hover:border-[#3a3a3a]"
+                  className="text-[11px] text-[#888] hover:text-[#ECECEC] underline underline-offset-2"
                 >
-                  Clear ({selectedTags.length})
+                  Clear filters
                 </button>
-              )}
-              {tagIndex.slice(0, 40).map(({ tag, count }) => {
-                const on = selectedTags.includes(tag);
-                return (
-                  <button
-                    key={tag}
-                    type="button"
-                    onClick={() =>
-                      setSelectedTags((prev) =>
-                        prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag],
-                      )
-                    }
-                    className={`text-[10px] px-2 py-0.5 rounded-full border transition-colors ${
-                      on
-                        ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-300'
-                        : 'bg-[#1a1a1a] border-[#2a2a2a] text-[#999] hover:text-[#ECECEC] hover:border-[#3a3a3a]'
-                    }`}
-                  >
-                    {tag} <span className={on ? 'text-emerald-400/70' : 'text-[#555]'}>· {count}</span>
-                  </button>
-                );
-              })}
-              {tagIndex.length > 40 && (
-                <span className="text-[10px] text-[#555]">+{tagIndex.length - 40} more (use search)</span>
               )}
             </div>
           )}
@@ -804,6 +939,7 @@ const LukeDataTab: React.FC = () => {
                 <tr>
                   <Th>Name</Th>
                   <Th>Email</Th>
+                  <Th>Instagram</Th>
                   <Th>Tags</Th>
                   <Th>Kit</Th>
                   <Th>Close</Th>
@@ -816,11 +952,11 @@ const LukeDataTab: React.FC = () => {
               </thead>
               <tbody className="text-[#bdbdbd]">
                 {loading ? (
-                  <tr><td colSpan={10} className="p-6 text-center text-[#555]">
+                  <tr><td colSpan={11} className="p-6 text-center text-[#555]">
                     <Loader2 size={14} className="inline-block animate-spin mr-2" /> Loading…
                   </td></tr>
                 ) : filtered.length === 0 ? (
-                  <tr><td colSpan={10} className="p-6 text-center text-[#555]">
+                  <tr><td colSpan={11} className="p-6 text-center text-[#555]">
                     {people.length === 0
                       ? 'No data yet. Click "Refresh now" to pull from WebinarJam, Close, Kit, and Whop.'
                       : 'No rows match this filter.'}
@@ -830,6 +966,18 @@ const LukeDataTab: React.FC = () => {
                     <tr key={p.id} className="border-b border-[#1a1a1a] hover:bg-[#141414]">
                       <Td>{[p.first_name, p.last_name].filter(Boolean).join(' ') || <span className="text-[#444]">—</span>}</Td>
                       <Td><span className="text-[#888]">{p.email}</span></Td>
+                      <Td>
+                        {p.instagram_handle ? (
+                          <a
+                            href={`https://instagram.com/${p.instagram_handle.replace(/^@/, '')}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-[#bdbdbd] hover:text-[#ECECEC]"
+                          >
+                            <Instagram size={11} /> {p.instagram_handle}
+                          </a>
+                        ) : <span className="text-[#444]">—</span>}
+                      </Td>
                       <Td>
                         {(p.kit_tags || []).length === 0 ? (
                           <span className="text-[#444]">—</span>
