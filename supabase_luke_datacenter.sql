@@ -13,6 +13,7 @@ create table if not exists public.luke_people (
   first_name              text,
   last_name               text,
   phone                   text,
+  instagram_handle        text,
 
   -- Presence flags — "is this person in system X?"
   in_webinarjam           boolean not null default false,
@@ -90,6 +91,10 @@ create index if not exists luke_people_bought_main_idx
 
 create index if not exists luke_people_attended_idx
   on public.luke_people (wj_attended_live) where wj_attended_live = true;
+
+-- Idempotent forward-migration for projects created before instagram_handle
+-- was part of the initial schema. Safe to leave permanently in place.
+alter table public.luke_people add column if not exists instagram_handle text;
 
 -- ---------- updated_at trigger ---------------------------------------------
 create or replace function public.luke_touch_updated_at()
