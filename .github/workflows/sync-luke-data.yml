@@ -1,0 +1,41 @@
+# Pings the Luke Data sync endpoint on a schedule so the Luke Data tab in the
+# Aureum App always has fresh registrant / Close / Kit / Whop data without
+# anyone clicking "Refresh now".
+#
+# Schedule: every 12 hours (00:00 and 12:00 UTC = 8pm and 8am ET).
+# Manual:   "Run workflow" button on the Actions tab also triggers a sync.
+#
+# Uses the existing LUKE_SYNC_TOKEN that the Aureum App also uses for the
+# manual refresh button. Stored as the GitHub repository secret
+# `LUKE_SYNC_TOKEN`.
+
+name: Sync Luke Data
+
+on:
+  schedule:
+    - cron: '0 0,12 * * *'  # twice daily, every 12 hours
+  workflow_dispatch:        # plus a manual "Run workflow" button
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Ping sync endpoint
+        env:
+          TOKEN: ${{ secrets.LUKE_SYNC_TOKEN }}
+        run: |
+          if [ -z "$TOKEN" ]; then
+            echo "::error::LUKE_SYNC_TOKEN secret is not set on this repository"
+            exit 1
+          fi
+          echo "Pinging sync endpoint..."
+          # -fS  = fail on HTTP error, show errors quietly
+          # --max-time 240 = sync usually finishes in < 30s but pull is large
+          RESPONSE=$(curl -fS --max-time 240 \
+            "https://aifreelancer.ai/api/sync-luke-data?token=${TOKEN}&source=github-cron")
+          echo "Response: $RESPONSE"
+          # Verify the JSON says ok:true
+          echo "$RESPONSE" | grep -q '"ok":\s*true' \
+            || { echo "::error::Sync endpoint returned non-ok response"; exit 1; }
+          echo "::notice::Luke data sync completed successfully"
