@@ -158,6 +158,33 @@ const rangeStart = (key: DateRange): Date | null => {
 
 // ---------------------------------------------------------------- bucket defs
 
+// "Ascended" — bought AI Insiders AND first joined our AIF funnel BEFORE that
+// purchase. Just having AI Insiders alone doesn't count — that's a pre-existing
+// AI Insiders customer who never touched our funnel. The required order is:
+//   1) Joined AIF (Kit / Close / WebinarJam / SLO / Main)
+//   2) (optionally booked Calendly)
+//   3) Bought AI Insiders
+const isAscended = (p: Person): boolean => {
+  if (!p.bought_ascended) return false;
+  if (!p.ascended_purchase_date) return false;
+  const ascendedAt = new Date(p.ascended_purchase_date).getTime();
+  if (!Number.isFinite(ascendedAt)) return false;
+  // Earliest reliable "joined AIF" timestamp we have for this person.
+  const aifStamps: number[] = [
+    p.slo_purchase_date,
+    p.main_purchase_date,
+    p.created_at,            // proxy: first time this email landed in luke_people
+    ...(p.wj_event_times || []),
+  ]
+    .filter((t): t is string => !!t)
+    .map((t) => new Date(t).getTime())
+    .filter((t) => Number.isFinite(t));
+  if (aifStamps.length === 0) return false;
+  const earliestAif = Math.min(...aifStamps);
+  // AIF touchpoint must precede the AI Insiders purchase.
+  return earliestAif < ascendedAt;
+};
+
 const BUCKETS: {
   key: BucketKey;
   label: string;
@@ -172,7 +199,7 @@ const BUCKETS: {
   { key: 'noshow',     label: 'No-shows',         icon: UserX,       hint: 'Registered but did not join', filter: (p) => p.in_webinarjam && !p.wj_attended_live },
   { key: 'slo',        label: 'Bought SLO',       icon: DollarSign,  hint: '$27 Toolkit purchase',       filter: (p) => p.bought_slo },
   { key: 'main',       label: 'Bought Main',      icon: Crown,       hint: '$1,297 Accelerator',          filter: (p) => p.bought_main },
-  { key: 'ascended',   label: 'Ascended',         icon: TrendingUp,  hint: 'Bought AI Insiders (high-ticket)', filter: (p) => p.bought_ascended },
+  { key: 'ascended',   label: 'Ascended',         icon: TrendingUp,  hint: 'Joined AIF funnel, then bought AI Insiders', filter: isAscended },
   { key: 'booked',     label: 'Buyers + booked',  icon: Calendar,    hint: 'Bought something + Calendly', filter: (p) => (p.bought_slo || p.bought_main) && p.calendly_booked },
   // "Buyers, no call" excludes people who already ASCENDED — they're past the
   // funnel; chasing them for a call would waste time. Eddie is the canonical
