@@ -343,6 +343,7 @@ const LukeDataTab: React.FC = () => {
     const start = rangeStart(dateRange);
     if (!start) return people;
     const s = start.getTime();
+    const nowMs = Date.now();
     const toMs = (v: string | null | undefined) => (v ? new Date(v).getTime() : 0);
     return people.filter((p) => {
       const sloAt     = toMs(p.slo_purchase_date);
@@ -350,13 +351,17 @@ const LukeDataTab: React.FC = () => {
       const calAt     = toMs(p.calendly_booking_time);
       // luke_people.created_at = first-seen timestamp, i.e. the lead date for
       // fresh opt-ins. Without this, a Kit-only opt-in from today who hadn't
-      // yet bought / booked was invisible in "Today" — which made today look
-      // like 9 SLO buyers instead of ~200 leads.
+      // yet bought / booked was invisible in "Today".
       const createdAt = toMs(p.created_at);
+      // wj_event_times stores the SCHEDULED webinar time (often in the future
+      // for upcoming events). If we let future timestamps win Math.max, every
+      // person registered for an upcoming webinar falls into every date
+      // window — which is how a "Last 7 days" view ended up showing all-time
+      // revenue. Only count past webinar events here.
       let wjAt = 0;
       for (const t of p.wj_event_times || []) {
         const v = toMs(t);
-        if (v > wjAt) wjAt = v;
+        if (v > 0 && v <= nowMs && v > wjAt) wjAt = v;
       }
       const latest = Math.max(sloAt, mainAt, calAt, wjAt, createdAt);
       return latest >= s;
@@ -420,20 +425,32 @@ const LukeDataTab: React.FC = () => {
   // ---- profit breakdown (webinar = in_kit, organic = NOT in_kit) -----------
   // Webinar revenue is the only revenue we credit ads with — everyone else
   // came in through some other path (Whop direct, social, etc.).
+  // Filtered by PURCHASE date directly (not "person in window"), so that a
+  // person who registered for a future webinar AND bought weeks ago doesn't
+  // get their ancient purchase counted in this week's totals.
   const profit = useMemo(() => {
+    const start = rangeStart(dateRange);
+    const sMs = start ? start.getTime() : null;
+    const purchaseInWindow = (dateStr: string | null | undefined) => {
+      if (sMs == null) return true;       // "All time"
+      if (!dateStr) return false;          // no timestamp = exclude from windowed views
+      return new Date(dateStr).getTime() >= sMs;
+    };
     let webSlo = 0, webMain = 0, orgSlo = 0, orgMain = 0;
     let webSloN = 0, webMainN = 0, orgSloN = 0, orgMainN = 0;
     const webBuyers = new Set<string>();
     const orgBuyers = new Set<string>();
-    for (const p of dateScopedPeople) {
-      if (!p.bought_slo && !p.bought_main) continue;
+    for (const p of people) {
       const k = (p.email || p.id).toLowerCase();
-      if (p.in_kit) {
-        if (p.bought_slo)  { webSlo  += Number(p.slo_amount  || 0); webSloN++;  webBuyers.add(k); }
-        if (p.bought_main) { webMain += Number(p.main_amount || 0); webMainN++; webBuyers.add(k); }
-      } else {
-        if (p.bought_slo)  { orgSlo  += Number(p.slo_amount  || 0); orgSloN++;  orgBuyers.add(k); }
-        if (p.bought_main) { orgMain += Number(p.main_amount || 0); orgMainN++; orgBuyers.add(k); }
+      if (p.bought_slo && purchaseInWindow(p.slo_purchase_date)) {
+        const amt = Number(p.slo_amount || 0);
+        if (p.in_kit) { webSlo  += amt; webSloN++;  webBuyers.add(k); }
+        else          { orgSlo  += amt; orgSloN++;  orgBuyers.add(k); }
+      }
+      if (p.bought_main && purchaseInWindow(p.main_purchase_date)) {
+        const amt = Number(p.main_amount || 0);
+        if (p.in_kit) { webMain += amt; webMainN++; webBuyers.add(k); }
+        else          { orgMain += amt; orgMainN++; orgBuyers.add(k); }
       }
     }
     const webRev = webSlo + webMain;
@@ -444,7 +461,7 @@ const LukeDataTab: React.FC = () => {
       webRev, orgRev, totalRev: webRev + orgRev,
       webBuyers: webBuyers.size, orgBuyers: orgBuyers.size,
     };
-  }, [dateScopedPeople]);
+  }, [people, dateRange]);
 
   // Affiliate revenue: every /receipt submission within the window = $500.
   // Treated as its own income stream alongside webinar + organic.
