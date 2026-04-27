@@ -495,12 +495,19 @@ const LukeDataTab: React.FC = () => {
   const adSpend = adSpendByRange[dateRange] ?? 0;
   const grossProfit = profit.webRev - adSpend;
   const roas = adSpend > 0 ? profit.webRev / adSpend : 0;
-  // Net cash = (webinar - ad spend) + organic + affiliate + ascended, minus fees.
-  // Ascended is high-margin recurring; same blended fee haircut as the rest.
-  const totalCash = grossProfit + profit.orgRev + affiliateRevenue + ascendedRevenue;
-  const fees = totalCash > 0 ? totalCash * PROCESSING_FEE_RATE : 0;
-  const netCash = totalCash - fees;
-  const totalRevenue = profit.webRev + profit.orgRev + affiliateRevenue + ascendedRevenue;
+  // Net cash is strictly the WEBINAR FUNNEL cash flow: (Webinar revenue − ad
+  // spend) + Organic, minus blended processor fees. Affiliate (Wix/Base44
+  // receipts) and Ascended (AI Insiders subs) are separate revenue streams
+  // not driven by the webinar ads — they're displayed in their own cards
+  // but NOT mixed into Net cash, otherwise a few high-ticket recurring subs
+  // make the funnel look 10x more profitable than it actually is.
+  const funnelCash = grossProfit + profit.orgRev;
+  const fees = funnelCash > 0 ? funnelCash * PROCESSING_FEE_RATE : 0;
+  const netCash = funnelCash - fees;
+  // Funnel-only revenue total — the number directly attributable to the ads.
+  const funnelRevenue = profit.webRev + profit.orgRev;
+  // Grand-total revenue across every stream — informational only.
+  const totalRevenueAllStreams = funnelRevenue + affiliateRevenue + ascendedRevenue;
   const cpaMain = profit.webMainN > 0 ? adSpend / profit.webMainN : 0;
   const cpaWebBuyer = profit.webBuyers > 0 ? adSpend / profit.webBuyers : 0;
   const ltvWebBuyer = profit.webBuyers > 0 ? profit.webRev / profit.webBuyers : 0;
@@ -1034,9 +1041,9 @@ const LukeDataTab: React.FC = () => {
           <div className="grid grid-cols-2 lg:grid-cols-5 gap-2 flex-shrink-0">
             <ProfitCard
               icon={TrendingUp}
-              label="Net cash (after fees)"
+              label="Funnel net cash"
               value={fmtMoney(netCash)}
-              sub={`Total rev ${fmtMoney(totalRevenue)} · ~${(PROCESSING_FEE_RATE * 100).toFixed(0)}% fees`}
+              sub={`Webinar + Organic − ads − ~${(PROCESSING_FEE_RATE * 100).toFixed(0)}% fees · Affiliate + Ascended shown separately`}
               accent="emerald"
               emphasized
             />
