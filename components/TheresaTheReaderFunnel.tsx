@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { FileText, Send, ExternalLink } from 'lucide-react';
+import { FileText, Send, ExternalLink, IdCard } from 'lucide-react';
 import FunnelCommunications from './FunnelCommunications';
+import FunnelProfile from './FunnelProfile';
 
 const pages = [
   { id: 'home-br', label: 'BR Landing',   src: 'https://theresathereader.com/leitura' },
@@ -14,23 +15,24 @@ interface Props {
   storagePrefix: string;
 }
 
-type View = 'pages' | 'communications';
+type View = 'profile' | 'pages' | 'communications';
 
 const TheresaTheReaderFunnel: React.FC<Props> = ({ storagePrefix }) => {
-  const [view, setView] = useState<View>('pages');
+  const [view, setView] = useState<View>('profile');
   const [activePageId, setActivePageId] = useState(pages[0].id);
   const activePage = pages.find(p => p.id === activePageId)!;
+
+  const subtitle =
+    view === 'profile' ? 'Client overview, team & key links'
+    : view === 'pages' ? 'Live funnel preview'
+    : 'Email, SMS & broadcast communications';
 
   return (
     <div className="h-full flex flex-col">
       <div className="flex items-center justify-between mb-3 flex-shrink-0">
         <div>
           <h1 className="text-lg font-semibold text-[#ECECEC]">{FUNNEL_NAME}</h1>
-          <p className="text-xs text-[#555] mt-0.5">
-            {view === 'pages'
-              ? 'Live funnel preview'
-              : 'Email, SMS & broadcast communications'}
-          </p>
+          <p className="text-xs text-[#555] mt-0.5">{subtitle}</p>
         </div>
         {view === 'pages' && (
           <a
@@ -46,6 +48,14 @@ const TheresaTheReaderFunnel: React.FC<Props> = ({ storagePrefix }) => {
 
       {/* Top-level view tabs */}
       <div className="flex gap-1 mb-3 flex-shrink-0 bg-[#1a1a1a] rounded-lg p-1 self-start">
+        <button
+          onClick={() => setView('profile')}
+          className={`flex items-center gap-1.5 px-4 py-1.5 rounded-md text-xs font-medium transition-colors ${
+            view === 'profile' ? 'bg-[#2a2a2a] text-[#ECECEC]' : 'text-[#666] hover:text-[#999]'
+          }`}
+        >
+          <IdCard size={12} /> Profile
+        </button>
         <button
           onClick={() => setView('pages')}
           className={`flex items-center gap-1.5 px-4 py-1.5 rounded-md text-xs font-medium transition-colors ${
@@ -64,7 +74,9 @@ const TheresaTheReaderFunnel: React.FC<Props> = ({ storagePrefix }) => {
         </button>
       </div>
 
-      {view === 'pages' ? (
+      {view === 'profile' ? (
+        <FunnelProfile funnelId={FUNNEL_ID} funnelName={FUNNEL_NAME} storagePrefix={storagePrefix} />
+      ) : view === 'pages' ? (
         <>
           {pages.length > 1 && (
             <div className="flex gap-1 mb-3 flex-shrink-0 bg-[#1a1a1a] rounded-lg p-1">
