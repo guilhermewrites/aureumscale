@@ -25,8 +25,6 @@ import {
 } from 'lucide-react';
 import { supabase } from '../services/supabaseClient';
 
-// Approximate Stripe + Whop fee blend used for net-cash math.
-const PROCESSING_FEE_RATE = 0.05;
 const AD_SPEND_KEY = 'aureum_luke_ad_spend_v2';
 
 // Each /receipt submission counts as $500 of affiliate revenue (Wix + Base44
@@ -37,6 +35,20 @@ const AFFILIATE_AOV = 500;
 // over-counts (only a fraction of submissions are genuine), so until that's
 // fixed Luke wants this hard-pinned to the verified payout figure.
 const AFFILIATE_REVENUE_OVERRIDE = 6350;
+
+// Manual whitelist of buyers who genuinely ascended through the Luke funnel.
+// `bought_ascended` from Whop flags anyone who ever bought AI Insiders, which
+// over-counts AI Insiders customers who never actually came through this
+// funnel. Until attribution is rebuilt, only emails listed here count as
+// ascended. Key = lower-cased email, value = the gross amount Luke received
+// (used for the Ascended revenue card and the per-row table cell).
+const GENUINE_ASCENDED_BUYERS: Record<string, number> = {
+  'edwardjonescontact@gmail.com': 3000,
+};
+const isGenuineAscendedEmail = (email: string | null | undefined): boolean =>
+  !!email && Object.prototype.hasOwnProperty.call(GENUINE_ASCENDED_BUYERS, email.toLowerCase());
+const genuineAscendedAmount = (email: string | null | undefined): number =>
+  email ? (GENUINE_ASCENDED_BUYERS[email.toLowerCase()] ?? 0) : 0;
 
 // ---------------------------------------------------------------- types
 
@@ -163,32 +175,12 @@ const rangeStart = (key: DateRange): Date | null => {
 
 // ---------------------------------------------------------------- bucket defs
 
-// "Ascended" — bought AI Insiders AND first joined our AIF funnel BEFORE that
-// purchase. Just having AI Insiders alone doesn't count — that's a pre-existing
-// AI Insiders customer who never touched our funnel. The required order is:
-//   1) Joined AIF (Kit / Close / WebinarJam / SLO / Main)
-//   2) (optionally booked Calendly)
-//   3) Bought AI Insiders
-const isAscended = (p: Person): boolean => {
-  if (!p.bought_ascended) return false;
-  if (!p.ascended_purchase_date) return false;
-  const ascendedAt = new Date(p.ascended_purchase_date).getTime();
-  if (!Number.isFinite(ascendedAt)) return false;
-  // Earliest reliable "joined AIF" timestamp we have for this person.
-  const aifStamps: number[] = [
-    p.slo_purchase_date,
-    p.main_purchase_date,
-    p.created_at,            // proxy: first time this email landed in luke_people
-    ...(p.wj_event_times || []),
-  ]
-    .filter((t): t is string => !!t)
-    .map((t) => new Date(t).getTime())
-    .filter((t) => Number.isFinite(t));
-  if (aifStamps.length === 0) return false;
-  const earliestAif = Math.min(...aifStamps);
-  // AIF touchpoint must precede the AI Insiders purchase.
-  return earliestAif < ascendedAt;
-};
+// "Ascended" — bought AI Insiders THROUGH this funnel. The Whop flag
+// (`bought_ascended`) over-counts because it includes AI Insiders customers
+// who were never part of the Luke funnel at all. Until attribution is
+// rebuilt, "ascended" is restricted to the manual GENUINE_ASCENDED_BUYERS
+// whitelist above — add a buyer's email there to mark them ascended.
+const isAscended = (p: Person): boolean => isGenuineAscendedEmail(p.email);
 
 const BUCKETS: {
   key: BucketKey;
@@ -209,7 +201,7 @@ const BUCKETS: {
   // "Buyers, no call" excludes people who already ASCENDED — they're past the
   // funnel; chasing them for a call would waste time. Eddie is the canonical
   // example: bought Main, never booked, then went straight to AI Insiders.
-  { key: 'not_booked', label: 'Buyers, no call',  icon: CalendarX,   hint: 'Bought, no Calendly, not yet ascended', filter: (p) => (p.bought_slo || p.bought_main) && !p.calendly_booked && !p.bought_ascended },
+  { key: 'not_booked', label: 'Buyers, no call',  icon: CalendarX,   hint: 'Bought, no Calendly, not yet ascended', filter: (p) => (p.bought_slo || p.bought_main) && !p.calendly_booked && !isAscended(p) },
 ];
 
 // ---------------------------------------------------------------- component
@@ -486,13 +478,15 @@ const LukeDataTab: React.FC = () => {
     const s = start ? start.getTime() : null;
     let total = 0; let count = 0;
     for (const p of people) {
-      if (!p.bought_ascended) continue;
+      if (!isAscended(p)) continue;
       if (s) {
         const t = p.ascended_purchase_date ? new Date(p.ascended_purchase_date).getTime() : 0;
         if (t < s) continue;
       }
       count++;
-      total += Number(p.ascended_amount || 0);
+      // Use the manual override amount, not p.ascended_amount, since the
+      // Whop figure may not match what Luke actually received net of fees.
+      total += genuineAscendedAmount(p.email);
     }
     return { count, total };
   }, [people, dateRange]);
@@ -500,22 +494,28 @@ const LukeDataTab: React.FC = () => {
   const ascendedCount   = ascendedStats.count;
 
   const adSpend = adSpendByRange[dateRange] ?? 0;
-  const grossProfit = profit.webRev - adSpend;
-  const roas = adSpend > 0 ? profit.webRev / adSpend : 0;
-  // Net cash = webinar funnel cash flow + affiliate payouts.
-  //   Funnel cash: (Webinar revenue − ad spend) + Organic, minus blended
-  //   processor fees. Affiliate revenue is added on top — it's already a net
-  //   payout from Wix/Base44 so no extra processor fee is applied. Ascended
-  //   (AI Insiders subs) is still kept out of Net cash because a few
-  //   high-ticket recurring subs would make the funnel look 10x more
-  //   profitable than it actually is.
-  const funnelCash = grossProfit + profit.orgRev;
-  const fees = funnelCash > 0 ? funnelCash * PROCESSING_FEE_RATE : 0;
-  const netCash = funnelCash - fees + affiliateRevenue;
-  // Funnel-only revenue total — the number directly attributable to the ads.
-  const funnelRevenue = profit.webRev + profit.orgRev;
-  // Grand-total revenue across every stream — informational only.
-  const totalRevenueAllStreams = funnelRevenue + affiliateRevenue + ascendedRevenue;
+  // Single revenue figure across the streams the funnel actually drives:
+  // webinar (incl. its SLO/Main purchases) + ascended (whitelisted AI
+  // Insiders sales) + affiliate (manual payout figure). Organic is left
+  // out — those are walk-ins not driven by ad spend.
+  const totalRevenue = profit.webRev + ascendedRevenue + affiliateRevenue;
+  // Net profit = total revenue − ads. No processor-fee deduction: the
+  // affiliate figure is already a net payout, the ascended override is the
+  // amount Luke actually received, and Stripe fees on the webinar funnel
+  // are minor enough that Luke wants the simple revenue − ads view.
+  const netProfit = totalRevenue - adSpend;
+  // Net cash, Funnel net cash, and Gross profit all surface the same number
+  // (net profit) — Luke wants one consistent "money kept" figure across the
+  // dashboard rather than three slightly-different definitions.
+  const netCash = netProfit;
+  const grossProfit = netProfit;
+  // ROAS = total revenue / ad spend. Previously this was webinar revenue
+  // only, which under-counted because ascended + affiliate sales are also
+  // driven by the same ad spend.
+  const roas = adSpend > 0 ? totalRevenue / adSpend : 0;
+  // Kept for legacy consumers below; same value as totalRevenue now.
+  const funnelRevenue = totalRevenue;
+  const totalRevenueAllStreams = totalRevenue;
   const cpaMain = profit.webMainN > 0 ? adSpend / profit.webMainN : 0;
   const cpaWebBuyer = profit.webBuyers > 0 ? adSpend / profit.webBuyers : 0;
   const ltvWebBuyer = profit.webBuyers > 0 ? profit.webRev / profit.webBuyers : 0;
@@ -615,7 +615,7 @@ const LukeDataTab: React.FC = () => {
   const needsCallList = useMemo(() => {
     const now = Date.now();
     return dateScopedPeople
-      .filter((p) => (p.bought_slo || p.bought_main) && !p.calendly_booked && !p.bought_ascended)
+      .filter((p) => (p.bought_slo || p.bought_main) && !p.calendly_booked && !isAscended(p))
       .map((p) => {
         const sloAt  = p.slo_purchase_date  ? new Date(p.slo_purchase_date).getTime()  : 0;
         const mainAt = p.main_purchase_date ? new Date(p.main_purchase_date).getTime() : 0;
@@ -1051,7 +1051,7 @@ const LukeDataTab: React.FC = () => {
               icon={TrendingUp}
               label="Funnel net cash"
               value={fmtMoney(netCash)}
-              sub={`Webinar + Organic − ads − ~${(PROCESSING_FEE_RATE * 100).toFixed(0)}% fees + Affiliate · Ascended shown separately`}
+              sub={`Webinar + Ascended + Affiliate − ad spend`}
               accent="emerald"
               emphasized
             />
@@ -1373,7 +1373,7 @@ const LukeDataTab: React.FC = () => {
                       ) : <Flag on={false} />}</Td>
                       <Td>{p.bought_slo ? <span className="text-[#6dd49a]">{fmtMoney(p.slo_amount || 0)}</span> : <Flag on={false} />}</Td>
                       <Td>{p.bought_main ? <span className="text-[#6dd49a]">{fmtMoney(p.main_amount || 0)}</span> : <Flag on={false} />}</Td>
-                      <Td>{p.bought_ascended ? <span className="text-[#e0c870] font-semibold">{fmtMoney(p.ascended_amount || 0)}</span> : <Flag on={false} />}</Td>
+                      <Td>{isAscended(p) ? <span className="text-[#e0c870] font-semibold">{fmtMoney(genuineAscendedAmount(p.email))}</span> : <Flag on={false} />}</Td>
                       <Td>{p.calendly_booked ? (
                         <span className="text-[#6dd49a]">
                           {p.calendly_booking_time ? formatDate(p.calendly_booking_time) : 'booked'}
