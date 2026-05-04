@@ -33,6 +33,11 @@ const AD_SPEND_KEY = 'aureum_luke_ad_spend_v2';
 // commission blend). Set per Guilherme's spec; if Luke renegotiates, update here.
 const AFFILIATE_AOV = 500;
 
+// Manual override for total affiliate revenue. The receipt-based attribution
+// over-counts (only a fraction of submissions are genuine), so until that's
+// fixed Luke wants this hard-pinned to the verified payout figure.
+const AFFILIATE_REVENUE_OVERRIDE = 6350;
+
 // ---------------------------------------------------------------- types
 
 type Person = {
@@ -463,10 +468,12 @@ const LukeDataTab: React.FC = () => {
     };
   }, [people, dateRange]);
 
-  // Affiliate revenue: every /receipt submission within the window = $500.
-  // Treated as its own income stream alongside webinar + organic.
+  // Affiliate revenue: receipt-based attribution is currently noisy (lots of
+  // false-positive submissions), so we display the manually-verified payout
+  // figure instead of `affiliateCount * AFFILIATE_AOV`. Receipt count is still
+  // shown for context. Swap back to the formula once attribution is cleaned up.
   const affiliateCount = dateScopedReceipts.length;
-  const affiliateRevenue = affiliateCount * AFFILIATE_AOV;
+  const affiliateRevenue = AFFILIATE_REVENUE_OVERRIDE;
   // Buyers who already had AIF Whop access at submission time — useful signal
   // for "are these net-new customers or upsells of existing AIF buyers".
   const affiliateAifOverlap = dateScopedReceipts.filter((r) => r.has_aif_access).length;
@@ -495,15 +502,16 @@ const LukeDataTab: React.FC = () => {
   const adSpend = adSpendByRange[dateRange] ?? 0;
   const grossProfit = profit.webRev - adSpend;
   const roas = adSpend > 0 ? profit.webRev / adSpend : 0;
-  // Net cash is strictly the WEBINAR FUNNEL cash flow: (Webinar revenue − ad
-  // spend) + Organic, minus blended processor fees. Affiliate (Wix/Base44
-  // receipts) and Ascended (AI Insiders subs) are separate revenue streams
-  // not driven by the webinar ads — they're displayed in their own cards
-  // but NOT mixed into Net cash, otherwise a few high-ticket recurring subs
-  // make the funnel look 10x more profitable than it actually is.
+  // Net cash = webinar funnel cash flow + affiliate payouts.
+  //   Funnel cash: (Webinar revenue − ad spend) + Organic, minus blended
+  //   processor fees. Affiliate revenue is added on top — it's already a net
+  //   payout from Wix/Base44 so no extra processor fee is applied. Ascended
+  //   (AI Insiders subs) is still kept out of Net cash because a few
+  //   high-ticket recurring subs would make the funnel look 10x more
+  //   profitable than it actually is.
   const funnelCash = grossProfit + profit.orgRev;
   const fees = funnelCash > 0 ? funnelCash * PROCESSING_FEE_RATE : 0;
-  const netCash = funnelCash - fees;
+  const netCash = funnelCash - fees + affiliateRevenue;
   // Funnel-only revenue total — the number directly attributable to the ads.
   const funnelRevenue = profit.webRev + profit.orgRev;
   // Grand-total revenue across every stream — informational only.
@@ -1043,7 +1051,7 @@ const LukeDataTab: React.FC = () => {
               icon={TrendingUp}
               label="Funnel net cash"
               value={fmtMoney(netCash)}
-              sub={`Webinar + Organic − ads − ~${(PROCESSING_FEE_RATE * 100).toFixed(0)}% fees · Affiliate + Ascended shown separately`}
+              sub={`Webinar + Organic − ads − ~${(PROCESSING_FEE_RATE * 100).toFixed(0)}% fees + Affiliate · Ascended shown separately`}
               accent="emerald"
               emphasized
             />
@@ -1104,7 +1112,7 @@ const LukeDataTab: React.FC = () => {
               icon={DollarSign}
               label="Affiliate revenue"
               value={fmtMoney(affiliateRevenue)}
-              sub={`${affiliateCount} receipts × ${fmtMoney(AFFILIATE_AOV)}${affiliateAifOverlap > 0 ? ` · ${affiliateAifOverlap} also in AIF` : ''}`}
+              sub={`Verified payout · ${affiliateCount} receipts on file${affiliateAifOverlap > 0 ? ` · ${affiliateAifOverlap} also in AIF` : ''}`}
               accent="emerald"
             />
             <ProfitCard
@@ -1661,7 +1669,7 @@ const LukeDataTab: React.FC = () => {
             <RevenueCard
               label="Affiliate revenue"
               value={fmtMoney(affiliateRevenue)}
-              sub={`${dateScopedReceipts.length} receipts × ${fmtMoney(AFFILIATE_AOV)}`}
+              sub={`Verified payout · ${dateScopedReceipts.length} receipts on file`}
               emphasized
             />
             <RevenueCard
