@@ -494,11 +494,12 @@ const LukeDataTab: React.FC = () => {
   const ascendedCount   = ascendedStats.count;
 
   const adSpend = adSpendByRange[dateRange] ?? 0;
-  // Single revenue figure across the streams the funnel actually drives:
-  // webinar (incl. its SLO/Main purchases) + ascended (whitelisted AI
-  // Insiders sales) + affiliate (manual payout figure). Organic is left
-  // out — those are walk-ins not driven by ad spend.
-  const totalRevenue = profit.webRev + ascendedRevenue + affiliateRevenue;
+  // Single revenue figure across every cash stream: webinar SLO+Main,
+  // organic SLO+Main (walk-in buyers not tagged in Kit), ascended
+  // (whitelisted AI Insiders sales), and affiliate (manual payout figure).
+  // Organic is folded in so every $27 SLO buyer counts regardless of
+  // whether they were attributed to the webinar.
+  const totalRevenue = profit.webRev + profit.orgRev + ascendedRevenue + affiliateRevenue;
   // Net profit = total revenue − ads. No processor-fee deduction: the
   // affiliate figure is already a net payout, the ascended override is the
   // amount Luke actually received, and Stripe fees on the webinar funnel
@@ -1051,7 +1052,7 @@ const LukeDataTab: React.FC = () => {
               icon={TrendingUp}
               label="Funnel net cash"
               value={fmtMoney(netCash)}
-              sub={`Webinar + Ascended + Affiliate − ad spend`}
+              sub={`Webinar + Organic + Ascended + Affiliate − ad spend`}
               accent="emerald"
               emphasized
             />
