@@ -6,6 +6,11 @@ import tailwindcss from '@tailwindcss/vite';
 export default defineConfig(({ mode }) => {
     const env = loadEnv(mode, '.', '');
     return {
+      base: '/portal/',
+      build: {
+        outDir: 'dist/portal',
+        emptyOutDir: true,
+      },
       server: {
         port: 5173,
         host: '127.0.0.1',
