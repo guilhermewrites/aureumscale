@@ -135,9 +135,9 @@ const GoogleDriveIcon = () => (
 
 const SOCIAL_LIST: { key: keyof SocialPlatforms; label: string; color: string; icon: React.FC }[] = [
   { key: 'instagram', label: 'Instagram', color: '#E1306C', icon: InstagramIcon },
-  { key: 'tiktok',    label: 'TikTok',    color: '#ECECEC', icon: TikTokIcon },
+  { key: 'tiktok',    label: 'TikTok',    color: '#f4f4f4', icon: TikTokIcon },
   { key: 'youtube',   label: 'YouTube',   color: '#FF4444', icon: YouTubeIcon },
-  { key: 'twitter',   label: 'Twitter/X', color: '#ECECEC', icon: XIcon },
+  { key: 'twitter',   label: 'Twitter/X', color: '#f4f4f4', icon: XIcon },
   { key: 'linkedin',  label: 'LinkedIn',  color: '#0A66C2', icon: LinkedInIcon },
   { key: 'facebook',  label: 'Facebook',  color: '#1877F2', icon: FacebookIcon },
 ];
@@ -657,13 +657,13 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
   if (!client) return null;
 
   // Shared field styles — slightly darker than card bg (#1c1c1c)
-  const ta = 'w-full resize-none focus:outline-none bg-[#161616] rounded-xl text-[#DEDEDE] text-sm leading-relaxed p-4 placeholder-[#3a3a3a] focus:ring-1 focus:ring-[#333] transition-all';
-  const inp = 'flex-1 focus:outline-none bg-[#161616] rounded-xl text-[#DEDEDE] text-sm px-4 py-3 placeholder-[#3a3a3a] focus:ring-1 focus:ring-[#333] transition-all';
+  const ta = 'w-full resize-none focus:outline-none bg-[#060606] rounded-none-none text-[#DEDEDE] text-sm leading-relaxed p-4 placeholder-[#3a3a3a] focus:ring-1 focus:ring-[#333] transition-all';
+  const inp = 'flex-1 focus:outline-none bg-[#060606] rounded-none-none text-[#DEDEDE] text-sm px-4 py-3 placeholder-[#3a3a3a] focus:ring-1 focus:ring-[#333] transition-all';
 
-  const card = { background: '#1c1c1c', borderRadius: 20 };
+  const card = { background: '#0a0a0a', borderRadius: 0 };
 
   return (
-    <div className="flex w-full h-full overflow-hidden gap-6 p-6" style={{ background: '#131313', borderRadius: 20 }}>
+    <div className="flex w-full h-full overflow-hidden gap-6 p-6" style={{ background: '#000', borderRadius: 0 }}>
 
       {/* ── LEFT CARD ─────────────────────────────────────────────────────────── */}
       <div
@@ -681,8 +681,8 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
             <img src={localPhoto} alt={client.name} className="w-full h-full object-cover" />
           ) : (
             <div className="w-full h-full flex flex-col items-center justify-center gap-2" style={{ background: '#242424' }}>
-              <Camera size={28} style={{ color: '#444' }} />
-              <span className="text-xs" style={{ color: '#444' }}>Add photo</span>
+              <Camera size={28} style={{ color: '#3a3a3a' }} />
+              <span className="text-xs" style={{ color: '#3a3a3a' }}>Add photo</span>
             </div>
           )}
           {/* Hover overlay */}
@@ -695,7 +695,7 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
         <div className="px-5 pt-4 pb-4 border-b" style={{ borderColor: '#222' }}>
           <p
             className="text-center text-xl font-bold leading-tight"
-            style={{ color: '#ECECEC', fontFamily: "'Georgia', 'Times New Roman', serif", fontStyle: 'italic' }}
+            style={{ color: '#f4f4f4', fontFamily: "'Georgia', 'Times New Roman', serif", fontStyle: 'italic' }}
           >
             {client.name || 'Client Name'}
           </p>
@@ -706,13 +706,13 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
               <input type="email" value={details.contact_email}
                 onChange={e => setField('contact_email', e.target.value)}
                 className="text-xs text-right bg-transparent focus:outline-none w-full truncate"
-                style={{ color: '#ECECEC' }} placeholder="email@example.com" />
+                style={{ color: '#f4f4f4' }} placeholder="email@example.com" />
             </CardRow>
             <CardRow label="Client since">
               <input type="date" value={details.client_since}
                 onChange={e => setField('client_since', e.target.value)}
                 className="text-xs text-right bg-transparent focus:outline-none w-full"
-                style={{ color: '#ECECEC', colorScheme: 'dark' }} />
+                style={{ color: '#f4f4f4', colorScheme: 'dark' }} />
             </CardRow>
             <CardRow label="Status">
               <CardStatusSelect
@@ -740,8 +740,8 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
             </CardRow>
             <CardRow label="Amount">
               <div className="flex items-center justify-end gap-0.5">
-                <span className="text-xs" style={{ color: '#555' }}>$</span>
-                <span className="text-xs font-semibold" style={{ color: '#ECECEC' }}>
+                <span className="text-xs" style={{ color: '#5a5a5a' }}>$</span>
+                <span className="text-xs font-semibold" style={{ color: '#f4f4f4' }}>
                   {(client.amount ?? 0).toLocaleString()}
                 </span>
               </div>
@@ -766,12 +766,12 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
               key={id}
               onClick={() => setActiveTab(id)}
               className={[
-                'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all text-left w-full',
+                'flex items-center gap-3 px-3 py-2.5 rounded-none-none text-sm font-medium transition-all text-left w-full',
                 activeTab === id
-                  ? 'text-[#ECECEC]'
-                  : 'text-[#555] hover:text-[#ECECEC] hover:bg-[#222]',
+                  ? 'text-[#f4f4f4]'
+                  : 'text-[#5a5a5a] hover:text-[#f4f4f4] hover:bg-[#222]',
               ].join(' ')}
-              style={activeTab === id ? { background: '#2a2a2a' } : {}}
+              style={activeTab === id ? { background: '#0d0d0d' } : {}}
             >
               <Icon size={15} className="flex-shrink-0" />
               {label}
@@ -786,7 +786,7 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
         {/* Main content area */}
         <div className="overflow-y-auto" style={{ flex: activeTab === 'Content' ? '3 1 0%' : '1 1 0%' }}>
         {loading ? (
-          <div className="flex items-center justify-center h-full gap-2.5" style={{ color: '#444' }}>
+          <div className="flex items-center justify-center h-full gap-2.5" style={{ color: '#3a3a3a' }}>
             <Loader2 size={20} className="animate-spin" />
             <span className="text-sm">Loading workspace…</span>
           </div>
@@ -819,7 +819,7 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
                 title={`Billing History${invoices.length > 0 ? ` · ${invoices.length}` : ''}`}
                 action={
                   <button onClick={addInvoice}
-                    className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-colors"
+                    className="flex items-center gap-2 px-4 py-2 rounded-none-none text-sm font-semibold transition-colors"
                     style={{ background: '#ECECEC', color: '#111' }}
                     onMouseEnter={e => (e.currentTarget.style.background = '#fff')}
                     onMouseLeave={e => (e.currentTarget.style.background = '#ECECEC')}
@@ -827,20 +827,20 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
                 }
               >
                 {invoicesLoading ? (
-                  <div className="flex items-center justify-center py-12 gap-2" style={{ color: '#444' }}>
+                  <div className="flex items-center justify-center py-12 gap-2" style={{ color: '#3a3a3a' }}>
                     <Loader2 size={16} className="animate-spin" />
                     <span className="text-sm">Loading invoices…</span>
                   </div>
                 ) : invoices.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-16 gap-2" style={{ color: '#333' }}>
                     <Receipt size={32} strokeWidth={1.5} />
-                    <p className="text-sm font-medium mt-1" style={{ color: '#444' }}>No invoices yet</p>
+                    <p className="text-sm font-medium mt-1" style={{ color: '#3a3a3a' }}>No invoices yet</p>
                     <p className="text-xs">Click "New Invoice" to create your first invoice.</p>
                   </div>
                 ) : (
-                  <div className="rounded-2xl overflow-hidden" style={{ background: '#161616' }}>
+                  <div className="rounded-none overflow-hidden" style={{ background: '#060606' }}>
                     {/* Header */}
-                    <div className="grid grid-cols-[24px_1fr_80px_1fr_85px_90px_90px_90px_70px_36px] gap-2 px-5 py-3 text-[10px] font-semibold uppercase tracking-widest" style={{ color: '#444', borderBottom: '1px solid #222' }}>
+                    <div className="grid grid-cols-[24px_1fr_80px_1fr_85px_90px_90px_90px_70px_36px] gap-2 px-5 py-3 text-[10px] font-semibold uppercase tracking-widest" style={{ color: '#3a3a3a', borderBottom: '1px solid #222' }}>
                       <span></span>
                       <span>Invoice #</span>
                       <span>Amount</span>
@@ -876,17 +876,17 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
                         onMouseEnter={e => (e.currentTarget.style.background = '#1a1a1a')}
                         onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
                       >
-                        <div className="cursor-grab active:cursor-grabbing text-[#333] hover:text-[#666] transition-colors">
+                        <div className="cursor-grab active:cursor-grabbing text-[#333] hover:text-[#5a5a5a] transition-colors">
                           <GripVertical size={14} />
                         </div>
                         <input
                           value={inv.invoice_number}
                           onChange={e => updateInvoice(inv.id, { invoice_number: e.target.value })}
-                          className="bg-transparent text-xs font-medium text-[#ECECEC] focus:outline-none w-full placeholder-[#333]"
+                          className="bg-transparent text-xs font-medium text-[#f4f4f4] focus:outline-none w-full placeholder-[#333]"
                           placeholder="INV-001"
                         />
                         <div className="flex items-center gap-0.5">
-                          <span className="text-[10px] text-emerald-500/60">$</span>
+                          <span className="text-[10px] text-[#6dd49a]/60">$</span>
                           <input
                             type="text"
                             value={inv.amount ? inv.amount.toLocaleString() : ''}
@@ -894,14 +894,14 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
                               const raw = e.target.value.replace(/[^0-9.]/g, '');
                               updateInvoice(inv.id, { amount: parseFloat(raw) || 0 });
                             }}
-                            className="bg-transparent text-xs font-medium text-emerald-400 focus:outline-none w-full placeholder-[#333]"
+                            className="bg-transparent text-xs font-medium text-[#6dd49a] focus:outline-none w-full placeholder-[#333]"
                             placeholder="0"
                           />
                         </div>
                         <input
                           value={inv.service}
                           onChange={e => updateInvoice(inv.id, { service: e.target.value })}
-                          className="bg-transparent text-xs text-[#ECECEC] focus:outline-none w-full placeholder-[#333]"
+                          className="bg-transparent text-xs text-[#f4f4f4] focus:outline-none w-full placeholder-[#333]"
                           placeholder="Service…"
                         />
                         <InvoiceStatusSelect
@@ -911,25 +911,25 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
                         <input
                           type="date" value={inv.date_sent}
                           onChange={e => updateInvoice(inv.id, { date_sent: e.target.value })}
-                          className="bg-transparent text-[10px] text-[#ECECEC] focus:outline-none w-full"
+                          className="bg-transparent text-[10px] text-[#f4f4f4] focus:outline-none w-full"
                           style={{ colorScheme: 'dark' }}
                         />
                         <input
                           type="date" value={inv.date_due}
                           onChange={e => updateInvoice(inv.id, { date_due: e.target.value })}
-                          className="bg-transparent text-[10px] text-[#ECECEC] focus:outline-none w-full"
+                          className="bg-transparent text-[10px] text-[#f4f4f4] focus:outline-none w-full"
                           style={{ colorScheme: 'dark' }}
                         />
                         <input
                           type="date" value={inv.date_paid}
                           onChange={e => updateInvoice(inv.id, { date_paid: e.target.value })}
-                          className="bg-transparent text-[10px] text-[#ECECEC] focus:outline-none w-full"
+                          className="bg-transparent text-[10px] text-[#f4f4f4] focus:outline-none w-full"
                           style={{ colorScheme: 'dark' }}
                         />
                         <span className="text-xs font-medium" style={{ color: speedColor }}>{speedLabel}</span>
                         <button
                           onClick={() => deleteInvoice(inv.id)}
-                          className="p-1 rounded-lg transition-colors flex-shrink-0"
+                          className="p-1 rounded-none-none transition-colors flex-shrink-0"
                           style={{ color: '#333' }}
                           onMouseEnter={e => (e.currentTarget.style.color = '#ef4444')}
                           onMouseLeave={e => (e.currentTarget.style.color = '#333')}
@@ -1007,7 +1007,7 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
               const CalendarSmIcon = () => <svg viewBox="0 0 24 24" width="18.75" height="18.75" fill="currentColor"><path d="M7 4V3h2v1h6V3h2v1h1.5C19.89 4 21 5.12 21 6.5v12c0 1.38-1.11 2.5-2.5 2.5h-13C4.12 21 3 19.88 3 18.5v-12C3 5.12 4.12 4 5.5 4H7zm0 2H5.5c-.27 0-.5.22-.5.5v12c0 .28.23.5.5.5h13c.28 0 .5-.22.5-.5v-12c0-.28-.22-.5-.5-.5H17v1h-2V6H9v1H7V6zm-1 4h12v2H6v-2z"/></svg>;
 
               return (
-              <div className="rounded-2xl overflow-hidden flex flex-col" style={{ background: '#000', border: '1px solid #2f3336', minHeight: 'calc(100vh - 40px)' }}>
+              <div className="rounded-none overflow-hidden flex flex-col" style={{ background: '#000', border: '1px solid #2f3336', minHeight: 'calc(100vh - 40px)' }}>
 
                 {/* ── Sticky top bar ── */}
                 <div className="flex items-center gap-6 px-4 py-1 sticky top-0 z-20" style={{ background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(12px)', borderRadius: '16px 16px 0 0' }}>
@@ -1038,12 +1038,12 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
                     {avatar ? (
                       <img src={avatar} alt="" className="rounded-full object-cover" style={{ width: 134, height: 134, border: '4px solid #000' }} />
                     ) : (
-                      <div className="rounded-full flex items-center justify-center text-4xl font-bold" style={{ width: 134, height: 134, border: '4px solid #000', background: '#333', color: '#ECECEC' }}>
+                      <div className="rounded-full flex items-center justify-center text-4xl font-bold" style={{ width: 134, height: 134, border: '4px solid #000', background: '#333', color: '#f4f4f4' }}>
                         {displayName.charAt(0).toUpperCase()}
                       </div>
                     )}
                     <button onClick={addTweet}
-                      className="flex items-center gap-2 px-5 py-2 rounded-full text-[15px] font-bold transition-colors"
+                      className="flex items-center gap-2 px-5 py-2 rounded-none-full text-[15px] font-bold transition-colors"
                       style={{ background: '#1d9bf0', color: '#fff', marginBottom: 12 }}
                       onMouseEnter={e => (e.currentTarget.style.background = '#1a8cd8')}
                       onMouseLeave={e => (e.currentTarget.style.background = '#1d9bf0')}
@@ -1132,7 +1132,7 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
                     <span className="text-[15px] mt-1">When {displayName} posts, it'll show up here.</span>
                   </div>
                 ) : tweetsLoading ? (
-                  <div className="flex items-center justify-center py-12 gap-2" style={{ color: '#444' }}>
+                  <div className="flex items-center justify-center py-12 gap-2" style={{ color: '#3a3a3a' }}>
                     <Loader2 size={20} className="animate-spin" style={{ color: '#1d9bf0' }} />
                   </div>
                 ) : tweets.length === 0 ? (
@@ -1181,7 +1181,7 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
                             {avatar ? (
                               <img src={avatar} alt="" className="rounded-full object-cover" style={{ width: 40, height: 40 }} />
                             ) : (
-                              <div className="rounded-full flex items-center justify-center text-sm font-bold" style={{ width: 40, height: 40, background: '#333', color: '#ECECEC' }}>
+                              <div className="rounded-full flex items-center justify-center text-sm font-bold" style={{ width: 40, height: 40, background: '#333', color: '#f4f4f4' }}>
                                 {displayName.charAt(0).toUpperCase()}
                               </div>
                             )}
@@ -1212,22 +1212,22 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
                                 if (diff <= 0 && diff >= -1) return null;
                                 const label = diff === 1 ? 'Tomorrow' : diff > 1 ? `In ${diff}d` : `${Math.abs(diff)}d ago`;
                                 const color = diff < 0 ? '#f4212e' : '#1d9bf0';
-                                return <span className="text-[11px] font-medium px-1.5 py-0.5 rounded-full flex-shrink-0" style={{ color, background: diff < 0 ? 'rgba(244,33,46,0.1)' : 'rgba(29,155,240,0.1)' }}>{label}</span>;
+                                return <span className="text-[11px] font-medium px-1.5 py-0.5 rounded-none-full flex-shrink-0" style={{ color, background: diff < 0 ? 'rgba(244,33,46,0.1)' : 'rgba(29,155,240,0.1)' }}>{label}</span>;
                               })()}
                               <div className="flex-1" />
                               {/* More menu (delete with confirmation) */}
                               <div className="relative">
                                 <button
                                   onClick={() => setDeleteConfirmTweet(deleteConfirmTweet === tw.id ? null : tw.id)}
-                                  className="p-1.5 -mr-1.5 rounded-full transition-colors"
+                                  className="p-1.5 -mr-1.5 rounded-none-full transition-colors"
                                   style={{ color: '#71767b' }}
                                   onMouseEnter={e => { e.currentTarget.style.color = '#1d9bf0'; e.currentTarget.style.background = 'rgba(29,155,240,0.1)'; }}
                                   onMouseLeave={e => { e.currentTarget.style.color = '#71767b'; e.currentTarget.style.background = 'transparent'; }}
                                 ><MoreIcon /></button>
                                 {deleteConfirmTweet === tw.id && (
                                   <div
-                                    className="absolute right-0 top-8 z-50 rounded-xl py-1 shadow-xl"
-                                    style={{ background: '#1c1c1c', border: '1px solid #2a2a2a', minWidth: 160 }}
+                                    className="absolute right-0 top-8 z-50 rounded-none-none py-1 shadow-xl"
+                                    style={{ background: '#0a0a0a', border: '1px solid #1a1a1a', minWidth: 160 }}
                                   >
                                     <button
                                       onClick={() => { deleteTweet(tw.id); setDeleteConfirmTweet(null); }}
@@ -1241,7 +1241,7 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
                                     <button
                                       onClick={() => setDeleteConfirmTweet(null)}
                                       className="w-full flex items-center gap-2 px-4 py-2.5 text-[13px] transition-colors text-left"
-                                      style={{ color: '#ECECEC' }}
+                                      style={{ color: '#f4f4f4' }}
                                       onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.05)')}
                                       onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
                                     >
@@ -1269,11 +1269,11 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
 
                             {/* Image */}
                             {tw.image_url && (
-                              <div className="mt-3 relative overflow-hidden" style={{ borderRadius: 16, border: '1px solid #2f3336' }}>
+                              <div className="mt-3 relative overflow-hidden" style={{ borderRadius: 0, border: '1px solid #2f3336' }}>
                                 <img src={tw.image_url} alt="" className="w-full" style={{ objectFit: 'contain', maxHeight: 510, background: '#000' }} />
                                 <button
                                   onClick={() => updateTweet(tw.id, { image_url: '' })}
-                                  className="absolute top-1.5 right-1.5 p-1.5 rounded-full transition-colors"
+                                  className="absolute top-1.5 right-1.5 p-1.5 rounded-none-full transition-colors"
                                   style={{ background: 'rgba(15,20,25,0.75)', color: '#e7e9ea', backdropFilter: 'blur(4px)' }}
                                   onMouseEnter={e => (e.currentTarget.style.background = 'rgba(15,20,25,0.9)')}
                                   onMouseLeave={e => (e.currentTarget.style.background = 'rgba(15,20,25,0.75)')}
@@ -1283,32 +1283,32 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
 
                             {/* Engagement bar */}
                             <div className="flex items-center justify-between mt-1.5 -ml-2 pb-1" style={{ maxWidth: 425 }}>
-                              <button className="flex items-center gap-1 p-2 rounded-full transition-colors group/r" style={{ color: '#71767b' }}
+                              <button className="flex items-center gap-1 p-2 rounded-none-full transition-colors group/r" style={{ color: '#71767b' }}
                                 onMouseEnter={e => { e.currentTarget.style.color = '#1d9bf0'; }}
                                 onMouseLeave={e => { e.currentTarget.style.color = '#71767b'; }}
                               >
-                                <div className="p-0 rounded-full group-hover/r:bg-[rgba(29,155,240,0.1)]"><ReplyIcon /></div>
+                                <div className="p-0 rounded-none-full group-hover/r:bg-[rgba(29,155,240,0.1)]"><ReplyIcon /></div>
                                 <span className="text-[13px] min-w-[24px]">{fmtNum(tw.replies)}</span>
                               </button>
-                              <button className="flex items-center gap-1 p-2 rounded-full transition-colors group/rt" style={{ color: '#71767b' }}
+                              <button className="flex items-center gap-1 p-2 rounded-none-full transition-colors group/rt" style={{ color: '#71767b' }}
                                 onMouseEnter={e => { e.currentTarget.style.color = '#00ba7c'; }}
                                 onMouseLeave={e => { e.currentTarget.style.color = '#71767b'; }}
                               >
-                                <div className="p-0 rounded-full group-hover/rt:bg-[rgba(0,186,124,0.1)]"><RetweetIcon /></div>
+                                <div className="p-0 rounded-none-full group-hover/rt:bg-[rgba(0,186,124,0.1)]"><RetweetIcon /></div>
                                 <span className="text-[13px] min-w-[24px]">{fmtNum(tw.retweets)}</span>
                               </button>
-                              <button className="flex items-center gap-1 p-2 rounded-full transition-colors group/lk" style={{ color: '#71767b' }}
+                              <button className="flex items-center gap-1 p-2 rounded-none-full transition-colors group/lk" style={{ color: '#71767b' }}
                                 onMouseEnter={e => { e.currentTarget.style.color = '#f91880'; }}
                                 onMouseLeave={e => { e.currentTarget.style.color = '#71767b'; }}
                               >
-                                <div className="p-0 rounded-full group-hover/lk:bg-[rgba(249,24,128,0.1)]"><LikeIcon /></div>
+                                <div className="p-0 rounded-none-full group-hover/lk:bg-[rgba(249,24,128,0.1)]"><LikeIcon /></div>
                                 <span className="text-[13px] min-w-[24px]">{fmtNum(tw.likes)}</span>
                               </button>
-                              <button className="flex items-center gap-1 p-2 rounded-full transition-colors group/vw" style={{ color: '#71767b' }}
+                              <button className="flex items-center gap-1 p-2 rounded-none-full transition-colors group/vw" style={{ color: '#71767b' }}
                                 onMouseEnter={e => { e.currentTarget.style.color = '#1d9bf0'; }}
                                 onMouseLeave={e => { e.currentTarget.style.color = '#71767b'; }}
                               >
-                                <div className="p-0 rounded-full group-hover/vw:bg-[rgba(29,155,240,0.1)]"><ViewIcon /></div>
+                                <div className="p-0 rounded-none-full group-hover/vw:bg-[rgba(29,155,240,0.1)]"><ViewIcon /></div>
                                 <span className="text-[13px] min-w-[24px]">{fmtNum(tw.views)}</span>
                               </button>
                               <div className="flex items-center gap-0">
@@ -1320,18 +1320,18 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
                                       inp.onchange = (ev: any) => { const f = ev.target.files?.[0]; if (f) uploadTweetImage(tw.id, f); };
                                       inp.click();
                                     }}
-                                    className="p-2 rounded-full transition-colors"
+                                    className="p-2 rounded-none-full transition-colors"
                                     style={{ color: '#71767b' }}
                                     onMouseEnter={e => { e.currentTarget.style.color = '#1d9bf0'; e.currentTarget.style.background = 'rgba(29,155,240,0.1)'; }}
                                     onMouseLeave={e => { e.currentTarget.style.color = '#71767b'; e.currentTarget.style.background = 'transparent'; }}
                                     title="Add image"
                                   ><ImageIcon size={18} /></button>
                                 )}
-                                <button className="p-2 rounded-full transition-colors" style={{ color: '#71767b' }}
+                                <button className="p-2 rounded-none-full transition-colors" style={{ color: '#71767b' }}
                                   onMouseEnter={e => { e.currentTarget.style.color = '#1d9bf0'; e.currentTarget.style.background = 'rgba(29,155,240,0.1)'; }}
                                   onMouseLeave={e => { e.currentTarget.style.color = '#71767b'; e.currentTarget.style.background = 'transparent'; }}
                                 ><BookmarkIcon /></button>
-                                <button className="p-2 rounded-full transition-colors" style={{ color: '#71767b' }}
+                                <button className="p-2 rounded-none-full transition-colors" style={{ color: '#71767b' }}
                                   onMouseEnter={e => { e.currentTarget.style.color = '#1d9bf0'; e.currentTarget.style.background = 'rgba(29,155,240,0.1)'; }}
                                   onMouseLeave={e => { e.currentTarget.style.color = '#71767b'; e.currentTarget.style.background = 'transparent'; }}
                                 ><ShareIcon /></button>
@@ -1353,14 +1353,14 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
               <Block title="Performance Metrics">
                 <div className="grid grid-cols-3 gap-3">
                   {ADS_METRICS.map(({ key, label, prefix }) => (
-                    <div key={key} className="rounded-2xl p-5 flex flex-col gap-2" style={{ background: '#161616' }}>
-                      <span className="text-[10px] font-semibold uppercase tracking-widest" style={{ color: '#555' }}>{label}</span>
+                    <div key={key} className="rounded-none p-5 flex flex-col gap-2" style={{ background: '#060606' }}>
+                      <span className="text-[10px] font-semibold uppercase tracking-widest" style={{ color: '#5a5a5a' }}>{label}</span>
                       <div className="flex items-baseline gap-0.5">
                         {prefix && <span className="text-sm font-bold" style={{ color: '#3a3a3a' }}>{prefix}</span>}
                         <input type="text" value={details.ads_performance[key]}
                           onChange={e => setAds(key, e.target.value)}
                           className="bg-transparent text-2xl font-bold focus:outline-none w-full placeholder-[#2e2e2e]"
-                          style={{ color: '#ECECEC' }} placeholder="—" />
+                          style={{ color: '#f4f4f4' }} placeholder="—" />
                       </div>
                     </div>
                   ))}
@@ -1377,7 +1377,7 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
             {/* ── SOCIAL ──────────────────────────────────────────────────── */}
             {activeTab === 'Social' && (
               <Block title="Platforms">
-                <div className="rounded-2xl overflow-hidden" style={{ background: '#161616' }}>
+                <div className="rounded-none overflow-hidden" style={{ background: '#060606' }}>
                   {SOCIAL_LIST.map(({ key, label, color, icon: Icon }, i) => (
                     <div key={key} className="flex items-center gap-4 px-5 py-3.5 transition-colors"
                       style={{ borderTop: i === 0 ? 'none' : '1px solid #222', background: 'transparent' }}
@@ -1387,7 +1387,7 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
                       <div className="w-7 h-7 flex items-center justify-center flex-shrink-0" style={{ color }}>
                         <Icon />
                       </div>
-                      <span className="text-sm font-medium w-24 flex-shrink-0" style={{ color: '#555' }}>{label}</span>
+                      <span className="text-sm font-medium w-24 flex-shrink-0" style={{ color: '#5a5a5a' }}>{label}</span>
                       <input type="text" value={details.social_platforms[key]}
                         onChange={e => setSocial(key, e.target.value)}
                         className="bg-transparent text-sm focus:outline-none flex-1 placeholder-[#2e2e2e]"
@@ -1429,7 +1429,7 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
                 title={`Scripts${details.scripted_ads.length > 0 ? ` · ${details.scripted_ads.length}` : ''}`}
                 action={
                   <button onClick={addScript}
-                    className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-colors"
+                    className="flex items-center gap-2 px-4 py-2 rounded-none-none text-sm font-semibold transition-colors"
                     style={{ background: '#ECECEC', color: '#111' }}
                     onMouseEnter={e => (e.currentTarget.style.background = '#fff')}
                     onMouseLeave={e => (e.currentTarget.style.background = '#ECECEC')}
@@ -1439,13 +1439,13 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
                 {details.scripted_ads.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-20 gap-2" style={{ color: '#333' }}>
                     <FileText size={32} strokeWidth={1.5} />
-                    <p className="text-sm font-medium mt-1" style={{ color: '#444' }}>No scripts yet</p>
+                    <p className="text-sm font-medium mt-1" style={{ color: '#3a3a3a' }}>No scripts yet</p>
                     <p className="text-xs">Click "New Script" to write your first ad.</p>
                   </div>
                 ) : (
                   <div className="space-y-4">
                     {details.scripted_ads.map((script, index) => (
-                      <div key={script.id} className="rounded-2xl p-6 space-y-4" style={{ background: '#161616' }}>
+                      <div key={script.id} className="rounded-none p-6 space-y-4" style={{ background: '#060606' }}>
                         <div className="flex items-center gap-3">
                           <span className="text-xs font-bold w-5 flex-shrink-0" style={{ color: '#3a3a3a' }}>
                             {String(index + 1).padStart(2, '0')}
@@ -1453,9 +1453,9 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
                           <input type="text" value={script.title}
                             onChange={e => patchScript(script.id, { title: e.target.value })}
                             className="bg-transparent text-sm font-semibold focus:outline-none flex-1 placeholder-[#2e2e2e] border-b border-transparent focus:border-[#2e2e2e] pb-0.5 transition-colors"
-                            style={{ color: '#ECECEC' }} placeholder="Script title…" />
+                            style={{ color: '#f4f4f4' }} placeholder="Script title…" />
                           <button onClick={() => removeScript(script.id)}
-                            className="flex-shrink-0 p-1.5 rounded-lg transition-colors"
+                            className="flex-shrink-0 p-1.5 rounded-none-none transition-colors"
                             style={{ color: '#3a3a3a' }}
                             onMouseEnter={e => (e.currentTarget.style.color = '#ef4444')}
                             onMouseLeave={e => (e.currentTarget.style.color = '#3a3a3a')}
@@ -1485,7 +1485,7 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
             {/* ── MEMORY (for AI) ──────────────────────────────────────────── */}
             {activeTab === 'Memory' && (
               <Block title="Client Memory" action={
-                <span className="text-[10px]" style={{ color: '#666' }}>
+                <span className="text-[10px]" style={{ color: '#5a5a5a' }}>
                   The Aureum Agent reads this when you ask about {client?.name || 'this client'}
                 </span>
               }>
@@ -1498,13 +1498,13 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
                     {MEMORY_CATEGORIES.map(cat => {
                       const items = clientMemories.filter(m => m.category === cat.id);
                       return (
-                        <div key={cat.id} className="rounded-xl overflow-hidden" style={{ background: '#161616' }}>
+                        <div key={cat.id} className="rounded-none overflow-hidden" style={{ background: '#060606' }}>
                           <div className="flex items-center justify-between px-4 py-3">
                             <div className="flex items-center gap-2">
-                              <Brain size={13} style={{ color: '#666' }} />
-                              <span className="text-xs font-semibold" style={{ color: '#ECECEC' }}>{cat.label}</span>
+                              <Brain size={13} style={{ color: '#5a5a5a' }} />
+                              <span className="text-xs font-semibold" style={{ color: '#f4f4f4' }}>{cat.label}</span>
                               {items.length > 0 && (
-                                <span className="text-[10px] px-1.5 py-0.5 rounded-full" style={{ background: 'rgba(255,255,255,0.06)', color: '#888' }}>
+                                <span className="text-[10px] px-1.5 py-0.5 rounded-none-full" style={{ background: 'rgba(255,255,255,0.06)', color: '#909090' }}>
                                   {items.length}
                                 </span>
                               )}
@@ -1521,7 +1521,7 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
                                     setMemSavedId(cat.id);
                                     setTimeout(() => setMemSavedId(null), 2000);
                                   }}
-                                  className="p-1 rounded-md transition-all active:scale-90"
+                                  className="p-1 rounded-none-none transition-all active:scale-90"
                                   style={{ color: memSavedId === cat.id ? '#34d399' : '#555' }}
                                   onMouseEnter={e => { if (memSavedId !== cat.id) e.currentTarget.style.color = '#ccc'; }}
                                   onMouseLeave={e => { if (memSavedId !== cat.id) e.currentTarget.style.color = '#555'; }}
@@ -1536,8 +1536,8 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
                                   setClientMemories(prev => [...prev, { id: mem.id, content: '', category: cat.id }]);
                                   await supabase.from('ai_memory').insert(mem);
                                 }}
-                                className="p-1 rounded-md transition-colors"
-                                style={{ color: '#555' }}
+                                className="p-1 rounded-none-none transition-colors"
+                                style={{ color: '#5a5a5a' }}
                                 onMouseEnter={e => (e.currentTarget.style.color = '#ccc')}
                                 onMouseLeave={e => (e.currentTarget.style.color = '#555')}
                               ><Plus size={14} /></button>
@@ -1552,17 +1552,17 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
                                   setClientMemories(prev => [...prev, { id: mem.id, content: '', category: cat.id }]);
                                   await supabase.from('ai_memory').insert(mem);
                                 }}
-                                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg text-[11px] font-medium transition-colors"
-                                style={{ color: '#444', border: '1px dashed #2a2a2a' }}
+                                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-none-none text-[11px] font-medium transition-colors"
+                                style={{ color: '#3a3a3a', border: '1px dashed #2a2a2a' }}
                                 onMouseEnter={e => { e.currentTarget.style.color = '#D4A843'; e.currentTarget.style.borderColor = '#D4A84344'; }}
-                                onMouseLeave={e => { e.currentTarget.style.color = '#444'; e.currentTarget.style.borderColor = '#2a2a2a'; }}
+                                onMouseLeave={e => { e.currentTarget.style.color = '#444'; e.currentTarget.style.borderColor = '#1a1a1a'; }}
                               >
                                 <Plus size={12} /> Add {cat.label.toLowerCase()}
                               </button>
                             </div>
                           ) : (
                             <div className="px-4 pb-3">
-                              <div className="rounded-lg overflow-hidden" style={{ border: '1px solid #252525' }}>
+                              <div className="rounded-none overflow-hidden" style={{ border: '1px solid #1a1a1a' }}>
                               {items.map((mem, memIdx) => {
 
                                 return (
@@ -1609,8 +1609,8 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
                                         setClientMemories(prev => prev.filter(m => m.id !== mem.id));
                                         if (supabase) await supabase.from('ai_memory').delete().eq('id', mem.id).eq('user_id', storagePrefix);
                                       }}
-                                      className="absolute top-1 right-1 p-1 rounded-md opacity-0 group-hover/mem:opacity-100 transition-opacity z-10"
-                                      style={{ color: '#555' }}
+                                      className="absolute top-1 right-1 p-1 rounded-none-none opacity-0 group-hover/mem:opacity-100 transition-opacity z-10"
+                                      style={{ color: '#5a5a5a' }}
                                       onMouseEnter={e => (e.currentTarget.style.color = '#f87171')}
                                       onMouseLeave={e => (e.currentTarget.style.color = '#555')}
                                     ><X size={11} /></button>
@@ -1642,9 +1642,9 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
               <div className="p-4 flex items-center justify-between" style={{ borderBottom: '1px solid #222' }}>
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-bold" style={{ color: '#ECECEC' }}>Content Journal</span>
+                    <span className="text-sm font-bold" style={{ color: '#f4f4f4' }}>Content Journal</span>
                   </div>
-                  <p className="text-[11px] mt-0.5" style={{ color: '#555' }}>Brainstorm ideas, then push to posts</p>
+                  <p className="text-[11px] mt-0.5" style={{ color: '#5a5a5a' }}>Brainstorm ideas, then push to posts</p>
                 </div>
               </div>
 
@@ -1669,14 +1669,14 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
                   }}
                   onBlur={() => { setTimeout(() => setJournalSelection(null), 200); }}
                   className="w-full h-full bg-transparent text-[13px] leading-6 focus:outline-none resize-none placeholder-[#333]"
-                  style={{ color: '#ECECEC', minHeight: 300 }}
+                  style={{ color: '#f4f4f4', minHeight: 300 }}
                   placeholder="Write your content ideas here... Select text and push to posts when ready."
                 />
 
                 {/* Selection popup: Move to Post */}
                 {journalSelection && (
                   <div
-                    className="absolute z-50 flex items-center gap-1 rounded-lg px-2 py-1.5 shadow-xl"
+                    className="absolute z-50 flex items-center gap-1 rounded-none-none px-2 py-1.5 shadow-xl"
                     style={{
                       left: journalSelection.x,
                       top: journalSelection.y,
@@ -1720,9 +1720,9 @@ const ClientPanel: React.FC<ClientPanelProps> = ({ client, storagePrefix, onClos
 
 function Block({ title, children, action }: { title: string; children: React.ReactNode; action?: React.ReactNode }) {
   return (
-    <section className="p-6 space-y-4" style={{ background: '#1c1c1c', borderRadius: 20 }}>
+    <section className="p-6 space-y-4" style={{ background: '#0a0a0a', borderRadius: 0 }}>
       <div className="flex items-center justify-between">
-        <h2 className="text-xs font-semibold uppercase tracking-widest" style={{ color: '#555' }}>{title}</h2>
+        <h2 className="text-xs font-semibold uppercase tracking-widest" style={{ color: '#5a5a5a' }}>{title}</h2>
         {action}
       </div>
       {children}
@@ -1735,8 +1735,8 @@ function OpenBtn({ href, label }: { href: string; label: string }) {
     <button
       onClick={() => href && window.open(href, '_blank')}
       disabled={!href}
-      className="flex items-center gap-2 px-4 py-3 rounded-2xl text-sm font-medium transition-colors whitespace-nowrap disabled:opacity-30 disabled:cursor-not-allowed flex-shrink-0"
-      style={{ background: '#161616', color: '#777' }}
+      className="flex items-center gap-2 px-4 py-3 rounded-none-none text-sm font-medium transition-colors whitespace-nowrap disabled:opacity-30 disabled:cursor-not-allowed flex-shrink-0"
+      style={{ background: '#060606', color: '#777' }}
       onMouseEnter={e => { if (href) e.currentTarget.style.color = '#ECECEC'; }}
       onMouseLeave={e => { e.currentTarget.style.color = '#777'; }}
     >
@@ -1766,7 +1766,7 @@ function CardRow({ label, children, icon, iconColor, href }: {
             {icon}
           </button>
         ) : null}
-        <span className="text-xs font-medium" style={{ color: '#555' }}>{label}</span>
+        <span className="text-xs font-medium" style={{ color: '#5a5a5a' }}>{label}</span>
       </div>
       <div className="flex-1 min-w-0 ml-3">{children}</div>
     </div>
@@ -1811,19 +1811,19 @@ function CardStatusSelect({ value, onChange }: { value: string; onChange: (v: st
         className="text-xs font-medium flex items-center gap-1 cursor-pointer"
         style={{ color: colors[value] ?? '#ECECEC' }}
       >
-        <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: colors[value] ?? '#ECECEC' }} />
+        <span className="w-1.5 h-1.5 rounded-none-full flex-shrink-0" style={{ background: colors[value] ?? '#ECECEC' }} />
         {value}
       </button>
       {open && createPortal(
         <div ref={dropRef} className="fixed py-1 min-w-[120px] shadow-xl"
-          style={{ background: '#222', borderRadius: 10, zIndex: 99999, top: pos.top, left: pos.left }}>
+          style={{ background: '#222', borderRadius: 0, zIndex: 99999, top: pos.top, left: pos.left }}>
           {statuses.map(s => (
             <button key={s}
               onClick={() => { onChange(s); setOpen(false); }}
-              className={`flex items-center gap-2 w-full text-left text-xs px-3 py-2 transition-colors hover:bg-[#2a2a2a] ${s === value ? 'font-semibold' : ''}`}
+              className={`flex items-center gap-2 w-full text-left text-xs px-3 py-2 transition-colors hover:bg-[#0d0d0d] ${s === value ? 'font-semibold' : ''}`}
               style={{ color: colors[s] }}
             >
-              <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: colors[s] }} />
+              <span className="w-1.5 h-1.5 rounded-none-full flex-shrink-0" style={{ background: colors[s] }} />
               {s}
             </button>
           ))}
@@ -1844,7 +1844,7 @@ function SocialIconBtn({ href, icon, color }: { href: string; icon: React.ReactN
           window.open(url, '_blank');
         }
       }}
-      className="w-8 h-8 rounded-lg flex items-center justify-center transition-all"
+      className="w-8 h-8 rounded-none-none flex items-center justify-center transition-all"
       style={{
         color: hasLink ? color : '#333',
         background: hasLink ? `${color}15` : 'transparent',
@@ -1893,19 +1893,19 @@ function CardPaymentSelect({ value, onChange }: { value: string; onChange: (v: s
         className="text-xs font-medium flex items-center gap-1 cursor-pointer"
         style={{ color: colors[value] ?? '#ECECEC' }}
       >
-        <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: colors[value] ?? '#ECECEC' }} />
+        <span className="w-1.5 h-1.5 rounded-none-full flex-shrink-0" style={{ background: colors[value] ?? '#ECECEC' }} />
         {value}
       </button>
       {open && createPortal(
         <div ref={dropRef} className="fixed py-1 min-w-[140px] shadow-xl"
-          style={{ background: '#222', borderRadius: 10, zIndex: 99999, top: pos.top, left: pos.left }}>
+          style={{ background: '#222', borderRadius: 0, zIndex: 99999, top: pos.top, left: pos.left }}>
           {statuses.map(s => (
             <button key={s}
               onClick={() => { onChange(s); setOpen(false); }}
-              className={`flex items-center gap-2 w-full text-left text-xs px-3 py-2 transition-colors hover:bg-[#2a2a2a] ${s === value ? 'font-semibold' : ''}`}
+              className={`flex items-center gap-2 w-full text-left text-xs px-3 py-2 transition-colors hover:bg-[#0d0d0d] ${s === value ? 'font-semibold' : ''}`}
               style={{ color: colors[s] }}
             >
-              <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: colors[s] }} />
+              <span className="w-1.5 h-1.5 rounded-none-full flex-shrink-0" style={{ background: colors[s] }} />
               {s}
             </button>
           ))}
@@ -1943,19 +1943,19 @@ function InvoiceStatusSelect({ value, onChange }: { value: BillingInvoice['statu
         className="text-xs font-medium flex items-center gap-1.5 cursor-pointer"
         style={{ color: invoiceStatusColors[value] ?? '#ECECEC' }}
       >
-        <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: invoiceStatusColors[value] ?? '#ECECEC' }} />
+        <span className="w-1.5 h-1.5 rounded-none-full flex-shrink-0" style={{ background: invoiceStatusColors[value] ?? '#ECECEC' }} />
         {value}
       </button>
       {open && createPortal(
         <div onClick={e => e.stopPropagation()}
           className="fixed z-[9999] py-1 min-w-[120px] shadow-2xl border"
-          style={{ top: coords.top, left: coords.left, background: '#1c1c1c', borderColor: '#2f2f2f', borderRadius: 10 }}>
+          style={{ top: coords.top, left: coords.left, background: '#0a0a0a', borderColor: '#2f2f2f', borderRadius: 0 }}>
           {INVOICE_STATUSES.map(s => (
             <button key={s} onClick={() => { onChange(s); setOpen(false); }}
-              className={`flex items-center gap-2 w-full text-left text-xs px-3 py-2 transition-colors hover:bg-[#2a2a2a] ${s === value ? 'font-semibold' : ''}`}
+              className={`flex items-center gap-2 w-full text-left text-xs px-3 py-2 transition-colors hover:bg-[#0d0d0d] ${s === value ? 'font-semibold' : ''}`}
               style={{ color: invoiceStatusColors[s] }}
             >
-              <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: invoiceStatusColors[s] }} />
+              <span className="w-1.5 h-1.5 rounded-none-full flex-shrink-0" style={{ background: invoiceStatusColors[s] }} />
               {s}
             </button>
           ))}

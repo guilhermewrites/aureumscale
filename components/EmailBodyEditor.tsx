@@ -76,12 +76,12 @@ const EmailBodyEditor: React.FC<EmailBodyEditorProps> = ({ value, onChange, plac
     if (url) exec('insertImage', url);
   };
 
-  const toolBtnClass = 'p-1.5 text-[#9B9B9B] hover:text-white hover:bg-[rgba(255,255,255,0.1)] rounded transition-none';
+  const toolBtnClass = 'p-1.5 text-[#909090] hover:text-white hover:bg-[rgba(255,255,255,0.1)] rounded-none transition-none';
 
   return (
-    <div className="rounded-lg border border-[#3a3a3a] overflow-hidden">
+    <div className="rounded-none border border-[#242424] overflow-hidden">
       {/* Toolbar */}
-      <div className="flex items-center gap-0.5 px-2 py-1 bg-[#333333] border-b border-[#3a3a3a]">
+      <div className="flex items-center gap-0.5 px-2 py-1 bg-[#333333] border-b border-[#242424]">
         <button type="button" onMouseDown={e => e.preventDefault()} onClick={handleBold} className={toolBtnClass} title="Bold">
           <Bold size={13} />
         </button>
@@ -107,7 +107,7 @@ const EmailBodyEditor: React.FC<EmailBodyEditorProps> = ({ value, onChange, plac
         suppressContentEditableWarning
         data-placeholder={placeholder}
         onInput={handleInput}
-        className="email-editor-content bg-[#3a3a3a] px-3 py-2 text-sm text-[#ECECEC] leading-relaxed focus:outline-none overflow-y-auto"
+        className="email-editor-content bg-[#3a3a3a] px-3 py-2 text-sm text-[#f4f4f4] leading-relaxed focus:outline-none overflow-y-auto"
         style={{ minHeight: expanded ? 280 : 140, maxHeight: expanded ? 500 : 260 }}
       />
     </div>

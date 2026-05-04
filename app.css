@@ -5,6 +5,61 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* ── Aureum design tokens (new aesthetic) ─────────────────────────── */
+:root {
+  --au-bg:      #000000;
+  --au-bg-2:    #060606;
+  --au-panel:   #0a0a0a;
+  --au-panel-2: #0d0d0d;
+  --au-line:    #1a1a1a;
+  --au-line-2:  #242424;
+  --au-text:    #f4f4f4;
+  --au-text-2:  #909090;
+  --au-text-3:  #5a5a5a;
+  --au-text-4:  #3a3a3a;
+  --au-good:    #6dd49a;
+  --au-bad:     #d46d6d;
+}
+
+/* Utility classes for the new system */
+.au-mono { font-family: 'JetBrains Mono', ui-monospace, monospace; }
+.au-eyebrow {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 10.5px; color: var(--au-text-3);
+  letter-spacing: 0.22em; text-transform: uppercase;
+}
+.au-label {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 10px; color: var(--au-text-3);
+  letter-spacing: 0.18em; text-transform: uppercase; font-weight: 500;
+}
+.au-btn-primary {
+  padding: 10px 16px; background: var(--au-text); color: #000;
+  border: 1px solid var(--au-text); border-radius: 0;
+  font-size: 11px; font-weight: 600;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  display: inline-flex; align-items: center; gap: 8px;
+  cursor: pointer; transition: opacity 0.12s;
+}
+.au-btn-primary:hover { opacity: 0.85; }
+.au-btn-ghost {
+  padding: 8px 14px; background: transparent; color: var(--au-text-2);
+  border: 1px solid var(--au-line-2); border-radius: 0;
+  font-size: 10.5px; font-weight: 500;
+  letter-spacing: 0.14em; text-transform: uppercase;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  display: inline-flex; align-items: center; gap: 6px;
+  cursor: pointer; transition: color 0.12s, border-color 0.12s;
+}
+.au-btn-ghost:hover { color: var(--au-text); border-color: var(--au-text-2); }
+.au-card {
+  background: transparent;
+  border: 1px solid var(--au-line);
+  border-radius: 0;
+}
+.au-hairline { border: 1px solid var(--au-line); border-radius: 0; }
+
 @theme inline {
     --font-heading: var(--font-sans);
     --font-sans: 'Geist Variable', sans-serif;

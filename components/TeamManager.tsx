@@ -230,7 +230,7 @@ const TeamManager: React.FC<TeamManagerProps> = ({ storagePrefix }) => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-12 gap-2 text-[#9B9B9B] text-sm">
+      <div className="flex items-center justify-center py-12 gap-2 text-[#909090] text-sm">
         <Loader2 size={18} className="animate-spin" />
         Loading team…
       </div>
@@ -239,7 +239,7 @@ const TeamManager: React.FC<TeamManagerProps> = ({ storagePrefix }) => {
 
   if (loadError) {
     return (
-      <div className="flex items-center justify-center py-12 text-red-400 text-sm">
+      <div className="flex items-center justify-center py-12 text-[#d46d6d] text-sm">
         {loadError}
       </div>
     );
@@ -248,18 +248,18 @@ const TeamManager: React.FC<TeamManagerProps> = ({ storagePrefix }) => {
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
       {saveError && (
-        <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-sm px-4 py-2.5 rounded-xl">
+        <div className="bg-red-500/10 border border-red-500/30 text-[#d46d6d] text-sm px-4 py-2.5 rounded-none-none">
           {saveError}
         </div>
       )}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex flex-col gap-1">
-          <h2 className="text-xl font-bold text-[#ECECEC]">Team Members</h2>
-          <p className="text-[#9B9B9B] text-sm">Meet the squad behind Aureum Scale.</p>
+          <h2 className="text-xl font-bold text-[#f4f4f4]">Team Members</h2>
+          <p className="text-[#909090] text-sm">Meet the squad behind Aureum Scale.</p>
         </div>
         <button
           onClick={() => setIsAddingMember(!isAddingMember)}
-          className="flex items-center gap-2 px-4 py-2 bg-white hover:bg-[#e5e5e5] text-[#212121] rounded-lg text-sm font-semibold transition-none"
+          className="flex items-center gap-2 px-4 py-2 bg-white hover:bg-[#e5e5e5] text-[#212121] rounded-none-none text-sm font-semibold transition-none"
         >
           <Plus size={16} className={isAddingMember ? 'rotate-45' : ''} />
           <span>{isAddingMember ? 'Cancel' : 'Add Member'}</span>
@@ -268,34 +268,34 @@ const TeamManager: React.FC<TeamManagerProps> = ({ storagePrefix }) => {
 
       {/* Add Member Form */}
       {isAddingMember && (
-        <div className="bg-[#2f2f2f] border border-[#3a3a3a] rounded-xl p-6 animate-in slide-in-from-top-2">
+        <div className="bg-[#0d0d0d] border border-[#242424] rounded-none-none p-6 animate-in slide-in-from-top-2">
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="flex-1 space-y-1.5">
-              <label className="text-xs text-[#9B9B9B] font-medium ml-1">Name</label>
+              <label className="text-xs text-[#909090] font-medium ml-1">Name</label>
               <input
                 type="text"
                 placeholder="e.g. John Doe"
                 value={newMemberName}
                 onChange={e => setNewMemberName(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Enter') handleAddMember(); }}
-                className="w-full bg-[#212121] border border-[#3a3a3a] rounded-lg px-3 py-2 text-sm text-[#ECECEC] focus:outline-none focus:ring-1 focus:ring-[#555555] placeholder-[#666666]"
+                className="w-full bg-[#000] border border-[#242424] rounded-none-none px-3 py-2 text-sm text-[#f4f4f4] focus:outline-none focus:ring-1 focus:ring-[#555555] placeholder-[#666666]"
               />
             </div>
             <div className="flex-1 space-y-1.5">
-              <label className="text-xs text-[#9B9B9B] font-medium ml-1">Role</label>
+              <label className="text-xs text-[#909090] font-medium ml-1">Role</label>
               <input
                 type="text"
                 placeholder="e.g. Designer"
                 value={newMemberRole}
                 onChange={e => setNewMemberRole(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Enter') handleAddMember(); }}
-                className="w-full bg-[#212121] border border-[#3a3a3a] rounded-lg px-3 py-2 text-sm text-[#ECECEC] focus:outline-none focus:ring-1 focus:ring-[#555555] placeholder-[#666666]"
+                className="w-full bg-[#000] border border-[#242424] rounded-none-none px-3 py-2 text-sm text-[#f4f4f4] focus:outline-none focus:ring-1 focus:ring-[#555555] placeholder-[#666666]"
               />
             </div>
             <div className="flex items-end">
               <button
                 onClick={handleAddMember}
-                className="bg-white hover:bg-[#e5e5e5] text-[#212121] px-6 py-2 rounded-lg text-sm font-bold transition-none"
+                className="bg-white hover:bg-[#e5e5e5] text-[#212121] px-6 py-2 rounded-none-none text-sm font-bold transition-none"
               >
                 Add
               </button>
@@ -306,20 +306,20 @@ const TeamManager: React.FC<TeamManagerProps> = ({ storagePrefix }) => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {members.map((member) => (
-          <div key={member.id} className="group relative bg-[#2f2f2f] border border-[#3a3a3a] p-6 rounded-xl hover:border-[#4a4a4a] transition-none">
+          <div key={member.id} className="group relative bg-[#0d0d0d] border border-[#242424] p-6 rounded-none-none hover:border-[#4a4a4a] transition-none">
             {/* Delete button */}
             {confirmDeleteId === member.id ? (
-              <div className="absolute top-3 right-3 flex items-center gap-1.5 bg-[#212121] border border-red-500/30 rounded-lg px-2.5 py-1.5 z-10">
-                <span className="text-xs text-[#9B9B9B]">Delete?</span>
+              <div className="absolute top-3 right-3 flex items-center gap-1.5 bg-[#000] border border-red-500/30 rounded-none-none px-2.5 py-1.5 z-10">
+                <span className="text-xs text-[#909090]">Delete?</span>
                 <button
                   onClick={() => handleDeleteMember(member.id)}
-                  className="text-red-400 hover:text-red-300 text-xs font-medium"
+                  className="text-[#d46d6d] hover:text-red-300 text-xs font-medium"
                 >
                   Yes
                 </button>
                 <button
                   onClick={() => setConfirmDeleteId(null)}
-                  className="text-[#9B9B9B] hover:text-[#ECECEC] text-xs font-medium"
+                  className="text-[#909090] hover:text-[#f4f4f4] text-xs font-medium"
                 >
                   No
                 </button>
@@ -327,7 +327,7 @@ const TeamManager: React.FC<TeamManagerProps> = ({ storagePrefix }) => {
             ) : (
               <button
                 onClick={() => setConfirmDeleteId(member.id)}
-                className="absolute top-3 right-3 p-1.5 rounded-lg text-[#666666] hover:text-red-400 hover:bg-red-500/10 opacity-0 group-hover:opacity-100 transition-none"
+                className="absolute top-3 right-3 p-1.5 rounded-none-none text-[#666666] hover:text-[#d46d6d] hover:bg-red-500/10 opacity-0 group-hover:opacity-100 transition-none"
                 title="Remove member"
               >
                 <Trash2 size={14} />
@@ -340,7 +340,7 @@ const TeamManager: React.FC<TeamManagerProps> = ({ storagePrefix }) => {
                 {member.photoUrl ? (
                   <button
                     type="button"
-                    className="w-16 h-16 rounded-xl overflow-hidden cursor-pointer ring-4 ring-[#2f2f2f]"
+                    className="w-16 h-16 rounded-none-none overflow-hidden cursor-pointer ring-4 ring-[#2f2f2f]"
                     onClick={(e) => { e.preventDefault(); e.stopPropagation(); triggerPhotoUpload(member.id); }}
                     title="Click to change photo"
                   >
@@ -349,12 +349,12 @@ const TeamManager: React.FC<TeamManagerProps> = ({ storagePrefix }) => {
                 ) : (
                   <button
                     type="button"
-                    className={`w-16 h-16 rounded-xl ${member.color} flex items-center justify-center text-xl font-bold text-white ring-4 ring-[#2f2f2f] cursor-pointer relative`}
+                    className={`w-16 h-16 rounded-none-none ${member.color} flex items-center justify-center text-xl font-bold text-white ring-4 ring-[#2f2f2f] cursor-pointer relative`}
                     onClick={(e) => { e.preventDefault(); e.stopPropagation(); triggerPhotoUpload(member.id); }}
                     title="Click to add photo"
                   >
                     {member.initials}
-                    <div className="absolute inset-0 bg-black/0 hover:bg-black/30 rounded-xl flex items-center justify-center pointer-events-none">
+                    <div className="absolute inset-0 bg-black/0 hover:bg-black/30 rounded-none-none flex items-center justify-center pointer-events-none">
                       <Camera size={16} className="text-white opacity-0 group-hover:opacity-70" />
                     </div>
                   </button>
@@ -371,14 +371,14 @@ const TeamManager: React.FC<TeamManagerProps> = ({ storagePrefix }) => {
                       onChange={e => setEditValue(e.target.value)}
                       onKeyDown={e => { if (e.key === 'Enter') saveEdit(); if (e.key === 'Escape') cancelEdit(); }}
                       autoFocus
-                      className="flex-1 bg-[#212121] border border-[#4a4a4a] rounded px-2 py-1 text-sm text-[#ECECEC] focus:outline-none font-bold"
+                      className="flex-1 bg-[#000] border border-[#4a4a4a] rounded-none px-2 py-1 text-sm text-[#f4f4f4] focus:outline-none font-bold"
                     />
-                    <button onClick={saveEdit} className="p-0.5 text-[#ECECEC] hover:text-white"><Check size={14} /></button>
-                    <button onClick={cancelEdit} className="p-0.5 text-[#9B9B9B] hover:text-[#ECECEC]"><X size={14} /></button>
+                    <button onClick={saveEdit} className="p-0.5 text-[#f4f4f4] hover:text-white"><Check size={14} /></button>
+                    <button onClick={cancelEdit} className="p-0.5 text-[#909090] hover:text-[#f4f4f4]"><X size={14} /></button>
                   </div>
                 ) : (
                   <h3
-                    className="text-lg font-bold text-[#ECECEC] cursor-pointer truncate"
+                    className="text-lg font-bold text-[#f4f4f4] cursor-pointer truncate"
                     onClick={() => startEditing(member.id, 'name', member.name)}
                     title="Click to edit name"
                   >
@@ -395,15 +395,15 @@ const TeamManager: React.FC<TeamManagerProps> = ({ storagePrefix }) => {
                       onChange={e => setEditValue(e.target.value)}
                       onKeyDown={e => { if (e.key === 'Enter') saveEdit(); if (e.key === 'Escape') cancelEdit(); }}
                       autoFocus
-                      className="flex-1 bg-[#212121] border border-[#4a4a4a] rounded px-2 py-0.5 text-xs text-[#ECECEC] focus:outline-none"
+                      className="flex-1 bg-[#000] border border-[#4a4a4a] rounded-none px-2 py-0.5 text-xs text-[#f4f4f4] focus:outline-none"
                     />
-                    <button onClick={saveEdit} className="p-0.5 text-[#ECECEC] hover:text-white"><Check size={12} /></button>
-                    <button onClick={cancelEdit} className="p-0.5 text-[#9B9B9B] hover:text-[#ECECEC]"><X size={12} /></button>
+                    <button onClick={saveEdit} className="p-0.5 text-[#f4f4f4] hover:text-white"><Check size={12} /></button>
+                    <button onClick={cancelEdit} className="p-0.5 text-[#909090] hover:text-[#f4f4f4]"><X size={12} /></button>
                   </div>
                 ) : (
                   <div className="flex items-center gap-2 mt-1.5">
                     <span
-                      className="px-2.5 py-1 rounded-md bg-[#212121] border border-[#3a3a3a] text-xs text-[#9B9B9B] font-medium uppercase tracking-wide cursor-pointer hover:border-[#4a4a4a] hover:text-[#ECECEC] transition-none"
+                      className="px-2.5 py-1 rounded-none-none bg-[#000] border border-[#242424] text-xs text-[#909090] font-medium uppercase tracking-wide cursor-pointer hover:border-[#4a4a4a] hover:text-[#f4f4f4] transition-none"
                       onClick={() => startEditing(member.id, 'role', member.role)}
                       title="Click to edit role"
                     >
@@ -424,16 +424,16 @@ const TeamManager: React.FC<TeamManagerProps> = ({ storagePrefix }) => {
                     onKeyDown={e => { if (e.key === 'Escape') cancelEdit(); }}
                     autoFocus
                     placeholder="Describe responsibilities, skills, focus areas..."
-                    className="w-full h-20 bg-[#212121] border border-[#4a4a4a] rounded-lg px-3 py-2 text-xs text-[#ECECEC] focus:outline-none resize-none placeholder-[#666666]"
+                    className="w-full h-20 bg-[#000] border border-[#4a4a4a] rounded-none-none px-3 py-2 text-xs text-[#f4f4f4] focus:outline-none resize-none placeholder-[#666666]"
                   />
                   <div className="flex justify-end gap-1">
-                    <button onClick={cancelEdit} className="px-2 py-1 text-xs text-[#9B9B9B] hover:text-[#ECECEC]">Cancel</button>
-                    <button onClick={saveEdit} className="px-2 py-1 text-xs text-[#ECECEC] hover:text-white font-medium">Save</button>
+                    <button onClick={cancelEdit} className="px-2 py-1 text-xs text-[#909090] hover:text-[#f4f4f4]">Cancel</button>
+                    <button onClick={saveEdit} className="px-2 py-1 text-xs text-[#f4f4f4] hover:text-white font-medium">Save</button>
                   </div>
                 </div>
               ) : member.description ? (
                 <p
-                  className="text-xs text-[#9B9B9B] leading-relaxed cursor-pointer hover:text-[#b4b4b4] transition-none border-t border-[#3a3a3a] pt-3"
+                  className="text-xs text-[#909090] leading-relaxed cursor-pointer hover:text-[#b4b4b4] transition-none border-t border-[#242424] pt-3"
                   onClick={() => startEditing(member.id, 'description', member.description || '')}
                   title="Click to edit description"
                 >
@@ -441,7 +441,7 @@ const TeamManager: React.FC<TeamManagerProps> = ({ storagePrefix }) => {
                 </p>
               ) : (
                 <p
-                  className="text-xs text-[#666666] italic cursor-pointer hover:text-[#9B9B9B] transition-none border-t border-[#3a3a3a] pt-3 flex items-center gap-1.5"
+                  className="text-xs text-[#666666] italic cursor-pointer hover:text-[#909090] transition-none border-t border-[#242424] pt-3 flex items-center gap-1.5"
                   onClick={() => startEditing(member.id, 'description', '')}
                   title="Click to add description"
                 >

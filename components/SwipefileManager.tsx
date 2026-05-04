@@ -62,7 +62,7 @@ const MediaPreview: React.FC<{ item: SwipefileItem; onExpand?: (url: string) => 
   if (item.mediaType === 'image' && mediaUrl && !imgError) {
     return (
       <div
-        className="relative w-full h-40 rounded-lg overflow-hidden bg-[#212121] cursor-pointer group/img"
+        className="relative w-full h-40 rounded-none-none overflow-hidden bg-[#000] cursor-pointer group/img"
         onClick={() => onExpand?.(mediaUrl)}
       >
         <img
@@ -72,8 +72,8 @@ const MediaPreview: React.FC<{ item: SwipefileItem; onExpand?: (url: string) => 
           className="w-full h-full object-cover transition-transform duration-300 group-hover/img:scale-105"
         />
         <div className="absolute inset-0 bg-black/0 group-hover/img:bg-black/20 transition-colors flex items-center justify-center">
-          <div className="opacity-0 group-hover/img:opacity-100 transition-opacity bg-black/60 rounded-full p-2">
-            <ExternalLink size={16} className="text-[#ECECEC]" />
+          <div className="opacity-0 group-hover/img:opacity-100 transition-opacity bg-black/60 rounded-none-full p-2">
+            <ExternalLink size={16} className="text-[#f4f4f4]" />
           </div>
         </div>
       </div>
@@ -86,11 +86,11 @@ const MediaPreview: React.FC<{ item: SwipefileItem; onExpand?: (url: string) => 
 
     if (youtubeId) {
       return (
-        <div className="relative w-full h-40 rounded-lg overflow-hidden bg-[#212121]">
+        <div className="relative w-full h-40 rounded-none-none overflow-hidden bg-[#000]">
           <img src={`https://img.youtube.com/vi/${youtubeId}/mqdefault.jpg`} alt={item.title} className="w-full h-full object-cover" />
           <a href={mediaUrl} target="_blank" rel="noreferrer" className="absolute inset-0 flex items-center justify-center bg-black/30 hover:bg-black/40 transition-colors">
-            <div className="w-12 h-12 rounded-full bg-red-600 flex items-center justify-center shadow-lg">
-              <Play size={20} className="text-[#ECECEC] ml-0.5" fill="white" />
+            <div className="w-12 h-12 rounded-none-full bg-red-600 flex items-center justify-center shadow-lg">
+              <Play size={20} className="text-[#f4f4f4] ml-0.5" fill="white" />
             </div>
           </a>
         </div>
@@ -99,10 +99,10 @@ const MediaPreview: React.FC<{ item: SwipefileItem; onExpand?: (url: string) => 
 
     if (vimeoId) {
       return (
-        <div className="relative w-full h-40 rounded-lg overflow-hidden bg-[#212121]">
+        <div className="relative w-full h-40 rounded-none-none overflow-hidden bg-[#000]">
           <div className="w-full h-full bg-gradient-to-br from-blue-900/40 to-gray-950 flex items-center justify-center">
-            <a href={mediaUrl} target="_blank" rel="noreferrer" className="w-12 h-12 rounded-full bg-blue-500 flex items-center justify-center shadow-lg hover:bg-blue-400 transition-colors">
-              <Play size={20} className="text-[#ECECEC] ml-0.5" fill="white" />
+            <a href={mediaUrl} target="_blank" rel="noreferrer" className="w-12 h-12 rounded-none-full bg-blue-500 flex items-center justify-center shadow-lg hover:bg-blue-400 transition-colors">
+              <Play size={20} className="text-[#f4f4f4] ml-0.5" fill="white" />
             </a>
           </div>
         </div>
@@ -111,11 +111,11 @@ const MediaPreview: React.FC<{ item: SwipefileItem; onExpand?: (url: string) => 
 
     if (/\.(mp4|webm|ogg|mov)(\?.*)?$/i.test(mediaUrl) || mediaUrl.startsWith('data:video/')) {
       return (
-        <div className="relative w-full h-40 rounded-lg overflow-hidden bg-[#212121]">
+        <div className="relative w-full h-40 rounded-none-none overflow-hidden bg-[#000]">
           <video src={mediaUrl} className="w-full h-full object-cover" muted preload="metadata" />
           <a href={mediaUrl} target="_blank" rel="noreferrer" className="absolute inset-0 flex items-center justify-center bg-black/30 hover:bg-black/40 transition-colors">
-            <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center shadow-lg">
-              <Play size={20} className="text-[#ECECEC] ml-0.5" fill="white" />
+            <div className="w-12 h-12 rounded-none-full bg-white flex items-center justify-center shadow-lg">
+              <Play size={20} className="text-[#f4f4f4] ml-0.5" fill="white" />
             </div>
           </a>
         </div>
@@ -123,19 +123,19 @@ const MediaPreview: React.FC<{ item: SwipefileItem; onExpand?: (url: string) => 
     }
 
     return (
-      <a href={mediaUrl} target="_blank" rel="noreferrer" className="block w-full h-40 rounded-lg overflow-hidden bg-gradient-to-br from-[#3a3a3a] to-[#212121] flex items-center justify-center hover:from-[#3a3a3a] transition-none">
+      <a href={mediaUrl} target="_blank" rel="noreferrer" className="block w-full h-40 rounded-none-none overflow-hidden bg-gradient-to-br from-[#3a3a3a] to-[#212121] flex items-center justify-center hover:from-[#3a3a3a] transition-none">
         <div className="flex flex-col items-center gap-2">
-          <div className="w-12 h-12 rounded-full bg-[rgba(255,255,255,0.1)] flex items-center justify-center">
-            <Play size={20} className="text-[#ECECEC] ml-0.5" />
+          <div className="w-12 h-12 rounded-none-full bg-[rgba(255,255,255,0.1)] flex items-center justify-center">
+            <Play size={20} className="text-[#f4f4f4] ml-0.5" />
           </div>
-          <span className="text-xs text-[#9B9B9B]">Open Video</span>
+          <span className="text-xs text-[#909090]">Open Video</span>
         </div>
       </a>
     );
   }
 
   return (
-    <div className="bg-[#212121] rounded-lg p-3 text-xs text-[#9B9B9B] font-mono break-all line-clamp-4 relative">
+    <div className="bg-[#000] rounded-none-none p-3 text-xs text-[#909090] font-mono break-all line-clamp-4 relative">
       {item.content}
     </div>
   );
@@ -144,7 +144,7 @@ const MediaPreview: React.FC<{ item: SwipefileItem; onExpand?: (url: string) => 
 const ImageLightbox: React.FC<{ url: string; onClose: () => void }> = ({ url, onClose }) => (
   <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm animate-in fade-in duration-200" onClick={onClose}>
     <button onClick={onClose} className="absolute top-4 right-4 text-white/70 hover:text-white p-2"><X size={24} /></button>
-    <img src={url} alt="Preview" className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl animate-in zoom-in-95 duration-200" onClick={(e) => e.stopPropagation()} />
+    <img src={url} alt="Preview" className="max-w-full max-h-[90vh] object-contain rounded-none-none shadow-2xl animate-in zoom-in-95 duration-200" onClick={(e) => e.stopPropagation()} />
   </div>
 );
 
@@ -465,16 +465,16 @@ const SwipefileManager: React.FC<SwipefileManagerProps> = ({ storagePrefix }) =>
       {/* Confirm Dialog */}
       {confirmState.isOpen && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-[#2f2f2f] border border-[#3a3a3a] rounded-xl w-full max-w-sm shadow-2xl scale-100 animate-in zoom-in-95 duration-200">
+          <div className="bg-[#0d0d0d] border border-[#242424] rounded-none-none w-full max-w-sm shadow-2xl scale-100 animate-in zoom-in-95 duration-200">
             <div className="p-6 text-center">
-              <div className="w-12 h-12 bg-[#3a3a3a] rounded-full flex items-center justify-center mx-auto mb-4">
+              <div className="w-12 h-12 bg-[#3a3a3a] rounded-none-full flex items-center justify-center mx-auto mb-4">
                 <AlertTriangle size={24} className="text-amber-500" />
               </div>
-              <h3 className="text-lg font-bold text-[#ECECEC] mb-2">{confirmState.title}</h3>
-              <p className="text-[#9B9B9B] text-sm mb-6">{confirmState.message}</p>
+              <h3 className="text-lg font-bold text-[#f4f4f4] mb-2">{confirmState.title}</h3>
+              <p className="text-[#909090] text-sm mb-6">{confirmState.message}</p>
               <div className="flex gap-3 justify-center">
-                <button onClick={() => setConfirmState(prev => ({...prev, isOpen: false}))} className="px-4 py-2 bg-[#3a3a3a] hover:bg-[#3a3a3a] text-[#ECECEC] rounded-lg text-sm font-medium transition-none">Cancel</button>
-                <button onClick={handleConfirmAction} className="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-[#ECECEC] rounded-lg text-sm font-medium transition-none shadow-lg shadow-rose-900/20">Confirm</button>
+                <button onClick={() => setConfirmState(prev => ({...prev, isOpen: false}))} className="px-4 py-2 bg-[#3a3a3a] hover:bg-[#3a3a3a] text-[#f4f4f4] rounded-none-none text-sm font-medium transition-none">Cancel</button>
+                <button onClick={handleConfirmAction} className="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-[#f4f4f4] rounded-none-none text-sm font-medium transition-none shadow-lg shadow-rose-900/20">Confirm</button>
               </div>
             </div>
           </div>
@@ -493,11 +493,11 @@ const SwipefileManager: React.FC<SwipefileManagerProps> = ({ storagePrefix }) =>
       {/* Header */}
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-2">
-          <h2 className="text-xl font-semibold text-[#ECECEC]">Swipe File</h2>
+          <h2 className="text-xl font-semibold text-[#f4f4f4]">Swipe File</h2>
           <button
             onClick={() => setViewMode(viewMode === 'trash' ? 'library' : 'trash')}
             title={viewMode === 'trash' ? 'Back to library' : 'View trash'}
-            className={`p-1.5 rounded-md transition-none ${viewMode === 'trash' ? 'text-rose-400' : 'text-[#666666] hover:text-[#9B9B9B]'}`}
+            className={`p-1.5 rounded-none-none transition-none ${viewMode === 'trash' ? 'text-rose-400' : 'text-[#666666] hover:text-[#909090]'}`}
           >
             <Trash2 size={15} />
           </button>
@@ -511,21 +511,21 @@ const SwipefileManager: React.FC<SwipefileManagerProps> = ({ storagePrefix }) =>
               placeholder="Search..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="bg-[#2a2a2a] border border-[#3a3a3a] rounded-lg pl-8 pr-3 py-1.5 text-sm text-[#ECECEC] focus:outline-none focus:border-[#555] w-40 placeholder-[#666666]"
+              className="bg-[#0d0d0d] border border-[#242424] rounded-none-none pl-8 pr-3 py-1.5 text-sm text-[#f4f4f4] focus:outline-none focus:border-[#555] w-40 placeholder-[#666666]"
             />
           </div>
           {viewMode === 'library' && (
             <>
               <button
                 onClick={() => fileInputRef.current?.click()}
-                className="p-1.5 text-[#666666] hover:text-[#9B9B9B] transition-none"
+                className="p-1.5 text-[#666666] hover:text-[#909090] transition-none"
                 title="Import from computer"
               >
                 <Upload size={16} />
               </button>
               <button
                 onClick={() => setIsAdding(!isAdding)}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-[#ECECEC] hover:bg-white text-[#121212] rounded-lg text-sm font-medium transition-none"
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-[#ECECEC] hover:bg-white text-[#121212] rounded-none-none text-sm font-medium transition-none"
               >
                 <Plus size={15} className={isAdding ? 'rotate-45 transition-transform' : ''} />
                 {isAdding ? 'Cancel' : 'Add'}
@@ -552,8 +552,8 @@ const SwipefileManager: React.FC<SwipefileManagerProps> = ({ storagePrefix }) =>
                   onClick={() => setActiveCategory(cat.id)}
                   className={`pb-2.5 text-sm font-medium transition-none border-b-2 ${
                     isActive
-                      ? 'text-[#ECECEC] border-[#ECECEC]'
-                      : 'text-[#666666] border-transparent hover:text-[#9B9B9B]'
+                      ? 'text-[#f4f4f4] border-[#ECECEC]'
+                      : 'text-[#666666] border-transparent hover:text-[#909090]'
                   }`}
                 >
                   {cat.label}
@@ -566,17 +566,17 @@ const SwipefileManager: React.FC<SwipefileManagerProps> = ({ storagePrefix }) =>
 
       {/* Add Form */}
       {isAdding && viewMode === 'library' && (
-        <div className="bg-[#2f2f2f] border border-[#3a3a3a] rounded-xl p-6 animate-in slide-in-from-top-2">
+        <div className="bg-[#0d0d0d] border border-[#242424] rounded-none-none p-6 animate-in slide-in-from-top-2">
           <form onSubmit={handleAddItem} className="space-y-4">
             <div className="space-y-1.5">
-              <label className="text-xs text-[#9B9B9B] font-medium ml-1">Type</label>
+              <label className="text-xs text-[#909090] font-medium ml-1">Type</label>
               <div className="flex gap-2">
                 {MEDIA_TYPE_OPTIONS.map(opt => {
                   const active = newItem.mediaType === opt.value;
                   return (
                     <button key={opt.value} type="button" onClick={() => setNewItem({ ...newItem, mediaType: opt.value })}
-                      className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-none border ${
-                        active ? 'bg-[rgba(255,255,255,0.08)] border-[#4a4a4a] text-[#ECECEC]' : 'bg-[#212121] border-[#3a3a3a] text-[#9B9B9B] hover:text-[#ECECEC] hover:border-[#4a4a4a]'
+                      className={`flex items-center gap-2 px-4 py-2 rounded-none-none text-sm font-medium transition-none border ${
+                        active ? 'bg-[rgba(255,255,255,0.08)] border-[#4a4a4a] text-[#f4f4f4]' : 'bg-[#000] border-[#242424] text-[#909090] hover:text-[#f4f4f4] hover:border-[#4a4a4a]'
                       }`}>
                       <opt.icon size={16} />{opt.label}
                     </button>
@@ -586,15 +586,15 @@ const SwipefileManager: React.FC<SwipefileManagerProps> = ({ storagePrefix }) =>
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs text-[#9B9B9B] font-medium ml-1">Title</label>
+              <label className="text-xs text-[#909090] font-medium ml-1">Title</label>
               <input type="text" required placeholder="e.g. High Converting VSL Hook" value={newItem.title}
                 onChange={e => setNewItem({...newItem, title: e.target.value})}
-                className="w-full bg-[#212121] border border-[#3a3a3a] rounded-lg px-3 py-2 text-sm text-[#ECECEC] focus:outline-none focus:ring-1 focus:ring-[#555555]" />
+                className="w-full bg-[#000] border border-[#242424] rounded-none-none px-3 py-2 text-sm text-[#f4f4f4] focus:outline-none focus:ring-1 focus:ring-[#555555]" />
             </div>
 
             {newItem.mediaType !== 'text' && (
               <div className="space-y-1.5">
-                <label className="text-xs text-[#9B9B9B] font-medium ml-1">
+                <label className="text-xs text-[#909090] font-medium ml-1">
                   {newItem.mediaType === 'image' ? 'Image URL' : 'Video URL'}
                 </label>
                 <div className="flex gap-2">
@@ -602,24 +602,24 @@ const SwipefileManager: React.FC<SwipefileManagerProps> = ({ storagePrefix }) =>
                     placeholder={newItem.mediaType === 'image' ? 'https://example.com/image.jpg' : 'https://youtube.com/watch?v=...'}
                     value={newItem.mediaUrl}
                     onChange={e => handleMediaUrlChange(e.target.value)}
-                    className="flex-1 bg-[#212121] border border-[#3a3a3a] rounded-lg px-3 py-2 text-sm text-[#ECECEC] focus:outline-none focus:ring-1 focus:ring-[#555555]" />
+                    className="flex-1 bg-[#000] border border-[#242424] rounded-none-none px-3 py-2 text-sm text-[#f4f4f4] focus:outline-none focus:ring-1 focus:ring-[#555555]" />
                   <button type="button" onClick={() => fileInputRef.current?.click()}
-                    className="flex items-center gap-2 px-3 py-2 bg-[#3a3a3a] hover:bg-[#3a3a3a] text-[#b4b4b4] rounded-lg text-sm font-medium transition-none border border-[#3a3a3a]">
+                    className="flex items-center gap-2 px-3 py-2 bg-[#3a3a3a] hover:bg-[#3a3a3a] text-[#b4b4b4] rounded-none-none text-sm font-medium transition-none border border-[#242424]">
                     <Upload size={14} /> File
                   </button>
                 </div>
                 {newItem.mediaUrl && isUrl(newItem.mediaUrl) && newItem.mediaType === 'image' && (
-                  <div className="mt-2 rounded-lg overflow-hidden bg-[#212121] max-h-40">
+                  <div className="mt-2 rounded-none-none overflow-hidden bg-[#000] max-h-40">
                     <img src={newItem.mediaUrl} alt="Preview" className="max-h-40 object-contain mx-auto" onError={(e) => (e.currentTarget.style.display = 'none')} />
                   </div>
                 )}
                 {newItem.mediaUrl && getYouTubeId(newItem.mediaUrl) && (
-                  <div className="mt-2 rounded-lg overflow-hidden bg-[#212121] max-h-40">
+                  <div className="mt-2 rounded-none-none overflow-hidden bg-[#000] max-h-40">
                     <img src={`https://img.youtube.com/vi/${getYouTubeId(newItem.mediaUrl)}/mqdefault.jpg`} alt="YouTube Preview" className="max-h-40 object-contain mx-auto" />
                   </div>
                 )}
                 {newItem.mediaUrl && newItem.mediaUrl.startsWith('data:image/') && (
-                  <div className="mt-2 rounded-lg overflow-hidden bg-[#212121] max-h-40">
+                  <div className="mt-2 rounded-none-none overflow-hidden bg-[#000] max-h-40">
                     <img src={newItem.mediaUrl} alt="Imported Preview" className="max-h-40 object-contain mx-auto" />
                   </div>
                 )}
@@ -627,23 +627,23 @@ const SwipefileManager: React.FC<SwipefileManagerProps> = ({ storagePrefix }) =>
             )}
 
             <div className="space-y-1.5">
-              <label className="text-xs text-[#9B9B9B] font-medium ml-1">
+              <label className="text-xs text-[#909090] font-medium ml-1">
                 {newItem.mediaType === 'text' ? 'Content / URL' : 'Notes (optional)'}
               </label>
               <textarea required={newItem.mediaType === 'text'}
                 placeholder={newItem.mediaType === 'text' ? 'Paste text or URL here...' : 'Add notes about this asset...'}
                 value={newItem.content}
                 onChange={e => setNewItem({...newItem, content: e.target.value})}
-                className="w-full h-24 bg-[#212121] border border-[#3a3a3a] rounded-lg px-3 py-2 text-sm text-[#ECECEC] focus:outline-none focus:ring-1 focus:ring-[#555555] resize-none font-mono" />
+                className="w-full h-24 bg-[#000] border border-[#242424] rounded-none-none px-3 py-2 text-sm text-[#f4f4f4] focus:outline-none focus:ring-1 focus:ring-[#555555] resize-none font-mono" />
             </div>
             <div className="space-y-1.5">
-              <label className="text-xs text-[#9B9B9B] font-medium ml-1">Tags (comma separated)</label>
+              <label className="text-xs text-[#909090] font-medium ml-1">Tags (comma separated)</label>
               <input type="text" placeholder="e.g. hook, viral, q3" value={newItem.tags}
                 onChange={e => setNewItem({...newItem, tags: e.target.value})}
-                className="w-full bg-[#212121] border border-[#3a3a3a] rounded-lg px-3 py-2 text-sm text-[#ECECEC] focus:outline-none focus:ring-1 focus:ring-[#555555]" />
+                className="w-full bg-[#000] border border-[#242424] rounded-none-none px-3 py-2 text-sm text-[#f4f4f4] focus:outline-none focus:ring-1 focus:ring-[#555555]" />
             </div>
             <div className="flex justify-end pt-2">
-              <button type="submit" className="bg-white hover:bg-[#e5e5e5] text-[#212121] px-6 py-2 rounded-lg text-sm font-bold transition-none">
+              <button type="submit" className="bg-white hover:bg-[#e5e5e5] text-[#212121] px-6 py-2 rounded-none-none text-sm font-bold transition-none">
                 Save Item
               </button>
             </div>
@@ -656,14 +656,14 @@ const SwipefileManager: React.FC<SwipefileManagerProps> = ({ storagePrefix }) =>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredItems.length > 0 ? (
             filteredItems.map(item => (
-              <div key={item.id} className="bg-[#2f2f2f] border border-[#3a3a3a] rounded-xl overflow-hidden hover:border-[#4a4a4a] transition-none group flex flex-col justify-between h-full">
+              <div key={item.id} className="bg-[#0d0d0d] border border-[#242424] rounded-none-none overflow-hidden hover:border-[#4a4a4a] transition-none group flex flex-col justify-between h-full">
                 <div className="p-5 pb-0 space-y-3">
                   <div className="flex justify-between items-start">
                     <div className="flex items-center gap-2 flex-1 min-w-0">
-                      <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium shrink-0 ${
+                      <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-none text-[10px] font-medium shrink-0 ${
                         item.mediaType === 'image' ? 'bg-blue-500/10 text-blue-400' :
                         item.mediaType === 'video' ? 'bg-purple-500/10 text-purple-400' :
-                        'bg-[#3a3a3a] text-[#9B9B9B]'
+                        'bg-[#3a3a3a] text-[#909090]'
                       }`}>
                         {getMediaIcon(item.mediaType || 'text')}
                         {(item.mediaType || 'text').charAt(0).toUpperCase() + (item.mediaType || 'text').slice(1)}
@@ -677,14 +677,14 @@ const SwipefileManager: React.FC<SwipefileManagerProps> = ({ storagePrefix }) =>
                             onChange={e => setEditValue(e.target.value)}
                             onKeyDown={e => { if (e.key === 'Enter') saveEdit(); if (e.key === 'Escape') cancelEdit(); }}
                             autoFocus
-                            className="flex-1 bg-[#212121] border border-[#4a4a4a] rounded px-2 py-0.5 text-sm text-[#ECECEC] focus:outline-none"
+                            className="flex-1 bg-[#000] border border-[#4a4a4a] rounded-none px-2 py-0.5 text-sm text-[#f4f4f4] focus:outline-none"
                           />
-                          <button onClick={saveEdit} className="p-0.5 text-[#ECECEC] hover:text-[#ECECEC]"><Check size={14} /></button>
-                          <button onClick={cancelEdit} className="p-0.5 text-[#9B9B9B] hover:text-[#ECECEC]"><X size={14} /></button>
+                          <button onClick={saveEdit} className="p-0.5 text-[#f4f4f4] hover:text-[#f4f4f4]"><Check size={14} /></button>
+                          <button onClick={cancelEdit} className="p-0.5 text-[#909090] hover:text-[#f4f4f4]"><X size={14} /></button>
                         </div>
                       ) : (
                         <h3
-                          className="font-semibold text-[#ECECEC] line-clamp-1 text-sm cursor-pointer hover:text-[#ECECEC] transition-none"
+                          className="font-semibold text-[#f4f4f4] line-clamp-1 text-sm cursor-pointer hover:text-[#f4f4f4] transition-none"
                           onClick={() => startEditing(item.id, 'title', item.title)}
                           title="Click to edit title"
                         >
@@ -703,7 +703,7 @@ const SwipefileManager: React.FC<SwipefileManagerProps> = ({ storagePrefix }) =>
                   {/* Inline content/notes editing */}
                   {item.mediaType !== 'text' && item.content && editingId !== item.id ? (
                     <div
-                      className="bg-[#212121] rounded-lg p-2 text-[11px] text-[#9B9B9B] line-clamp-2 cursor-pointer hover:text-[#9B9B9B] transition-none"
+                      className="bg-[#000] rounded-none-none p-2 text-[11px] text-[#909090] line-clamp-2 cursor-pointer hover:text-[#909090] transition-none"
                       onClick={() => startEditing(item.id, 'content', item.content)}
                       title="Click to edit notes"
                     >
@@ -711,7 +711,7 @@ const SwipefileManager: React.FC<SwipefileManagerProps> = ({ storagePrefix }) =>
                     </div>
                   ) : item.mediaType !== 'text' && !item.content && editingId !== item.id ? (
                     <div
-                      className="bg-[#212121] rounded-lg p-2 text-[11px] text-[#666666] cursor-pointer hover:text-[#9B9B9B] transition-none italic"
+                      className="bg-[#000] rounded-none-none p-2 text-[11px] text-[#666666] cursor-pointer hover:text-[#909090] transition-none italic"
                       onClick={() => startEditing(item.id, 'content', '')}
                       title="Click to add notes"
                     >
@@ -726,16 +726,16 @@ const SwipefileManager: React.FC<SwipefileManagerProps> = ({ storagePrefix }) =>
                         onChange={e => setEditValue(e.target.value)}
                         onKeyDown={e => { if (e.key === 'Escape') cancelEdit(); }}
                         autoFocus
-                        className="w-full h-24 bg-[#212121] border border-[#4a4a4a] rounded-lg px-3 py-2 text-xs text-[#ECECEC] focus:outline-none resize-none font-mono"
+                        className="w-full h-24 bg-[#000] border border-[#4a4a4a] rounded-none-none px-3 py-2 text-xs text-[#f4f4f4] focus:outline-none resize-none font-mono"
                       />
                       <div className="flex justify-end gap-1">
-                        <button onClick={cancelEdit} className="px-2 py-1 text-xs text-[#9B9B9B] hover:text-[#ECECEC]">Cancel</button>
-                        <button onClick={saveEdit} className="px-2 py-1 text-xs text-[#ECECEC] hover:text-[#ECECEC] font-medium">Save</button>
+                        <button onClick={cancelEdit} className="px-2 py-1 text-xs text-[#909090] hover:text-[#f4f4f4]">Cancel</button>
+                        <button onClick={saveEdit} className="px-2 py-1 text-xs text-[#f4f4f4] hover:text-[#f4f4f4] font-medium">Save</button>
                       </div>
                     </div>
                   ) : item.mediaType === 'text' && !(editingId === item.id && editField === 'content') ? (
                     <div
-                      className="bg-[#212121] rounded-lg p-3 text-xs text-[#9B9B9B] font-mono break-all line-clamp-4 cursor-pointer hover:text-[#b4b4b4] transition-none"
+                      className="bg-[#000] rounded-none-none p-3 text-xs text-[#909090] font-mono break-all line-clamp-4 cursor-pointer hover:text-[#b4b4b4] transition-none"
                       onClick={() => startEditing(item.id, 'content', item.content)}
                       title="Click to edit content"
                     >
@@ -752,11 +752,11 @@ const SwipefileManager: React.FC<SwipefileManagerProps> = ({ storagePrefix }) =>
                         onKeyDown={e => { if (e.key === 'Escape') cancelEdit(); }}
                         autoFocus
                         placeholder="Add notes..."
-                        className="w-full h-16 bg-[#212121] border border-[#4a4a4a] rounded-lg px-3 py-2 text-xs text-[#ECECEC] focus:outline-none resize-none"
+                        className="w-full h-16 bg-[#000] border border-[#4a4a4a] rounded-none-none px-3 py-2 text-xs text-[#f4f4f4] focus:outline-none resize-none"
                       />
                       <div className="flex justify-end gap-1">
-                        <button onClick={cancelEdit} className="px-2 py-1 text-xs text-[#9B9B9B] hover:text-[#ECECEC]">Cancel</button>
-                        <button onClick={saveEdit} className="px-2 py-1 text-xs text-[#ECECEC] hover:text-[#ECECEC] font-medium">Save</button>
+                        <button onClick={cancelEdit} className="px-2 py-1 text-xs text-[#909090] hover:text-[#f4f4f4]">Cancel</button>
+                        <button onClick={saveEdit} className="px-2 py-1 text-xs text-[#f4f4f4] hover:text-[#f4f4f4] font-medium">Save</button>
                       </div>
                     </div>
                   )}
@@ -764,20 +764,20 @@ const SwipefileManager: React.FC<SwipefileManagerProps> = ({ storagePrefix }) =>
                   {item.tags.length > 0 && (
                     <div className="flex flex-wrap gap-2">
                       {item.tags.map((tag, i) => (
-                        <span key={i} className="px-2 py-0.5 rounded text-[10px] bg-[#3a3a3a] text-[#9B9B9B] border border-[#3a3a3a]">#{tag}</span>
+                        <span key={i} className="px-2 py-0.5 rounded-none text-[10px] bg-[#3a3a3a] text-[#909090] border border-[#242424]">#{tag}</span>
                       ))}
                     </div>
                   )}
                 </div>
 
-                <div className="p-5 pt-3 mt-2 border-t border-[#3a3a3a] flex gap-2">
+                <div className="p-5 pt-3 mt-2 border-t border-[#242424] flex gap-2">
                   <button onClick={() => copyToClipboard(item.mediaUrl || item.content)}
-                    className="flex-1 flex items-center justify-center gap-2 py-1.5 rounded bg-[#3a3a3a] hover:bg-[#3a3a3a] text-[#b4b4b4] text-xs font-medium transition-none">
+                    className="flex-1 flex items-center justify-center gap-2 py-1.5 rounded-none bg-[#3a3a3a] hover:bg-[#3a3a3a] text-[#b4b4b4] text-xs font-medium transition-none">
                     <Copy size={12} /> Copy
                   </button>
                   {(item.mediaUrl || isUrl(item.content)) && !item.mediaUrl?.startsWith('data:') && (
                     <a href={item.mediaUrl || item.content} target="_blank" rel="noreferrer"
-                      className="flex-1 flex items-center justify-center gap-2 py-1.5 rounded bg-[#3a3a3a] hover:bg-[#3a3a3a] text-[#b4b4b4] text-xs font-medium transition-none">
+                      className="flex-1 flex items-center justify-center gap-2 py-1.5 rounded-none bg-[#3a3a3a] hover:bg-[#3a3a3a] text-[#b4b4b4] text-xs font-medium transition-none">
                       <ExternalLink size={12} /> Open
                     </a>
                   )}
@@ -785,8 +785,8 @@ const SwipefileManager: React.FC<SwipefileManagerProps> = ({ storagePrefix }) =>
               </div>
             ))
           ) : (
-            <div className="col-span-full py-16 flex flex-col items-center justify-center text-[#9B9B9B] border-2 border-dashed border-[#3a3a3a] rounded-xl">
-              <div className="w-12 h-12 bg-[rgba(255,255,255,0.05)] rounded-full flex items-center justify-center mb-3 text-[#666666]">
+            <div className="col-span-full py-16 flex flex-col items-center justify-center text-[#909090] border-2 border-dashed border-[#242424] rounded-none-none">
+              <div className="w-12 h-12 bg-[rgba(255,255,255,0.05)] rounded-none-full flex items-center justify-center mb-3 text-[#666666]">
                 <Archive size={24} />
               </div>
               <p>No swipefile items in this category yet.</p>
@@ -797,12 +797,12 @@ const SwipefileManager: React.FC<SwipefileManagerProps> = ({ storagePrefix }) =>
 
       {/* Trash View */}
       {viewMode === 'trash' && (
-        <div className="bg-[#2f2f2f] border border-[#3a3a3a] rounded-xl overflow-hidden shadow-sm animate-in fade-in duration-300">
+        <div className="bg-[#0d0d0d] border border-[#242424] rounded-none-none overflow-hidden shadow-sm animate-in fade-in duration-300">
           <div className="overflow-x-auto min-h-[400px]">
             {trash.length > 0 ? (
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="bg-[#212121] text-xs uppercase tracking-wider text-[#9B9B9B] font-medium border-b border-[#3a3a3a]">
+                  <tr className="bg-[#000] text-xs uppercase tracking-wider text-[#909090] font-medium border-b border-[#242424]">
                     <th className="px-6 py-4">Type</th>
                     <th className="px-6 py-4 w-1/3">Title</th>
                     <th className="px-6 py-4">Category</th>
@@ -813,10 +813,10 @@ const SwipefileManager: React.FC<SwipefileManagerProps> = ({ storagePrefix }) =>
                   {trash.map((item) => (
                     <tr key={item.id} className="group hover:bg-[rgba(255,255,255,0.05)] transition-none">
                       <td className="px-6 py-4">
-                        <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium ${
+                        <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-none text-[10px] font-medium ${
                           item.mediaType === 'image' ? 'bg-blue-500/10 text-blue-400' :
                           item.mediaType === 'video' ? 'bg-purple-500/10 text-purple-400' :
-                          'bg-[#3a3a3a] text-[#9B9B9B]'
+                          'bg-[#3a3a3a] text-[#909090]'
                         }`}>
                           {getMediaIcon(item.mediaType || 'text')}
                           {(item.mediaType || 'text').charAt(0).toUpperCase() + (item.mediaType || 'text').slice(1)}
@@ -825,15 +825,15 @@ const SwipefileManager: React.FC<SwipefileManagerProps> = ({ storagePrefix }) =>
                       <td className="px-6 py-4">
                         <span className="text-[#b4b4b4] font-medium line-through decoration-[#666666] decoration-2">{item.title}</span>
                       </td>
-                      <td className="px-6 py-4 text-sm text-[#9B9B9B]">{item.category}</td>
+                      <td className="px-6 py-4 text-sm text-[#909090]">{item.category}</td>
                       <td className="px-6 py-4 text-right">
                         <div className="flex items-center justify-end gap-3">
                           <button onClick={() => handleRestore(item.id)}
-                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-[rgba(255,255,255,0.08)] text-[#ECECEC] hover:bg-[rgba(255,255,255,0.1)] transition-none">
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-none-none text-xs font-medium bg-[rgba(255,255,255,0.08)] text-[#f4f4f4] hover:bg-[rgba(255,255,255,0.1)] transition-none">
                             <RefreshCcw size={14} /> Restore
                           </button>
                           <button onClick={() => requestDeleteForever(item.id)}
-                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-rose-500/10 text-rose-500 hover:bg-rose-500/20 transition-none">
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-none-none text-xs font-medium bg-rose-500/10 text-rose-500 hover:bg-rose-500/20 transition-none">
                             <Ban size={14} /> Delete Forever
                           </button>
                         </div>
@@ -844,10 +844,10 @@ const SwipefileManager: React.FC<SwipefileManagerProps> = ({ storagePrefix }) =>
               </table>
             ) : (
               <div className="flex flex-col items-center justify-center py-20 text-[#666666]">
-                <div className="w-16 h-16 bg-[rgba(255,255,255,0.05)] rounded-full flex items-center justify-center mb-4 text-[#666666]">
+                <div className="w-16 h-16 bg-[rgba(255,255,255,0.05)] rounded-none-full flex items-center justify-center mb-4 text-[#666666]">
                   <Trash2 size={32} />
                 </div>
-                <p className="text-lg font-medium text-[#9B9B9B]">Trash is empty</p>
+                <p className="text-lg font-medium text-[#909090]">Trash is empty</p>
                 <p className="text-sm">Items moved to trash will appear here.</p>
               </div>
             )}

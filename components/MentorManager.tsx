@@ -160,11 +160,11 @@ function renderMarkdown(text: string): React.ReactNode {
 
     // Headings (optional)
     if (line.startsWith('### ')) {
-      elements.push(<h4 key={i} className="font-semibold text-[#ECECEC] mt-2 mb-1">{line.slice(4)}</h4>);
+      elements.push(<h4 key={i} className="font-semibold text-[#f4f4f4] mt-2 mb-1">{line.slice(4)}</h4>);
       continue;
     }
     if (line.startsWith('## ')) {
-      elements.push(<h3 key={i} className="font-semibold text-[#ECECEC] mt-2 mb-1">{line.slice(3)}</h3>);
+      elements.push(<h3 key={i} className="font-semibold text-[#f4f4f4] mt-2 mb-1">{line.slice(3)}</h3>);
       continue;
     }
 
@@ -174,7 +174,7 @@ function renderMarkdown(text: string): React.ReactNode {
       const content = bulletMatch[2];
       elements.push(
         <div key={i} className="flex gap-2 ml-1">
-          <span className="text-[#555] flex-shrink-0 mt-0.5">{'•'}</span>
+          <span className="text-[#5a5a5a] flex-shrink-0 mt-0.5">{'•'}</span>
           <span>{renderInline(content)}</span>
         </div>
       );
@@ -205,7 +205,7 @@ function renderInline(text: string): React.ReactNode {
     if (match.index > lastIndex) {
       parts.push(text.slice(lastIndex, match.index));
     }
-    parts.push(<strong key={match.index} className="font-semibold text-[#ECECEC]">{match[1]}</strong>);
+    parts.push(<strong key={match.index} className="font-semibold text-[#f4f4f4]">{match[1]}</strong>);
     lastIndex = regex.lastIndex;
   }
 
@@ -991,8 +991,8 @@ const MentorManager: React.FC<MentorManagerProps> = ({ storagePrefix }) => {
       {/* Header */}
       <div className="flex items-center justify-between mb-5 flex-shrink-0">
         <div>
-          <h1 className="text-lg font-semibold text-[#ECECEC]">{greeting}, Guilherme.</h1>
-          <p className="text-xs text-[#555] mt-0.5">
+          <h1 className="text-lg font-semibold text-[#f4f4f4]">{greeting}, Guilherme.</h1>
+          <p className="text-xs text-[#5a5a5a] mt-0.5">
             {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
           </p>
         </div>
@@ -1001,10 +1001,10 @@ const MentorManager: React.FC<MentorManagerProps> = ({ storagePrefix }) => {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-none ${
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-none-none text-xs font-medium transition-none ${
                 activeTab === tab.id
-                  ? 'bg-[#252525] text-[#ECECEC]'
-                  : 'text-[#555] hover:text-[#888]'
+                  ? 'bg-[#0d0d0d] text-[#f4f4f4]'
+                  : 'text-[#5a5a5a] hover:text-[#909090]'
               }`}
             >
               <tab.icon size={14} />
@@ -1024,10 +1024,10 @@ const MentorManager: React.FC<MentorManagerProps> = ({ storagePrefix }) => {
                 <button
                   key={cat.id}
                   onClick={() => setLogCategory(logCategory === cat.id ? null : cat.id)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-none ${
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-none-none text-xs font-medium transition-none ${
                     logCategory === cat.id
-                      ? 'bg-[#252525] text-[#ECECEC] border border-[#3a3a3a]'
-                      : 'bg-[#1c1c1c] text-[#666] hover:text-[#888] border border-[#2a2a2a]'
+                      ? 'bg-[#0d0d0d] text-[#f4f4f4] border border-[#242424]'
+                      : 'bg-[#0a0a0a] text-[#5a5a5a] hover:text-[#909090] border border-[#1a1a1a]'
                   }`}
                 >
                   <cat.icon size={12} />
@@ -1045,11 +1045,11 @@ const MentorManager: React.FC<MentorManagerProps> = ({ storagePrefix }) => {
                   onChange={e => setLogInput(e.target.value)}
                   onKeyDown={e => e.key === 'Enter' && addLog()}
                   placeholder={LOG_CATEGORIES.find(c => c.id === logCategory)?.placeholder}
-                  className="flex-1 bg-[#1c1c1c] border border-[#2a2a2a] rounded-lg px-3 py-2 text-sm text-[#ECECEC] placeholder-[#444] focus:outline-none focus:border-[#3a3a3a]"
+                  className="flex-1 bg-[#0a0a0a] border border-[#1a1a1a] rounded-none-none px-3 py-2 text-sm text-[#f4f4f4] placeholder-[#444] focus:outline-none focus:border-[#242424]"
                 />
                 <button
                   onClick={addLog}
-                  className="px-3 py-2 bg-[#252525] hover:bg-[#2a2a2a] text-[#ECECEC] rounded-lg text-xs font-medium transition-none"
+                  className="px-3 py-2 bg-[#0d0d0d] hover:bg-[#0d0d0d] text-[#f4f4f4] rounded-none-none text-xs font-medium transition-none"
                 >
                   Log
                 </button>
@@ -1063,13 +1063,13 @@ const MentorManager: React.FC<MentorManagerProps> = ({ storagePrefix }) => {
                   const catInfo = LOG_CATEGORIES.find(c => c.id === log.category);
                   const Icon = catInfo?.icon || StickyNote;
                   return (
-                    <div key={log.id} className="flex items-center gap-2 bg-[#1c1c1c] border border-[#2a2a2a] rounded-lg px-3 py-1.5 group">
-                      <Icon size={11} className="text-[#555]" />
-                      <span className="text-xs text-[#9B9B9B]">{log.content}</span>
+                    <div key={log.id} className="flex items-center gap-2 bg-[#0a0a0a] border border-[#1a1a1a] rounded-none-none px-3 py-1.5 group">
+                      <Icon size={11} className="text-[#5a5a5a]" />
+                      <span className="text-xs text-[#909090]">{log.content}</span>
                       <span className="text-[10px] text-[#333]">{formatTime(log.created_at)}</span>
                       <button
                         onClick={() => deleteLog(log.id)}
-                        className="text-[#333] hover:text-[#888] opacity-0 group-hover:opacity-100 transition-opacity"
+                        className="text-[#333] hover:text-[#909090] opacity-0 group-hover:opacity-100 transition-opacity"
                       >
                         <X size={10} />
                       </button>
@@ -1081,19 +1081,19 @@ const MentorManager: React.FC<MentorManagerProps> = ({ storagePrefix }) => {
           </div>
 
           {/* Chat area */}
-          <div className="flex-1 flex flex-col min-h-0 bg-[#1c1c1c] rounded-xl border border-[#2a2a2a] overflow-hidden">
+          <div className="flex-1 flex flex-col min-h-0 bg-[#0a0a0a] rounded-none-none border border-[#1a1a1a] overflow-hidden">
             {/* Messages */}
             <div className="flex-1 overflow-y-auto p-3 space-y-3 custom-scrollbar">
               {messages.length === 0 && (
                 <div className="flex flex-col items-center justify-center h-full text-center">
                   <Brain size={32} className="text-[#333] mb-3" />
-                  <p className="text-sm text-[#555] mb-4">Ask your mentor anything.</p>
+                  <p className="text-sm text-[#5a5a5a] mb-4">Ask your mentor anything.</p>
                   <div className="flex flex-wrap gap-2 justify-center max-w-md">
                     {SUGGESTED_PROMPTS.map(prompt => (
                       <button
                         key={prompt}
                         onClick={() => sendMessage(prompt)}
-                        className="px-3 py-1.5 bg-[#252525] hover:bg-[#2a2a2a] border border-[#2a2a2a] rounded-lg text-xs text-[#888] hover:text-[#ECECEC] transition-none"
+                        className="px-3 py-1.5 bg-[#0d0d0d] hover:bg-[#0d0d0d] border border-[#1a1a1a] rounded-none-none text-xs text-[#909090] hover:text-[#f4f4f4] transition-none"
                       >
                         {prompt}
                       </button>
@@ -1107,18 +1107,18 @@ const MentorManager: React.FC<MentorManagerProps> = ({ storagePrefix }) => {
                   {/* Mentor avatar */}
                   {msg.role === 'assistant' && (
                     profile.mentor_photo ? (
-                      <img src={profile.mentor_photo} alt={profile.mentor_name} className="w-7 h-7 rounded-full object-cover flex-shrink-0" />
+                      <img src={profile.mentor_photo} alt={profile.mentor_name} className="w-7 h-7 rounded-none-full object-cover flex-shrink-0" />
                     ) : (
-                      <div className="w-7 h-7 rounded-full bg-[#252525] border border-[#2a2a2a] flex items-center justify-center flex-shrink-0">
-                        <Brain size={14} className="text-[#888]" />
+                      <div className="w-7 h-7 rounded-none-full bg-[#0d0d0d] border border-[#1a1a1a] flex items-center justify-center flex-shrink-0">
+                        <Brain size={14} className="text-[#909090]" />
                       </div>
                     )
                   )}
                   <div
-                    className={`max-w-[78%] rounded-xl px-3 py-2 text-sm leading-snug ${
+                    className={`max-w-[78%] rounded-none-none px-3 py-2 text-sm leading-snug ${
                       msg.role === 'user'
-                        ? 'bg-[#252525] text-[#ECECEC]'
-                        : 'bg-[#171717] text-[#CDCDCD] border border-[#2a2a2a]'
+                        ? 'bg-[#0d0d0d] text-[#f4f4f4]'
+                        : 'bg-[#0a0a0a] text-[#CDCDCD] border border-[#1a1a1a]'
                     }`}
                   >
                     {msg.role === 'assistant' ? renderMarkdown(msg.content) : <div className="whitespace-pre-wrap">{msg.content}</div>}
@@ -1126,9 +1126,9 @@ const MentorManager: React.FC<MentorManagerProps> = ({ storagePrefix }) => {
                   {/* User avatar */}
                   {msg.role === 'user' && (
                     userPhoto ? (
-                      <img src={userPhoto} alt="You" className="w-7 h-7 rounded-full object-cover flex-shrink-0" />
+                      <img src={userPhoto} alt="You" className="w-7 h-7 rounded-none-full object-cover flex-shrink-0" />
                     ) : (
-                      <div className="w-7 h-7 rounded-full bg-emerald-500 flex items-center justify-center flex-shrink-0 text-[10px] font-bold text-white">
+                      <div className="w-7 h-7 rounded-none-full bg-emerald-500 flex items-center justify-center flex-shrink-0 text-[10px] font-bold text-white">
                         GU
                       </div>
                     )
@@ -1139,17 +1139,17 @@ const MentorManager: React.FC<MentorManagerProps> = ({ storagePrefix }) => {
               {isLoading && (
                 <div className="flex items-end gap-2.5 justify-start">
                   {profile.mentor_photo ? (
-                    <img src={profile.mentor_photo} alt={profile.mentor_name} className="w-7 h-7 rounded-full object-cover flex-shrink-0" />
+                    <img src={profile.mentor_photo} alt={profile.mentor_name} className="w-7 h-7 rounded-none-full object-cover flex-shrink-0" />
                   ) : (
-                    <div className="w-7 h-7 rounded-full bg-[#252525] border border-[#2a2a2a] flex items-center justify-center flex-shrink-0">
-                      <Brain size={14} className="text-[#888]" />
+                    <div className="w-7 h-7 rounded-none-full bg-[#0d0d0d] border border-[#1a1a1a] flex items-center justify-center flex-shrink-0">
+                      <Brain size={14} className="text-[#909090]" />
                     </div>
                   )}
-                  <div className="bg-[#171717] border border-[#2a2a2a] rounded-xl px-4 py-3">
+                  <div className="bg-[#0a0a0a] border border-[#1a1a1a] rounded-none-none px-4 py-3">
                     <div className="flex gap-1.5">
-                      <div className="w-1.5 h-1.5 bg-[#555] rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                      <div className="w-1.5 h-1.5 bg-[#555] rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                      <div className="w-1.5 h-1.5 bg-[#555] rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                      <div className="w-1.5 h-1.5 bg-[#555] rounded-none-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                      <div className="w-1.5 h-1.5 bg-[#555] rounded-none-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                      <div className="w-1.5 h-1.5 bg-[#555] rounded-none-full animate-bounce" style={{ animationDelay: '300ms' }} />
                     </div>
                   </div>
                 </div>
@@ -1159,7 +1159,7 @@ const MentorManager: React.FC<MentorManagerProps> = ({ storagePrefix }) => {
             </div>
 
             {/* Input */}
-            <div className="flex-shrink-0 border-t border-[#2a2a2a] p-2.5">
+            <div className="flex-shrink-0 border-t border-[#1a1a1a] p-2.5">
               <div className="flex gap-2">
                 <textarea
                   ref={inputRef}
@@ -1173,12 +1173,12 @@ const MentorManager: React.FC<MentorManagerProps> = ({ storagePrefix }) => {
                   }}
                   placeholder="Ask your mentor..."
                   rows={1}
-                  className="flex-1 bg-[#171717] border border-[#2a2a2a] rounded-lg px-3 py-2 text-sm text-[#ECECEC] placeholder-[#444] focus:outline-none focus:border-[#3a3a3a] resize-none"
+                  className="flex-1 bg-[#0a0a0a] border border-[#1a1a1a] rounded-none-none px-3 py-2 text-sm text-[#f4f4f4] placeholder-[#444] focus:outline-none focus:border-[#242424] resize-none"
                 />
                 <button
                   onClick={() => sendMessage()}
                   disabled={isLoading || !chatInput.trim()}
-                  className="px-3 py-2 bg-[#252525] hover:bg-[#2a2a2a] text-[#ECECEC] rounded-lg transition-none disabled:opacity-30"
+                  className="px-3 py-2 bg-[#0d0d0d] hover:bg-[#0d0d0d] text-[#f4f4f4] rounded-none-none transition-none disabled:opacity-30"
                 >
                   <Send size={16} />
                 </button>
@@ -1186,7 +1186,7 @@ const MentorManager: React.FC<MentorManagerProps> = ({ storagePrefix }) => {
               {messages.length > 0 && (
                 <button
                   onClick={clearConversation}
-                  className="mt-2 text-[10px] text-[#333] hover:text-[#666] transition-none"
+                  className="mt-2 text-[10px] text-[#333] hover:text-[#5a5a5a] transition-none"
                 >
                   Clear conversation
                 </button>
@@ -1200,21 +1200,21 @@ const MentorManager: React.FC<MentorManagerProps> = ({ storagePrefix }) => {
       {activeTab === 'goals' && (
         <div className="flex-1 overflow-y-auto custom-scrollbar space-y-4">
           {profile.life_areas.map(area => (
-            <div key={area.id} className="bg-[#1c1c1c] rounded-xl border border-[#2a2a2a] p-4">
+            <div key={area.id} className="bg-[#0a0a0a] rounded-none-none border border-[#1a1a1a] p-4">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-3">
-                  <h3 className="text-sm font-semibold text-[#ECECEC]">{area.name}</h3>
+                  <h3 className="text-sm font-semibold text-[#f4f4f4]">{area.name}</h3>
                   <select
                     value={area.priority}
                     onChange={e => setAreaPriority(area.id, e.target.value as any)}
-                    className="bg-[#171717] border border-[#2a2a2a] rounded px-2 py-0.5 text-[10px] text-[#888] focus:outline-none"
+                    className="bg-[#0a0a0a] border border-[#1a1a1a] rounded-none px-2 py-0.5 text-[10px] text-[#909090] focus:outline-none"
                   >
                     <option value="high">High</option>
                     <option value="medium">Medium</option>
                     <option value="low">Low</option>
                   </select>
                 </div>
-                <button onClick={() => deleteArea(area.id)} className="text-[#333] hover:text-[#888] transition-none">
+                <button onClick={() => deleteArea(area.id)} className="text-[#333] hover:text-[#909090] transition-none">
                   <Trash2 size={14} />
                 </button>
               </div>
@@ -1225,26 +1225,26 @@ const MentorManager: React.FC<MentorManagerProps> = ({ storagePrefix }) => {
                   <div key={goal.id} className="flex items-center gap-3 group">
                     <button
                       onClick={() => toggleGoal(area.id, goal.id)}
-                      className={`w-4 h-4 rounded border flex-shrink-0 flex items-center justify-center transition-none ${
+                      className={`w-4 h-4 rounded-none border flex-shrink-0 flex items-center justify-center transition-none ${
                         goal.completed
                           ? 'bg-[#ECECEC] border-[#ECECEC]'
-                          : 'border-[#3a3a3a] hover:border-[#555]'
+                          : 'border-[#242424] hover:border-[#555]'
                       }`}
                     >
                       {goal.completed && <Check size={10} className="text-[#171717]" />}
                     </button>
-                    <span className={`text-sm flex-1 ${goal.completed ? 'text-[#555] line-through' : 'text-[#CDCDCD]'}`}>
+                    <span className={`text-sm flex-1 ${goal.completed ? 'text-[#5a5a5a] line-through' : 'text-[#CDCDCD]'}`}>
                       {goal.text}
                     </span>
                     {goal.deadline && (
-                      <span className="text-[10px] text-[#444] flex items-center gap-1">
+                      <span className="text-[10px] text-[#3a3a3a] flex items-center gap-1">
                         <Clock size={9} />
                         {goal.deadline}
                       </span>
                     )}
                     <button
                       onClick={() => deleteGoal(area.id, goal.id)}
-                      className="text-[#333] hover:text-[#888] opacity-0 group-hover:opacity-100 transition-opacity"
+                      className="text-[#333] hover:text-[#909090] opacity-0 group-hover:opacity-100 transition-opacity"
                     >
                       <X size={12} />
                     </button>
@@ -1261,25 +1261,25 @@ const MentorManager: React.FC<MentorManagerProps> = ({ storagePrefix }) => {
                     onChange={e => setNewGoalText(e.target.value)}
                     onKeyDown={e => e.key === 'Enter' && addGoal(area.id)}
                     placeholder="New goal..."
-                    className="flex-1 bg-[#171717] border border-[#2a2a2a] rounded-lg px-3 py-1.5 text-sm text-[#ECECEC] placeholder-[#444] focus:outline-none focus:border-[#3a3a3a]"
+                    className="flex-1 bg-[#0a0a0a] border border-[#1a1a1a] rounded-none-none px-3 py-1.5 text-sm text-[#f4f4f4] placeholder-[#444] focus:outline-none focus:border-[#242424]"
                   />
                   <input
                     type="date"
                     value={newGoalDeadline}
                     onChange={e => setNewGoalDeadline(e.target.value)}
-                    className="bg-[#171717] border border-[#2a2a2a] rounded-lg px-2 py-1.5 text-xs text-[#888] focus:outline-none"
+                    className="bg-[#0a0a0a] border border-[#1a1a1a] rounded-none-none px-2 py-1.5 text-xs text-[#909090] focus:outline-none"
                   />
-                  <button onClick={() => addGoal(area.id)} className="px-3 py-1.5 bg-[#252525] hover:bg-[#2a2a2a] text-[#ECECEC] rounded-lg text-xs transition-none">
+                  <button onClick={() => addGoal(area.id)} className="px-3 py-1.5 bg-[#0d0d0d] hover:bg-[#0d0d0d] text-[#f4f4f4] rounded-none-none text-xs transition-none">
                     Add
                   </button>
-                  <button onClick={() => { setEditingAreaId(null); setNewGoalText(''); setNewGoalDeadline(''); }} className="text-[#555] hover:text-[#888]">
+                  <button onClick={() => { setEditingAreaId(null); setNewGoalText(''); setNewGoalDeadline(''); }} className="text-[#5a5a5a] hover:text-[#909090]">
                     <X size={14} />
                   </button>
                 </div>
               ) : (
                 <button
                   onClick={() => setEditingAreaId(area.id)}
-                  className="mt-3 flex items-center gap-1.5 text-[11px] text-[#444] hover:text-[#888] transition-none"
+                  className="mt-3 flex items-center gap-1.5 text-[11px] text-[#3a3a3a] hover:text-[#909090] transition-none"
                 >
                   <Plus size={12} /> Add goal
                 </button>
@@ -1294,9 +1294,9 @@ const MentorManager: React.FC<MentorManagerProps> = ({ storagePrefix }) => {
               onChange={e => setNewAreaName(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && addArea()}
               placeholder="Add life area..."
-              className="flex-1 bg-[#1c1c1c] border border-[#2a2a2a] rounded-lg px-3 py-2 text-sm text-[#ECECEC] placeholder-[#444] focus:outline-none focus:border-[#3a3a3a]"
+              className="flex-1 bg-[#0a0a0a] border border-[#1a1a1a] rounded-none-none px-3 py-2 text-sm text-[#f4f4f4] placeholder-[#444] focus:outline-none focus:border-[#242424]"
             />
-            <button onClick={addArea} className="px-4 py-2 bg-[#252525] hover:bg-[#2a2a2a] text-[#ECECEC] rounded-lg text-xs font-medium transition-none">
+            <button onClick={addArea} className="px-4 py-2 bg-[#0d0d0d] hover:bg-[#0d0d0d] text-[#f4f4f4] rounded-none-none text-xs font-medium transition-none">
               <Plus size={14} />
             </button>
           </div>
@@ -1307,10 +1307,10 @@ const MentorManager: React.FC<MentorManagerProps> = ({ storagePrefix }) => {
       {activeTab === 'knowledge' && (
         <div className="flex-1 overflow-y-auto custom-scrollbar space-y-3">
           <div className="flex items-center justify-between mb-2">
-            <p className="text-xs text-[#555]">Feed your mentor knowledge about your business, processes, and strategies.</p>
+            <p className="text-xs text-[#5a5a5a]">Feed your mentor knowledge about your business, processes, and strategies.</p>
             <button
               onClick={() => setShowAddKnowledge(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-[#252525] hover:bg-[#2a2a2a] text-[#ECECEC] rounded-lg text-xs font-medium transition-none"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-[#0d0d0d] hover:bg-[#0d0d0d] text-[#f4f4f4] rounded-none-none text-xs font-medium transition-none"
             >
               <Plus size={12} /> Add
             </button>
@@ -1318,17 +1318,17 @@ const MentorManager: React.FC<MentorManagerProps> = ({ storagePrefix }) => {
 
           {/* Add knowledge modal */}
           {showAddKnowledge && (
-            <div className="bg-[#1c1c1c] rounded-xl border border-[#2a2a2a] p-4 space-y-3">
+            <div className="bg-[#0a0a0a] rounded-none-none border border-[#1a1a1a] p-4 space-y-3">
               <div className="flex items-center justify-between">
-                <h3 className="text-sm font-semibold text-[#ECECEC]">Add Knowledge</h3>
-                <button onClick={() => setShowAddKnowledge(false)} className="text-[#555] hover:text-[#888]">
+                <h3 className="text-sm font-semibold text-[#f4f4f4]">Add Knowledge</h3>
+                <button onClick={() => setShowAddKnowledge(false)} className="text-[#5a5a5a] hover:text-[#909090]">
                   <X size={14} />
                 </button>
               </div>
               <select
                 value={knowledgeForm.category}
                 onChange={e => setKnowledgeForm(p => ({ ...p, category: e.target.value }))}
-                className="w-full bg-[#171717] border border-[#2a2a2a] rounded-lg px-3 py-2 text-sm text-[#ECECEC] focus:outline-none"
+                className="w-full bg-[#0a0a0a] border border-[#1a1a1a] rounded-none-none px-3 py-2 text-sm text-[#f4f4f4] focus:outline-none"
               >
                 {KNOWLEDGE_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
               </select>
@@ -1336,26 +1336,26 @@ const MentorManager: React.FC<MentorManagerProps> = ({ storagePrefix }) => {
                 value={knowledgeForm.title}
                 onChange={e => setKnowledgeForm(p => ({ ...p, title: e.target.value }))}
                 placeholder="Title (e.g. How to close high-ticket clients)"
-                className="w-full bg-[#171717] border border-[#2a2a2a] rounded-lg px-3 py-2 text-sm text-[#ECECEC] placeholder-[#444] focus:outline-none focus:border-[#3a3a3a]"
+                className="w-full bg-[#0a0a0a] border border-[#1a1a1a] rounded-none-none px-3 py-2 text-sm text-[#f4f4f4] placeholder-[#444] focus:outline-none focus:border-[#242424]"
               />
               <textarea
                 value={knowledgeForm.content}
                 onChange={e => setKnowledgeForm(p => ({ ...p, content: e.target.value }))}
                 placeholder="Content — the actual knowledge, process, framework..."
                 rows={4}
-                className="w-full bg-[#171717] border border-[#2a2a2a] rounded-lg px-3 py-2 text-sm text-[#ECECEC] placeholder-[#444] focus:outline-none focus:border-[#3a3a3a] resize-none"
+                className="w-full bg-[#0a0a0a] border border-[#1a1a1a] rounded-none-none px-3 py-2 text-sm text-[#f4f4f4] placeholder-[#444] focus:outline-none focus:border-[#242424] resize-none"
               />
               <input
                 value={knowledgeForm.source}
                 onChange={e => setKnowledgeForm(p => ({ ...p, source: e.target.value }))}
                 placeholder="Source URL (optional)"
-                className="w-full bg-[#171717] border border-[#2a2a2a] rounded-lg px-3 py-2 text-sm text-[#ECECEC] placeholder-[#444] focus:outline-none focus:border-[#3a3a3a]"
+                className="w-full bg-[#0a0a0a] border border-[#1a1a1a] rounded-none-none px-3 py-2 text-sm text-[#f4f4f4] placeholder-[#444] focus:outline-none focus:border-[#242424]"
               />
               <div className="flex justify-end gap-2">
-                <button onClick={() => setShowAddKnowledge(false)} className="px-3 py-1.5 text-xs text-[#888] hover:text-[#ECECEC] transition-none">
+                <button onClick={() => setShowAddKnowledge(false)} className="px-3 py-1.5 text-xs text-[#909090] hover:text-[#f4f4f4] transition-none">
                   Cancel
                 </button>
-                <button onClick={addKnowledge} className="px-4 py-1.5 bg-white hover:bg-[#e5e5e5] text-[#212121] rounded-lg text-xs font-medium transition-none">
+                <button onClick={addKnowledge} className="px-4 py-1.5 bg-white hover:bg-[#e5e5e5] text-[#212121] rounded-none-none text-xs font-medium transition-none">
                   Save
                 </button>
               </div>
@@ -1366,29 +1366,29 @@ const MentorManager: React.FC<MentorManagerProps> = ({ storagePrefix }) => {
           {knowledge.length === 0 && !showAddKnowledge && (
             <div className="flex flex-col items-center justify-center py-12 text-center">
               <BookOpen size={32} className="text-[#333] mb-3" />
-              <p className="text-sm text-[#555] mb-1">No knowledge added yet.</p>
-              <p className="text-xs text-[#444]">Add business playbooks, processes, and frameworks for your mentor to reference.</p>
+              <p className="text-sm text-[#5a5a5a] mb-1">No knowledge added yet.</p>
+              <p className="text-xs text-[#3a3a3a]">Add business playbooks, processes, and frameworks for your mentor to reference.</p>
             </div>
           )}
 
           {knowledge.map(entry => (
-            <div key={entry.id} className="bg-[#1c1c1c] rounded-xl border border-[#2a2a2a] p-4 group">
+            <div key={entry.id} className="bg-[#0a0a0a] rounded-none-none border border-[#1a1a1a] p-4 group">
               <div className="flex items-start justify-between">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
-                    <span className="text-[10px] uppercase tracking-wider text-[#555] font-medium">{entry.category}</span>
+                    <span className="text-[10px] uppercase tracking-wider text-[#5a5a5a] font-medium">{entry.category}</span>
                   </div>
-                  <h4 className="text-sm font-medium text-[#ECECEC] mb-1">{entry.title}</h4>
-                  <p className="text-xs text-[#888] line-clamp-3 whitespace-pre-wrap">{entry.content}</p>
+                  <h4 className="text-sm font-medium text-[#f4f4f4] mb-1">{entry.title}</h4>
+                  <p className="text-xs text-[#909090] line-clamp-3 whitespace-pre-wrap">{entry.content}</p>
                   {entry.source && (
-                    <a href={entry.source} target="_blank" rel="noopener noreferrer" className="text-[10px] text-[#555] hover:text-[#888] mt-1 inline-block">
+                    <a href={entry.source} target="_blank" rel="noopener noreferrer" className="text-[10px] text-[#5a5a5a] hover:text-[#909090] mt-1 inline-block">
                       {entry.source}
                     </a>
                   )}
                 </div>
                 <button
                   onClick={() => deleteKnowledge(entry.id)}
-                  className="text-[#333] hover:text-[#888] opacity-0 group-hover:opacity-100 transition-opacity ml-3"
+                  className="text-[#333] hover:text-[#909090] opacity-0 group-hover:opacity-100 transition-opacity ml-3"
                 >
                   <Trash2 size={14} />
                 </button>
@@ -1403,20 +1403,20 @@ const MentorManager: React.FC<MentorManagerProps> = ({ storagePrefix }) => {
         <div className="flex-1 overflow-y-auto custom-scrollbar space-y-6">
           {/* Personality */}
           <div>
-            <h3 className="text-xs uppercase tracking-wider text-[#555] font-medium mb-3">Mentor Personality</h3>
+            <h3 className="text-xs uppercase tracking-wider text-[#5a5a5a] font-medium mb-3">Mentor Personality</h3>
             <div className="grid grid-cols-2 lg:grid-cols-3 gap-2">
               {PERSONALITIES.map(p => (
                 <button
                   key={p.id}
                   onClick={() => saveProfile({ ...profile, personality: p.id })}
-                  className={`p-3 rounded-xl border text-left transition-none ${
+                  className={`p-3 rounded-none-none border text-left transition-none ${
                     profile.personality === p.id
-                      ? 'bg-[#252525] border-[#3a3a3a] text-[#ECECEC]'
-                      : 'bg-[#1c1c1c] border-[#2a2a2a] text-[#888] hover:text-[#ECECEC] hover:border-[#333]'
+                      ? 'bg-[#0d0d0d] border-[#242424] text-[#f4f4f4]'
+                      : 'bg-[#0a0a0a] border-[#1a1a1a] text-[#909090] hover:text-[#f4f4f4] hover:border-[#242424]'
                   }`}
                 >
                   <p className="text-sm font-medium">{p.label}</p>
-                  <p className="text-[10px] text-[#555] mt-0.5">{p.desc}</p>
+                  <p className="text-[10px] text-[#5a5a5a] mt-0.5">{p.desc}</p>
                 </button>
               ))}
             </div>
@@ -1424,28 +1424,28 @@ const MentorManager: React.FC<MentorManagerProps> = ({ storagePrefix }) => {
 
           {/* Custom personality */}
           <div>
-            <h3 className="text-xs uppercase tracking-wider text-[#555] font-medium mb-2">Custom Instructions</h3>
+            <h3 className="text-xs uppercase tracking-wider text-[#5a5a5a] font-medium mb-2">Custom Instructions</h3>
             <textarea
               value={profile.custom_personality}
               onChange={e => saveProfile({ ...profile, custom_personality: e.target.value })}
               placeholder="Additional instructions for how your mentor should behave, speak, or what to focus on..."
               rows={3}
-              className="w-full bg-[#1c1c1c] border border-[#2a2a2a] rounded-lg px-3 py-2 text-sm text-[#ECECEC] placeholder-[#444] focus:outline-none focus:border-[#3a3a3a] resize-none"
+              className="w-full bg-[#0a0a0a] border border-[#1a1a1a] rounded-none-none px-3 py-2 text-sm text-[#f4f4f4] placeholder-[#444] focus:outline-none focus:border-[#242424] resize-none"
             />
           </div>
 
           {/* Tone */}
           <div>
-            <h3 className="text-xs uppercase tracking-wider text-[#555] font-medium mb-2">Communication Tone</h3>
+            <h3 className="text-xs uppercase tracking-wider text-[#5a5a5a] font-medium mb-2">Communication Tone</h3>
             <div className="flex gap-2">
               {TONES.map(t => (
                 <button
                   key={t}
                   onClick={() => saveProfile({ ...profile, tone: t })}
-                  className={`px-4 py-2 rounded-lg text-xs font-medium capitalize transition-none ${
+                  className={`px-4 py-2 rounded-none-none text-xs font-medium capitalize transition-none ${
                     profile.tone === t
-                      ? 'bg-[#252525] text-[#ECECEC] border border-[#3a3a3a]'
-                      : 'bg-[#1c1c1c] text-[#888] border border-[#2a2a2a] hover:text-[#ECECEC]'
+                      ? 'bg-[#0d0d0d] text-[#f4f4f4] border border-[#242424]'
+                      : 'bg-[#0a0a0a] text-[#909090] border border-[#1a1a1a] hover:text-[#f4f4f4]'
                   }`}
                 >
                   {t}
@@ -1456,24 +1456,24 @@ const MentorManager: React.FC<MentorManagerProps> = ({ storagePrefix }) => {
 
           {/* Schedule */}
           <div>
-            <h3 className="text-xs uppercase tracking-wider text-[#555] font-medium mb-2">Your Schedule</h3>
+            <h3 className="text-xs uppercase tracking-wider text-[#5a5a5a] font-medium mb-2">Your Schedule</h3>
             <div className="flex gap-4">
               <div>
-                <label className="text-[10px] text-[#555] uppercase tracking-wider">Wake time</label>
+                <label className="text-[10px] text-[#5a5a5a] uppercase tracking-wider">Wake time</label>
                 <input
                   type="time"
                   value={profile.wake_time}
                   onChange={e => saveProfile({ ...profile, wake_time: e.target.value })}
-                  className="block mt-1 bg-[#1c1c1c] border border-[#2a2a2a] rounded-lg px-3 py-2 text-sm text-[#ECECEC] focus:outline-none"
+                  className="block mt-1 bg-[#0a0a0a] border border-[#1a1a1a] rounded-none-none px-3 py-2 text-sm text-[#f4f4f4] focus:outline-none"
                 />
               </div>
               <div>
-                <label className="text-[10px] text-[#555] uppercase tracking-wider">Sleep time</label>
+                <label className="text-[10px] text-[#5a5a5a] uppercase tracking-wider">Sleep time</label>
                 <input
                   type="time"
                   value={profile.sleep_time}
                   onChange={e => saveProfile({ ...profile, sleep_time: e.target.value })}
-                  className="block mt-1 bg-[#1c1c1c] border border-[#2a2a2a] rounded-lg px-3 py-2 text-sm text-[#ECECEC] focus:outline-none"
+                  className="block mt-1 bg-[#0a0a0a] border border-[#1a1a1a] rounded-none-none px-3 py-2 text-sm text-[#f4f4f4] focus:outline-none"
                 />
               </div>
             </div>
@@ -1481,30 +1481,30 @@ const MentorManager: React.FC<MentorManagerProps> = ({ storagePrefix }) => {
 
           {/* Mentor identity */}
           <div>
-            <h3 className="text-xs uppercase tracking-wider text-[#555] font-medium mb-3">Mentor Identity</h3>
+            <h3 className="text-xs uppercase tracking-wider text-[#5a5a5a] font-medium mb-3">Mentor Identity</h3>
             <div className="flex items-center gap-4">
               <button
                 onClick={() => mentorPhotoRef.current?.click()}
-                className="w-16 h-16 rounded-full overflow-hidden bg-[#2a2a2a] flex items-center justify-center text-[#888] hover:brightness-110 transition-none flex-shrink-0 relative group"
+                className="w-16 h-16 rounded-none-full overflow-hidden bg-[#0d0d0d] flex items-center justify-center text-[#909090] hover:brightness-110 transition-none flex-shrink-0 relative group"
               >
                 {profile.mentor_photo ? (
                   <img src={profile.mentor_photo} alt="Mentor" className="w-full h-full object-cover" />
                 ) : (
                   <Brain size={24} />
                 )}
-                <div className="absolute inset-0 bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                <div className="absolute inset-0 bg-black/50 rounded-none-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                   <Camera size={14} className="text-white" />
                 </div>
               </button>
               <input ref={mentorPhotoRef} type="file" accept="image/*" className="hidden" onChange={handleMentorPhotoUpload} />
               <div className="flex-1">
-                <label className="text-[10px] text-[#555] uppercase tracking-wider">Name</label>
+                <label className="text-[10px] text-[#5a5a5a] uppercase tracking-wider">Name</label>
                 <input
                   value={profile.mentor_name}
                   onChange={e => saveProfile({ ...profile, mentor_name: e.target.value })}
-                  className="block mt-1 w-48 bg-[#1c1c1c] border border-[#2a2a2a] rounded-lg px-3 py-2 text-sm text-[#ECECEC] focus:outline-none focus:border-[#3a3a3a]"
+                  className="block mt-1 w-48 bg-[#0a0a0a] border border-[#1a1a1a] rounded-none-none px-3 py-2 text-sm text-[#f4f4f4] focus:outline-none focus:border-[#242424]"
                 />
-                <p className="text-[10px] text-[#444] mt-1">Click the circle to upload a photo for your mentor.</p>
+                <p className="text-[10px] text-[#3a3a3a] mt-1">Click the circle to upload a photo for your mentor.</p>
               </div>
             </div>
           </div>

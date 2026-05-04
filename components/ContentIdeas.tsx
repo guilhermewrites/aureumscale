@@ -18,16 +18,16 @@ export interface ContentIdea {
 }
 
 const PLATFORM_META: Record<PlatformType, { label: string; icon: string; color: string; bg: string }> = {
-  x:         { label: 'X',         icon: '𝕏',  color: '#ECECEC', bg: 'rgba(236,236,236,0.14)' },
+  x:         { label: 'X',         icon: '𝕏',  color: '#f4f4f4', bg: 'rgba(236,236,236,0.14)' },
   instagram: { label: 'Instagram', icon: '📸', color: '#fbcfe8', bg: 'rgba(251,207,232,0.14)' },
-  youtube:   { label: 'YouTube',   icon: '▶️', color: '#fca5a5', bg: 'rgba(252,165,165,0.14)' },
+  youtube:   { label: 'YouTube',   icon: '▶️', color: '#d46d6d', bg: 'rgba(252,165,165,0.14)' },
 };
 
 const STATUS_META: Record<StatusType, { label: string; color: string }> = {
   unscripted: { label: 'Unscripted', color: '#d4d4d8' },
   scripted:   { label: 'Scripted',   color: '#bfdbfe' },
   scheduled:  { label: 'Scheduled',  color: '#fde68a' },
-  posted:     { label: 'Posted',     color: '#86efac' },
+  posted:     { label: 'Posted',     color: '#6dd49a' },
 };
 
 interface Props {
@@ -147,31 +147,31 @@ const ContentIdeas: React.FC<Props> = ({ storagePrefix, onScheduleIdea }) => {
   const filteredIdeas = ideas.filter(i => filter === 'all' || i.platform === filter);
 
   return (
-    <div className="bg-[#1c1c1c] rounded-2xl p-6">
+    <div className="bg-[#0a0a0a] rounded-none-none p-6">
       <div className="flex items-center justify-between mb-5 flex-wrap gap-3">
         <div>
-          <h2 className="text-sm font-bold text-[#ECECEC]">Content Ideas</h2>
-          <p className="text-[11px] text-[#555] mt-0.5">
+          <h2 className="text-sm font-bold text-[#f4f4f4]">Content Ideas</h2>
+          <p className="text-[11px] text-[#5a5a5a] mt-0.5">
             {filteredIdeas.length} {filteredIdeas.length === 1 ? 'idea' : 'ideas'} in the pipeline
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <div className="flex bg-[#161616] rounded-lg p-0.5 border border-[#252525]">
+          <div className="flex bg-[#060606] rounded-none-none p-0.5 border border-[#1a1a1a]">
             <button onClick={() => setFilter('all')}
-              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${filter === 'all' ? 'bg-[#252525] text-[#ECECEC]' : 'text-[#555] hover:text-[#888]'}`}>
+              className={`px-3 py-1.5 rounded-none-none text-xs font-medium transition-colors ${filter === 'all' ? 'bg-[#0d0d0d] text-[#f4f4f4]' : 'text-[#5a5a5a] hover:text-[#909090]'}`}>
               All
             </button>
             {(Object.keys(PLATFORM_META) as PlatformType[]).map(p => (
               <button key={p} onClick={() => setFilter(p)}
-                className={`px-2.5 py-1.5 rounded-md text-xs transition-colors ${filter === p ? 'bg-[#252525]' : 'text-[#555] hover:text-[#888]'}`}>
+                className={`px-2.5 py-1.5 rounded-none-none text-xs transition-colors ${filter === p ? 'bg-[#0d0d0d]' : 'text-[#5a5a5a] hover:text-[#909090]'}`}>
                 {PLATFORM_META[p].icon}
               </button>
             ))}
           </div>
           <button
             onClick={openNew}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium transition-colors"
-            style={{ background: 'rgba(134,239,172,0.12)', color: '#86efac', border: '1px solid rgba(134,239,172,0.25)' }}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-none-none text-[11px] font-medium transition-colors"
+            style={{ background: 'rgba(134,239,172,0.12)', color: '#6dd49a', border: '1px solid rgba(134,239,172,0.25)' }}
           >
             <Plus size={12} /> New Idea
           </button>
@@ -179,8 +179,8 @@ const ContentIdeas: React.FC<Props> = ({ storagePrefix, onScheduleIdea }) => {
       </div>
 
       {filteredIdeas.length === 0 ? (
-        <div className="py-10 text-center text-[#555] text-xs">
-          No ideas yet. Click <span className="text-[#86efac]">New Idea</span> to start building your content pipeline.
+        <div className="py-10 text-center text-[#5a5a5a] text-xs">
+          No ideas yet. Click <span className="text-[#6dd49a]">New Idea</span> to start building your content pipeline.
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
@@ -190,7 +190,7 @@ const ContentIdeas: React.FC<Props> = ({ storagePrefix, onScheduleIdea }) => {
             return (
               <div
                 key={idea.id}
-                className="rounded-xl overflow-hidden transition-all hover:translate-y-[-1px]"
+                className="rounded-none overflow-hidden transition-all hover:translate-y-[-1px]"
                 style={{
                   background: 'linear-gradient(135deg,rgba(255,255,255,0.035) 0%,rgba(255,255,255,0.01) 100%)',
                   border: '1px solid rgba(255,255,255,0.06)',
@@ -210,37 +210,37 @@ const ContentIdeas: React.FC<Props> = ({ storagePrefix, onScheduleIdea }) => {
                     </div>
                   )}
                   <div
-                    className="absolute top-2 left-2 px-2 py-0.5 rounded-md text-[10px] font-medium backdrop-blur-sm"
+                    className="absolute top-2 left-2 px-2 py-0.5 rounded-none-none text-[10px] font-medium backdrop-blur-sm"
                     style={{ background: meta.bg, color: meta.color, border: `1px solid ${meta.color}33` }}
                   >
                     {meta.icon} {meta.label}
                   </div>
                   <div
-                    className="absolute top-2 right-2 px-2 py-0.5 rounded-md text-[10px] font-medium backdrop-blur-sm flex items-center gap-1"
+                    className="absolute top-2 right-2 px-2 py-0.5 rounded-none-none text-[10px] font-medium backdrop-blur-sm flex items-center gap-1"
                     style={{ background: 'rgba(0,0,0,0.5)', color: statusMeta.color }}
                   >
-                    <span className="w-1.5 h-1.5 rounded-full" style={{ background: statusMeta.color }} />
+                    <span className="w-1.5 h-1.5 rounded-none-full" style={{ background: statusMeta.color }} />
                     {statusMeta.label}
                   </div>
                 </div>
                 <div className="p-3">
-                  <h3 className="text-xs font-semibold text-[#ECECEC] truncate mb-1">
+                  <h3 className="text-xs font-semibold text-[#f4f4f4] truncate mb-1">
                     {idea.title || '(untitled idea)'}
                   </h3>
                   {idea.notes && (
-                    <p className="text-[10px] text-[#666] line-clamp-2 mb-2.5">{idea.notes}</p>
+                    <p className="text-[10px] text-[#5a5a5a] line-clamp-2 mb-2.5">{idea.notes}</p>
                   )}
                   <div className="flex items-center gap-1.5">
                     <button
                       onClick={() => openScheduleFor(idea)}
-                      className="flex-1 flex items-center justify-center gap-1 py-1.5 rounded-md text-[10px] font-medium transition-colors"
-                      style={{ background: 'rgba(134,239,172,0.1)', color: '#86efac', border: '1px solid rgba(134,239,172,0.2)' }}
+                      className="flex-1 flex items-center justify-center gap-1 py-1.5 rounded-none-none text-[10px] font-medium transition-colors"
+                      style={{ background: 'rgba(134,239,172,0.1)', color: '#6dd49a', border: '1px solid rgba(134,239,172,0.2)' }}
                     >
                       <Calendar size={10} /> Schedule
                     </button>
                     <button
                       onClick={() => openEdit(idea)}
-                      className="px-2 py-1.5 rounded-md text-[#888] hover:text-[#ECECEC] hover:bg-[#252525] transition-colors"
+                      className="px-2 py-1.5 rounded-none-none text-[#909090] hover:text-[#f4f4f4] hover:bg-[#0d0d0d] transition-colors"
                     >
                       <Edit3 size={11} />
                     </button>
@@ -256,19 +256,19 @@ const ContentIdeas: React.FC<Props> = ({ storagePrefix, onScheduleIdea }) => {
       {editing && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={close}>
           <div
-            className="bg-[#1c1c1c] border border-[#2a2a2a] rounded-2xl p-6 w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto"
+            className="bg-[#0a0a0a] border border-[#1a1a1a] rounded-none-none p-6 w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto"
             onClick={e => e.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-bold text-[#ECECEC]">{form.id ? 'Edit idea' : 'New content idea'}</h3>
-              <button onClick={close} className="text-[#666] hover:text-[#ECECEC] transition-colors">
+              <h3 className="text-sm font-bold text-[#f4f4f4]">{form.id ? 'Edit idea' : 'New content idea'}</h3>
+              <button onClick={close} className="text-[#5a5a5a] hover:text-[#f4f4f4] transition-colors">
                 <X size={16} />
               </button>
             </div>
 
             <div className="space-y-3">
               <div>
-                <label className="block text-[10px] uppercase tracking-wider text-[#555] mb-1.5">Platform</label>
+                <label className="block text-[10px] uppercase tracking-wider text-[#5a5a5a] mb-1.5">Platform</label>
                 <div className="flex gap-1.5">
                   {(Object.keys(PLATFORM_META) as PlatformType[]).map(p => {
                     const active = form.platform === p;
@@ -277,7 +277,7 @@ const ContentIdeas: React.FC<Props> = ({ storagePrefix, onScheduleIdea }) => {
                       <button
                         key={p}
                         onClick={() => setForm(f => ({ ...f, platform: p }))}
-                        className="flex-1 px-3 py-2 rounded-lg text-xs font-medium transition-all"
+                        className="flex-1 px-3 py-2 rounded-none-none text-xs font-medium transition-all"
                         style={{
                           background: active ? meta.bg : '#161616',
                           border: `1px solid ${active ? meta.color + '55' : '#252525'}`,
@@ -292,9 +292,9 @@ const ContentIdeas: React.FC<Props> = ({ storagePrefix, onScheduleIdea }) => {
               </div>
 
               <div>
-                <label className="block text-[10px] uppercase tracking-wider text-[#555] mb-1.5">Thumbnail / Media</label>
+                <label className="block text-[10px] uppercase tracking-wider text-[#5a5a5a] mb-1.5">Thumbnail / Media</label>
                 {form.thumbnail_url ? (
-                  <div className="relative rounded-lg overflow-hidden border border-[#252525]" style={{ aspectRatio: '16/9' }}>
+                  <div className="relative rounded-none-none overflow-hidden border border-[#1a1a1a]" style={{ aspectRatio: '16/9' }}>
                     {isVideoUrl(form.thumbnail_url) ? (
                       <video src={form.thumbnail_url} className="w-full h-full object-cover" controls muted playsInline preload="metadata" />
                     ) : (
@@ -302,7 +302,7 @@ const ContentIdeas: React.FC<Props> = ({ storagePrefix, onScheduleIdea }) => {
                     )}
                     <button
                       onClick={() => setForm(f => ({ ...f, thumbnail_url: '' }))}
-                      className="absolute top-1.5 right-1.5 bg-black/70 hover:bg-black/90 text-[#ECECEC] rounded-md p-1 transition-colors"
+                      className="absolute top-1.5 right-1.5 bg-black/70 hover:bg-black/90 text-[#f4f4f4] rounded-none-none p-1 transition-colors"
                     >
                       <X size={12} />
                     </button>
@@ -311,13 +311,13 @@ const ContentIdeas: React.FC<Props> = ({ storagePrefix, onScheduleIdea }) => {
                   <button
                     onClick={() => fileInputRef.current?.click()}
                     disabled={uploading}
-                    className="w-full flex flex-col items-center justify-center gap-1.5 py-5 border border-dashed border-[#2a2a2a] rounded-lg text-[#666] hover:text-[#888] hover:border-[#3a3a3a] transition-colors disabled:opacity-50"
+                    className="w-full flex flex-col items-center justify-center gap-1.5 py-5 border border-dashed border-[#1a1a1a] rounded-none-none text-[#5a5a5a] hover:text-[#909090] hover:border-[#242424] transition-colors disabled:opacity-50"
                   >
                     {uploading ? (
                       <span className="text-[11px]">Uploading…</span>
                     ) : (
                       <>
-                        <div className="flex items-center gap-2 text-[#888]">
+                        <div className="flex items-center gap-2 text-[#909090]">
                           <Upload size={14} />
                           <Film size={14} />
                         </div>
@@ -340,33 +340,33 @@ const ContentIdeas: React.FC<Props> = ({ storagePrefix, onScheduleIdea }) => {
               </div>
 
               <div>
-                <label className="block text-[10px] uppercase tracking-wider text-[#555] mb-1.5">Title / Hook</label>
+                <label className="block text-[10px] uppercase tracking-wider text-[#5a5a5a] mb-1.5">Title / Hook</label>
                 <input
                   type="text"
                   value={form.title || ''}
                   onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
                   placeholder="Headline or hook"
-                  className="w-full bg-[#161616] border border-[#252525] rounded-lg px-3 py-2 text-xs text-[#ECECEC] placeholder-[#444] focus:outline-none focus:border-[#86efac]/40"
+                  className="w-full bg-[#060606] border border-[#1a1a1a] rounded-none-none px-3 py-2 text-xs text-[#f4f4f4] placeholder-[#444] focus:outline-none focus:border-[#86efac]/40"
                 />
               </div>
 
               <div>
-                <label className="block text-[10px] uppercase tracking-wider text-[#555] mb-1.5">Notes / Script</label>
+                <label className="block text-[10px] uppercase tracking-wider text-[#5a5a5a] mb-1.5">Notes / Script</label>
                 <textarea
                   value={form.notes || ''}
                   onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
                   placeholder="Content, angle, references…"
                   rows={4}
-                  className="w-full bg-[#161616] border border-[#252525] rounded-lg px-3 py-2 text-xs text-[#ECECEC] placeholder-[#444] focus:outline-none focus:border-[#86efac]/40 resize-none"
+                  className="w-full bg-[#060606] border border-[#1a1a1a] rounded-none-none px-3 py-2 text-xs text-[#f4f4f4] placeholder-[#444] focus:outline-none focus:border-[#86efac]/40 resize-none"
                 />
               </div>
 
               <div>
-                <label className="block text-[10px] uppercase tracking-wider text-[#555] mb-1.5">Status</label>
+                <label className="block text-[10px] uppercase tracking-wider text-[#5a5a5a] mb-1.5">Status</label>
                 <select
                   value={form.status || 'unscripted'}
                   onChange={e => setForm(f => ({ ...f, status: e.target.value as StatusType }))}
-                  className="w-full bg-[#161616] border border-[#252525] rounded-lg px-3 py-2 text-xs text-[#ECECEC] focus:outline-none focus:border-[#86efac]/40"
+                  className="w-full bg-[#060606] border border-[#1a1a1a] rounded-none-none px-3 py-2 text-xs text-[#f4f4f4] focus:outline-none focus:border-[#86efac]/40"
                 >
                   {(Object.keys(STATUS_META) as StatusType[]).map(s => (
                     <option key={s} value={s}>{STATUS_META[s].label}</option>
@@ -375,11 +375,11 @@ const ContentIdeas: React.FC<Props> = ({ storagePrefix, onScheduleIdea }) => {
               </div>
             </div>
 
-            <div className="flex items-center justify-between mt-5 pt-4 border-t border-[#2a2a2a]">
+            <div className="flex items-center justify-between mt-5 pt-4 border-t border-[#1a1a1a]">
               {form.id ? (
                 <button
                   onClick={remove}
-                  className="flex items-center gap-1.5 text-[11px] text-[#fca5a5] hover:text-[#fecaca] transition-colors"
+                  className="flex items-center gap-1.5 text-[11px] text-[#d46d6d] hover:text-[#fecaca] transition-colors"
                 >
                   <Trash2 size={12} /> Delete
                 </button>
@@ -387,14 +387,14 @@ const ContentIdeas: React.FC<Props> = ({ storagePrefix, onScheduleIdea }) => {
               <div className="flex items-center gap-2">
                 <button
                   onClick={close}
-                  className="px-3 py-1.5 rounded-lg text-[11px] text-[#888] hover:text-[#ECECEC] transition-colors">
+                  className="px-3 py-1.5 rounded-none-none text-[11px] text-[#909090] hover:text-[#f4f4f4] transition-colors">
                   Cancel
                 </button>
                 <button
                   onClick={save}
                   disabled={saving || uploading}
-                  className="px-3 py-1.5 rounded-lg text-[11px] font-medium transition-colors disabled:opacity-50"
-                  style={{ background: 'rgba(134,239,172,0.12)', color: '#86efac', border: '1px solid rgba(134,239,172,0.25)' }}>
+                  className="px-3 py-1.5 rounded-none-none text-[11px] font-medium transition-colors disabled:opacity-50"
+                  style={{ background: 'rgba(134,239,172,0.12)', color: '#6dd49a', border: '1px solid rgba(134,239,172,0.25)' }}>
                   {saving ? 'Saving…' : form.id ? 'Save changes' : 'Create idea'}
                 </button>
               </div>
@@ -407,48 +407,48 @@ const ContentIdeas: React.FC<Props> = ({ storagePrefix, onScheduleIdea }) => {
       {scheduleTarget && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => setScheduleTarget(null)}>
           <div
-            className="bg-[#1c1c1c] border border-[#2a2a2a] rounded-2xl p-6 w-full max-w-sm mx-4"
+            className="bg-[#0a0a0a] border border-[#1a1a1a] rounded-none-none p-6 w-full max-w-sm mx-4"
             onClick={e => e.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-bold text-[#ECECEC]">Schedule idea</h3>
-              <button onClick={() => setScheduleTarget(null)} className="text-[#666] hover:text-[#ECECEC] transition-colors">
+              <h3 className="text-sm font-bold text-[#f4f4f4]">Schedule idea</h3>
+              <button onClick={() => setScheduleTarget(null)} className="text-[#5a5a5a] hover:text-[#f4f4f4] transition-colors">
                 <X size={16} />
               </button>
             </div>
-            <p className="text-[11px] text-[#666] mb-4 line-clamp-2">
+            <p className="text-[11px] text-[#5a5a5a] mb-4 line-clamp-2">
               "{scheduleTarget.title || 'Untitled'}" will move from Ideas to the calendar.
             </p>
             <div className="grid grid-cols-2 gap-3 mb-4">
               <div>
-                <label className="block text-[10px] uppercase tracking-wider text-[#555] mb-1.5">Date</label>
+                <label className="block text-[10px] uppercase tracking-wider text-[#5a5a5a] mb-1.5">Date</label>
                 <input
                   type="date"
                   value={scheduleDate}
                   onChange={e => setScheduleDate(e.target.value)}
-                  className="w-full bg-[#161616] border border-[#252525] rounded-lg px-3 py-2 text-xs text-[#ECECEC] focus:outline-none focus:border-[#86efac]/40"
+                  className="w-full bg-[#060606] border border-[#1a1a1a] rounded-none-none px-3 py-2 text-xs text-[#f4f4f4] focus:outline-none focus:border-[#86efac]/40"
                 />
               </div>
               <div>
-                <label className="block text-[10px] uppercase tracking-wider text-[#555] mb-1.5">Time</label>
+                <label className="block text-[10px] uppercase tracking-wider text-[#5a5a5a] mb-1.5">Time</label>
                 <input
                   type="time"
                   value={scheduleTime}
                   onChange={e => setScheduleTime(e.target.value)}
-                  className="w-full bg-[#161616] border border-[#252525] rounded-lg px-3 py-2 text-xs text-[#ECECEC] focus:outline-none focus:border-[#86efac]/40"
+                  className="w-full bg-[#060606] border border-[#1a1a1a] rounded-none-none px-3 py-2 text-xs text-[#f4f4f4] focus:outline-none focus:border-[#86efac]/40"
                 />
               </div>
             </div>
             <div className="flex items-center justify-end gap-2">
               <button
                 onClick={() => setScheduleTarget(null)}
-                className="px-3 py-1.5 rounded-lg text-[11px] text-[#888] hover:text-[#ECECEC] transition-colors">
+                className="px-3 py-1.5 rounded-none-none text-[11px] text-[#909090] hover:text-[#f4f4f4] transition-colors">
                 Cancel
               </button>
               <button
                 onClick={confirmSchedule}
-                className="px-3 py-1.5 rounded-lg text-[11px] font-medium transition-colors"
-                style={{ background: 'rgba(134,239,172,0.12)', color: '#86efac', border: '1px solid rgba(134,239,172,0.25)' }}>
+                className="px-3 py-1.5 rounded-none-none text-[11px] font-medium transition-colors"
+                style={{ background: 'rgba(134,239,172,0.12)', color: '#6dd49a', border: '1px solid rgba(134,239,172,0.25)' }}>
                 Schedule
               </button>
             </div>

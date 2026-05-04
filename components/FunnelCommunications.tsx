@@ -22,14 +22,14 @@ export interface FunnelMessage {
 const CHANNEL_META: Record<Channel, { label: string; icon: React.ReactNode; color: string; bg: string }> = {
   email:    { label: 'Email',    icon: <Mail size={12} />,         color: '#bfdbfe', bg: 'rgba(191,219,254,0.12)' },
   sms:      { label: 'SMS',      icon: <MessageSquare size={12} />, color: '#fde68a', bg: 'rgba(253,230,138,0.12)' },
-  telegram: { label: 'Telegram', icon: <Send size={12} />,          color: '#86efac', bg: 'rgba(134,239,172,0.12)' },
+  telegram: { label: 'Telegram', icon: <Send size={12} />,          color: '#6dd49a', bg: 'rgba(134,239,172,0.12)' },
 };
 
 const STATUS_META: Record<MsgStatus, { label: string; color: string; icon: React.ReactNode }> = {
   draft:     { label: 'Draft',     color: '#d4d4d8', icon: <Edit3 size={10} /> },
   scheduled: { label: 'Scheduled', color: '#fde68a', icon: <Clock size={10} /> },
-  sent:      { label: 'Sent',      color: '#86efac', icon: <CheckCircle size={10} /> },
-  failed:    { label: 'Failed',    color: '#fca5a5', icon: <AlertCircle size={10} /> },
+  sent:      { label: 'Sent',      color: '#6dd49a', icon: <CheckCircle size={10} /> },
+  failed:    { label: 'Failed',    color: '#d46d6d', icon: <AlertCircle size={10} /> },
 };
 
 const formatDateTime = (iso: string | null) => {
@@ -174,7 +174,7 @@ const FunnelCommunications: React.FC<Props> = ({ funnelId, storagePrefix, funnel
     <div className="h-full flex flex-col">
       {/* Channel tabs */}
       <div className="flex items-center justify-between gap-3 mb-3 flex-shrink-0 flex-wrap">
-        <div className="flex gap-1 bg-[#1a1a1a] rounded-lg p-1">
+        <div className="flex gap-1 bg-[#1a1a1a] rounded-none-none p-1">
           {(Object.keys(CHANNEL_META) as Channel[]).map(c => {
             const meta = CHANNEL_META[c];
             const active = channel === c;
@@ -182,7 +182,7 @@ const FunnelCommunications: React.FC<Props> = ({ funnelId, storagePrefix, funnel
               <button
                 key={c}
                 onClick={() => setChannel(c)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-none-none text-xs font-medium transition-colors"
                 style={{
                   background: active ? meta.bg : 'transparent',
                   color: active ? meta.color : '#666',
@@ -197,14 +197,14 @@ const FunnelCommunications: React.FC<Props> = ({ funnelId, storagePrefix, funnel
           })}
         </div>
         <div className="flex items-center gap-2">
-          <div className="flex bg-[#161616] rounded-lg p-0.5 border border-[#252525]">
+          <div className="flex bg-[#060606] rounded-none-none p-0.5 border border-[#1a1a1a]">
             <button onClick={() => setStatusFilter('all')}
-              className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition-colors ${statusFilter === 'all' ? 'bg-[#252525] text-[#ECECEC]' : 'text-[#555] hover:text-[#888]'}`}>
+              className={`px-2.5 py-1 rounded-none-none text-[11px] font-medium transition-colors ${statusFilter === 'all' ? 'bg-[#0d0d0d] text-[#f4f4f4]' : 'text-[#5a5a5a] hover:text-[#909090]'}`}>
               All
             </button>
             {(Object.keys(STATUS_META) as MsgStatus[]).map(s => (
               <button key={s} onClick={() => setStatusFilter(s)}
-                className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition-colors ${statusFilter === s ? 'bg-[#252525]' : 'hover:text-[#888]'}`}
+                className={`px-2.5 py-1 rounded-none-none text-[11px] font-medium transition-colors ${statusFilter === s ? 'bg-[#0d0d0d]' : 'hover:text-[#909090]'}`}
                 style={{ color: statusFilter === s ? STATUS_META[s].color : '#555' }}>
                 {STATUS_META[s].label}
               </button>
@@ -212,7 +212,7 @@ const FunnelCommunications: React.FC<Props> = ({ funnelId, storagePrefix, funnel
           </div>
           <button
             onClick={openNew}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-none-none text-[11px] font-medium transition-colors"
             style={{ background: channelMeta.bg, color: channelMeta.color, border: `1px solid ${channelMeta.color}33` }}
           >
             <Plus size={12} /> New {channelMeta.label}
@@ -221,14 +221,14 @@ const FunnelCommunications: React.FC<Props> = ({ funnelId, storagePrefix, funnel
       </div>
 
       {/* List */}
-      <div className="flex-1 rounded-xl border border-[#2a2a2a] bg-[#161616] overflow-y-auto min-h-0">
+      <div className="flex-1 rounded-none-none border border-[#1a1a1a] bg-[#060606] overflow-y-auto min-h-0">
         {channelMessages.length === 0 ? (
-          <div className="h-full flex flex-col items-center justify-center text-[#555] gap-2 py-16 px-6 text-center">
-            <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: channelMeta.bg, color: channelMeta.color }}>
+          <div className="h-full flex flex-col items-center justify-center text-[#5a5a5a] gap-2 py-16 px-6 text-center">
+            <div className="w-10 h-10 rounded-none-full flex items-center justify-center" style={{ background: channelMeta.bg, color: channelMeta.color }}>
               {channelMeta.icon}
             </div>
-            <p className="text-sm font-medium text-[#888]">No {channelMeta.label.toLowerCase()} messages yet{funnelName ? ` for ${funnelName}` : ''}</p>
-            <p className="text-xs text-[#555]">Write your first message, save it as a draft, or schedule it for later.</p>
+            <p className="text-sm font-medium text-[#909090]">No {channelMeta.label.toLowerCase()} messages yet{funnelName ? ` for ${funnelName}` : ''}</p>
+            <p className="text-xs text-[#5a5a5a]">Write your first message, save it as a draft, or schedule it for later.</p>
           </div>
         ) : (
           <div className="divide-y divide-[#202020]">
@@ -245,34 +245,34 @@ const FunnelCommunications: React.FC<Props> = ({ funnelId, storagePrefix, funnel
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1 flex-wrap">
                         <span
-                          className="flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium"
+                          className="flex items-center gap-1 px-2 py-0.5 rounded-none-none text-[10px] font-medium"
                           style={{ background: `${sm.color}15`, color: sm.color, border: `1px solid ${sm.color}30` }}
                         >
                           {sm.icon}
                           {sm.label}
                         </span>
                         {channel === 'email' && msg.subject && (
-                          <h4 className="text-xs font-semibold text-[#ECECEC] truncate">{msg.subject}</h4>
+                          <h4 className="text-xs font-semibold text-[#f4f4f4] truncate">{msg.subject}</h4>
                         )}
                         {msg.scheduled_at && msg.status !== 'sent' && (
-                          <span className="text-[10px] text-[#777] flex items-center gap-1">
+                          <span className="text-[10px] text-[#5a5a5a] flex items-center gap-1">
                             <Clock size={9} /> {formatDateTime(msg.scheduled_at)}
                           </span>
                         )}
                         {msg.sent_at && (
-                          <span className="text-[10px] text-[#777] flex items-center gap-1">
+                          <span className="text-[10px] text-[#5a5a5a] flex items-center gap-1">
                             <CheckCircle size={9} /> sent {formatDateTime(msg.sent_at)}
                           </span>
                         )}
                       </div>
-                      <p className="text-[11px] text-[#888] line-clamp-2 break-words">{preview}</p>
+                      <p className="text-[11px] text-[#909090] line-clamp-2 break-words">{preview}</p>
                     </div>
                     <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                       {msg.status !== 'sent' && (
                         <button
                           onClick={(e) => { e.stopPropagation(); markSent(msg); }}
                           title="Mark as sent"
-                          className="p-1.5 rounded-md text-[#888] hover:text-[#86efac] hover:bg-[#252525] transition-colors"
+                          className="p-1.5 rounded-none-none text-[#909090] hover:text-[#6dd49a] hover:bg-[#0d0d0d] transition-colors"
                         >
                           <CheckCircle size={12} />
                         </button>
@@ -280,14 +280,14 @@ const FunnelCommunications: React.FC<Props> = ({ funnelId, storagePrefix, funnel
                       <button
                         onClick={(e) => { e.stopPropagation(); duplicate(msg); }}
                         title="Duplicate"
-                        className="p-1.5 rounded-md text-[#888] hover:text-[#ECECEC] hover:bg-[#252525] transition-colors"
+                        className="p-1.5 rounded-none-none text-[#909090] hover:text-[#f4f4f4] hover:bg-[#0d0d0d] transition-colors"
                       >
                         <Copy size={12} />
                       </button>
                       <button
                         onClick={(e) => { e.stopPropagation(); remove(msg.id); }}
                         title="Delete"
-                        className="p-1.5 rounded-md text-[#888] hover:text-[#fca5a5] hover:bg-[#252525] transition-colors"
+                        className="p-1.5 rounded-none-none text-[#909090] hover:text-[#d46d6d] hover:bg-[#0d0d0d] transition-colors"
                       >
                         <Trash2 size={12} />
                       </button>
@@ -304,15 +304,15 @@ const FunnelCommunications: React.FC<Props> = ({ funnelId, storagePrefix, funnel
       {editing && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={close}>
           <div
-            className="bg-[#1c1c1c] border border-[#2a2a2a] rounded-2xl p-6 w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto"
+            className="bg-[#0a0a0a] border border-[#1a1a1a] rounded-none-none p-6 w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto"
             onClick={e => e.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-bold text-[#ECECEC] flex items-center gap-2">
+              <h3 className="text-sm font-bold text-[#f4f4f4] flex items-center gap-2">
                 {channelMeta.icon}
                 {form.id ? `Edit ${channelMeta.label}` : `New ${channelMeta.label}`}
               </h3>
-              <button onClick={close} className="text-[#666] hover:text-[#ECECEC] transition-colors">
+              <button onClick={close} className="text-[#5a5a5a] hover:text-[#f4f4f4] transition-colors">
                 <X size={16} />
               </button>
             </div>
@@ -320,19 +320,19 @@ const FunnelCommunications: React.FC<Props> = ({ funnelId, storagePrefix, funnel
             <div className="space-y-3">
               {form.channel === 'email' && (
                 <div>
-                  <label className="block text-[10px] uppercase tracking-wider text-[#555] mb-1.5">Subject</label>
+                  <label className="block text-[10px] uppercase tracking-wider text-[#5a5a5a] mb-1.5">Subject</label>
                   <input
                     type="text"
                     value={form.subject || ''}
                     onChange={e => setForm(f => ({ ...f, subject: e.target.value }))}
                     placeholder="Email subject line"
-                    className="w-full bg-[#161616] border border-[#252525] rounded-lg px-3 py-2 text-xs text-[#ECECEC] placeholder-[#444] focus:outline-none focus:border-[#86efac]/40"
+                    className="w-full bg-[#060606] border border-[#1a1a1a] rounded-none-none px-3 py-2 text-xs text-[#f4f4f4] placeholder-[#444] focus:outline-none focus:border-[#86efac]/40"
                   />
                 </div>
               )}
 
               <div>
-                <label className="block text-[10px] uppercase tracking-wider text-[#555] mb-1.5">
+                <label className="block text-[10px] uppercase tracking-wider text-[#5a5a5a] mb-1.5">
                   {form.channel === 'email' ? 'Body' : 'Message'}
                 </label>
                 <textarea
@@ -346,10 +346,10 @@ const FunnelCommunications: React.FC<Props> = ({ funnelId, storagePrefix, funnel
                       : 'Email body…'
                   }
                   rows={form.channel === 'sms' ? 3 : 8}
-                  className="w-full bg-[#161616] border border-[#252525] rounded-lg px-3 py-2 text-xs text-[#ECECEC] placeholder-[#444] focus:outline-none focus:border-[#86efac]/40 resize-y font-mono leading-relaxed"
+                  className="w-full bg-[#060606] border border-[#1a1a1a] rounded-none-none px-3 py-2 text-xs text-[#f4f4f4] placeholder-[#444] focus:outline-none focus:border-[#86efac]/40 resize-y font-mono leading-relaxed"
                 />
                 {form.channel === 'sms' && (
-                  <p className="mt-1 text-[10px] text-[#555]">
+                  <p className="mt-1 text-[10px] text-[#5a5a5a]">
                     {(form.body || '').length} chars · ~{Math.max(1, Math.ceil(((form.body || '').length || 1) / 160))} segment(s)
                   </p>
                 )}
@@ -357,28 +357,28 @@ const FunnelCommunications: React.FC<Props> = ({ funnelId, storagePrefix, funnel
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[10px] uppercase tracking-wider text-[#555] mb-1.5">Schedule for</label>
+                  <label className="block text-[10px] uppercase tracking-wider text-[#5a5a5a] mb-1.5">Schedule for</label>
                   <input
                     type="datetime-local"
                     value={toLocalInput(form.scheduled_at ?? null)}
                     onChange={e => setForm(f => ({ ...f, scheduled_at: fromLocalInput(e.target.value) }))}
-                    className="w-full bg-[#161616] border border-[#252525] rounded-lg px-3 py-2 text-xs text-[#ECECEC] focus:outline-none focus:border-[#86efac]/40"
+                    className="w-full bg-[#060606] border border-[#1a1a1a] rounded-none-none px-3 py-2 text-xs text-[#f4f4f4] focus:outline-none focus:border-[#86efac]/40"
                   />
                   {form.scheduled_at && (
                     <button
                       onClick={() => setForm(f => ({ ...f, scheduled_at: null }))}
-                      className="mt-1 text-[10px] text-[#666] hover:text-[#fca5a5] transition-colors"
+                      className="mt-1 text-[10px] text-[#5a5a5a] hover:text-[#d46d6d] transition-colors"
                     >
                       Clear schedule
                     </button>
                   )}
                 </div>
                 <div>
-                  <label className="block text-[10px] uppercase tracking-wider text-[#555] mb-1.5">Status</label>
+                  <label className="block text-[10px] uppercase tracking-wider text-[#5a5a5a] mb-1.5">Status</label>
                   <select
                     value={form.status || 'draft'}
                     onChange={e => setForm(f => ({ ...f, status: e.target.value as MsgStatus }))}
-                    className="w-full bg-[#161616] border border-[#252525] rounded-lg px-3 py-2 text-xs text-[#ECECEC] focus:outline-none focus:border-[#86efac]/40"
+                    className="w-full bg-[#060606] border border-[#1a1a1a] rounded-none-none px-3 py-2 text-xs text-[#f4f4f4] focus:outline-none focus:border-[#86efac]/40"
                   >
                     {(Object.keys(STATUS_META) as MsgStatus[]).map(s => (
                       <option key={s} value={s}>{STATUS_META[s].label}</option>
@@ -388,22 +388,22 @@ const FunnelCommunications: React.FC<Props> = ({ funnelId, storagePrefix, funnel
               </div>
 
               <div>
-                <label className="block text-[10px] uppercase tracking-wider text-[#555] mb-1.5">Notes (internal)</label>
+                <label className="block text-[10px] uppercase tracking-wider text-[#5a5a5a] mb-1.5">Notes (internal)</label>
                 <input
                   type="text"
                   value={form.notes || ''}
                   onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
                   placeholder="Private notes, audience targeting, reminders…"
-                  className="w-full bg-[#161616] border border-[#252525] rounded-lg px-3 py-2 text-xs text-[#ECECEC] placeholder-[#444] focus:outline-none focus:border-[#86efac]/40"
+                  className="w-full bg-[#060606] border border-[#1a1a1a] rounded-none-none px-3 py-2 text-xs text-[#f4f4f4] placeholder-[#444] focus:outline-none focus:border-[#86efac]/40"
                 />
               </div>
             </div>
 
-            <div className="flex items-center justify-between mt-5 pt-4 border-t border-[#2a2a2a]">
+            <div className="flex items-center justify-between mt-5 pt-4 border-t border-[#1a1a1a]">
               {form.id ? (
                 <button
                   onClick={() => remove(form.id!)}
-                  className="flex items-center gap-1.5 text-[11px] text-[#fca5a5] hover:text-[#fecaca] transition-colors"
+                  className="flex items-center gap-1.5 text-[11px] text-[#d46d6d] hover:text-[#fecaca] transition-colors"
                 >
                   <Trash2 size={12} /> Delete
                 </button>
@@ -411,14 +411,14 @@ const FunnelCommunications: React.FC<Props> = ({ funnelId, storagePrefix, funnel
               <div className="flex items-center gap-2">
                 <button
                   onClick={close}
-                  className="px-3 py-1.5 rounded-lg text-[11px] text-[#888] hover:text-[#ECECEC] transition-colors">
+                  className="px-3 py-1.5 rounded-none-none text-[11px] text-[#909090] hover:text-[#f4f4f4] transition-colors">
                   Cancel
                 </button>
                 <button
                   onClick={save}
                   disabled={saving}
-                  className="px-3 py-1.5 rounded-lg text-[11px] font-medium transition-colors disabled:opacity-50"
-                  style={{ background: 'rgba(134,239,172,0.12)', color: '#86efac', border: '1px solid rgba(134,239,172,0.25)' }}>
+                  className="px-3 py-1.5 rounded-none-none text-[11px] font-medium transition-colors disabled:opacity-50"
+                  style={{ background: 'rgba(134,239,172,0.12)', color: '#6dd49a', border: '1px solid rgba(134,239,172,0.25)' }}>
                   {saving ? 'Saving…' : form.id ? 'Save changes' : 'Create message'}
                 </button>
               </div>

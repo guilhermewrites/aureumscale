@@ -17,7 +17,7 @@ import EmailBodyEditor from './EmailBodyEditor';
 // ─── Step type config ───────────────────────────────────────────
 const STEP_TYPES: { value: FunnelStepType; label: string; icon: React.ElementType; color: string; glow: string }[] = [
   { value: 'registration', label: 'Registration', icon: FileText, color: '#bfdbfe', glow: '0 0 20px rgba(191,219,254,0.3)' },
-  { value: 'thank_you', label: 'Thank You', icon: Check, color: '#86efac', glow: '0 0 20px rgba(134,239,172,0.3)' },
+  { value: 'thank_you', label: 'Thank You', icon: Check, color: '#6dd49a', glow: '0 0 20px rgba(134,239,172,0.3)' },
   { value: 'video', label: 'Video Page', icon: Play, color: '#ddd6fe', glow: '0 0 20px rgba(221,214,254,0.3)' },
   { value: 'email', label: 'Email', icon: Mail, color: '#fde68a', glow: '0 0 20px rgba(253,230,138,0.3)' },
   { value: 'email_sequence', label: 'Email Sequence', icon: ListOrdered, color: '#fed7aa', glow: '0 0 20px rgba(254,215,170,0.3)' },
@@ -26,7 +26,7 @@ const STEP_TYPES: { value: FunnelStepType; label: string; icon: React.ElementTyp
   { value: 'whatsapp', label: 'WhatsApp', icon: MessageCircle, color: '#bbf7d0', glow: '0 0 20px rgba(187,247,208,0.3)' },
   { value: 'group_sequence', label: 'Group Sequence', icon: ListOrdered, color: '#e9d5ff', glow: '0 0 20px rgba(233,213,255,0.3)' },
   { value: 'call', label: 'Call', icon: Phone, color: '#d9f99d', glow: '0 0 20px rgba(217,249,157,0.3)' },
-  { value: 'sales_page', label: 'Sales Page', icon: ShoppingCart, color: '#fca5a5', glow: '0 0 20px rgba(252,165,165,0.3)' },
+  { value: 'sales_page', label: 'Sales Page', icon: ShoppingCart, color: '#d46d6d', glow: '0 0 20px rgba(252,165,165,0.3)' },
   { value: 'checkout', label: 'Checkout', icon: ShoppingCart, color: '#fed7aa', glow: '0 0 20px rgba(254,215,170,0.3)' },
   { value: 'upsell', label: 'Upsell', icon: Gift, color: '#fbcfe8', glow: '0 0 20px rgba(251,207,232,0.3)' },
   { value: 'ad', label: 'Ad', icon: Megaphone, color: '#a5f3fc', glow: '0 0 20px rgba(165,243,252,0.3)' },
@@ -48,11 +48,11 @@ const AD_STATUSES: { value: FunnelAdStatus; label: string; color: string; bgColo
   { value: 'Pending', label: 'Pending', color: 'text-gray-400', bgColor: 'bg-gray-500/10 border-gray-500/20', icon: Clock },
   { value: 'Scripted', label: 'Scripted', color: 'text-[#bfdbfe]', bgColor: 'bg-[#bfdbfe]/10 border-[#bfdbfe]/20', icon: FileText },
   { value: 'Recorded', label: 'Recorded', color: 'text-[#ddd6fe]', bgColor: 'bg-[#ddd6fe]/10 border-[#ddd6fe]/20', icon: Video },
-  { value: 'Edited', label: 'Edited', color: 'text-[#fde68a]', bgColor: 'bg-[#fde68a]/10 border-[#fde68a]/20', icon: CheckCircle2 },
+  { value: 'Edited', label: 'Edited', color: 'text-[#e0c870]', bgColor: 'bg-[#fde68a]/10 border-[#fde68a]/20', icon: CheckCircle2 },
   { value: 'Needs Review', label: 'Needs Review', color: 'text-[#fed7aa]', bgColor: 'bg-[#fed7aa]/10 border-[#fed7aa]/20', icon: Eye },
   { value: 'Sent', label: 'Sent', color: 'text-[#bae6fd]', bgColor: 'bg-[#bae6fd]/10 border-[#bae6fd]/20', icon: Send },
-  { value: 'Live', label: 'Live', color: 'text-[#86efac]', bgColor: 'bg-[#86efac]/10 border-[#86efac]/20', icon: Radio },
-  { value: 'Paused', label: 'Paused', color: 'text-[#fca5a5]', bgColor: 'bg-[#fca5a5]/10 border-[#fca5a5]/20', icon: Pause },
+  { value: 'Live', label: 'Live', color: 'text-[#6dd49a]', bgColor: 'bg-[#86efac]/10 border-[#86efac]/20', icon: Radio },
+  { value: 'Paused', label: 'Paused', color: 'text-[#d46d6d]', bgColor: 'bg-[#fca5a5]/10 border-[#fca5a5]/20', icon: Pause },
 ];
 const getAdStatusConfig = (status?: FunnelAdStatus) => AD_STATUSES.find(s => s.value === status) || AD_STATUSES[0];
 
@@ -66,7 +66,7 @@ function getMetricColor(actual: number, expected?: number): 'green' | 'yellow' |
 
 function MetricBadge({ label, actual, expected }: { label: string; actual: number; expected?: number }) {
   const color = getMetricColor(actual, expected);
-  const cls = color === 'green' ? 'text-[#86efac]' : color === 'yellow' ? 'text-[#fde68a]' : color === 'red' ? 'text-[#fca5a5]' : 'text-[#9B9B9B]';
+  const cls = color === 'green' ? 'text-[#6dd49a]' : color === 'yellow' ? 'text-[#e0c870]' : color === 'red' ? 'text-[#d46d6d]' : 'text-[#909090]';
   return (
     <span className={cls} title={expected != null ? `Expected: ${expected.toLocaleString()}` : undefined}>
       {label}: {actual.toLocaleString()}{expected != null ? ` / ${expected.toLocaleString()}` : ''}
@@ -90,34 +90,34 @@ function ExpectedMetricsEditor({ funnel, onUpdate }: { funnel: CanvasFunnel; onU
   };
   return (
     <div className="relative">
-      <button onClick={() => setOpen(!open)} className="flex items-center gap-2 px-3 py-2 bg-[#2f2f2f] border border-[#3a3a3a] rounded-lg text-xs text-[#9B9B9B] hover:text-white transition-none">
+      <button onClick={() => setOpen(!open)} className="flex items-center gap-2 px-3 py-2 bg-[#0d0d0d] border border-[#242424] rounded-none-none text-xs text-[#909090] hover:text-white transition-none">
         Set expected
       </button>
       {open && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-          <div className="absolute right-0 top-full mt-1 z-50 bg-[#2f2f2f] border border-[#3a3a3a] rounded-xl p-4 shadow-xl min-w-[200px]">
-            <p className="text-[10px] uppercase tracking-wider text-[#9B9B9B] font-medium mb-2">Expected metrics</p>
+          <div className="absolute right-0 top-full mt-1 z-50 bg-[#0d0d0d] border border-[#242424] rounded-none-none p-4 shadow-xl min-w-[200px]">
+            <p className="text-[10px] uppercase tracking-wider text-[#909090] font-medium mb-2">Expected metrics</p>
             <div className="space-y-2">
               <div className="flex items-center justify-between gap-2">
                 <span className="text-xs text-[#b4b4b4]">Views</span>
                 <input type="number" min={0} value={v} onChange={e => setV(e.target.value)} placeholder="—"
-                  className="w-20 bg-[#212121] border border-[#3a3a3a] rounded px-2 py-1 text-xs text-[#ECECEC] focus:outline-none focus:ring-1 focus:ring-[#555555]" />
+                  className="w-20 bg-[#000] border border-[#242424] rounded-none px-2 py-1 text-xs text-[#f4f4f4] focus:outline-none focus:ring-1 focus:ring-[#555555]" />
               </div>
               <div className="flex items-center justify-between gap-2">
                 <span className="text-xs text-[#b4b4b4]">Clicks</span>
                 <input type="number" min={0} value={c} onChange={e => setC(e.target.value)} placeholder="—"
-                  className="w-20 bg-[#212121] border border-[#3a3a3a] rounded px-2 py-1 text-xs text-[#ECECEC] focus:outline-none focus:ring-1 focus:ring-[#555555]" />
+                  className="w-20 bg-[#000] border border-[#242424] rounded-none px-2 py-1 text-xs text-[#f4f4f4] focus:outline-none focus:ring-1 focus:ring-[#555555]" />
               </div>
               <div className="flex items-center justify-between gap-2">
                 <span className="text-xs text-[#b4b4b4]">Conversions</span>
                 <input type="number" min={0} value={cv} onChange={e => setCv(e.target.value)} placeholder="—"
-                  className="w-20 bg-[#212121] border border-[#3a3a3a] rounded px-2 py-1 text-xs text-[#ECECEC] focus:outline-none focus:ring-1 focus:ring-[#555555]" />
+                  className="w-20 bg-[#000] border border-[#242424] rounded-none px-2 py-1 text-xs text-[#f4f4f4] focus:outline-none focus:ring-1 focus:ring-[#555555]" />
               </div>
             </div>
             <div className="flex justify-end gap-1 mt-3">
-              <button onClick={() => setOpen(false)} className="px-2 py-1 text-xs text-[#9B9B9B] hover:text-white">Cancel</button>
-              <button onClick={apply} className="px-2 py-1 text-xs bg-white text-[#212121] rounded hover:bg-[#e5e5e5]">Apply</button>
+              <button onClick={() => setOpen(false)} className="px-2 py-1 text-xs text-[#909090] hover:text-white">Cancel</button>
+              <button onClick={apply} className="px-2 py-1 text-xs bg-white text-[#212121] rounded-none hover:bg-[#e5e5e5]">Apply</button>
             </div>
           </div>
         </>
@@ -804,33 +804,33 @@ const FunnelManager: React.FC<FunnelManagerProps> = ({ storagePrefix }) => {
       <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-xl font-bold text-[#ECECEC]">Funnels</h2>
-            <p className="text-sm text-[#9B9B9B]">Build and visualize your marketing funnels</p>
+            <h2 className="text-xl font-bold text-[#f4f4f4]">Funnels</h2>
+            <p className="text-sm text-[#909090]">Build and visualize your marketing funnels</p>
           </div>
-          <button onClick={() => setIsCreating(true)} className="flex items-center gap-2 px-4 py-2 bg-white hover:bg-[#e5e5e5] text-[#212121] rounded-lg text-sm font-medium transition-none">
+          <button onClick={() => setIsCreating(true)} className="flex items-center gap-2 px-4 py-2 bg-white hover:bg-[#e5e5e5] text-[#212121] rounded-none-none text-sm font-medium transition-none">
             <Plus size={16} /> New Funnel
           </button>
         </div>
 
         {isCreating && (
-          <div className="bg-[#2f2f2f] border border-[#3a3a3a] rounded-xl p-6 animate-in slide-in-from-top-2">
-            <h3 className="text-sm font-semibold text-[#ECECEC] mb-3">Create New Funnel</h3>
+          <div className="bg-[#0d0d0d] border border-[#242424] rounded-none-none p-6 animate-in slide-in-from-top-2">
+            <h3 className="text-sm font-semibold text-[#f4f4f4] mb-3">Create New Funnel</h3>
             <div className="flex gap-3">
               <input value={newFunnelName} onChange={e => setNewFunnelName(e.target.value)} placeholder="Funnel name..."
-                className="flex-1 bg-[#3a3a3a] border border-[#3a3a3a] rounded-lg px-4 py-2.5 text-sm text-[#ECECEC] placeholder-[#666666] focus:outline-none focus:ring-2 focus:ring-[#555555]"
+                className="flex-1 bg-[#3a3a3a] border border-[#242424] rounded-none-none px-4 py-2.5 text-sm text-[#f4f4f4] placeholder-[#666666] focus:outline-none focus:ring-2 focus:ring-[#555555]"
                 onKeyDown={e => { if (e.key === 'Enter') handleCreateFunnel(); if (e.key === 'Escape') setIsCreating(false); }} autoFocus />
-              <button onClick={handleCreateFunnel} className="px-5 py-2.5 bg-white hover:bg-[#e5e5e5] text-[#212121] rounded-lg text-sm font-medium">Create</button>
-              <button onClick={() => setIsCreating(false)} className="px-5 py-2.5 bg-[#3a3a3a] hover:bg-[#3a3a3a] text-[#b4b4b4] rounded-lg text-sm font-medium">Cancel</button>
+              <button onClick={handleCreateFunnel} className="px-5 py-2.5 bg-white hover:bg-[#e5e5e5] text-[#212121] rounded-none-none text-sm font-medium">Create</button>
+              <button onClick={() => setIsCreating(false)} className="px-5 py-2.5 bg-[#3a3a3a] hover:bg-[#3a3a3a] text-[#b4b4b4] rounded-none-none text-sm font-medium">Cancel</button>
             </div>
           </div>
         )}
 
         {funnels.length === 0 && !isCreating ? (
           <div className="flex flex-col items-center justify-center py-24 text-center">
-            <div className="w-16 h-16 rounded-xl bg-[#2f2f2f] border border-[#3a3a3a] flex items-center justify-center mb-4"><Plus size={24} className="text-[#666666]" /></div>
-            <p className="text-[#9B9B9B] font-medium mb-1">No funnels yet</p>
+            <div className="w-16 h-16 rounded-none-none bg-[#0d0d0d] border border-[#242424] flex items-center justify-center mb-4"><Plus size={24} className="text-[#666666]" /></div>
+            <p className="text-[#909090] font-medium mb-1">No funnels yet</p>
             <p className="text-[#666666] text-sm mb-4">Create your first funnel to start mapping your customer journey</p>
-            <button onClick={() => setIsCreating(true)} className="px-4 py-2 bg-white hover:bg-[#e5e5e5] text-[#212121] rounded-lg text-sm font-medium">Create First Funnel</button>
+            <button onClick={() => setIsCreating(true)} className="px-4 py-2 bg-white hover:bg-[#e5e5e5] text-[#212121] rounded-none-none text-sm font-medium">Create First Funnel</button>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -838,7 +838,7 @@ const FunnelManager: React.FC<FunnelManagerProps> = ({ storagePrefix }) => {
               const { totalViews, totalSpend } = getFunnelTotals(funnel);
               return (
                 <button key={funnel.id} onClick={() => { setSelectedFunnelId(funnel.id); setCanvasOffset({ x: 0, y: 0 }); setZoom(1); }}
-                  className="text-left bg-[#2f2f2f] border border-[#3a3a3a] rounded-xl p-5 hover:border-[#4a4a4a] transition-all group">
+                  className="text-left bg-[#0d0d0d] border border-[#242424] rounded-none-none p-5 hover:border-[#4a4a4a] transition-all group">
                   <div className="flex items-start justify-between mb-3">
                     {editingFunnelId === funnel.id ? (
                       <input
@@ -846,17 +846,17 @@ const FunnelManager: React.FC<FunnelManagerProps> = ({ storagePrefix }) => {
                         onChange={e => setEditingFunnelName(e.target.value)}
                         onBlur={saveEditFunnel}
                         onKeyDown={e => { if (e.key === 'Enter') saveEditFunnel(); if (e.key === 'Escape') setEditingFunnelId(null); }}
-                        className="w-full bg-[#3a3a3a] border border-[#3a3a3a] rounded px-2 py-1 text-sm text-[#ECECEC] focus:outline-none"
+                        className="w-full bg-[#3a3a3a] border border-[#242424] rounded-none px-2 py-1 text-sm text-[#f4f4f4] focus:outline-none"
                         autoFocus
                         onClick={e => e.stopPropagation()}
                       />
                     ) : (
-                      <h3 className="font-semibold text-[#ECECEC] group-hover:text-[#ECECEC] transition-none cursor-text"
+                      <h3 className="font-semibold text-[#f4f4f4] group-hover:text-[#f4f4f4] transition-none cursor-text"
                         onClick={e => { e.stopPropagation(); startEditFunnel(funnel.id, funnel.name); }}>
                         {funnel.name}
                       </h3>
                     )}
-                    <button onClick={e => { e.stopPropagation(); handleDeleteFunnel(funnel.id); }} className="p-1 text-[#666666] hover:text-[#fca5a5] transition-none opacity-0 group-hover:opacity-100"><Trash2 size={14} /></button>
+                    <button onClick={e => { e.stopPropagation(); handleDeleteFunnel(funnel.id); }} className="p-1 text-[#666666] hover:text-[#d46d6d] transition-none opacity-0 group-hover:opacity-100"><Trash2 size={14} /></button>
                   </div>
                   <div className="flex items-center gap-1.5 mb-3 overflow-hidden">
                     {funnel.steps.slice(0, 6).map((step, i) => {
@@ -864,16 +864,16 @@ const FunnelManager: React.FC<FunnelManagerProps> = ({ storagePrefix }) => {
                       return (
                         <React.Fragment key={step.id}>
                           {i > 0 && <div className="w-4 h-px flex-shrink-0" style={{ backgroundColor: cfg.color + '40' }} />}
-                          <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: cfg.color + '15', border: `1px solid ${cfg.color}25` }}>
+                          <div className="w-7 h-7 rounded-none-none flex items-center justify-center flex-shrink-0" style={{ backgroundColor: cfg.color + '15', border: `1px solid ${cfg.color}25` }}>
                             <cfg.icon size={11} style={{ color: cfg.color }} />
                           </div>
                         </React.Fragment>
                       );
                     })}
-                    {funnel.steps.length > 6 && <span className="text-[10px] text-[#9B9B9B] ml-1">+{funnel.steps.length - 6}</span>}
+                    {funnel.steps.length > 6 && <span className="text-[10px] text-[#909090] ml-1">+{funnel.steps.length - 6}</span>}
                     {funnel.steps.length === 0 && <span className="text-xs text-[#666666]">Empty funnel</span>}
                   </div>
-                  <div className="flex items-center gap-4 text-xs text-[#9B9B9B]">
+                  <div className="flex items-center gap-4 text-xs text-[#909090]">
                     <span>{funnel.steps.length} steps</span>
                     <span>{totalViews.toLocaleString()} views</span>
                     <span>${totalSpend.toLocaleString()}</span>
@@ -896,7 +896,7 @@ const FunnelManager: React.FC<FunnelManagerProps> = ({ storagePrefix }) => {
       {/* Toolbar */}
       <div className="flex items-center justify-between mb-3 flex-shrink-0">
         <div className="flex items-center gap-3">
-          <button onClick={() => { setSelectedFunnelId(null); setSelectedStepId(null); }} className="p-2 text-[#9B9B9B] hover:text-white hover:bg-[rgba(255,255,255,0.05)] rounded-lg transition-none"><ArrowLeft size={18} /></button>
+          <button onClick={() => { setSelectedFunnelId(null); setSelectedStepId(null); }} className="p-2 text-[#909090] hover:text-white hover:bg-[rgba(255,255,255,0.05)] rounded-none-none transition-none"><ArrowLeft size={18} /></button>
           <div>
             {editingFunnelId === selectedFunnel.id ? (
               <input
@@ -904,18 +904,18 @@ const FunnelManager: React.FC<FunnelManagerProps> = ({ storagePrefix }) => {
                 onChange={e => setEditingFunnelName(e.target.value)}
                 onBlur={saveEditFunnel}
                 onKeyDown={e => { if (e.key === 'Enter') saveEditFunnel(); if (e.key === 'Escape') setEditingFunnelId(null); }}
-                className="bg-[#3a3a3a] border border-[#3a3a3a] rounded px-2 py-1 text-sm text-[#ECECEC] focus:outline-none"
+                className="bg-[#3a3a3a] border border-[#242424] rounded-none px-2 py-1 text-sm text-[#f4f4f4] focus:outline-none"
                 autoFocus
               />
             ) : (
-              <h2 className="text-lg font-bold text-[#ECECEC] cursor-text"
+              <h2 className="text-lg font-bold text-[#f4f4f4] cursor-text"
                 onClick={() => startEditFunnel(selectedFunnel.id, selectedFunnel.name)}>
                 {selectedFunnel.name}
               </h2>
             )}
             <div className="flex items-center gap-4 text-xs flex-wrap">
-              <span className="text-[#9B9B9B]">{selectedFunnel.steps.length} steps</span>
-              <span className="text-[#9B9B9B]">${totalSpend.toLocaleString()} spend</span>
+              <span className="text-[#909090]">{selectedFunnel.steps.length} steps</span>
+              <span className="text-[#909090]">${totalSpend.toLocaleString()} spend</span>
               <MetricBadge label="Views" actual={totalViews} expected={selectedFunnel.expectedMetrics?.views} />
               <MetricBadge label="Clicks" actual={totalClicks} expected={selectedFunnel.expectedMetrics?.clicks} />
               <MetricBadge label="Conversions" actual={totalConversions} expected={selectedFunnel.expectedMetrics?.conversions} />
@@ -924,24 +924,24 @@ const FunnelManager: React.FC<FunnelManagerProps> = ({ storagePrefix }) => {
         </div>
         <div className="flex items-center gap-2">
           <ExpectedMetricsEditor funnel={selectedFunnel} onUpdate={updateExpectedMetrics} />
-          <div className="flex items-center gap-1 bg-[#2f2f2f] backdrop-blur border border-[#3a3a3a] rounded-lg px-2 py-1">
-            <button onClick={() => handleZoom(-0.15)} className="p-1 text-[#9B9B9B] hover:text-white"><ZoomOut size={14} /></button>
-            <span className="text-[10px] text-[#9B9B9B] w-10 text-center font-mono">{Math.round(zoom * 100)}%</span>
-            <button onClick={() => handleZoom(0.15)} className="p-1 text-[#9B9B9B] hover:text-white"><ZoomIn size={14} /></button>
+          <div className="flex items-center gap-1 bg-[#0d0d0d] backdrop-blur border border-[#242424] rounded-none-none px-2 py-1">
+            <button onClick={() => handleZoom(-0.15)} className="p-1 text-[#909090] hover:text-white"><ZoomOut size={14} /></button>
+            <span className="text-[10px] text-[#909090] w-10 text-center font-mono">{Math.round(zoom * 100)}%</span>
+            <button onClick={() => handleZoom(0.15)} className="p-1 text-[#909090] hover:text-white"><ZoomIn size={14} /></button>
             <div className="w-px h-4 bg-[#3a3a3a] mx-0.5" />
-            <button onClick={resetView} className="p-1 text-[#9B9B9B] hover:text-white" title="Reset view"><Maximize2 size={14} /></button>
+            <button onClick={resetView} className="p-1 text-[#909090] hover:text-white" title="Reset view"><Maximize2 size={14} /></button>
             <span className="text-[9px] text-[#666666] ml-1 hidden sm:inline">Scroll: wheel · Zoom: Ctrl+wheel</span>
           </div>
           <div className="relative">
-            <button onClick={() => setPaletteOpen(!paletteOpen)} className="flex items-center gap-2 px-4 py-2 bg-white hover:bg-[#e5e5e5] text-[#212121] rounded-lg text-sm font-medium transition-none">
+            <button onClick={() => setPaletteOpen(!paletteOpen)} className="flex items-center gap-2 px-4 py-2 bg-white hover:bg-[#e5e5e5] text-[#212121] rounded-none-none text-sm font-medium transition-none">
               <Plus size={16} /> Add Element
             </button>
             {paletteOpen && (
-              <div className="absolute right-0 top-full mt-2 bg-[#2f2f2f] border border-[#3a3a3a] rounded-xl shadow-2xl p-2 w-72 z-50 animate-in fade-in slide-in-from-top-2 duration-200 grid grid-cols-3 gap-1">
+              <div className="absolute right-0 top-full mt-2 bg-[#0d0d0d] border border-[#242424] rounded-none-none shadow-2xl p-2 w-72 z-50 animate-in fade-in slide-in-from-top-2 duration-200 grid grid-cols-3 gap-1">
                 {STEP_TYPES.map(st => (
                   <button key={st.value} onClick={() => addStepToCanvas(st.value)}
-                    className="flex flex-col items-center gap-1.5 px-2 py-3 rounded-lg text-[10px] font-medium text-[#9B9B9B] hover:text-white transition-none hover:bg-[rgba(255,255,255,0.05)] group">
-                    <div className="w-8 h-8 rounded-lg flex items-center justify-center group-hover:scale-110" style={{ backgroundColor: st.color + '15', border: `1px solid ${st.color}30`, boxShadow: `0 0 0px ${st.color}00` }}>
+                    className="flex flex-col items-center gap-1.5 px-2 py-3 rounded-none-none text-[10px] font-medium text-[#909090] hover:text-white transition-none hover:bg-[rgba(255,255,255,0.05)] group">
+                    <div className="w-8 h-8 rounded-none-none flex items-center justify-center group-hover:scale-110" style={{ backgroundColor: st.color + '15', border: `1px solid ${st.color}30`, boxShadow: `0 0 0px ${st.color}00` }}>
                       <st.icon size={14} style={{ color: st.color }} />
                     </div>
                     {st.label}
@@ -956,7 +956,7 @@ const FunnelManager: React.FC<FunnelManagerProps> = ({ storagePrefix }) => {
       {/* Canvas + Side panel */}
       <div className="flex flex-1 gap-3 min-h-0">
         <div ref={canvasRef}
-          className="flex-1 rounded-xl overflow-hidden relative select-none"
+          className="flex-1 rounded-none-none overflow-hidden relative select-none"
           style={{ cursor: isPanning ? 'grabbing' : connecting ? 'crosshair' : 'default', background: 'linear-gradient(180deg, #1a1a1a 0%, #171717 100%)' }}
           onMouseDown={handleCanvasMouseDown} onMouseMove={handleCanvasMouseMove} onMouseUp={handleCanvasMouseUp} onMouseLeave={handleCanvasMouseUp}
           onWheel={handleWheel}
@@ -970,7 +970,7 @@ const FunnelManager: React.FC<FunnelManagerProps> = ({ storagePrefix }) => {
           }} />
 
           {/* Border glow */}
-          <div className="absolute inset-0 rounded-xl pointer-events-none" style={{ boxShadow: 'inset 0 0 60px rgba(255,255,255,0.02)' }} />
+          <div className="absolute inset-0 rounded-none-none pointer-events-none" style={{ boxShadow: 'inset 0 0 60px rgba(255,255,255,0.02)' }} />
 
           {/* SVG connections + alignment guides */}
           <svg className="absolute inset-0 w-full h-full neon-line-subtle" style={{ overflow: 'visible' }}>
@@ -1036,14 +1036,14 @@ const FunnelManager: React.FC<FunnelManagerProps> = ({ storagePrefix }) => {
                   onClick={e => { e.stopPropagation(); setSelectedStepId(step.id); }}>
 
                   {/* Top stats (outside card) */}
-                  <div className="absolute -top-7 left-0 w-full flex items-center justify-between px-1 text-[10px] text-[#9B9B9B]">
+                  <div className="absolute -top-7 left-0 w-full flex items-center justify-between px-1 text-[10px] text-[#909090]">
                     <div className="min-w-0 flex items-center gap-2">
                       {editingStepId === step.id && editField === 'name' ? (
                         <input value={editValue} onChange={e => setEditValue(e.target.value)} onBlur={saveEdit}
                           onKeyDown={e => { if (e.key === 'Enter') saveEdit(); if (e.key === 'Escape') { setEditingStepId(null); setEditField(null); } }}
-                          className="w-28 bg-[rgba(255,255,255,0.05)] border border-[#4a4a4a] rounded px-2 py-0.5 text-[10px] text-[#ECECEC] focus:outline-none" autoFocus onMouseDown={e => e.stopPropagation()} />
+                          className="w-28 bg-[rgba(255,255,255,0.05)] border border-[#4a4a4a] rounded-none px-2 py-0.5 text-[10px] text-[#f4f4f4] focus:outline-none" autoFocus onMouseDown={e => e.stopPropagation()} />
                       ) : (
-                        <span className="font-semibold text-[#ECECEC] truncate cursor-text"
+                        <span className="font-semibold text-[#f4f4f4] truncate cursor-text"
                           onDoubleClick={e => { e.stopPropagation(); startEdit(step.id, 'name', step.name); }}>{step.name}</span>
                       )}
                       <span className="text-[9px] uppercase tracking-wider text-[#666666]">{cfg.label}</span>
@@ -1053,28 +1053,28 @@ const FunnelManager: React.FC<FunnelManagerProps> = ({ storagePrefix }) => {
                         V:{editingStepId === step.id && editField === 'views' ? (
                           <input value={editValue} onChange={e => setEditValue(e.target.value)} onBlur={saveEdit}
                             onKeyDown={e => { if (e.key === 'Enter') saveEdit(); if (e.key === 'Escape') { setEditingStepId(null); setEditField(null); } }}
-                            className="w-10 bg-[#3a3a3a] border border-[#4a4a4a] rounded px-1 text-[10px] text-[#ECECEC] focus:outline-none" autoFocus onMouseDown={e => e.stopPropagation()} />
+                            className="w-10 bg-[#3a3a3a] border border-[#4a4a4a] rounded-none px-1 text-[10px] text-[#f4f4f4] focus:outline-none" autoFocus onMouseDown={e => e.stopPropagation()} />
                         ) : (step.views || 0).toLocaleString()}
                       </span>
                       <span className="cursor-text hover:text-white transition-none" onDoubleClick={e => { e.stopPropagation(); startEdit(step.id, 'clicks', (step.clicks || 0).toString()); }}>
                         C:{editingStepId === step.id && editField === 'clicks' ? (
                           <input value={editValue} onChange={e => setEditValue(e.target.value)} onBlur={saveEdit}
                             onKeyDown={e => { if (e.key === 'Enter') saveEdit(); if (e.key === 'Escape') { setEditingStepId(null); setEditField(null); } }}
-                            className="w-10 bg-[#3a3a3a] border border-[#4a4a4a] rounded px-1 text-[10px] text-[#ECECEC] focus:outline-none" autoFocus onMouseDown={e => e.stopPropagation()} />
+                            className="w-10 bg-[#3a3a3a] border border-[#4a4a4a] rounded-none px-1 text-[10px] text-[#f4f4f4] focus:outline-none" autoFocus onMouseDown={e => e.stopPropagation()} />
                         ) : (step.clicks || 0).toLocaleString()}
                       </span>
                       <span className="cursor-text hover:text-white transition-none" onDoubleClick={e => { e.stopPropagation(); startEdit(step.id, 'conversions', (step.conversions || 0).toString()); }}>
                         CV:{editingStepId === step.id && editField === 'conversions' ? (
                           <input value={editValue} onChange={e => setEditValue(e.target.value)} onBlur={saveEdit}
                             onKeyDown={e => { if (e.key === 'Enter') saveEdit(); if (e.key === 'Escape') { setEditingStepId(null); setEditField(null); } }}
-                            className="w-10 bg-[#3a3a3a] border border-[#4a4a4a] rounded px-1 text-[10px] text-[#ECECEC] focus:outline-none" autoFocus onMouseDown={e => e.stopPropagation()} />
+                            className="w-10 bg-[#3a3a3a] border border-[#4a4a4a] rounded-none px-1 text-[10px] text-[#f4f4f4] focus:outline-none" autoFocus onMouseDown={e => e.stopPropagation()} />
                         ) : (step.conversions || 0).toLocaleString()}
                       </span>
                     </div>
                   </div>
 
                   {/* Card */}
-                  <div className="rounded-xl overflow-hidden transition-all duration-200" style={{
+                  <div className="rounded-none overflow-hidden transition-all duration-200" style={{
                     height: CARD_H,
                     background: 'linear-gradient(135deg, rgba(47,47,47,0.97) 0%, rgba(33,33,33,0.98) 100%)',
                     border: `1.5px solid ${isSelected ? 'rgba(236,236,236,0.9)' : 'rgba(58,58,58,0.6)'}`,
@@ -1101,7 +1101,7 @@ const FunnelManager: React.FC<FunnelManagerProps> = ({ storagePrefix }) => {
                               )
                             ) : (
                               <div className="absolute inset-0 flex items-center justify-center bg-black/40">
-                                <button className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/80 text-xs text-[#212121] hover:bg-white"
+                                <button className="flex items-center gap-2 px-3 py-1.5 rounded-none-full bg-white/80 text-xs text-[#212121] hover:bg-white"
                                   onMouseDown={e => e.stopPropagation()} onClick={e => { e.stopPropagation(); setPlayingAdStepId(step.id); }}>
                                   <Play size={12} /> Play ad
                                 </button>
@@ -1120,31 +1120,31 @@ const FunnelManager: React.FC<FunnelManagerProps> = ({ storagePrefix }) => {
                           const sc = getAdStatusConfig(step.adStatus);
                           const SIcon = sc.icon;
                           return (
-                            <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-medium border self-start mb-1.5 ${sc.bgColor} ${sc.color}`}>
+                            <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-none-full text-[9px] font-medium border self-start mb-1.5 ${sc.bgColor} ${sc.color}`}>
                               <SIcon size={9} /> {step.adStatus}
                             </div>
                           );
                         })()}
                         {/* Ad title */}
                         {step.adTitle && (
-                          <p className="text-[11px] font-semibold text-[#ECECEC] mb-1.5 leading-tight" style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{step.adTitle}</p>
+                          <p className="text-[11px] font-semibold text-[#f4f4f4] mb-1.5 leading-tight" style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{step.adTitle}</p>
                         )}
                         {/* Transcript preview */}
                         {step.transcript && (
-                          <p className="text-[9px] text-[#9B9B9B] leading-relaxed whitespace-pre-wrap overflow-hidden flex-1" style={{ display: '-webkit-box', WebkitLineClamp: step.adTitle ? 9 : 12, WebkitBoxOrient: 'vertical' }}>{step.transcript}</p>
+                          <p className="text-[9px] text-[#909090] leading-relaxed whitespace-pre-wrap overflow-hidden flex-1" style={{ display: '-webkit-box', WebkitLineClamp: step.adTitle ? 9 : 12, WebkitBoxOrient: 'vertical' }}>{step.transcript}</p>
                         )}
                       </div>
                     ) : step.type === 'email' && (step.emailHeadline || step.emailSubheadline || step.emailBody) ? (
                       <div className="w-full h-full flex flex-col overflow-hidden">
                         {/* Header bar */}
                         <div className="flex items-center gap-1.5 px-3 py-1.5 border-b border-[rgba(58,58,58,0.6)]" style={{ background: 'rgba(255,255,255,0.02)' }}>
-                          <Mail size={10} className="text-[#9B9B9B]" />
-                          <span className="text-[9px] font-semibold text-[#9B9B9B]">Email</span>
+                          <Mail size={10} className="text-[#909090]" />
+                          <span className="text-[9px] font-semibold text-[#909090]">Email</span>
                           {step.emailStatus && step.emailStatus !== 'Unassigned' && (() => {
                             const sc = getAdStatusConfig(step.emailStatus);
                             const SIcon = sc.icon;
                             return (
-                              <div className={`ml-auto inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[8px] font-medium border ${sc.bgColor} ${sc.color}`}>
+                              <div className={`ml-auto inline-flex items-center gap-1 px-1.5 py-0.5 rounded-none-full text-[8px] font-medium border ${sc.bgColor} ${sc.color}`}>
                                 <SIcon size={8} /> {step.emailStatus}
                               </div>
                             );
@@ -1153,10 +1153,10 @@ const FunnelManager: React.FC<FunnelManagerProps> = ({ storagePrefix }) => {
                         {/* Email content */}
                         <div className="flex-1 flex flex-col p-3 overflow-hidden">
                           {step.emailHeadline && (
-                            <p className="text-[11px] font-bold text-[#ECECEC] mb-1 leading-tight" style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{step.emailHeadline}</p>
+                            <p className="text-[11px] font-bold text-[#f4f4f4] mb-1 leading-tight" style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{step.emailHeadline}</p>
                           )}
                           {step.emailSubheadline && (
-                            <p className="text-[10px] text-[#9B9B9B] mb-2 leading-tight" style={{ display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{step.emailSubheadline}</p>
+                            <p className="text-[10px] text-[#909090] mb-2 leading-tight" style={{ display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{step.emailSubheadline}</p>
                           )}
                           {step.emailBody && (
                             <div
@@ -1174,14 +1174,14 @@ const FunnelManager: React.FC<FunnelManagerProps> = ({ storagePrefix }) => {
                           const sc = getAdStatusConfig(step.smsStatus);
                           const SIcon = sc.icon;
                           return (
-                            <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-medium border self-start mb-2 ${sc.bgColor} ${sc.color}`}>
+                            <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-none-full text-[9px] font-medium border self-start mb-2 ${sc.bgColor} ${sc.color}`}>
                               <SIcon size={9} /> {step.smsStatus}
                             </div>
                           );
                         })()}
                         {/* Chat bubble */}
                         <div className="flex-1 flex flex-col justify-end overflow-hidden">
-                          <div className="self-end max-w-[90%] px-3 py-2 rounded-2xl rounded-br-md overflow-hidden"
+                          <div className="self-end max-w-[90%] px-3 py-2 rounded-none-none rounded-none-none overflow-hidden"
                             style={{ background: 'rgba(14,165,233,0.12)', border: '1px solid rgba(14,165,233,0.2)' }}>
                             <p className="text-[10px] text-[#d4e8f7] leading-relaxed whitespace-pre-wrap" style={{ display: '-webkit-box', WebkitLineClamp: 10, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                               {step.smsBody}
@@ -1196,29 +1196,29 @@ const FunnelManager: React.FC<FunnelManagerProps> = ({ storagePrefix }) => {
                     ) : (step.type === 'email_sequence' || step.type === 'sms_sequence' || step.type === 'group_sequence') ? (
                       <div className="w-full h-full flex flex-col overflow-hidden">
                         <div className="flex items-center gap-1.5 px-3 py-1.5 border-b border-[rgba(58,58,58,0.6)]" style={{ background: 'rgba(255,255,255,0.02)' }}>
-                          <ListOrdered size={10} className="text-[#9B9B9B]" />
-                          <span className="text-[9px] font-semibold text-[#9B9B9B]">{getStepConfig(step.type).label}</span>
-                          <span className="ml-auto text-[9px] font-medium px-1.5 py-0.5 rounded-full" style={{ background: 'rgba(255,255,255,0.05)', color: '#9B9B9B' }}>
+                          <ListOrdered size={10} className="text-[#909090]" />
+                          <span className="text-[9px] font-semibold text-[#909090]">{getStepConfig(step.type).label}</span>
+                          <span className="ml-auto text-[9px] font-medium px-1.5 py-0.5 rounded-none-full" style={{ background: 'rgba(255,255,255,0.05)', color: '#909090' }}>
                             {(step.sequenceItems?.length ?? 0)} msg
                           </span>
                         </div>
                         <div className="flex-1 overflow-hidden p-2 space-y-1">
                           {(step.sequenceItems ?? []).slice(0, 4).map((item, i) => (
                             <div key={item.id} className="flex items-center gap-1.5 text-[9px]">
-                              <span className="font-mono text-[#555]">#{i + 1}</span>
-                              <span className="text-[#9B9B9B] truncate flex-1">
+                              <span className="font-mono text-[#5a5a5a]">#{i + 1}</span>
+                              <span className="text-[#909090] truncate flex-1">
                                 {item.subject || item.body?.slice(0, 40) || 'Untitled'}
                               </span>
                               {item.delayDays != null && (
-                                <span className="text-[#555]">+{item.delayDays}d</span>
+                                <span className="text-[#5a5a5a]">+{item.delayDays}d</span>
                               )}
                             </div>
                           ))}
                           {(step.sequenceItems?.length ?? 0) === 0 && (
-                            <p className="text-[9px] text-[#555] italic">Empty sequence — click to add messages</p>
+                            <p className="text-[9px] text-[#5a5a5a] italic">Empty sequence — click to add messages</p>
                           )}
                           {(step.sequenceItems?.length ?? 0) > 4 && (
-                            <p className="text-[9px] text-[#555] italic">+{(step.sequenceItems!.length - 4)} more…</p>
+                            <p className="text-[9px] text-[#5a5a5a] italic">+{(step.sequenceItems!.length - 4)} more…</p>
                           )}
                         </div>
                       </div>
@@ -1230,7 +1230,7 @@ const FunnelManager: React.FC<FunnelManagerProps> = ({ storagePrefix }) => {
                   </div>
 
                   {/* Connection handles */}
-                  <div className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 w-3.5 h-3.5 rounded-full border-2 transition-all cursor-crosshair z-10 hover:scale-150 hover:border-[#4a4a4a]"
+                  <div className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 w-3.5 h-3.5 rounded-none-full border-2 transition-all cursor-crosshair z-10 hover:scale-150 hover:border-[#4a4a4a]"
                     style={{ backgroundColor: 'rgba(180,180,180,0.25)', borderColor: 'rgba(180,180,180,0.45)' }}
                     onMouseDown={e => {
                       e.stopPropagation();
@@ -1240,7 +1240,7 @@ const FunnelManager: React.FC<FunnelManagerProps> = ({ storagePrefix }) => {
                         setConnectMouse({ x: (e.clientX - rect.left - canvasOffset.x) / zoom, y: (e.clientY - rect.top - canvasOffset.y) / zoom });
                       }
                     }} />
-                  <div className={`absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 w-3.5 h-3.5 rounded-full border-2 transition-all z-10 ${connecting && connecting !== step.id ? 'scale-150 border-[#4a4a4a]' : ''}`}
+                  <div className={`absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 w-3.5 h-3.5 rounded-none-full border-2 transition-all z-10 ${connecting && connecting !== step.id ? 'scale-150 border-[#4a4a4a]' : ''}`}
                     style={{ backgroundColor: connecting && connecting !== step.id ? 'rgba(180,180,180,0.5)' : 'rgba(58,58,58,0.4)', borderColor: connecting && connecting !== step.id ? 'rgba(180,180,180,0.8)' : 'rgba(58,58,58,0.25)' }} />
                 </div>
               );
@@ -1250,28 +1250,28 @@ const FunnelManager: React.FC<FunnelManagerProps> = ({ storagePrefix }) => {
           {/* Empty state */}
           {selectedFunnel.steps.length === 0 && (
             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-              <div className="w-14 h-14 rounded-xl bg-[#212121] border border-[#3a3a3a] flex items-center justify-center mb-3"><Plus size={20} className="text-[#666666]" /></div>
-              <p className="text-[#9B9B9B] text-sm">Empty canvas</p>
+              <div className="w-14 h-14 rounded-none-none bg-[#000] border border-[#242424] flex items-center justify-center mb-3"><Plus size={20} className="text-[#666666]" /></div>
+              <p className="text-[#909090] text-sm">Empty canvas</p>
               <p className="text-[#666666] text-xs">Click "Add Element" to build your funnel</p>
             </div>
           )}
 
           {/* Connecting indicator */}
           {connecting && (
-            <div className="absolute top-3 left-1/2 -translate-x-1/2 px-4 py-2 bg-[#2f2f2f] backdrop-blur border border-[#3a3a3a] rounded-full text-xs text-[#ECECEC] font-medium z-50">
+            <div className="absolute top-3 left-1/2 -translate-x-1/2 px-4 py-2 bg-[#0d0d0d] backdrop-blur border border-[#242424] rounded-none-full text-xs text-[#f4f4f4] font-medium z-50">
               Drop on a step to connect · Release to cancel
             </div>
           )}
 
           {/* Delete step confirmation */}
           {confirmDeleteStepId && (
-            <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/50 rounded-xl" onClick={() => setConfirmDeleteStepId(null)}>
-              <div className="bg-[#2f2f2f] border border-[#3a3a3a] rounded-xl p-6 max-w-sm shadow-xl" onClick={e => e.stopPropagation()}>
-                <p className="text-[#ECECEC] font-medium mb-1">Delete this step?</p>
-                <p className="text-sm text-[#9B9B9B] mb-4">Connections to and from it will be removed.</p>
+            <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/50 rounded-none-none" onClick={() => setConfirmDeleteStepId(null)}>
+              <div className="bg-[#0d0d0d] border border-[#242424] rounded-none-none p-6 max-w-sm shadow-xl" onClick={e => e.stopPropagation()}>
+                <p className="text-[#f4f4f4] font-medium mb-1">Delete this step?</p>
+                <p className="text-sm text-[#909090] mb-4">Connections to and from it will be removed.</p>
                 <div className="flex gap-2 justify-end">
-                  <button onClick={() => setConfirmDeleteStepId(null)} className="px-4 py-2 text-sm text-[#9B9B9B] hover:text-white transition-none">Cancel</button>
-                  <button onClick={() => { deleteStep(confirmDeleteStepId); setConfirmDeleteStepId(null); }} className="px-4 py-2 text-sm bg-rose-500 hover:bg-rose-600 text-white rounded-lg transition-none">Delete</button>
+                  <button onClick={() => setConfirmDeleteStepId(null)} className="px-4 py-2 text-sm text-[#909090] hover:text-white transition-none">Cancel</button>
+                  <button onClick={() => { deleteStep(confirmDeleteStepId); setConfirmDeleteStepId(null); }} className="px-4 py-2 text-sm bg-rose-500 hover:bg-rose-600 text-white rounded-none-none transition-none">Delete</button>
                 </div>
               </div>
             </div>
@@ -1280,46 +1280,46 @@ const FunnelManager: React.FC<FunnelManagerProps> = ({ storagePrefix }) => {
 
         {/* Side panel */}
         {selectedStep && (
-          <div className={`${panelExpanded ? 'w-[480px]' : 'w-72'} flex-shrink-0 bg-[#2f2f2f] backdrop-blur border border-[#3a3a3a] rounded-xl p-4 overflow-y-auto animate-in slide-in-from-right-4 duration-200 space-y-4 transition-[width] duration-200`}>
+          <div className={`${panelExpanded ? 'w-[480px]' : 'w-72'} flex-shrink-0 bg-[#0d0d0d] backdrop-blur border border-[#242424] rounded-none-none p-4 overflow-y-auto animate-in slide-in-from-right-4 duration-200 space-y-4 transition-[width] duration-200`}>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 min-w-0">
                 {(() => { const cfg = getStepConfig(selectedStep.type); return (
-                  <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: cfg.color + '15', border: `1px solid ${cfg.color}25` }}>
+                  <div className="w-7 h-7 rounded-none-none flex items-center justify-center flex-shrink-0" style={{ backgroundColor: cfg.color + '15', border: `1px solid ${cfg.color}25` }}>
                     <cfg.icon size={14} style={{ color: cfg.color }} />
                   </div>
                 ); })()}
-                <h3 className="text-sm font-semibold text-[#ECECEC] truncate">{selectedStep.name}</h3>
+                <h3 className="text-sm font-semibold text-[#f4f4f4] truncate">{selectedStep.name}</h3>
               </div>
               <div className="flex gap-1 flex-shrink-0">
                 {(selectedStep.type === 'ad' || selectedStep.type === 'email') && (
-                  <button onClick={() => setPanelExpanded(!panelExpanded)} className="p-1 text-[#9B9B9B] hover:text-white" title={panelExpanded ? 'Collapse panel' : 'Expand panel'}>
+                  <button onClick={() => setPanelExpanded(!panelExpanded)} className="p-1 text-[#909090] hover:text-white" title={panelExpanded ? 'Collapse panel' : 'Expand panel'}>
                     {panelExpanded ? <ChevronsRight size={14} /> : <ChevronsLeft size={14} />}
                   </button>
                 )}
-                <button onClick={() => setConfirmDeleteStepId(selectedStep.id)} className="p-1 text-[#9B9B9B] hover:text-[#fca5a5]" title="Delete step"><Trash2 size={14} /></button>
-                <button onClick={() => { setSelectedStepId(null); setPanelExpanded(false); }} className="p-1 text-[#9B9B9B] hover:text-white"><X size={14} /></button>
+                <button onClick={() => setConfirmDeleteStepId(selectedStep.id)} className="p-1 text-[#909090] hover:text-[#d46d6d]" title="Delete step"><Trash2 size={14} /></button>
+                <button onClick={() => { setSelectedStepId(null); setPanelExpanded(false); }} className="p-1 text-[#909090] hover:text-white"><X size={14} /></button>
               </div>
             </div>
 
-            <div><label className="text-[10px] uppercase tracking-wider text-[#9B9B9B] font-medium">Type</label>
+            <div><label className="text-[10px] uppercase tracking-wider text-[#909090] font-medium">Type</label>
               <select value={selectedStep.type} onChange={e => updateStep(selectedStep.id, { type: e.target.value as FunnelStepType })}
-                className="w-full mt-1 bg-[#3a3a3a] border border-[#3a3a3a] rounded-lg px-3 py-2 text-sm text-[#ECECEC] focus:outline-none">
+                className="w-full mt-1 bg-[#3a3a3a] border border-[#242424] rounded-none-none px-3 py-2 text-sm text-[#f4f4f4] focus:outline-none">
                 {STEP_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
               </select>
             </div>
 
             {selectedStep.type === 'ad' && (
               <>
-                <div><label className="text-[10px] uppercase tracking-wider text-[#9B9B9B] font-medium">Ad Title</label>
+                <div><label className="text-[10px] uppercase tracking-wider text-[#909090] font-medium">Ad Title</label>
                   <input value={selectedStep.adTitle || ''} onChange={e => updateStep(selectedStep.id, { adTitle: e.target.value })} placeholder="Give this ad a title..."
-                    className="w-full mt-1 bg-[#3a3a3a] border border-[#3a3a3a] rounded-lg px-3 py-2 text-sm text-[#ECECEC] placeholder-[#666666] focus:outline-none focus:ring-2 focus:ring-[#555555]" />
+                    className="w-full mt-1 bg-[#3a3a3a] border border-[#242424] rounded-none-none px-3 py-2 text-sm text-[#f4f4f4] placeholder-[#666666] focus:outline-none focus:ring-2 focus:ring-[#555555]" />
                 </div>
 
-                <div><label className="text-[10px] uppercase tracking-wider text-[#9B9B9B] font-medium">Status</label>
+                <div><label className="text-[10px] uppercase tracking-wider text-[#909090] font-medium">Status</label>
                   <div className="relative mt-1" ref={statusDropdownOpen === 'ad' ? statusDropdownRef : undefined}>
                     {(() => { const sc = getAdStatusConfig(selectedStep.adStatus); const StatusIcon = sc.icon; return (
                       <button onClick={() => setStatusDropdownOpen(statusDropdownOpen === 'ad' ? null : 'ad')}
-                        className={`w-full flex items-center justify-between gap-2 px-3 py-2 rounded-lg text-sm font-medium border cursor-pointer transition-none ${sc.bgColor} ${sc.color}`}>
+                        className={`w-full flex items-center justify-between gap-2 px-3 py-2 rounded-none-none text-sm font-medium border cursor-pointer transition-none ${sc.bgColor} ${sc.color}`}>
                         <div className="flex items-center gap-1.5">
                           <StatusIcon size={14} />
                           <span>{selectedStep.adStatus && selectedStep.adStatus !== 'Unassigned' ? selectedStep.adStatus : 'Select status'}</span>
@@ -1328,7 +1328,7 @@ const FunnelManager: React.FC<FunnelManagerProps> = ({ storagePrefix }) => {
                       </button>
                     ); })()}
                     {statusDropdownOpen === 'ad' && (
-                      <div className="absolute top-full left-0 mt-1 w-full bg-[#2f2f2f] border border-[#3a3a3a] rounded-xl shadow-2xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-100">
+                      <div className="absolute top-full left-0 mt-1 w-full bg-[#0d0d0d] border border-[#242424] rounded-none-none shadow-2xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-100">
                         {AD_STATUSES.map(s => {
                           const SIcon = s.icon;
                           return (
@@ -1337,9 +1337,9 @@ const FunnelManager: React.FC<FunnelManagerProps> = ({ storagePrefix }) => {
                               className={`w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-[rgba(255,255,255,0.05)] transition-none ${
                                 selectedStep.adStatus === s.value ? 'bg-[rgba(255,255,255,0.05)]' : ''
                               }`}>
-                              <div className={`w-1.5 h-1.5 rounded-full ${s.color.replace('text-', 'bg-')}`} />
+                              <div className={`w-1.5 h-1.5 rounded-none-full ${s.color.replace('text-', 'bg-')}`} />
                               <span className={s.color}>{s.label}</span>
-                              {selectedStep.adStatus === s.value && <Check size={12} className="ml-auto text-[#ECECEC]" />}
+                              {selectedStep.adStatus === s.value && <Check size={12} className="ml-auto text-[#f4f4f4]" />}
                             </button>
                           );
                         })}
@@ -1352,21 +1352,21 @@ const FunnelManager: React.FC<FunnelManagerProps> = ({ storagePrefix }) => {
 
             {selectedStep.type === 'email' && (
               <>
-                <div><label className="text-[10px] uppercase tracking-wider text-[#9B9B9B] font-medium">Headline</label>
+                <div><label className="text-[10px] uppercase tracking-wider text-[#909090] font-medium">Headline</label>
                   <input value={selectedStep.emailHeadline || ''} onChange={e => updateStep(selectedStep.id, { emailHeadline: e.target.value })} placeholder="Email headline..."
-                    className="w-full mt-1 bg-[#3a3a3a] border border-[#3a3a3a] rounded-lg px-3 py-2 text-sm text-[#ECECEC] placeholder-[#666666] focus:outline-none focus:ring-2 focus:ring-[#555555]" />
+                    className="w-full mt-1 bg-[#3a3a3a] border border-[#242424] rounded-none-none px-3 py-2 text-sm text-[#f4f4f4] placeholder-[#666666] focus:outline-none focus:ring-2 focus:ring-[#555555]" />
                 </div>
 
-                <div><label className="text-[10px] uppercase tracking-wider text-[#9B9B9B] font-medium">Subheadline</label>
+                <div><label className="text-[10px] uppercase tracking-wider text-[#909090] font-medium">Subheadline</label>
                   <input value={selectedStep.emailSubheadline || ''} onChange={e => updateStep(selectedStep.id, { emailSubheadline: e.target.value })} placeholder="Email subheadline..."
-                    className="w-full mt-1 bg-[#3a3a3a] border border-[#3a3a3a] rounded-lg px-3 py-2 text-sm text-[#ECECEC] placeholder-[#666666] focus:outline-none focus:ring-2 focus:ring-[#555555]" />
+                    className="w-full mt-1 bg-[#3a3a3a] border border-[#242424] rounded-none-none px-3 py-2 text-sm text-[#f4f4f4] placeholder-[#666666] focus:outline-none focus:ring-2 focus:ring-[#555555]" />
                 </div>
 
-                <div><label className="text-[10px] uppercase tracking-wider text-[#9B9B9B] font-medium">Status</label>
+                <div><label className="text-[10px] uppercase tracking-wider text-[#909090] font-medium">Status</label>
                   <div className="relative mt-1" ref={statusDropdownOpen === 'email' ? statusDropdownRef : undefined}>
                     {(() => { const sc = getAdStatusConfig(selectedStep.emailStatus); const StatusIcon = sc.icon; return (
                       <button onClick={() => setStatusDropdownOpen(statusDropdownOpen === 'email' ? null : 'email')}
-                        className={`w-full flex items-center justify-between gap-2 px-3 py-2 rounded-lg text-sm font-medium border cursor-pointer transition-none ${sc.bgColor} ${sc.color}`}>
+                        className={`w-full flex items-center justify-between gap-2 px-3 py-2 rounded-none-none text-sm font-medium border cursor-pointer transition-none ${sc.bgColor} ${sc.color}`}>
                         <div className="flex items-center gap-1.5">
                           <StatusIcon size={14} />
                           <span>{selectedStep.emailStatus && selectedStep.emailStatus !== 'Unassigned' ? selectedStep.emailStatus : 'Select status'}</span>
@@ -1375,7 +1375,7 @@ const FunnelManager: React.FC<FunnelManagerProps> = ({ storagePrefix }) => {
                       </button>
                     ); })()}
                     {statusDropdownOpen === 'email' && (
-                      <div className="absolute top-full left-0 mt-1 w-full bg-[#2f2f2f] border border-[#3a3a3a] rounded-xl shadow-2xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-100">
+                      <div className="absolute top-full left-0 mt-1 w-full bg-[#0d0d0d] border border-[#242424] rounded-none-none shadow-2xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-100">
                         {AD_STATUSES.map(s => {
                           const SIcon = s.icon;
                           return (
@@ -1384,9 +1384,9 @@ const FunnelManager: React.FC<FunnelManagerProps> = ({ storagePrefix }) => {
                               className={`w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-[rgba(255,255,255,0.05)] transition-none ${
                                 selectedStep.emailStatus === s.value ? 'bg-[rgba(255,255,255,0.05)]' : ''
                               }`}>
-                              <div className={`w-1.5 h-1.5 rounded-full ${s.color.replace('text-', 'bg-')}`} />
+                              <div className={`w-1.5 h-1.5 rounded-none-full ${s.color.replace('text-', 'bg-')}`} />
                               <span className={s.color}>{s.label}</span>
-                              {selectedStep.emailStatus === s.value && <Check size={12} className="ml-auto text-[#ECECEC]" />}
+                              {selectedStep.emailStatus === s.value && <Check size={12} className="ml-auto text-[#f4f4f4]" />}
                             </button>
                           );
                         })}
@@ -1396,7 +1396,7 @@ const FunnelManager: React.FC<FunnelManagerProps> = ({ storagePrefix }) => {
                 </div>
 
                 <div className="flex flex-col flex-1 min-h-0">
-                  <label className="text-[10px] uppercase tracking-wider text-[#9B9B9B] font-medium mb-1">Body</label>
+                  <label className="text-[10px] uppercase tracking-wider text-[#909090] font-medium mb-1">Body</label>
                   <EmailBodyEditor
                     key={selectedStep.id}
                     value={selectedStep.emailBody || ''}
@@ -1410,11 +1410,11 @@ const FunnelManager: React.FC<FunnelManagerProps> = ({ storagePrefix }) => {
 
             {selectedStep.type === 'sms' && (
               <>
-                <div><label className="text-[10px] uppercase tracking-wider text-[#9B9B9B] font-medium">Status</label>
+                <div><label className="text-[10px] uppercase tracking-wider text-[#909090] font-medium">Status</label>
                   <div className="relative mt-1" ref={statusDropdownOpen === 'sms' ? statusDropdownRef : undefined}>
                     {(() => { const sc = getAdStatusConfig(selectedStep.smsStatus); const StatusIcon = sc.icon; return (
                       <button onClick={() => setStatusDropdownOpen(statusDropdownOpen === 'sms' ? null : 'sms')}
-                        className={`w-full flex items-center justify-between gap-2 px-3 py-2 rounded-lg text-sm font-medium border cursor-pointer transition-none ${sc.bgColor} ${sc.color}`}>
+                        className={`w-full flex items-center justify-between gap-2 px-3 py-2 rounded-none-none text-sm font-medium border cursor-pointer transition-none ${sc.bgColor} ${sc.color}`}>
                         <div className="flex items-center gap-1.5">
                           <StatusIcon size={14} />
                           <span>{selectedStep.smsStatus && selectedStep.smsStatus !== 'Unassigned' ? selectedStep.smsStatus : 'Select status'}</span>
@@ -1423,7 +1423,7 @@ const FunnelManager: React.FC<FunnelManagerProps> = ({ storagePrefix }) => {
                       </button>
                     ); })()}
                     {statusDropdownOpen === 'sms' && (
-                      <div className="absolute top-full left-0 mt-1 w-full bg-[#2f2f2f] border border-[#3a3a3a] rounded-xl shadow-2xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-100">
+                      <div className="absolute top-full left-0 mt-1 w-full bg-[#0d0d0d] border border-[#242424] rounded-none-none shadow-2xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-100">
                         {AD_STATUSES.map(s => {
                           const SIcon = s.icon;
                           return (
@@ -1432,9 +1432,9 @@ const FunnelManager: React.FC<FunnelManagerProps> = ({ storagePrefix }) => {
                               className={`w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-[rgba(255,255,255,0.05)] transition-none ${
                                 selectedStep.smsStatus === s.value ? 'bg-[rgba(255,255,255,0.05)]' : ''
                               }`}>
-                              <div className={`w-1.5 h-1.5 rounded-full ${s.color.replace('text-', 'bg-')}`} />
+                              <div className={`w-1.5 h-1.5 rounded-none-full ${s.color.replace('text-', 'bg-')}`} />
                               <span className={s.color}>{s.label}</span>
-                              {selectedStep.smsStatus === s.value && <Check size={12} className="ml-auto text-[#ECECEC]" />}
+                              {selectedStep.smsStatus === s.value && <Check size={12} className="ml-auto text-[#f4f4f4]" />}
                             </button>
                           );
                         })}
@@ -1444,15 +1444,15 @@ const FunnelManager: React.FC<FunnelManagerProps> = ({ storagePrefix }) => {
                 </div>
 
                 <div className="flex flex-col flex-1 min-h-0">
-                  <label className="text-[10px] uppercase tracking-wider text-[#9B9B9B] font-medium mb-1">Message</label>
+                  <label className="text-[10px] uppercase tracking-wider text-[#909090] font-medium mb-1">Message</label>
                   <textarea
                     value={selectedStep.smsBody || ''}
                     onChange={e => updateStep(selectedStep.id, { smsBody: e.target.value })}
                     placeholder="Write your SMS message..."
                     rows={6}
-                    className="w-full bg-[#3a3a3a] border border-[#3a3a3a] rounded-lg px-3 py-2 text-sm text-[#ECECEC] placeholder-[#666666] focus:outline-none focus:ring-2 focus:ring-[#555555] leading-relaxed resize-y"
+                    className="w-full bg-[#3a3a3a] border border-[#242424] rounded-none-none px-3 py-2 text-sm text-[#f4f4f4] placeholder-[#666666] focus:outline-none focus:ring-2 focus:ring-[#555555] leading-relaxed resize-y"
                   />
-                  <p className={`text-[10px] mt-1 ${(selectedStep.smsBody?.length || 0) > 160 ? 'text-[#fde68a]' : 'text-[#666666]'}`}>
+                  <p className={`text-[10px] mt-1 ${(selectedStep.smsBody?.length || 0) > 160 ? 'text-[#e0c870]' : 'text-[#666666]'}`}>
                     {selectedStep.smsBody?.length || 0} / 160 characters{(selectedStep.smsBody?.length || 0) > 160 ? ' (multi-part SMS)' : ''}
                   </p>
                 </div>
@@ -1466,27 +1466,27 @@ const FunnelManager: React.FC<FunnelManagerProps> = ({ storagePrefix }) => {
               />
             )}
 
-            <div><label className="text-[10px] uppercase tracking-wider text-[#9B9B9B] font-medium">Page URL</label>
+            <div><label className="text-[10px] uppercase tracking-wider text-[#909090] font-medium">Page URL</label>
               <input value={selectedStep.url || ''} onChange={e => updateStep(selectedStep.id, { url: e.target.value || undefined })} placeholder="https://..."
-                className="w-full mt-1 bg-[#3a3a3a] border border-[#3a3a3a] rounded-lg px-3 py-2 text-sm text-[#ECECEC] placeholder-[#666666] focus:outline-none focus:ring-2 focus:ring-[#555555]" />
+                className="w-full mt-1 bg-[#3a3a3a] border border-[#242424] rounded-none-none px-3 py-2 text-sm text-[#f4f4f4] placeholder-[#666666] focus:outline-none focus:ring-2 focus:ring-[#555555]" />
               {selectedStep.url && getUrlDomain(selectedStep.url) && (
                 <a href={selectedStep.url.startsWith('http') ? selectedStep.url : `https://${selectedStep.url}`} target="_blank" rel="noreferrer"
-                  className="mt-2 flex items-center gap-2 px-3 py-2 bg-[rgba(255,255,255,0.05)] rounded-lg text-xs text-[#9B9B9B] hover:text-[#ECECEC] transition-none">
-                  <img src={`https://www.google.com/s2/favicons?domain=${getUrlDomain(selectedStep.url)}&sz=32`} alt="" className="w-4 h-4 rounded" onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                  className="mt-2 flex items-center gap-2 px-3 py-2 bg-[rgba(255,255,255,0.05)] rounded-none-none text-xs text-[#909090] hover:text-[#f4f4f4] transition-none">
+                  <img src={`https://www.google.com/s2/favicons?domain=${getUrlDomain(selectedStep.url)}&sz=32`} alt="" className="w-4 h-4 rounded-none" onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                   <span className="truncate flex-1">{getUrlDomain(selectedStep.url)}</span><ExternalLink size={12} />
                 </a>
               )}
             </div>
 
-            <div><label className="text-[10px] uppercase tracking-wider text-[#9B9B9B] font-medium">Preview Media</label>
+            <div><label className="text-[10px] uppercase tracking-wider text-[#909090] font-medium">Preview Media</label>
               <input ref={fileInputRef} type="file" accept="image/*,video/mp4,video/webm" className="hidden" onChange={handleMediaUpload} />
               {uploadingMedia ? (
-                <div className="w-full mt-1 flex items-center justify-center gap-2 px-3 py-4 border border-dashed border-[#4a4a4a] rounded-lg text-xs text-[#9B9B9B]">
-                  <div className="w-3 h-3 border-2 border-[#9B9B9B] border-t-transparent rounded-full animate-spin" /> Uploading...
+                <div className="w-full mt-1 flex items-center justify-center gap-2 px-3 py-4 border border-dashed border-[#4a4a4a] rounded-none-none text-xs text-[#909090]">
+                  <div className="w-3 h-3 border-2 border-[#9B9B9B] border-t-transparent rounded-none-full animate-spin" /> Uploading...
                 </div>
               ) : selectedStep.previewMedia ? (
                 <div className="mt-1 space-y-2">
-                  <div className="relative rounded-lg overflow-hidden border border-[#3a3a3a]" style={{ height: 100 }}>
+                  <div className="relative rounded-none-none overflow-hidden border border-[#242424]" style={{ height: 100 }}>
                     {selectedStep.previewMediaType === 'video' ? (
                       <video src={selectedStep.previewMedia} className="w-full h-full object-cover" preload="metadata" />
                     ) : (
@@ -1495,48 +1495,48 @@ const FunnelManager: React.FC<FunnelManagerProps> = ({ storagePrefix }) => {
                   </div>
                   <div className="flex gap-2">
                     <button onClick={() => { deleteMediaFromStorage(selectedStep.previewMedia); fileInputRef.current?.click(); }}
-                      className="flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 text-[10px] text-[#9B9B9B] hover:text-white bg-[#3a3a3a] rounded-lg transition-none">
+                      className="flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 text-[10px] text-[#909090] hover:text-white bg-[#3a3a3a] rounded-none-none transition-none">
                       <Upload size={10} /> Replace
                     </button>
                     <button onClick={() => { deleteMediaFromStorage(selectedStep.previewMedia); updateStep(selectedStep.id, { previewMedia: undefined, previewMediaType: undefined }); }}
-                      className="flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 text-[10px] text-[#9B9B9B] hover:text-[#fca5a5] bg-[#3a3a3a] rounded-lg transition-none">
+                      className="flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 text-[10px] text-[#909090] hover:text-[#d46d6d] bg-[#3a3a3a] rounded-none-none transition-none">
                       <Trash2 size={10} /> Remove
                     </button>
                   </div>
                 </div>
               ) : (
                 <button onClick={() => fileInputRef.current?.click()}
-                  className="w-full mt-1 flex items-center justify-center gap-2 px-3 py-3 border border-dashed border-[#4a4a4a] rounded-lg text-xs text-[#666666] hover:text-[#9B9B9B] hover:border-[#666666] transition-none">
+                  className="w-full mt-1 flex items-center justify-center gap-2 px-3 py-3 border border-dashed border-[#4a4a4a] rounded-none-none text-xs text-[#666666] hover:text-[#909090] hover:border-[#666666] transition-none">
                   <Image size={14} /> Upload image or MP4
                 </button>
               )}
               <p className="text-[9px] text-[#555555] mt-1">Overrides URL preview when set</p>
             </div>
 
-            <div><label className="text-[10px] uppercase tracking-wider text-[#9B9B9B] font-medium">Page Views</label>
+            <div><label className="text-[10px] uppercase tracking-wider text-[#909090] font-medium">Page Views</label>
               <input type="number" value={selectedStep.views} onChange={e => updateStep(selectedStep.id, { views: parseInt(e.target.value) || 0 })}
-                className="w-full mt-1 bg-[#3a3a3a] border border-[#3a3a3a] rounded-lg px-3 py-2 text-sm text-[#ECECEC] focus:outline-none focus:ring-2 focus:ring-[#555555]" />
+                className="w-full mt-1 bg-[#3a3a3a] border border-[#242424] rounded-none-none px-3 py-2 text-sm text-[#f4f4f4] focus:outline-none focus:ring-2 focus:ring-[#555555]" />
             </div>
 
-            <div><label className="text-[10px] uppercase tracking-wider text-[#9B9B9B] font-medium">Clicks</label>
+            <div><label className="text-[10px] uppercase tracking-wider text-[#909090] font-medium">Clicks</label>
               <input type="number" value={selectedStep.clicks || 0} onChange={e => updateStep(selectedStep.id, { clicks: parseInt(e.target.value) || 0 })}
-                className="w-full mt-1 bg-[#3a3a3a] border border-[#3a3a3a] rounded-lg px-3 py-2 text-sm text-[#ECECEC] focus:outline-none focus:ring-2 focus:ring-[#555555]" />
+                className="w-full mt-1 bg-[#3a3a3a] border border-[#242424] rounded-none-none px-3 py-2 text-sm text-[#f4f4f4] focus:outline-none focus:ring-2 focus:ring-[#555555]" />
             </div>
 
-            <div><label className="text-[10px] uppercase tracking-wider text-[#9B9B9B] font-medium">Conversions</label>
+            <div><label className="text-[10px] uppercase tracking-wider text-[#909090] font-medium">Conversions</label>
               <input type="number" value={selectedStep.conversions || 0} onChange={e => updateStep(selectedStep.id, { conversions: parseInt(e.target.value) || 0 })}
-                className="w-full mt-1 bg-[#3a3a3a] border border-[#3a3a3a] rounded-lg px-3 py-2 text-sm text-[#ECECEC] focus:outline-none focus:ring-2 focus:ring-[#555555]" />
+                className="w-full mt-1 bg-[#3a3a3a] border border-[#242424] rounded-none-none px-3 py-2 text-sm text-[#f4f4f4] focus:outline-none focus:ring-2 focus:ring-[#555555]" />
             </div>
 
             {selectedStep.type === 'ad' && (
               <div className="flex flex-col flex-1 min-h-0">
-                <label className="text-[10px] uppercase tracking-wider text-[#9B9B9B] font-medium mb-1">Transcript</label>
+                <label className="text-[10px] uppercase tracking-wider text-[#909090] font-medium mb-1">Transcript</label>
                 <textarea
                   value={selectedStep.transcript || ''}
                   onChange={e => updateStep(selectedStep.id, { transcript: e.target.value })}
                   placeholder="Write your ad transcript here..."
                   rows={panelExpanded ? 16 : 8}
-                  className="w-full bg-[#3a3a3a] border border-[#3a3a3a] rounded-lg px-3 py-2 text-sm text-[#ECECEC] placeholder-[#666666] focus:outline-none focus:ring-2 focus:ring-[#555555] font-mono leading-relaxed resize-y"
+                  className="w-full bg-[#3a3a3a] border border-[#242424] rounded-none-none px-3 py-2 text-sm text-[#f4f4f4] placeholder-[#666666] focus:outline-none focus:ring-2 focus:ring-[#555555] font-mono leading-relaxed resize-y"
                 />
                 {selectedStep.transcript && (
                   <p className="text-[10px] text-[#666666] mt-1">{selectedStep.transcript.split(/\s+/).filter(Boolean).length} words</p>
@@ -1603,45 +1603,45 @@ const SequenceEditor: React.FC<SequenceEditorProps> = ({ step, onUpdate }) => {
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
-        <label className="text-[10px] uppercase tracking-wider text-[#9B9B9B] font-medium">Sequence ({items.length})</label>
+        <label className="text-[10px] uppercase tracking-wider text-[#909090] font-medium">Sequence ({items.length})</label>
         <button
           onClick={addItem}
-          className="flex items-center gap-1 text-[10px] px-2 py-1 rounded-md bg-[#3a3a3a] text-[#ECECEC] hover:bg-[#454545] transition-colors"
+          className="flex items-center gap-1 text-[10px] px-2 py-1 rounded-none-none bg-[#3a3a3a] text-[#f4f4f4] hover:bg-[#454545] transition-colors"
         >
           <Plus size={10} /> Add {channelLabel}
         </button>
       </div>
 
       {items.length === 0 && (
-        <p className="text-[10px] text-[#666666] italic text-center py-3 border border-dashed border-[#3a3a3a] rounded-lg">
+        <p className="text-[10px] text-[#666666] italic text-center py-3 border border-dashed border-[#242424] rounded-none-none">
           No messages yet. Click "Add {channelLabel}" to start the sequence.
         </p>
       )}
 
       <div className="space-y-2">
         {items.map((item, i) => (
-          <div key={item.id} className="rounded-lg p-2.5 space-y-1.5" style={{ background: '#232323', border: '1px solid #3a3a3a' }}>
+          <div key={item.id} className="rounded-none p-2.5 space-y-1.5" style={{ background: '#232323', border: '1px solid #242424' }}>
             <div className="flex items-center gap-1.5">
-              <span className="text-[9px] font-mono font-semibold text-[#666] w-6">#{i + 1}</span>
+              <span className="text-[9px] font-mono font-semibold text-[#5a5a5a] w-6">#{i + 1}</span>
               <div className="flex items-center gap-1 text-[10px]">
-                <Clock size={10} className="text-[#666]" />
+                <Clock size={10} className="text-[#5a5a5a]" />
                 <input
                   type="number"
                   min={0}
                   value={item.delayDays ?? 0}
                   onChange={e => updateItem(item.id, { delayDays: parseInt(e.target.value) || 0 })}
-                  className="w-10 bg-transparent border-b border-[#3a3a3a] text-[10px] text-[#ECECEC] focus:outline-none focus:border-[#555]"
+                  className="w-10 bg-transparent border-b border-[#242424] text-[10px] text-[#f4f4f4] focus:outline-none focus:border-[#555]"
                 />
-                <span className="text-[9px] text-[#666]">days after</span>
+                <span className="text-[9px] text-[#5a5a5a]">days after</span>
               </div>
               <div className="ml-auto flex items-center gap-0.5">
-                <button onClick={() => move(item.id, -1)} disabled={i === 0} className="p-0.5 text-[#555] hover:text-[#ECECEC] disabled:opacity-30 disabled:cursor-not-allowed">
+                <button onClick={() => move(item.id, -1)} disabled={i === 0} className="p-0.5 text-[#5a5a5a] hover:text-[#f4f4f4] disabled:opacity-30 disabled:cursor-not-allowed">
                   <ChevronUp size={12} />
                 </button>
-                <button onClick={() => move(item.id, 1)} disabled={i === items.length - 1} className="p-0.5 text-[#555] hover:text-[#ECECEC] disabled:opacity-30 disabled:cursor-not-allowed">
+                <button onClick={() => move(item.id, 1)} disabled={i === items.length - 1} className="p-0.5 text-[#5a5a5a] hover:text-[#f4f4f4] disabled:opacity-30 disabled:cursor-not-allowed">
                   <ChevronDown size={12} />
                 </button>
-                <button onClick={() => removeItem(item.id)} className="p-0.5 text-[#555] hover:text-[#fca5a5]">
+                <button onClick={() => removeItem(item.id)} className="p-0.5 text-[#5a5a5a] hover:text-[#d46d6d]">
                   <Trash2 size={11} />
                 </button>
               </div>
@@ -1651,7 +1651,7 @@ const SequenceEditor: React.FC<SequenceEditorProps> = ({ step, onUpdate }) => {
                 value={item.subject || ''}
                 onChange={e => updateItem(item.id, { subject: e.target.value })}
                 placeholder="Subject line..."
-                className="w-full bg-[#1c1c1c] border border-[#2a2a2a] rounded px-2 py-1.5 text-[11px] text-[#ECECEC] placeholder-[#555] focus:outline-none focus:border-[#555]"
+                className="w-full bg-[#0a0a0a] border border-[#1a1a1a] rounded-none px-2 py-1.5 text-[11px] text-[#f4f4f4] placeholder-[#555] focus:outline-none focus:border-[#555]"
               />
             )}
             <textarea
@@ -1663,10 +1663,10 @@ const SequenceEditor: React.FC<SequenceEditorProps> = ({ step, onUpdate }) => {
                 'Email body...'
               }
               rows={3}
-              className="w-full bg-[#1c1c1c] border border-[#2a2a2a] rounded px-2 py-1.5 text-[11px] text-[#ECECEC] placeholder-[#555] focus:outline-none focus:border-[#555] resize-y leading-relaxed"
+              className="w-full bg-[#0a0a0a] border border-[#1a1a1a] rounded-none px-2 py-1.5 text-[11px] text-[#f4f4f4] placeholder-[#555] focus:outline-none focus:border-[#555] resize-y leading-relaxed"
             />
             {step.type === 'sms_sequence' && (item.body?.length || 0) > 160 && (
-              <p className="text-[9px] text-[#fde68a]">{item.body?.length} chars (multi-part SMS)</p>
+              <p className="text-[9px] text-[#e0c870]">{item.body?.length} chars (multi-part SMS)</p>
             )}
           </div>
         ))}

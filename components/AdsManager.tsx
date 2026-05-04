@@ -34,9 +34,9 @@ const AD_STATUSES: { value: AdStatus; label: string; color: string; bgColor: str
   { value: 'Pending', label: 'Pending', color: 'text-gray-400', bgColor: 'bg-gray-500/10 border-gray-500/20', icon: Clock },
   { value: 'Scripted', label: 'Scripted', color: 'text-blue-400', bgColor: 'bg-blue-500/10 border-blue-500/20', icon: FileText },
   { value: 'Recorded', label: 'Recorded', color: 'text-purple-400', bgColor: 'bg-purple-500/10 border-purple-500/20', icon: Video },
-  { value: 'Edited', label: 'Edited', color: 'text-amber-400', bgColor: 'bg-amber-500/10 border-amber-500/20', icon: CheckCircle2 },
+  { value: 'Edited', label: 'Edited', color: 'text-[#e0c870]', bgColor: 'bg-amber-500/10 border-amber-500/20', icon: CheckCircle2 },
   { value: 'Needs Review', label: 'Needs Review', color: 'text-orange-400', bgColor: 'bg-orange-500/10 border-orange-500/20', icon: Eye },
-  { value: 'Live', label: 'Live', color: 'text-emerald-400', bgColor: 'bg-emerald-500/10 border-emerald-500/20', icon: Radio },
+  { value: 'Live', label: 'Live', color: 'text-[#6dd49a]', bgColor: 'bg-emerald-500/10 border-emerald-500/20', icon: Radio },
   { value: 'Paused', label: 'Paused', color: 'text-rose-400', bgColor: 'bg-rose-500/10 border-rose-500/20', icon: Pause },
 ];
 
@@ -388,14 +388,14 @@ const AdsManager: React.FC<AdsManagerProps> = ({ storagePrefix }) => {
       {/* Confirm Dialog */}
       {confirmState.isOpen && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-[#2f2f2f] border border-[#3a3a3a] rounded-xl w-full max-w-sm shadow-2xl">
+          <div className="bg-[#0d0d0d] border border-[#242424] rounded-none-none w-full max-w-sm shadow-2xl">
             <div className="p-6 text-center">
-              <div className="w-12 h-12 bg-[#3a3a3a] rounded-full flex items-center justify-center mx-auto mb-4"><AlertTriangle size={24} className="text-amber-500" /></div>
-              <h3 className="text-lg font-bold text-[#ECECEC] mb-2">{confirmState.title}</h3>
-              <p className="text-[#9B9B9B] text-sm mb-6">{confirmState.message}</p>
+              <div className="w-12 h-12 bg-[#3a3a3a] rounded-none-full flex items-center justify-center mx-auto mb-4"><AlertTriangle size={24} className="text-amber-500" /></div>
+              <h3 className="text-lg font-bold text-[#f4f4f4] mb-2">{confirmState.title}</h3>
+              <p className="text-[#909090] text-sm mb-6">{confirmState.message}</p>
               <div className="flex gap-3 justify-center">
-                <button onClick={() => setConfirmState(prev => ({ ...prev, isOpen: false }))} className="px-4 py-2 bg-[#3a3a3a] hover:bg-[#3a3a3a] text-[#ECECEC] rounded-lg text-sm font-medium">Cancel</button>
-                <button onClick={handleConfirmAction} className="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-[#ECECEC] rounded-lg text-sm font-medium">Confirm</button>
+                <button onClick={() => setConfirmState(prev => ({ ...prev, isOpen: false }))} className="px-4 py-2 bg-[#3a3a3a] hover:bg-[#3a3a3a] text-[#f4f4f4] rounded-none-none text-sm font-medium">Cancel</button>
+                <button onClick={handleConfirmAction} className="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-[#f4f4f4] rounded-none-none text-sm font-medium">Confirm</button>
               </div>
             </div>
           </div>
@@ -405,38 +405,38 @@ const AdsManager: React.FC<AdsManagerProps> = ({ storagePrefix }) => {
       {/* Edit Modal */}
       {editModalAd && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-[#2f2f2f] border border-[#3a3a3a] rounded-xl w-full max-w-2xl shadow-2xl animate-in zoom-in-95 duration-200">
-            <div className="flex items-center justify-between p-6 border-b border-[#3a3a3a]">
-              <h3 className="text-lg font-bold text-[#ECECEC]">Edit Ad</h3>
-              <button onClick={() => setEditModalAd(null)} className="p-1 text-[#9B9B9B] hover:text-[#ECECEC]"><X size={18} /></button>
+          <div className="bg-[#0d0d0d] border border-[#242424] rounded-none-none w-full max-w-2xl shadow-2xl animate-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between p-6 border-b border-[#242424]">
+              <h3 className="text-lg font-bold text-[#f4f4f4]">Edit Ad</h3>
+              <button onClick={() => setEditModalAd(null)} className="p-1 text-[#909090] hover:text-[#f4f4f4]"><X size={18} /></button>
             </div>
             <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
               <div>
-                <label className="text-xs text-[#9B9B9B] font-medium">Ad Name</label>
+                <label className="text-xs text-[#909090] font-medium">Ad Name</label>
                 <input value={editModalName} onChange={e => setEditModalName(e.target.value)}
-                  className="w-full mt-1 bg-[#3a3a3a] border border-[#3a3a3a] rounded-lg px-4 py-2.5 text-sm text-[#ECECEC] focus:outline-none focus:ring-1 focus:ring-[#555555]" />
+                  className="w-full mt-1 bg-[#3a3a3a] border border-[#242424] rounded-none-none px-4 py-2.5 text-sm text-[#f4f4f4] focus:outline-none focus:ring-1 focus:ring-[#555555]" />
               </div>
               <div>
-                <label className="text-xs text-[#9B9B9B] font-medium">Description</label>
+                <label className="text-xs text-[#909090] font-medium">Description</label>
                 <input value={editModalDesc} onChange={e => setEditModalDesc(e.target.value)} placeholder="Brief description..."
-                  className="w-full mt-1 bg-[#3a3a3a] border border-[#3a3a3a] rounded-lg px-4 py-2.5 text-sm text-[#ECECEC] placeholder-[#666666] focus:outline-none focus:ring-1 focus:ring-[#555555]" />
+                  className="w-full mt-1 bg-[#3a3a3a] border border-[#242424] rounded-none-none px-4 py-2.5 text-sm text-[#f4f4f4] placeholder-[#666666] focus:outline-none focus:ring-1 focus:ring-[#555555]" />
               </div>
               <div>
-                <label className="text-xs text-[#9B9B9B] font-medium">Google Drive Link</label>
+                <label className="text-xs text-[#909090] font-medium">Google Drive Link</label>
                 <input value={editModalDrive} onChange={e => setEditModalDrive(e.target.value)} placeholder="https://drive.google.com/..."
-                  className="w-full mt-1 bg-[#3a3a3a] border border-[#3a3a3a] rounded-lg px-4 py-2.5 text-sm text-[#ECECEC] placeholder-[#666666] focus:outline-none focus:ring-1 focus:ring-[#555555]" />
+                  className="w-full mt-1 bg-[#3a3a3a] border border-[#242424] rounded-none-none px-4 py-2.5 text-sm text-[#f4f4f4] placeholder-[#666666] focus:outline-none focus:ring-1 focus:ring-[#555555]" />
               </div>
               <div>
-                <label className="text-xs text-[#9B9B9B] font-medium">Ad Script</label>
+                <label className="text-xs text-[#909090] font-medium">Ad Script</label>
                 <textarea value={editModalScript} onChange={e => setEditModalScript(e.target.value)}
                   placeholder="Write your ad script here..."
                   rows={12}
-                  className="w-full mt-1 bg-[#3a3a3a] border border-[#3a3a3a] rounded-lg px-4 py-3 text-sm text-[#ECECEC] placeholder-[#666666] focus:outline-none focus:ring-1 focus:ring-[#555555] font-mono leading-relaxed resize-y" />
+                  className="w-full mt-1 bg-[#3a3a3a] border border-[#242424] rounded-none-none px-4 py-3 text-sm text-[#f4f4f4] placeholder-[#666666] focus:outline-none focus:ring-1 focus:ring-[#555555] font-mono leading-relaxed resize-y" />
               </div>
             </div>
-            <div className="flex justify-end gap-3 p-6 border-t border-[#3a3a3a]">
-              <button onClick={() => setEditModalAd(null)} className="px-4 py-2 bg-[#3a3a3a] hover:bg-[#3a3a3a] text-[#b4b4b4] rounded-lg text-sm font-medium">Cancel</button>
-              <button onClick={saveEditModal} className="flex items-center gap-2 px-4 py-2 bg-white hover:bg-[#e5e5e5] text-[#212121] rounded-lg text-sm font-medium"><Save size={14} /> Save</button>
+            <div className="flex justify-end gap-3 p-6 border-t border-[#242424]">
+              <button onClick={() => setEditModalAd(null)} className="px-4 py-2 bg-[#3a3a3a] hover:bg-[#3a3a3a] text-[#b4b4b4] rounded-none-none text-sm font-medium">Cancel</button>
+              <button onClick={saveEditModal} className="flex items-center gap-2 px-4 py-2 bg-white hover:bg-[#e5e5e5] text-[#212121] rounded-none-none text-sm font-medium"><Save size={14} /> Save</button>
             </div>
           </div>
         </div>
@@ -445,9 +445,9 @@ const AdsManager: React.FC<AdsManagerProps> = ({ storagePrefix }) => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-bold text-[#ECECEC]">Ads</h2>
-          <p className="text-sm text-[#9B9B9B]">Manage your ad creatives and production pipeline</p>
-          <p className="text-[#9B9B9B] text-sm">Manage ad creatives and their status.</p>
+          <h2 className="text-xl font-bold text-[#f4f4f4]">Ads</h2>
+          <p className="text-sm text-[#909090]">Manage your ad creatives and production pipeline</p>
+          <p className="text-[#909090] text-sm">Manage ad creatives and their status.</p>
         </div>
         <div />
       </div>
@@ -455,11 +455,11 @@ const AdsManager: React.FC<AdsManagerProps> = ({ storagePrefix }) => {
       {/* Filters row */}
       <div className="flex items-center gap-4 flex-wrap">
         {/* View mode */}
-        <div className="flex bg-[#2f2f2f] rounded-lg border border-[#3a3a3a] p-1">
-          <button onClick={() => setViewMode('library')} className={`flex items-center gap-2 px-4 py-1.5 rounded-md text-sm font-medium transition-none ${viewMode === 'library' ? 'bg-[#3a3a3a] text-[#ECECEC] shadow-sm' : 'text-[#9B9B9B] hover:text-[#ECECEC]'}`}>
+        <div className="flex bg-[#0d0d0d] rounded-none-none border border-[#242424] p-1">
+          <button onClick={() => setViewMode('library')} className={`flex items-center gap-2 px-4 py-1.5 rounded-none-none text-sm font-medium transition-none ${viewMode === 'library' ? 'bg-[#3a3a3a] text-[#f4f4f4] shadow-sm' : 'text-[#909090] hover:text-[#f4f4f4]'}`}>
             <Folder size={16} /> Library
           </button>
-          <button onClick={() => setViewMode('trash')} className={`flex items-center gap-2 px-4 py-1.5 rounded-md text-sm font-medium transition-none ${viewMode === 'trash' ? 'bg-rose-900/20 text-rose-400 shadow-sm' : 'text-[#9B9B9B] hover:text-rose-400 hover:bg-rose-900/10'}`}>
+          <button onClick={() => setViewMode('trash')} className={`flex items-center gap-2 px-4 py-1.5 rounded-none-none text-sm font-medium transition-none ${viewMode === 'trash' ? 'bg-rose-900/20 text-rose-400 shadow-sm' : 'text-[#909090] hover:text-rose-400 hover:bg-rose-900/10'}`}>
             <Trash2 size={16} /> Trash
           </button>
         </div>
@@ -468,31 +468,31 @@ const AdsManager: React.FC<AdsManagerProps> = ({ storagePrefix }) => {
           <>
             {/* Funnel selector */}
             <div className="flex items-center gap-2">
-              <Filter size={14} className="text-[#9B9B9B]" />
+              <Filter size={14} className="text-[#909090]" />
               <select value={selectedFunnelId} onChange={e => setSelectedFunnelId(e.target.value)}
-                className="bg-[#2f2f2f] border border-[#3a3a3a] rounded-lg px-3 py-2 text-sm text-[#ECECEC] focus:outline-none focus:ring-1 focus:ring-[#555555]">
+                className="bg-[#0d0d0d] border border-[#242424] rounded-none-none px-3 py-2 text-sm text-[#f4f4f4] focus:outline-none focus:ring-1 focus:ring-[#555555]">
                 <option value="all">All Funnels</option>
                 {funnels.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
               </select>
             </div>
 
             {/* Marketing / Remarketing tabs */}
-            <div className="flex bg-[#2f2f2f] rounded-lg border border-[#3a3a3a] p-1">
+            <div className="flex bg-[#0d0d0d] rounded-none-none border border-[#242424] p-1">
               <button onClick={() => setAdTypeTab('marketing')}
-                className={`flex items-center gap-1.5 px-4 py-1.5 rounded-md text-sm font-medium transition-none ${adTypeTab === 'marketing' ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20' : 'text-[#9B9B9B] hover:text-[#ECECEC]'}`}>
+                className={`flex items-center gap-1.5 px-4 py-1.5 rounded-none-none text-sm font-medium transition-none ${adTypeTab === 'marketing' ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20' : 'text-[#909090] hover:text-[#f4f4f4]'}`}>
                 <Megaphone size={14} /> Marketing
               </button>
               <button onClick={() => setAdTypeTab('remarketing')}
-                className={`flex items-center gap-1.5 px-4 py-1.5 rounded-md text-sm font-medium transition-none ${adTypeTab === 'remarketing' ? 'bg-orange-500/10 text-orange-400 border border-orange-500/20' : 'text-[#9B9B9B] hover:text-[#ECECEC]'}`}>
+                className={`flex items-center gap-1.5 px-4 py-1.5 rounded-none-none text-sm font-medium transition-none ${adTypeTab === 'remarketing' ? 'bg-orange-500/10 text-orange-400 border border-orange-500/20' : 'text-[#909090] hover:text-[#f4f4f4]'}`}>
                 <Target size={14} /> Remarketing
               </button>
             </div>
 
             <div className="ml-auto flex items-center gap-4">
-              <span className="text-sm text-[#9B9B9B]">{visibleAds.length} ad{visibleAds.length !== 1 ? 's' : ''}</span>
+              <span className="text-sm text-[#909090]">{visibleAds.length} ad{visibleAds.length !== 1 ? 's' : ''}</span>
               <button
                 onClick={handleAddInline}
-                className="flex items-center justify-center gap-2 px-4 py-2 bg-white text-[#212121] rounded-lg text-sm font-semibold hover:bg-[#e5e5e5] transition-none"
+                className="flex items-center justify-center gap-2 px-4 py-2 bg-white text-[#212121] rounded-none-none text-sm font-semibold hover:bg-[#e5e5e5] transition-none"
               >
                 <Plus size={16} />
                 <span>New Ad</span>
@@ -504,11 +504,11 @@ const AdsManager: React.FC<AdsManagerProps> = ({ storagePrefix }) => {
 
       {/* Library Table */}
       {viewMode === 'library' && (
-        <div className="bg-[#2f2f2f] border border-[#3a3a3a] rounded-xl shadow-sm overflow-visible">
+        <div className="bg-[#0d0d0d] border border-[#242424] rounded-none-none shadow-sm overflow-visible">
           <div>
             <table className="w-full text-left">
               <thead>
-                <tr className="bg-[#212121] text-xs uppercase tracking-wider text-[#9B9B9B] font-medium">
+                <tr className="bg-[#000] text-xs uppercase tracking-wider text-[#909090] font-medium">
                   <th className="px-6 py-4 w-8"></th>
                   <th className="px-6 py-4">Ad Name</th>
                   <th className="px-6 py-4">Status</th>
@@ -550,23 +550,23 @@ const AdsManager: React.FC<AdsManagerProps> = ({ storagePrefix }) => {
                         {editingId === ad.id && editField === 'name' ? (
                           <input value={editValue} onChange={e => setEditValue(e.target.value)} onBlur={saveEdit}
                             onKeyDown={e => { if (e.key === 'Enter') saveEdit(); if (e.key === 'Escape') { setEditingId(null); setEditField(null); } }}
-                            className="bg-[#3a3a3a] border border-[#4a4a4a] rounded px-2 py-1 text-sm text-[#ECECEC] focus:outline-none w-full max-w-xs" autoFocus />
+                            className="bg-[#3a3a3a] border border-[#4a4a4a] rounded-none px-2 py-1 text-sm text-[#f4f4f4] focus:outline-none w-full max-w-xs" autoFocus />
                         ) : (
-                          <p className="font-medium text-[#ECECEC] text-sm cursor-text hover:text-[#ECECEC] transition-none"
+                          <p className="font-medium text-[#f4f4f4] text-sm cursor-text hover:text-[#f4f4f4] transition-none"
                             onClick={(e) => { e.stopPropagation(); startEdit(ad.id, 'name', ad.name); }}>{ad.name}</p>
                         )}
-                        {ad.description && <p className="text-xs text-[#9B9B9B] mt-0.5 truncate max-w-xs">{ad.description}</p>}
+                        {ad.description && <p className="text-xs text-[#909090] mt-0.5 truncate max-w-xs">{ad.description}</p>}
                       </td>
 
                       {/* Status dropdown */}
                       <td className="px-6 py-4 relative">
                         <div className="relative inline-block" ref={statusDropdownId === ad.id ? statusDropdownRef : null}>
                           <button onClick={(e) => { e.stopPropagation(); toggleStatusDropdown(ad.id); }}
-                            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border cursor-pointer transition-none ${statusCfg.bgColor} ${statusCfg.color}`}>
+                            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-none-full text-xs font-medium border cursor-pointer transition-none ${statusCfg.bgColor} ${statusCfg.color}`}>
                             <StatusIcon size={12} /> {ad.status === 'Unassigned' ? 'Select status' : ad.status} <ChevronDown size={10} />
                           </button>
                           {statusDropdownId === ad.id && (
-                            <div className="absolute top-full left-0 mt-2 w-40 bg-[#2f2f2f] border border-[#3a3a3a] rounded-xl shadow-2xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-100">
+                            <div className="absolute top-full left-0 mt-2 w-40 bg-[#0d0d0d] border border-[#242424] rounded-none-none shadow-2xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-100">
                               {AD_STATUSES.map(s => {
                                 const SIcon = s.icon;
                                 return (
@@ -575,9 +575,9 @@ const AdsManager: React.FC<AdsManagerProps> = ({ storagePrefix }) => {
                                     className={`w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-[rgba(255,255,255,0.05)] transition-none ${
                                       ad.status === s.value ? 'bg-[rgba(255,255,255,0.05)]' : ''
                                     }`}>
-                                    <div className={`w-1.5 h-1.5 rounded-full ${s.color.replace('text-', 'bg-')}`}></div>
+                                    <div className={`w-1.5 h-1.5 rounded-none-full ${s.color.replace('text-', 'bg-')}`}></div>
                                     <span className={s.color}>{s.label}</span>
-                                    {ad.status === s.value && <Check size={12} className="ml-auto text-[#ECECEC]" />}
+                                    {ad.status === s.value && <Check size={12} className="ml-auto text-[#f4f4f4]" />}
                                   </button>
                                 );
                               })}
@@ -591,28 +591,28 @@ const AdsManager: React.FC<AdsManagerProps> = ({ storagePrefix }) => {
                         {editingId === ad.id && editField === 'driveLink' ? (
                           <input value={editValue} onChange={e => setEditValue(e.target.value)} onBlur={saveEdit}
                             onKeyDown={e => { if (e.key === 'Enter') saveEdit(); if (e.key === 'Escape') { setEditingId(null); setEditField(null); } }}
-                            placeholder="Paste Drive link..." className="bg-[#3a3a3a] border border-[#4a4a4a] rounded px-2 py-1 text-sm text-[#ECECEC] placeholder-[#666666] focus:outline-none w-full max-w-xs" autoFocus />
+                            placeholder="Paste Drive link..." className="bg-[#3a3a3a] border border-[#4a4a4a] rounded-none px-2 py-1 text-sm text-[#f4f4f4] placeholder-[#666666] focus:outline-none w-full max-w-xs" autoFocus />
                         ) : ad.driveLink ? (
                           <div className="flex items-center gap-2">
                             <a href={ad.driveLink} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 text-sm text-blue-400 hover:text-blue-300 transition-none">
                               <Folder size={14} /><span className="truncate max-w-[180px]">Open in Drive</span><ExternalLink size={12} />
                             </a>
-                            <button onClick={() => startEdit(ad.id, 'driveLink', ad.driveLink)} className="text-[#666666] hover:text-[#9B9B9B] opacity-0 group-hover:opacity-100"><FileText size={12} /></button>
+                            <button onClick={() => startEdit(ad.id, 'driveLink', ad.driveLink)} className="text-[#666666] hover:text-[#909090] opacity-0 group-hover:opacity-100"><FileText size={12} /></button>
                           </div>
                         ) : (
-                          <button onClick={() => startEdit(ad.id, 'driveLink', '')} className="text-xs text-[#666666] hover:text-[#9B9B9B]">+ Add Drive link</button>
+                          <button onClick={() => startEdit(ad.id, 'driveLink', '')} className="text-xs text-[#666666] hover:text-[#909090]">+ Add Drive link</button>
                         )}
                       </td>
 
                       {/* Created */}
-                      <td className="px-6 py-4 text-sm text-[#9B9B9B]">
+                      <td className="px-6 py-4 text-sm text-[#909090]">
                         {new Date(ad.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                       </td>
 
                       {/* Actions */}
                       <td className="px-6 py-4 text-right">
                         <div className={`flex items-center gap-2 justify-end ${selectedAdId === ad.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'} transition-opacity`}>
-                          <button onClick={(e) => { e.stopPropagation(); openEditModal(ad); }} className="text-[#9B9B9B] hover:text-[#ECECEC]"><FileText size={16} /></button>
+                          <button onClick={(e) => { e.stopPropagation(); openEditModal(ad); }} className="text-[#909090] hover:text-[#f4f4f4]"><FileText size={16} /></button>
                           <button onClick={(e) => { e.stopPropagation(); requestDelete(ad.id); }} className="text-[#666666] hover:text-rose-400"><Trash2 size={16} /></button>
                         </div>
                       </td>
@@ -622,10 +622,10 @@ const AdsManager: React.FC<AdsManagerProps> = ({ storagePrefix }) => {
                 {visibleAds.length === 0 && (
                   <tr>
                     <td colSpan={6} className="px-6 py-16 text-center">
-                      <div className="flex flex-col items-center gap-3 text-[#9B9B9B]">
+                      <div className="flex flex-col items-center gap-3 text-[#909090]">
                         <Video size={32} className="text-[#666666]" />
                         <p>No ads yet.</p>
-                        <button onClick={handleAddInline} className="text-sm text-[#ECECEC] hover:text-[#ECECEC] font-medium">Create your first ad</button>
+                        <button onClick={handleAddInline} className="text-sm text-[#f4f4f4] hover:text-[#f4f4f4] font-medium">Create your first ad</button>
                       </div>
                     </td>
                   </tr>
@@ -638,29 +638,29 @@ const AdsManager: React.FC<AdsManagerProps> = ({ storagePrefix }) => {
 
       {/* Trash View */}
       {viewMode === 'trash' && (
-        <div className="bg-[#2f2f2f] border border-[#3a3a3a] rounded-xl overflow-hidden shadow-sm">
+        <div className="bg-[#0d0d0d] border border-[#242424] rounded-none-none overflow-hidden shadow-sm">
           {trash.length > 0 && (
-            <div className="p-4 border-b border-[#3a3a3a] flex items-center justify-between">
-              <p className="text-sm text-[#9B9B9B]">{trash.length} item{trash.length !== 1 ? 's' : ''} in trash</p>
+            <div className="p-4 border-b border-[#242424] flex items-center justify-between">
+              <p className="text-sm text-[#909090]">{trash.length} item{trash.length !== 1 ? 's' : ''} in trash</p>
               <button onClick={requestEmptyTrash} className="text-xs text-rose-400 hover:text-rose-300 font-medium flex items-center gap-1"><Ban size={12} /> Empty Trash</button>
             </div>
           )}
           <div className="overflow-x-auto">
             <table className="w-full text-left">
-              <thead><tr className="bg-[#212121] text-xs uppercase tracking-wider text-[#9B9B9B] font-medium">
+              <thead><tr className="bg-[#000] text-xs uppercase tracking-wider text-[#909090] font-medium">
                 <th className="px-6 py-4">Ad Name</th><th className="px-6 py-4">Status</th><th className="px-6 py-4"></th>
               </tr></thead>
               <tbody className="divide-y divide-[#3a3a3a]">
-                {trash.length === 0 && <tr><td colSpan={3} className="px-6 py-12 text-center text-[#9B9B9B] text-sm">Trash is empty</td></tr>}
+                {trash.length === 0 && <tr><td colSpan={3} className="px-6 py-12 text-center text-[#909090] text-sm">Trash is empty</td></tr>}
                 {trash.map(ad => {
                   const sc = getStatusConfig(ad.status);
                   return (
                     <tr key={ad.id} className="group hover:bg-[rgba(255,255,255,0.05)] transition-none">
-                      <td className="px-6 py-4"><p className="font-medium text-[#9B9B9B] text-sm line-through">{ad.name}</p></td>
-                      <td className="px-6 py-4"><span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border opacity-50 ${sc.bgColor} ${sc.color}`}><sc.icon size={12} /> {ad.status}</span></td>
+                      <td className="px-6 py-4"><p className="font-medium text-[#909090] text-sm line-through">{ad.name}</p></td>
+                      <td className="px-6 py-4"><span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-none-full text-xs font-medium border opacity-50 ${sc.bgColor} ${sc.color}`}><sc.icon size={12} /> {ad.status}</span></td>
                       <td className="px-6 py-4 text-right">
                         <div className="flex items-center gap-2 justify-end opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button onClick={() => requestRestore(ad.id)} className="text-xs text-emerald-400 hover:text-emerald-300 flex items-center gap-1"><RefreshCcw size={12} /> Restore</button>
+                          <button onClick={() => requestRestore(ad.id)} className="text-xs text-[#6dd49a] hover:text-[#6dd49a] flex items-center gap-1"><RefreshCcw size={12} /> Restore</button>
                           <button onClick={() => requestDeleteForever(ad.id)} className="text-xs text-rose-400 hover:text-rose-300 flex items-center gap-1"><Trash2 size={12} /> Delete</button>
                         </div>
                       </td>

@@ -22,9 +22,9 @@ interface CalendarEvent {
 // Neutral style matching the app design system
 const EVT = {
   bg: 'bg-[rgba(255,255,255,0.06)]',
-  border: 'border-[#3a3a3a]',
-  text: 'text-[#ECECEC]',
-  sub: 'text-[#888]',
+  border: 'border-[#242424]',
+  text: 'text-[#f4f4f4]',
+  sub: 'text-[#909090]',
   hoverBg: 'hover:bg-[rgba(255,255,255,0.09)]',
 };
 
@@ -442,23 +442,23 @@ const CalendarManager: React.FC<CalendarManagerProps> = ({ storagePrefix }) => {
         {/* Hour lines */}
         {isPanel && HOURS.map(h => (
           <div key={h} className="absolute w-full flex items-start" style={{ top: (h - 6) * HOUR_HEIGHT, height: HOUR_HEIGHT }}>
-            <span className="text-[10px] text-[#444] font-medium w-12 text-right pr-2 pt-0.5 flex-shrink-0">
+            <span className="text-[10px] text-[#3a3a3a] font-medium w-12 text-right pr-2 pt-0.5 flex-shrink-0">
               {h > 12 ? h - 12 : h}{h >= 12 ? 'p' : 'a'}
             </span>
-            <div className="flex-1 border-t border-[#2a2a2a] h-full" />
+            <div className="flex-1 border-t border-[#1a1a1a] h-full" />
           </div>
         ))}
         {!isPanel && HOURS.map(h => (
-          <div key={h} className="border-b border-[#2a2a2a]" style={{ height: HOUR_HEIGHT }} />
+          <div key={h} className="border-b border-[#1a1a1a]" style={{ height: HOUR_HEIGHT }} />
         ))}
 
         {/* Drag-create preview */}
         {showPreview && (
           <div
-            className={`absolute ${isPanel ? 'left-14 right-3' : 'left-1 right-1'} rounded-lg bg-[rgba(255,255,255,0.08)] border border-[#555] border-dashed px-3 py-1 z-20 pointer-events-none`}
+            className={`absolute ${isPanel ? 'left-14 right-3' : 'left-1 right-1'} rounded-none-none bg-[rgba(255,255,255,0.08)] border border-[#555] border-dashed px-3 py-1 z-20 pointer-events-none`}
             style={{ top: previewTop, height: previewH }}
           >
-            <span className="text-[10px] text-[#9B9B9B] font-medium">
+            <span className="text-[10px] text-[#909090] font-medium">
               {formatTime12(minutesToTime(Math.min(dragPreviewStart!, dragPreviewEnd!)))} - {formatTime12(minutesToTime(Math.max(dragPreviewStart!, dragPreviewEnd!)))}
             </span>
           </div>
@@ -478,7 +478,7 @@ const CalendarManager: React.FC<CalendarManagerProps> = ({ storagePrefix }) => {
             <div
               key={ev.id}
               data-event
-              className={`absolute ${isPanel ? 'left-14 right-3' : 'left-1 right-1'} rounded-lg ${EVT.bg} border ${EVT.border} text-left z-10 group ${
+              className={`absolute ${isPanel ? 'left-14 right-3' : 'left-1 right-1'} rounded-none-none ${EVT.bg} border ${EVT.border} text-left z-10 group ${
                 isDraggingThis ? 'opacity-80 shadow-lg' : ''
               } ${isInlineEditing ? '' : `cursor-grab ${EVT.hoverBg}`}`}
               style={{ top: pos.top, height: pos.height }}
@@ -500,7 +500,7 @@ const CalendarManager: React.FC<CalendarManagerProps> = ({ storagePrefix }) => {
               {/* Delete X button — top right corner */}
               {!isInlineEditing && !isDraggingThis && isPanel && !isConfirmingDelete && (
                 <button
-                  className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-[#2a2a2a] border border-[#3a3a3a] flex items-center justify-center text-[#666] hover:text-[#ECECEC] hover:bg-[#333] opacity-0 group-hover:opacity-100 transition-opacity z-40"
+                  className="absolute -top-2 -right-2 w-5 h-5 rounded-none-full bg-[#0d0d0d] border border-[#242424] flex items-center justify-center text-[#5a5a5a] hover:text-[#f4f4f4] hover:bg-[#333] opacity-0 group-hover:opacity-100 transition-opacity z-40"
                   onMouseDown={(e) => e.stopPropagation()}
                   onClick={(e) => {
                     e.stopPropagation();
@@ -513,19 +513,19 @@ const CalendarManager: React.FC<CalendarManagerProps> = ({ storagePrefix }) => {
 
               {/* Delete confirmation — replaces content */}
               {isConfirmingDelete && (
-                <div className="absolute inset-0 rounded-lg bg-[#1e1e1e] z-40 flex items-center justify-center gap-3"
+                <div className="absolute inset-0 rounded-none-none bg-[#0a0a0a] z-40 flex items-center justify-center gap-3"
                   onMouseDown={(e) => e.stopPropagation()}
                 >
-                  <span className="text-[11px] text-[#9B9B9B]">Delete this event?</span>
+                  <span className="text-[11px] text-[#909090]">Delete this event?</span>
                   <button
                     onClick={(e) => { e.stopPropagation(); setEvents(prev => prev.filter(ev2 => ev2.id !== ev.id)); setConfirmDeleteId(null); }}
-                    className="px-2.5 py-1 rounded-md text-[11px] font-medium bg-rose-500/20 text-rose-400 hover:bg-rose-500/30 transition-none"
+                    className="px-2.5 py-1 rounded-none-none text-[11px] font-medium bg-rose-500/20 text-rose-400 hover:bg-rose-500/30 transition-none"
                   >
                     Delete
                   </button>
                   <button
                     onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(null); }}
-                    className="px-2.5 py-1 rounded-md text-[11px] font-medium bg-[rgba(255,255,255,0.08)] text-[#9B9B9B] hover:bg-[rgba(255,255,255,0.12)] transition-none"
+                    className="px-2.5 py-1 rounded-none-none text-[11px] font-medium bg-[rgba(255,255,255,0.08)] text-[#909090] hover:bg-[rgba(255,255,255,0.12)] transition-none"
                   >
                     Cancel
                   </button>
@@ -597,7 +597,7 @@ const CalendarManager: React.FC<CalendarManagerProps> = ({ storagePrefix }) => {
           const top = (minutesSince6 / 60) * HOUR_HEIGHT;
           return (
             <div className={`absolute ${isPanel ? 'left-12' : 'left-0'} right-0 flex items-center z-20 pointer-events-none`} style={{ top }}>
-              <div className="w-2 h-2 rounded-full bg-rose-500 flex-shrink-0" />
+              <div className="w-2 h-2 rounded-none-full bg-rose-500 flex-shrink-0" />
               <div className="flex-1 h-[1.5px] bg-rose-500" />
             </div>
           );
@@ -611,22 +611,22 @@ const CalendarManager: React.FC<CalendarManagerProps> = ({ storagePrefix }) => {
       {/* ── Header ── */}
       <div className="flex items-center justify-between flex-shrink-0">
         <div className="flex items-center gap-4">
-          <h1 className="text-lg font-semibold text-[#ECECEC]">{monthName}</h1>
+          <h1 className="text-lg font-semibold text-[#f4f4f4]">{monthName}</h1>
           <div className="flex items-center gap-1">
-            <button onClick={prevMonth} className="p-1.5 rounded-lg text-[#666] hover:text-[#ECECEC] hover:bg-[rgba(255,255,255,0.05)] transition-none"><ChevronLeft size={16} /></button>
-            <button onClick={nextMonth} className="p-1.5 rounded-lg text-[#666] hover:text-[#ECECEC] hover:bg-[rgba(255,255,255,0.05)] transition-none"><ChevronRight size={16} /></button>
+            <button onClick={prevMonth} className="p-1.5 rounded-none-none text-[#5a5a5a] hover:text-[#f4f4f4] hover:bg-[rgba(255,255,255,0.05)] transition-none"><ChevronLeft size={16} /></button>
+            <button onClick={nextMonth} className="p-1.5 rounded-none-none text-[#5a5a5a] hover:text-[#f4f4f4] hover:bg-[rgba(255,255,255,0.05)] transition-none"><ChevronRight size={16} /></button>
           </div>
-          <button onClick={goToToday} className="px-3 py-1 text-xs font-medium text-[#9B9B9B] hover:text-[#ECECEC] bg-[#2a2a2a] hover:bg-[#333] rounded-lg transition-none">Today</button>
+          <button onClick={goToToday} className="px-3 py-1 text-xs font-medium text-[#909090] hover:text-[#f4f4f4] bg-[#0d0d0d] hover:bg-[#333] rounded-none-none transition-none">Today</button>
         </div>
         <div className="flex items-center gap-3">
-          <div className="flex bg-[#1c1c1c] rounded-lg p-0.5 border border-[#2a2a2a]">
+          <div className="flex bg-[#0a0a0a] rounded-none-none p-0.5 border border-[#1a1a1a]">
             {(['month', 'week'] as const).map(v => (
-              <button key={v} onClick={() => setView(v)} className={`px-3 py-1.5 rounded-md text-xs font-medium transition-none ${view === v ? 'bg-[#2a2a2a] text-[#ECECEC]' : 'text-[#555] hover:text-[#888]'}`}>
+              <button key={v} onClick={() => setView(v)} className={`px-3 py-1.5 rounded-none-none text-xs font-medium transition-none ${view === v ? 'bg-[#0d0d0d] text-[#f4f4f4]' : 'text-[#5a5a5a] hover:text-[#909090]'}`}>
                 {v === 'month' ? 'Month' : 'Week'}
               </button>
             ))}
           </div>
-          <button onClick={() => openNewEvent()} className="flex items-center gap-2 px-3 py-1.5 bg-white text-[#212121] hover:bg-[#e5e5e5] rounded-lg text-xs font-medium transition-none">
+          <button onClick={() => openNewEvent()} className="flex items-center gap-2 px-3 py-1.5 bg-white text-[#212121] hover:bg-[#e5e5e5] rounded-none-none text-xs font-medium transition-none">
             <Plus size={14} /> New Event
           </button>
         </div>
@@ -637,10 +637,10 @@ const CalendarManager: React.FC<CalendarManagerProps> = ({ storagePrefix }) => {
         {/* Left: Calendar Grid */}
         <div className="flex-1 flex flex-col min-h-0">
           {view === 'month' ? (
-            <div className="bg-[#1c1c1c] rounded-2xl border border-[#2a2a2a] flex-1 flex flex-col overflow-hidden">
-              <div className="grid grid-cols-7 border-b border-[#2a2a2a]">
+            <div className="bg-[#0a0a0a] rounded-none-none border border-[#1a1a1a] flex-1 flex flex-col overflow-hidden">
+              <div className="grid grid-cols-7 border-b border-[#1a1a1a]">
                 {DAYS.map(d => (
-                  <div key={d} className="px-2 py-2.5 text-center text-[10px] uppercase tracking-wider text-[#555] font-medium">{d}</div>
+                  <div key={d} className="px-2 py-2.5 text-center text-[10px] uppercase tracking-wider text-[#5a5a5a] font-medium">{d}</div>
                 ))}
               </div>
               <div className="grid grid-cols-7 flex-1 auto-rows-fr">
@@ -650,15 +650,15 @@ const CalendarManager: React.FC<CalendarManagerProps> = ({ storagePrefix }) => {
                   const isSelected = cd.date === selectedDate;
                   return (
                     <button key={i} onClick={() => setSelectedDate(cd.date)}
-                      className={`relative border-b border-r border-[#2a2a2a] p-1.5 text-left transition-none hover:bg-[rgba(255,255,255,0.03)] flex flex-col ${!cd.isCurrentMonth ? 'opacity-30' : ''} ${isSelected ? 'bg-[rgba(255,255,255,0.05)]' : ''}`}>
-                      <span className={`text-xs font-medium w-6 h-6 flex items-center justify-center rounded-full ${isToday ? 'bg-white text-[#212121]' : 'text-[#9B9B9B]'}`}>{cd.day}</span>
+                      className={`relative border-b border-r border-[#1a1a1a] p-1.5 text-left transition-none hover:bg-[rgba(255,255,255,0.03)] flex flex-col ${!cd.isCurrentMonth ? 'opacity-30' : ''} ${isSelected ? 'bg-[rgba(255,255,255,0.05)]' : ''}`}>
+                      <span className={`text-xs font-medium w-6 h-6 flex items-center justify-center rounded-none-full ${isToday ? 'bg-white text-[#212121]' : 'text-[#909090]'}`}>{cd.day}</span>
                       <div className="mt-0.5 space-y-0.5 overflow-hidden flex-1">
                         {dayEvents.slice(0, 3).map(ev => (
-                          <div key={ev.id} className="text-[9px] leading-tight truncate px-1 py-0.5 rounded bg-[rgba(255,255,255,0.06)] text-[#ECECEC] font-medium">
+                          <div key={ev.id} className="text-[9px] leading-tight truncate px-1 py-0.5 rounded-none bg-[rgba(255,255,255,0.06)] text-[#f4f4f4] font-medium">
                             {ev.title || 'Untitled'}
                           </div>
                         ))}
-                        {dayEvents.length > 3 && <div className="text-[9px] text-[#555] px-1">+{dayEvents.length - 3} more</div>}
+                        {dayEvents.length > 3 && <div className="text-[9px] text-[#5a5a5a] px-1">+{dayEvents.length - 3} more</div>}
                       </div>
                     </button>
                   );
@@ -666,16 +666,16 @@ const CalendarManager: React.FC<CalendarManagerProps> = ({ storagePrefix }) => {
               </div>
             </div>
           ) : (
-            <div className="bg-[#1c1c1c] rounded-2xl border border-[#2a2a2a] flex-1 flex flex-col overflow-hidden">
-              <div className="grid grid-cols-[60px_repeat(7,1fr)] border-b border-[#2a2a2a]">
+            <div className="bg-[#0a0a0a] rounded-none-none border border-[#1a1a1a] flex-1 flex flex-col overflow-hidden">
+              <div className="grid grid-cols-[60px_repeat(7,1fr)] border-b border-[#1a1a1a]">
                 <div />
                 {weekDays.map(wd => {
                   const isToday2 = wd.date === today;
                   const isSel = wd.date === selectedDate;
                   return (
                     <button key={wd.date} onClick={() => setSelectedDate(wd.date)} className={`py-2.5 text-center transition-none ${isSel ? 'bg-[rgba(255,255,255,0.05)]' : ''}`}>
-                      <div className="text-[10px] uppercase tracking-wider text-[#555] font-medium">{wd.dayName}</div>
-                      <div className={`text-sm font-semibold mt-0.5 w-7 h-7 mx-auto flex items-center justify-center rounded-full ${isToday2 ? 'bg-white text-[#212121]' : 'text-[#ECECEC]'}`}>{wd.day}</div>
+                      <div className="text-[10px] uppercase tracking-wider text-[#5a5a5a] font-medium">{wd.dayName}</div>
+                      <div className={`text-sm font-semibold mt-0.5 w-7 h-7 mx-auto flex items-center justify-center rounded-none-full ${isToday2 ? 'bg-white text-[#212121]' : 'text-[#f4f4f4]'}`}>{wd.day}</div>
                     </button>
                   );
                 })}
@@ -683,12 +683,12 @@ const CalendarManager: React.FC<CalendarManagerProps> = ({ storagePrefix }) => {
               <div className="flex-1 overflow-y-auto custom-scrollbar">
                 <div className="grid grid-cols-[60px_repeat(7,1fr)] relative" style={{ height: HOURS.length * HOUR_HEIGHT }}>
                   {HOURS.map(h => (
-                    <div key={h} className="col-start-1 border-b border-[#2a2a2a] flex items-start justify-end pr-2 pt-1" style={{ gridRow: `${h - 5}`, height: HOUR_HEIGHT }}>
-                      <span className="text-[10px] text-[#555] font-medium">{h > 12 ? h - 12 : h}{h >= 12 ? 'PM' : 'AM'}</span>
+                    <div key={h} className="col-start-1 border-b border-[#1a1a1a] flex items-start justify-end pr-2 pt-1" style={{ gridRow: `${h - 5}`, height: HOUR_HEIGHT }}>
+                      <span className="text-[10px] text-[#5a5a5a] font-medium">{h > 12 ? h - 12 : h}{h >= 12 ? 'PM' : 'AM'}</span>
                     </div>
                   ))}
                   {weekDays.map((wd, di) => (
-                    <div key={wd.date} className="relative border-l border-[#2a2a2a]" style={{ gridColumn: di + 2, gridRow: '1 / -1' }}>
+                    <div key={wd.date} className="relative border-l border-[#1a1a1a]" style={{ gridColumn: di + 2, gridRow: '1 / -1' }}>
                       {renderTimeline(wd.date, false)}
                     </div>
                   ))}
@@ -700,15 +700,15 @@ const CalendarManager: React.FC<CalendarManagerProps> = ({ storagePrefix }) => {
 
         {/* Right: Daily Schedule Panel */}
         <div className="w-80 flex-shrink-0 flex flex-col min-h-0">
-          <div className="bg-[#1c1c1c] rounded-2xl border border-[#2a2a2a] flex-1 flex flex-col overflow-hidden">
-            <div className="px-4 py-3 border-b border-[#2a2a2a] flex items-center justify-between">
+          <div className="bg-[#0a0a0a] rounded-none-none border border-[#1a1a1a] flex-1 flex flex-col overflow-hidden">
+            <div className="px-4 py-3 border-b border-[#1a1a1a] flex items-center justify-between">
               <div>
-                <h2 className="text-sm font-semibold text-[#ECECEC]">
+                <h2 className="text-sm font-semibold text-[#f4f4f4]">
                   {new Date(selectedDate + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
                 </h2>
-                <p className="text-[10px] text-[#555] mt-0.5">{selectedDayEvents.length} event{selectedDayEvents.length !== 1 ? 's' : ''} · drag to create</p>
+                <p className="text-[10px] text-[#5a5a5a] mt-0.5">{selectedDayEvents.length} event{selectedDayEvents.length !== 1 ? 's' : ''} · drag to create</p>
               </div>
-              <button onClick={() => openNewEvent(selectedDate)} className="p-1.5 rounded-lg text-[#666] hover:text-[#ECECEC] hover:bg-[rgba(255,255,255,0.05)] transition-none" title="Add event">
+              <button onClick={() => openNewEvent(selectedDate)} className="p-1.5 rounded-none-none text-[#5a5a5a] hover:text-[#f4f4f4] hover:bg-[rgba(255,255,255,0.05)] transition-none" title="Add event">
                 <Plus size={16} />
               </button>
             </div>
@@ -717,10 +717,10 @@ const CalendarManager: React.FC<CalendarManagerProps> = ({ storagePrefix }) => {
             </div>
           </div>
           {selectedDayEvents.length === 0 && !dragMode && (
-            <div className="mt-3 bg-[#1c1c1c] rounded-2xl border border-[#2a2a2a] p-6 flex flex-col items-center justify-center text-center">
-              <Clock size={24} className="text-[#444] mb-2" />
-              <p className="text-xs text-[#555]">No events scheduled</p>
-              <p className="text-[10px] text-[#444] mt-1">Click and drag on the timeline</p>
+            <div className="mt-3 bg-[#0a0a0a] rounded-none-none border border-[#1a1a1a] p-6 flex flex-col items-center justify-center text-center">
+              <Clock size={24} className="text-[#3a3a3a] mb-2" />
+              <p className="text-xs text-[#5a5a5a]">No events scheduled</p>
+              <p className="text-[10px] text-[#3a3a3a] mt-1">Click and drag on the timeline</p>
             </div>
           )}
         </div>
@@ -729,36 +729,36 @@ const CalendarManager: React.FC<CalendarManagerProps> = ({ storagePrefix }) => {
       {/* ── Event Modal ── */}
       {modalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 animate-in fade-in duration-200" onClick={() => setModalOpen(false)}>
-          <div className="bg-[#1e1e1e] border border-[#2a2a2a] rounded-xl w-full max-w-md overflow-hidden" onClick={e => e.stopPropagation()}>
-            <div className="p-5 border-b border-[#2a2a2a] flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-[#ECECEC]">{editingEvent ? 'Edit Event' : 'New Event'}</h3>
-              <button onClick={() => setModalOpen(false)} className="p-1 text-[#666] hover:text-[#ECECEC] transition-none"><X size={16} /></button>
+          <div className="bg-[#0a0a0a] border border-[#1a1a1a] rounded-none-none w-full max-w-md overflow-hidden" onClick={e => e.stopPropagation()}>
+            <div className="p-5 border-b border-[#1a1a1a] flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-[#f4f4f4]">{editingEvent ? 'Edit Event' : 'New Event'}</h3>
+              <button onClick={() => setModalOpen(false)} className="p-1 text-[#5a5a5a] hover:text-[#f4f4f4] transition-none"><X size={16} /></button>
             </div>
             <div className="p-5 space-y-4">
               <div>
-                <label className="text-[10px] uppercase tracking-wider text-[#555] font-medium">Event name</label>
+                <label className="text-[10px] uppercase tracking-wider text-[#5a5a5a] font-medium">Event name</label>
                 <input value={formTitle} onChange={e => setFormTitle(e.target.value)} placeholder="e.g. Client call, Team standup..."
-                  className="w-full mt-1 bg-[#2a2a2a] border border-[#3a3a3a] rounded-lg px-3 py-2.5 text-sm text-[#ECECEC] placeholder-[#555] focus:outline-none focus:ring-1 focus:ring-[#555]" autoFocus />
+                  className="w-full mt-1 bg-[#0d0d0d] border border-[#242424] rounded-none-none px-3 py-2.5 text-sm text-[#f4f4f4] placeholder-[#555] focus:outline-none focus:ring-1 focus:ring-[#555]" autoFocus />
               </div>
               <div>
-                <label className="text-[10px] uppercase tracking-wider text-[#555] font-medium">Date</label>
+                <label className="text-[10px] uppercase tracking-wider text-[#5a5a5a] font-medium">Date</label>
                 <input type="date" value={formDate} onChange={e => setFormDate(e.target.value)}
-                  className="w-full mt-1 bg-[#2a2a2a] border border-[#3a3a3a] rounded-lg px-3 py-2.5 text-sm text-[#ECECEC] focus:outline-none focus:ring-1 focus:ring-[#555] [color-scheme:dark]" />
+                  className="w-full mt-1 bg-[#0d0d0d] border border-[#242424] rounded-none-none px-3 py-2.5 text-sm text-[#f4f4f4] focus:outline-none focus:ring-1 focus:ring-[#555] [color-scheme:dark]" />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-[10px] uppercase tracking-wider text-[#555] font-medium">Start</label>
+                  <label className="text-[10px] uppercase tracking-wider text-[#5a5a5a] font-medium">Start</label>
                   <input type="time" value={formStart} onChange={e => setFormStart(e.target.value)}
-                    className="w-full mt-1 bg-[#2a2a2a] border border-[#3a3a3a] rounded-lg px-3 py-2.5 text-sm text-[#ECECEC] focus:outline-none focus:ring-1 focus:ring-[#555] [color-scheme:dark]" />
+                    className="w-full mt-1 bg-[#0d0d0d] border border-[#242424] rounded-none-none px-3 py-2.5 text-sm text-[#f4f4f4] focus:outline-none focus:ring-1 focus:ring-[#555] [color-scheme:dark]" />
                 </div>
                 <div>
-                  <label className="text-[10px] uppercase tracking-wider text-[#555] font-medium">End</label>
+                  <label className="text-[10px] uppercase tracking-wider text-[#5a5a5a] font-medium">End</label>
                   <input type="time" value={formEnd} onChange={e => setFormEnd(e.target.value)}
-                    className="w-full mt-1 bg-[#2a2a2a] border border-[#3a3a3a] rounded-lg px-3 py-2.5 text-sm text-[#ECECEC] focus:outline-none focus:ring-1 focus:ring-[#555] [color-scheme:dark]" />
+                    className="w-full mt-1 bg-[#0d0d0d] border border-[#242424] rounded-none-none px-3 py-2.5 text-sm text-[#f4f4f4] focus:outline-none focus:ring-1 focus:ring-[#555] [color-scheme:dark]" />
                 </div>
               </div>
               <div>
-                <label className="text-[10px] uppercase tracking-wider text-[#555] font-medium">Sub-tasks</label>
+                <label className="text-[10px] uppercase tracking-wider text-[#5a5a5a] font-medium">Sub-tasks</label>
                 <div className="mt-1 space-y-1">
                   {(() => {
                     const lines = formDesc ? formDesc.split('\n').filter(l => l.trim()) : [];
@@ -817,7 +817,7 @@ const CalendarManager: React.FC<CalendarManagerProps> = ({ storagePrefix }) => {
                                   updateDesc(updated.join('\n'));
                                 }
                               }}
-                              className="flex-shrink-0 w-4 h-4 rounded border flex items-center justify-center transition-all"
+                              className="flex-shrink-0 w-4 h-4 rounded-none border flex items-center justify-center transition-all"
                               style={{
                                 borderColor: done ? '#10b981' : failed ? '#ef4444' : '#555',
                                 background: done ? '#10b981' : failed ? '#ef4444' : 'transparent',
@@ -842,7 +842,7 @@ const CalendarManager: React.FC<CalendarManagerProps> = ({ storagePrefix }) => {
                                 if (failReasonIdx === i) setFailReasonIdx(null);
                                 updateDesc(updated.join('\n'));
                               }}
-                              className="opacity-0 group-hover:opacity-100 text-[#555] hover:text-rose-400 transition-opacity"
+                              className="opacity-0 group-hover:opacity-100 text-[#5a5a5a] hover:text-rose-400 transition-opacity"
                             >
                               <X size={12} />
                             </button>
@@ -863,7 +863,7 @@ const CalendarManager: React.FC<CalendarManagerProps> = ({ storagePrefix }) => {
                               type="text"
                               defaultValue={reason || ''}
                               placeholder="Why couldn't you do it?"
-                              className="ml-6 mt-1 w-[calc(100%-1.5rem)] bg-[#2a2a2a] border border-[#ef4444]/30 rounded px-2 py-1 text-[11px] text-[#ef4444] placeholder-[#ef4444]/40 focus:outline-none focus:border-[#ef4444]/60"
+                              className="ml-6 mt-1 w-[calc(100%-1.5rem)] bg-[#0d0d0d] border border-[#ef4444]/30 rounded-none px-2 py-1 text-[11px] text-[#ef4444] placeholder-[#ef4444]/40 focus:outline-none focus:border-[#ef4444]/60"
                               onKeyDown={e => {
                                 if (e.key === 'Enter') {
                                   const val = (e.target as HTMLInputElement).value.trim();
@@ -889,13 +889,13 @@ const CalendarManager: React.FC<CalendarManagerProps> = ({ storagePrefix }) => {
                     });
                   })()}
                   <div className="flex items-center gap-2 mt-1">
-                    <div className="flex-shrink-0 w-4 h-4 rounded border border-[#3a3a3a] flex items-center justify-center">
-                      <Plus size={10} className="text-[#555]" />
+                    <div className="flex-shrink-0 w-4 h-4 rounded-none border border-[#242424] flex items-center justify-center">
+                      <Plus size={10} className="text-[#5a5a5a]" />
                     </div>
                     <input
                       type="text"
                       placeholder="Add a sub-task..."
-                      className="flex-1 bg-transparent border-none text-sm text-[#ECECEC] placeholder-[#444] focus:outline-none"
+                      className="flex-1 bg-transparent border-none text-sm text-[#f4f4f4] placeholder-[#444] focus:outline-none"
                       onKeyDown={e => {
                         if (e.key === 'Enter' && (e.target as HTMLInputElement).value.trim()) {
                           const val = (e.target as HTMLInputElement).value.trim();
@@ -915,7 +915,7 @@ const CalendarManager: React.FC<CalendarManagerProps> = ({ storagePrefix }) => {
                 </div>
               </div>
             </div>
-            <div className="flex items-center justify-between p-4 border-t border-[#2a2a2a]">
+            <div className="flex items-center justify-between p-4 border-t border-[#1a1a1a]">
               <div>
                 {editingEvent && (
                   <button onClick={() => deleteEvent(editingEvent.id)} className="flex items-center gap-1.5 text-xs text-rose-400 hover:text-rose-300 transition-none">
@@ -924,9 +924,9 @@ const CalendarManager: React.FC<CalendarManagerProps> = ({ storagePrefix }) => {
                 )}
               </div>
               <div className="flex gap-3">
-                <button onClick={() => setModalOpen(false)} className="px-4 py-2 bg-[#2a2a2a] hover:bg-[#333] text-[#ECECEC] rounded-lg text-sm font-medium transition-none">Cancel</button>
+                <button onClick={() => setModalOpen(false)} className="px-4 py-2 bg-[#0d0d0d] hover:bg-[#333] text-[#f4f4f4] rounded-none-none text-sm font-medium transition-none">Cancel</button>
                 <button onClick={saveEvent} disabled={!formTitle.trim()}
-                  className="px-4 py-2 bg-white hover:bg-[#e5e5e5] text-[#212121] rounded-lg text-sm font-medium transition-none disabled:opacity-40 disabled:cursor-not-allowed">
+                  className="px-4 py-2 bg-white hover:bg-[#e5e5e5] text-[#212121] rounded-none-none text-sm font-medium transition-none disabled:opacity-40 disabled:cursor-not-allowed">
                   {editingEvent ? 'Save Changes' : 'Create Event'}
                 </button>
               </div>

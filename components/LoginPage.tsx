@@ -6,6 +6,29 @@ interface LoginPageProps {
   onSignUp: (email: string, password: string) => Promise<{ error: string | null }>;
 }
 
+const inputStyle: React.CSSProperties = {
+  width: '100%',
+  background: '#0a0a0a',
+  border: '1px solid var(--au-line-2)',
+  borderRadius: 0,
+  padding: '11px 14px',
+  fontSize: 13,
+  color: 'var(--au-text)',
+  outline: 'none',
+  boxSizing: 'border-box',
+  transition: 'border-color 0.12s',
+  fontFamily: 'Inter, sans-serif',
+};
+
+const labelStyle: React.CSSProperties = {
+  display: 'block',
+  fontFamily: 'JetBrains Mono, monospace',
+  fontSize: 10, color: 'var(--au-text-3)',
+  marginBottom: 8,
+  letterSpacing: '0.18em', textTransform: 'uppercase',
+  fontWeight: 500,
+};
+
 const LoginPage: React.FC<LoginPageProps> = ({ onSignIn, onSignUp }) => {
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState('');
@@ -26,12 +49,10 @@ const LoginPage: React.FC<LoginPageProps> = ({ onSignIn, onSignUp }) => {
       setError('Please fill in all fields');
       return;
     }
-
     if (isSignUp && password !== confirmPassword) {
       setError('Passwords do not match');
       return;
     }
-
     if (password.length < 6) {
       setError('Password must be at least 6 characters');
       return;
@@ -44,16 +65,14 @@ const LoginPage: React.FC<LoginPageProps> = ({ onSignIn, onSignUp }) => {
         if (result.error) {
           setError(result.error);
         } else {
-          setSuccess('Account created! Check your email for a confirmation link.');
+          setSuccess('Account created. Check your email for a confirmation link.');
           setIsSignUp(false);
           setPassword('');
           setConfirmPassword('');
         }
       } else {
         const result = await onSignIn(email, password);
-        if (result.error) {
-          setError(result.error);
-        }
+        if (result.error) setError(result.error);
       }
     } catch {
       setError('An unexpected error occurred');
@@ -74,304 +93,200 @@ const LoginPage: React.FC<LoginPageProps> = ({ onSignIn, onSignUp }) => {
     <div
       style={{
         minHeight: '100vh',
-        background: '#131313',
+        background: '#000',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        fontFamily: "'Plus Jakarta Sans', sans-serif",
+        fontFamily: 'Inter, sans-serif',
         padding: 24,
+        position: 'relative',
       }}
     >
-      <div
-        style={{
-          width: '100%',
-          maxWidth: 420,
-          background: '#1c1c1c',
-          borderRadius: 20,
-          border: '1px solid #2a2a2a',
-          padding: 40,
-        }}
-      >
-        {/* Logo + Brand */}
-        <div style={{ textAlign: 'center', marginBottom: 36 }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, marginBottom: 8 }}>
-            <img
-              src="/aureum-logo.svg"
-              alt="Aureum Logo"
-              style={{ width: 36, height: 36 }}
-            />
+      {/* Index marker top-left */}
+      <div className="au-eyebrow" style={{ position: 'absolute', top: 24, left: 28 }}>
+        — File / 001 · Access · Auth
+      </div>
+      {/* Date marker top-right */}
+      <div className="au-eyebrow" style={{ position: 'absolute', top: 24, right: 28, color: 'var(--au-text-4)' }}>
+        {new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }).toUpperCase()}
+      </div>
+
+      <div style={{ width: '100%', maxWidth: 440, border: '1px solid var(--au-line)', background: 'transparent' }}>
+        {/* Brand row */}
+        <div style={{ padding: '32px 36px 24px', borderBottom: '1px solid var(--au-line)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
+            <img src="/aureum-logo.svg" alt="" style={{ width: 22, height: 22, objectFit: 'contain' }} />
+            <span style={{ fontWeight: 600, fontSize: 14, letterSpacing: '0.04em', textTransform: 'uppercase', color: 'var(--au-text)' }}>Aureum</span>
             <span
               style={{
-                fontFamily: "'Cormorant Garamond', serif",
-                fontStyle: 'italic',
-                fontWeight: 700,
-                fontSize: 28,
-                color: '#ECECEC',
-                letterSpacing: '0.02em',
+                marginLeft: 'auto',
+                minWidth: 18, height: 18,
+                background: 'transparent',
+                border: '1px solid var(--au-line-2)',
+                display: 'grid', placeItems: 'center',
+                color: 'var(--au-text-2)',
+                fontSize: 10,
+                fontFamily: 'JetBrains Mono, monospace',
               }}
             >
-              Aureum
+              {isSignUp ? '02' : '01'}
             </span>
           </div>
-          <p style={{ color: '#9B9B9B', fontSize: 14, margin: 0 }}>
-            {isSignUp ? 'Create your account' : 'Sign in to your account'}
-          </p>
+          <div className="au-eyebrow" style={{ marginBottom: 6 }}>— {isSignUp ? 'New account' : 'Returning'}</div>
+          <h1 style={{ margin: 0, fontSize: 26, fontWeight: 600, letterSpacing: '-0.02em', color: 'var(--au-text)', lineHeight: 1.1 }}>
+            {isSignUp ? 'Create your account.' : 'Welcome back.'}
+          </h1>
         </div>
 
-        {/* Error / Success Messages */}
-        {error && (
-          <div
-            style={{
-              background: 'rgba(239, 68, 68, 0.1)',
-              border: '1px solid rgba(239, 68, 68, 0.25)',
-              borderRadius: 12,
-              padding: '12px 16px',
-              marginBottom: 20,
-              fontSize: 13,
-              color: '#f87171',
-              lineHeight: 1.5,
-            }}
-          >
-            {error}
-          </div>
-        )}
-        {success && (
-          <div
-            style={{
-              background: 'rgba(52, 211, 153, 0.1)',
-              border: '1px solid rgba(52, 211, 153, 0.25)',
-              borderRadius: 12,
-              padding: '12px 16px',
-              marginBottom: 20,
-              fontSize: 13,
-              color: '#34d399',
-              lineHeight: 1.5,
-            }}
-          >
-            {success}
-          </div>
-        )}
-
-        {/* Form */}
-        <form onSubmit={handleSubmit}>
-          {/* Email */}
-          <div style={{ marginBottom: 16 }}>
-            <label
+        {/* Body */}
+        <div style={{ padding: '24px 36px 32px' }}>
+          {error && (
+            <div
               style={{
-                display: 'block',
+                background: 'transparent',
+                border: '1px solid rgba(212,109,109,0.4)',
+                padding: '10px 14px',
+                marginBottom: 18,
                 fontSize: 12,
-                fontWeight: 600,
-                color: '#9B9B9B',
-                marginBottom: 6,
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em',
+                color: 'var(--au-bad)',
+                fontFamily: 'JetBrains Mono, monospace',
+                letterSpacing: '0.04em',
               }}
             >
-              Email
-            </label>
-            <input
-              type="email"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              placeholder="you@example.com"
-              autoComplete="email"
-              style={{
-                width: '100%',
-                background: '#161616',
-                border: '1px solid #2a2a2a',
-                borderRadius: 12,
-                padding: '12px 16px',
-                fontSize: 14,
-                color: '#ECECEC',
-                outline: 'none',
-                boxSizing: 'border-box',
-                transition: 'border-color 0.15s',
-              }}
-              onFocus={e => (e.target.style.borderColor = '#555')}
-              onBlur={e => (e.target.style.borderColor = '#2a2a2a')}
-            />
-          </div>
-
-          {/* Password */}
-          <div style={{ marginBottom: isSignUp ? 16 : 24 }}>
-            <label
-              style={{
-                display: 'block',
-                fontSize: 12,
-                fontWeight: 600,
-                color: '#9B9B9B',
-                marginBottom: 6,
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em',
-              }}
-            >
-              Password
-            </label>
-            <div style={{ position: 'relative' }}>
-              <input
-                type={showPassword ? 'text' : 'password'}
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                placeholder="Enter your password"
-                autoComplete={isSignUp ? 'new-password' : 'current-password'}
-                style={{
-                  width: '100%',
-                  background: '#161616',
-                  border: '1px solid #2a2a2a',
-                  borderRadius: 12,
-                  padding: '12px 16px',
-                  paddingRight: 44,
-                  fontSize: 14,
-                  color: '#ECECEC',
-                  outline: 'none',
-                  boxSizing: 'border-box',
-                  transition: 'border-color 0.15s',
-                }}
-                onFocus={e => (e.target.style.borderColor = '#555')}
-                onBlur={e => (e.target.style.borderColor = '#2a2a2a')}
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                style={{
-                  position: 'absolute',
-                  right: 12,
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  background: 'none',
-                  border: 'none',
-                  padding: 4,
-                  cursor: 'pointer',
-                  color: '#555',
-                  display: 'flex',
-                  alignItems: 'center',
-                }}
-              >
-                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-              </button>
+              {error}
             </div>
-          </div>
-
-          {/* Confirm Password (Sign Up only) */}
-          {isSignUp && (
-            <div style={{ marginBottom: 24 }}>
-              <label
-                style={{
-                  display: 'block',
-                  fontSize: 12,
-                  fontWeight: 600,
-                  color: '#9B9B9B',
-                  marginBottom: 6,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.05em',
-                }}
-              >
-                Confirm Password
-              </label>
-              <div style={{ position: 'relative' }}>
-                <input
-                  type={showConfirm ? 'text' : 'password'}
-                  value={confirmPassword}
-                  onChange={e => setConfirmPassword(e.target.value)}
-                  placeholder="Confirm your password"
-                  autoComplete="new-password"
-                  style={{
-                    width: '100%',
-                    background: '#161616',
-                    border: '1px solid #2a2a2a',
-                    borderRadius: 12,
-                    padding: '12px 16px',
-                    paddingRight: 44,
-                    fontSize: 14,
-                    color: '#ECECEC',
-                    outline: 'none',
-                    boxSizing: 'border-box',
-                    transition: 'border-color 0.15s',
-                  }}
-                  onFocus={e => (e.target.style.borderColor = '#555')}
-                  onBlur={e => (e.target.style.borderColor = '#2a2a2a')}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowConfirm(!showConfirm)}
-                  style={{
-                    position: 'absolute',
-                    right: 12,
-                    top: '50%',
-                    transform: 'translateY(-50%)',
-                    background: 'none',
-                    border: 'none',
-                    padding: 4,
-                    cursor: 'pointer',
-                    color: '#555',
-                    display: 'flex',
-                    alignItems: 'center',
-                  }}
-                >
-                  {showConfirm ? <EyeOff size={16} /> : <Eye size={16} />}
-                </button>
-              </div>
+          )}
+          {success && (
+            <div
+              style={{
+                background: 'transparent',
+                border: '1px solid rgba(109,212,154,0.4)',
+                padding: '10px 14px',
+                marginBottom: 18,
+                fontSize: 12,
+                color: 'var(--au-good)',
+                fontFamily: 'JetBrains Mono, monospace',
+                letterSpacing: '0.04em',
+              }}
+            >
+              {success}
             </div>
           )}
 
-          {/* Submit Button */}
-          <button
-            type="submit"
-            disabled={loading}
-            style={{
-              width: '100%',
-              padding: '13px 24px',
-              background: '#ECECEC',
-              color: '#131313',
-              border: 'none',
-              borderRadius: 12,
-              fontSize: 14,
-              fontWeight: 700,
-              cursor: loading ? 'not-allowed' : 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 8,
-              opacity: loading ? 0.7 : 1,
-              fontFamily: "'Plus Jakarta Sans', sans-serif",
-            }}
-          >
-            {loading && <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} />}
-            {isSignUp ? 'Create Account' : 'Sign In'}
-          </button>
-        </form>
+          <form onSubmit={handleSubmit}>
+            <div style={{ marginBottom: 16 }}>
+              <label style={labelStyle}>— Email</label>
+              <input
+                type="email"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                placeholder="you@example.com"
+                autoComplete="email"
+                style={inputStyle}
+                onFocus={e => (e.target.style.borderColor = 'var(--au-text-3)')}
+                onBlur={e => (e.target.style.borderColor = 'var(--au-line-2)')}
+              />
+            </div>
 
-        {/* Toggle Mode */}
-        <div style={{ textAlign: 'center', marginTop: 24 }}>
-          <span style={{ color: '#555', fontSize: 13 }}>
-            {isSignUp ? 'Already have an account? ' : "Don't have an account? "}
-          </span>
-          <button
-            type="button"
-            onClick={toggleMode}
-            style={{
-              background: 'none',
-              border: 'none',
-              color: '#ECECEC',
-              fontSize: 13,
-              fontWeight: 600,
-              cursor: 'pointer',
-              padding: 0,
-              fontFamily: "'Plus Jakarta Sans', sans-serif",
-            }}
-          >
-            {isSignUp ? 'Sign In' : 'Sign Up'}
-          </button>
+            <div style={{ marginBottom: isSignUp ? 16 : 22 }}>
+              <label style={labelStyle}>— Password</label>
+              <div style={{ position: 'relative' }}>
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  autoComplete={isSignUp ? 'new-password' : 'current-password'}
+                  style={{ ...inputStyle, paddingRight: 40 }}
+                  onFocus={e => (e.target.style.borderColor = 'var(--au-text-3)')}
+                  onBlur={e => (e.target.style.borderColor = 'var(--au-line-2)')}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  style={{
+                    position: 'absolute',
+                    right: 10,
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    background: 'none', border: 'none', padding: 4, cursor: 'pointer',
+                    color: 'var(--au-text-3)', display: 'flex', alignItems: 'center',
+                  }}
+                >
+                  {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
+                </button>
+              </div>
+            </div>
+
+            {isSignUp && (
+              <div style={{ marginBottom: 22 }}>
+                <label style={labelStyle}>— Confirm</label>
+                <div style={{ position: 'relative' }}>
+                  <input
+                    type={showConfirm ? 'text' : 'password'}
+                    value={confirmPassword}
+                    onChange={e => setConfirmPassword(e.target.value)}
+                    placeholder="••••••••"
+                    autoComplete="new-password"
+                    style={{ ...inputStyle, paddingRight: 40 }}
+                    onFocus={e => (e.target.style.borderColor = 'var(--au-text-3)')}
+                    onBlur={e => (e.target.style.borderColor = 'var(--au-line-2)')}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirm(!showConfirm)}
+                    style={{
+                      position: 'absolute',
+                      right: 10,
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      background: 'none', border: 'none', padding: 4, cursor: 'pointer',
+                      color: 'var(--au-text-3)', display: 'flex', alignItems: 'center',
+                    }}
+                  >
+                    {showConfirm ? <EyeOff size={14} /> : <Eye size={14} />}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="au-btn-primary"
+              style={{
+                width: '100%',
+                padding: '12px 16px',
+                justifyContent: 'center',
+                opacity: loading ? 0.7 : 1,
+                cursor: loading ? 'not-allowed' : 'pointer',
+              }}
+            >
+              {loading && <Loader2 size={12} style={{ animation: 'spin 1s linear infinite' }} />}
+              {isSignUp ? 'Create account' : 'Sign in'}
+            </button>
+          </form>
+
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8, marginTop: 22, fontFamily: 'JetBrains Mono, monospace', fontSize: 10, color: 'var(--au-text-3)', letterSpacing: '0.14em', textTransform: 'uppercase' }}>
+            <span>{isSignUp ? 'Have an account?' : 'New here?'}</span>
+            <button
+              type="button"
+              onClick={toggleMode}
+              style={{
+                background: 'none', border: 'none', padding: 0, cursor: 'pointer',
+                color: 'var(--au-text)',
+                fontFamily: 'JetBrains Mono, monospace',
+                fontSize: 10, fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase',
+                textDecoration: 'underline', textUnderlineOffset: 3,
+              }}
+            >
+              {isSignUp ? 'Sign in' : 'Sign up'}
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Spinner keyframes */}
-      <style>{`
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-      `}</style>
+      <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
     </div>
   );
 };

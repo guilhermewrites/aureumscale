@@ -195,7 +195,7 @@ const ContentRow: React.FC<ContentRowProps> = ({ item, onUpdate, onDelete, onDem
         return { color: 'text-pink-400', bg: 'bg-pink-500/10', border: 'border-pink-500/20', dot: 'bg-pink-400' };
       // Instagram styles
       case InstagramStyle.MOVING_CHAIR:
-        return { color: 'text-amber-400', bg: 'bg-amber-500/10', border: 'border-amber-500/20', dot: 'bg-amber-400' };
+        return { color: 'text-[#e0c870]', bg: 'bg-amber-500/10', border: 'border-amber-500/20', dot: 'bg-amber-400' };
       case InstagramStyle.TALKING_HEAD:
         return { color: 'text-rose-400', bg: 'bg-rose-500/10', border: 'border-rose-500/20', dot: 'bg-rose-400' };
       case InstagramStyle.FACE_BACKGROUND:
@@ -264,9 +264,9 @@ const ContentRow: React.FC<ContentRowProps> = ({ item, onUpdate, onDelete, onDem
       case ContentStatus.SENT:
         return { icon: Send, color: 'text-purple-400', bg: 'bg-purple-500/10', border: 'border-purple-500/20' };
       case ContentStatus.REJECTED:
-        return { icon: XCircle, color: 'text-red-400', bg: 'bg-red-500/10', border: 'border-red-500/20' };
+        return { icon: XCircle, color: 'text-[#d46d6d]', bg: 'bg-red-500/10', border: 'border-red-500/20' };
       case ContentStatus.DONE:
-        return { icon: CheckCircle2, color: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20' };
+        return { icon: CheckCircle2, color: 'text-[#6dd49a]', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20' };
       case ContentStatus.LIVE:
         return { icon: Radio, color: 'text-rose-400', bg: 'bg-rose-500/10', border: 'border-rose-500/20' };
     }
@@ -278,13 +278,13 @@ const ContentRow: React.FC<ContentRowProps> = ({ item, onUpdate, onDelete, onDem
   const getPlatformIcon = () => {
     switch (item.platform) {
       case Platform.YOUTUBE:
-        return <Youtube size={16} className="text-[#9B9B9B]" />;
+        return <Youtube size={16} className="text-[#909090]" />;
       case Platform.INSTAGRAM:
-        return <Instagram size={16} className="text-[#9B9B9B]" />;
+        return <Instagram size={16} className="text-[#909090]" />;
       case Platform.TIKTOK:
-        return <span className="text-xs font-bold text-[#9B9B9B]">TT</span>;
+        return <span className="text-xs font-bold text-[#909090]">TT</span>;
       case Platform.LINKEDIN:
-        return <span className="text-xs font-bold text-[#9B9B9B]">in</span>;
+        return <span className="text-xs font-bold text-[#909090]">in</span>;
       default:
         return null;
     }
@@ -346,7 +346,7 @@ const ContentRow: React.FC<ContentRowProps> = ({ item, onUpdate, onDelete, onDem
         <div className="flex items-start gap-3">
           {/* Drag handle */}
           {onDragStart && (
-            <div className="flex-shrink-0 cursor-grab active:cursor-grabbing text-[#666666] hover:text-[#9B9B9B] mt-1 opacity-0 group-hover:opacity-100 transition-opacity">
+            <div className="flex-shrink-0 cursor-grab active:cursor-grabbing text-[#666666] hover:text-[#909090] mt-1 opacity-0 group-hover:opacity-100 transition-opacity">
               <GripVertical size={14} />
             </div>
           )}
@@ -356,14 +356,14 @@ const ContentRow: React.FC<ContentRowProps> = ({ item, onUpdate, onDelete, onDem
               <img 
                 src={item.thumbnailUrl} 
                 alt={item.title}
-                className="w-28 h-16 object-cover rounded-lg border border-[#3a3a3a]"
+                className="w-28 h-16 object-cover rounded-none-none border border-[#242424]"
               />
               <button
                 onClick={() => {
                   setTempThumbnail(item.thumbnailUrl || '');
                   setEditingField('thumbnail');
                 }}
-                className="absolute inset-0 bg-black/50 opacity-0 group-hover/thumb:opacity-100 transition-opacity rounded-lg flex items-center justify-center"
+                className="absolute inset-0 bg-black/50 opacity-0 group-hover/thumb:opacity-100 transition-opacity rounded-none-none flex items-center justify-center"
               >
                 <Image size={16} className="text-white" />
               </button>
@@ -392,7 +392,7 @@ const ContentRow: React.FC<ContentRowProps> = ({ item, onUpdate, onDelete, onDem
                     }
                   }}
                   autoFocus
-                  className="flex-1 bg-[#2f2f2f] border border-[#4a4a4a] rounded px-2 py-1 text-sm text-[#ECECEC] focus:outline-none"
+                  className="flex-1 bg-[#0d0d0d] border border-[#4a4a4a] rounded-none px-2 py-1 text-sm text-[#f4f4f4] focus:outline-none"
                 />
               ) : (
                 <span
@@ -400,7 +400,7 @@ const ContentRow: React.FC<ContentRowProps> = ({ item, onUpdate, onDelete, onDem
                         setTempTitle(item.title);
                         setEditingField('title');
                     }}
-                    className="font-medium text-[#ECECEC] text-sm block truncate max-w-xs cursor-pointer hover:text-[#ECECEC] border border-transparent hover:border-[#4a4a4a] rounded px-2 py-1 transition-none"
+                    className="font-medium text-[#f4f4f4] text-sm block truncate max-w-xs cursor-pointer hover:text-[#f4f4f4] border border-transparent hover:border-[#4a4a4a] rounded-none px-2 py-1 transition-none"
                     title="Click to edit title"
                 >
                     {item.title}
@@ -409,7 +409,7 @@ const ContentRow: React.FC<ContentRowProps> = ({ item, onUpdate, onDelete, onDem
             </div>
             
             {item.description && (
-                <span className="text-[10px] text-[#9B9B9B] pl-7 block truncate max-w-xs mt-0.5">{item.description}</span>
+                <span className="text-[10px] text-[#909090] pl-7 block truncate max-w-xs mt-0.5">{item.description}</span>
             )}
             
             {/* YouTube URL */}
@@ -429,9 +429,9 @@ const ContentRow: React.FC<ContentRowProps> = ({ item, onUpdate, onDelete, onDem
                   }}
                   placeholder="https://youtube.com/..."
                   autoFocus
-                  className="flex-1 max-w-xs bg-[#2f2f2f] border border-[#4a4a4a] rounded px-2 py-0.5 text-[10px] text-[#ECECEC] focus:outline-none placeholder-[#666666]"
+                  className="flex-1 max-w-xs bg-[#0d0d0d] border border-[#4a4a4a] rounded-none px-2 py-0.5 text-[10px] text-[#f4f4f4] focus:outline-none placeholder-[#666666]"
                 />
-                <button onClick={saveYoutubeUrl} className="text-[#9B9B9B] hover:text-[#ECECEC]">
+                <button onClick={saveYoutubeUrl} className="text-[#909090] hover:text-[#f4f4f4]">
                   <Check size={12} />
                 </button>
               </div>
@@ -447,7 +447,7 @@ const ContentRow: React.FC<ContentRowProps> = ({ item, onUpdate, onDelete, onDem
                   setTempYoutubeUrl(item.youtubeUrl || '');
                   setEditingField('youtube');
                 }}
-                className="text-[10px] text-[#666666] hover:text-[#9B9B9B] pl-7 mt-1 flex items-center gap-1 truncate max-w-xs"
+                className="text-[10px] text-[#666666] hover:text-[#909090] pl-7 mt-1 flex items-center gap-1 truncate max-w-xs"
                 title="Double-click to edit"
               >
                 <ExternalLink size={10} /> {item.youtubeUrl.replace('https://', '').replace('www.', '').slice(0, 40)}...
@@ -458,7 +458,7 @@ const ContentRow: React.FC<ContentRowProps> = ({ item, onUpdate, onDelete, onDem
                   setTempYoutubeUrl('');
                   setEditingField('youtube');
                 }}
-                className="text-[10px] text-[#666666] hover:text-[#9B9B9B] pl-7 mt-1 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                className="text-[10px] text-[#666666] hover:text-[#909090] pl-7 mt-1 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity"
               >
                 <ExternalLink size={10} /> Add YouTube URL
               </button>
@@ -471,7 +471,7 @@ const ContentRow: React.FC<ContentRowProps> = ({ item, onUpdate, onDelete, onDem
                   setTempThumbnail('');
                   setEditingField('thumbnail');
                 }}
-                className="text-[10px] text-[#666666] hover:text-[#9B9B9B] pl-7 mt-1 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                className="text-[10px] text-[#666666] hover:text-[#909090] pl-7 mt-1 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity"
               >
                 <Image size={10} /> Add thumbnail
               </button>
@@ -481,11 +481,11 @@ const ContentRow: React.FC<ContentRowProps> = ({ item, onUpdate, onDelete, onDem
         
         {/* Thumbnail edit dropdown */}
         {editingField === 'thumbnail' && (
-          <div ref={thumbnailDropdownRef} className="absolute mt-2 w-72 bg-[#2f2f2f] border border-[#3a3a3a] rounded-xl shadow-2xl z-50 p-3">
-            <label className="text-xs font-semibold text-[#9B9B9B] mb-2 block">Thumbnail</label>
+          <div ref={thumbnailDropdownRef} className="absolute mt-2 w-72 bg-[#0d0d0d] border border-[#242424] rounded-none-none shadow-2xl z-50 p-3">
+            <label className="text-xs font-semibold text-[#909090] mb-2 block">Thumbnail</label>
             
             {/* File upload */}
-            <label className="flex items-center justify-center gap-2 w-full py-2 px-3 bg-[#212121] border border-dashed border-[#4a4a4a] rounded-lg text-xs text-[#9B9B9B] hover:text-[#ECECEC] hover:border-[#666666] cursor-pointer transition-colors mb-2">
+            <label className="flex items-center justify-center gap-2 w-full py-2 px-3 bg-[#000] border border-dashed border-[#4a4a4a] rounded-none-none text-xs text-[#909090] hover:text-[#f4f4f4] hover:border-[#666666] cursor-pointer transition-colors mb-2">
               <Image size={14} />
               <span>Upload from device</span>
               <input 
@@ -503,10 +503,10 @@ const ContentRow: React.FC<ContentRowProps> = ({ item, onUpdate, onDelete, onDem
                 value={tempThumbnail}
                 onChange={(e) => setTempThumbnail(e.target.value)}
                 placeholder="Or paste URL..."
-                className="flex-1 bg-[#212121] border border-[#3a3a3a] rounded px-2 py-1 text-xs text-[#ECECEC] focus:ring-1 focus:ring-[#555555] outline-none"
+                className="flex-1 bg-[#000] border border-[#242424] rounded-none px-2 py-1 text-xs text-[#f4f4f4] focus:ring-1 focus:ring-[#555555] outline-none"
                 onKeyDown={(e) => e.key === 'Enter' && saveThumbnail()}
               />
-              <button onClick={saveThumbnail} className="p-1 bg-[rgba(255,255,255,0.08)] text-[#ECECEC] rounded hover:bg-[rgba(255,255,255,0.1)]">
+              <button onClick={saveThumbnail} className="p-1 bg-[rgba(255,255,255,0.08)] text-[#f4f4f4] rounded-none hover:bg-[rgba(255,255,255,0.1)]">
                 <Check size={14} />
               </button>
             </div>
@@ -514,7 +514,7 @@ const ContentRow: React.FC<ContentRowProps> = ({ item, onUpdate, onDelete, onDem
             {/* Preview */}
             {tempThumbnail && (
               <div className="mt-2">
-                <img src={tempThumbnail} alt="Preview" className="w-full h-20 object-cover rounded border border-[#3a3a3a]" onError={(e) => (e.target as HTMLImageElement).style.display = 'none'} />
+                <img src={tempThumbnail} alt="Preview" className="w-full h-20 object-cover rounded-none border border-[#242424]" onError={(e) => (e.target as HTMLImageElement).style.display = 'none'} />
               </div>
             )}
           </div>
@@ -529,30 +529,30 @@ const ContentRow: React.FC<ContentRowProps> = ({ item, onUpdate, onDelete, onDem
                     setTempLink(item.driveLink);
                     setEditingField('link');
                 }}
-                className={`inline-flex p-2 rounded-lg transition-none ${item.driveLink ? 'text-[#9B9B9B] hover:text-[#ECECEC] hover:bg-[rgba(255,255,255,0.08)]' : 'text-[#666666] hover:text-[#9B9B9B]'}`}
+                className={`inline-flex p-2 rounded-none-none transition-none ${item.driveLink ? 'text-[#909090] hover:text-[#f4f4f4] hover:bg-[rgba(255,255,255,0.08)]' : 'text-[#666666] hover:text-[#909090]'}`}
                 title="Edit Drive Link"
             >
                 <Folder size={18} />
             </button>
 
             {editingField === 'link' && (
-                <div ref={linkDropdownRef} className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-64 bg-[#2f2f2f] border border-[#3a3a3a] rounded-xl shadow-2xl z-50 p-3">
-                    <label className="text-xs font-semibold text-[#9B9B9B] mb-2 block">Drive Link</label>
+                <div ref={linkDropdownRef} className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-64 bg-[#0d0d0d] border border-[#242424] rounded-none-none shadow-2xl z-50 p-3">
+                    <label className="text-xs font-semibold text-[#909090] mb-2 block">Drive Link</label>
                     <div className="flex gap-2">
                         <input
                             type="text"
                             value={tempLink}
                             onChange={(e) => setTempLink(e.target.value)}
                             placeholder="https://..."
-                            className="flex-1 bg-[#212121] border border-[#3a3a3a] rounded px-2 py-1 text-xs text-[#ECECEC] focus:ring-1 focus:ring-[#555555] outline-none"
+                            className="flex-1 bg-[#000] border border-[#242424] rounded-none px-2 py-1 text-xs text-[#f4f4f4] focus:ring-1 focus:ring-[#555555] outline-none"
                             autoFocus
                             onKeyDown={(e) => e.key === 'Enter' && saveLink()}
                         />
-                        <button onClick={saveLink} className="p-1 bg-[rgba(255,255,255,0.08)] text-[#ECECEC] rounded hover:bg-[rgba(255,255,255,0.1)]">
+                        <button onClick={saveLink} className="p-1 bg-[rgba(255,255,255,0.08)] text-[#f4f4f4] rounded-none hover:bg-[rgba(255,255,255,0.1)]">
                             <Check size={14} />
                         </button>
                         {item.driveLink && (
-                            <a href={item.driveLink} target="_blank" rel="noreferrer" className="p-1 text-[#9B9B9B] hover:text-white">
+                            <a href={item.driveLink} target="_blank" rel="noreferrer" className="p-1 text-[#909090] hover:text-white">
                                 <ExternalLink size={14} />
                             </a>
                         )}
@@ -570,30 +570,30 @@ const ContentRow: React.FC<ContentRowProps> = ({ item, onUpdate, onDelete, onDem
                     setTempScript(item.scriptLink || '');
                     setEditingField('script');
                 }}
-                className={`inline-flex p-2 rounded-lg transition-none ${item.scriptLink ? 'text-[#9B9B9B] hover:text-[#ECECEC] hover:bg-[rgba(255,255,255,0.08)]' : 'text-[#666666] hover:text-[#9B9B9B]'}`}
+                className={`inline-flex p-2 rounded-none-none transition-none ${item.scriptLink ? 'text-[#909090] hover:text-[#f4f4f4] hover:bg-[rgba(255,255,255,0.08)]' : 'text-[#666666] hover:text-[#909090]'}`}
                 title="Edit Script Link"
             >
                 <FileText size={18} />
             </button>
 
             {editingField === 'script' && (
-                <div ref={scriptDropdownRef} className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-64 bg-[#2f2f2f] border border-[#3a3a3a] rounded-xl shadow-2xl z-50 p-3">
-                    <label className="text-xs font-semibold text-[#9B9B9B] mb-2 block">Script Link (Google Doc)</label>
+                <div ref={scriptDropdownRef} className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-64 bg-[#0d0d0d] border border-[#242424] rounded-none-none shadow-2xl z-50 p-3">
+                    <label className="text-xs font-semibold text-[#909090] mb-2 block">Script Link (Google Doc)</label>
                     <div className="flex gap-2">
                         <input
                             type="text"
                             value={tempScript}
                             onChange={(e) => setTempScript(e.target.value)}
                             placeholder="https://docs.google.com/..."
-                            className="flex-1 bg-[#212121] border border-[#3a3a3a] rounded px-2 py-1 text-xs text-[#ECECEC] focus:ring-1 focus:ring-[#555555] outline-none"
+                            className="flex-1 bg-[#000] border border-[#242424] rounded-none px-2 py-1 text-xs text-[#f4f4f4] focus:ring-1 focus:ring-[#555555] outline-none"
                             autoFocus
                             onKeyDown={(e) => e.key === 'Enter' && saveScript()}
                         />
-                        <button onClick={saveScript} className="p-1 bg-[rgba(255,255,255,0.08)] text-[#ECECEC] rounded hover:bg-[rgba(255,255,255,0.1)]">
+                        <button onClick={saveScript} className="p-1 bg-[rgba(255,255,255,0.08)] text-[#f4f4f4] rounded-none hover:bg-[rgba(255,255,255,0.1)]">
                             <Check size={14} />
                         </button>
                         {item.scriptLink && (
-                            <a href={item.scriptLink} target="_blank" rel="noreferrer" className="p-1 text-[#9B9B9B] hover:text-white">
+                            <a href={item.scriptLink} target="_blank" rel="noreferrer" className="p-1 text-[#909090] hover:text-white">
                                 <ExternalLink size={14} />
                             </a>
                         )}
@@ -608,14 +608,14 @@ const ContentRow: React.FC<ContentRowProps> = ({ item, onUpdate, onDelete, onDem
         <div className="relative inline-block">
             <button
                 onClick={() => setEditingField('status')}
-                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border transition-none cursor-pointer ${statusConfig.bg} ${statusConfig.color} ${statusConfig.border}`}
+                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-none-full text-xs font-medium border transition-none cursor-pointer ${statusConfig.bg} ${statusConfig.color} ${statusConfig.border}`}
             >
                 <StatusIcon size={12} className={item.status === ContentStatus.LIVE ? 'animate-pulse' : ''} />
                 {item.status}
             </button>
 
             {editingField === 'status' && (
-                <div ref={statusDropdownRef} className="absolute top-full left-0 mt-2 w-40 bg-[#2f2f2f] border border-[#3a3a3a] rounded-xl shadow-2xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-100">
+                <div ref={statusDropdownRef} className="absolute top-full left-0 mt-2 w-40 bg-[#0d0d0d] border border-[#242424] rounded-none-none shadow-2xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-100">
                     {getStatusesForPlatform(item.platform).map((status) => {
                         const conf = getStatusConfig(status);
                         const SIcon = conf.icon;
@@ -625,9 +625,9 @@ const ContentRow: React.FC<ContentRowProps> = ({ item, onUpdate, onDelete, onDem
                                 onClick={() => updateStatus(status)}
                                 className={`w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-[rgba(255,255,255,0.05)] transition-none ${item.status === status ? 'bg-[rgba(255,255,255,0.05)]' : ''}`}
                             >
-                                <div className={`w-1.5 h-1.5 rounded-full ${conf.color.replace('text-', 'bg-')}`}></div>
+                                <div className={`w-1.5 h-1.5 rounded-none-full ${conf.color.replace('text-', 'bg-')}`}></div>
                                 <span className={conf.color}>{status}</span>
-                                {item.status === status && <Check size={12} className="ml-auto text-[#ECECEC]" />}
+                                {item.status === status && <Check size={12} className="ml-auto text-[#f4f4f4]" />}
                             </button>
                         );
                     })}
@@ -644,7 +644,7 @@ const ContentRow: React.FC<ContentRowProps> = ({ item, onUpdate, onDelete, onDem
               return (
                 <button
                     onClick={() => setEditingField('style')}
-                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border transition-none cursor-pointer ${styleConf.bg} ${styleConf.color} ${styleConf.border}`}
+                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-none-full text-xs font-medium border transition-none cursor-pointer ${styleConf.bg} ${styleConf.color} ${styleConf.border}`}
                 >
                     {item.style}
                 </button>
@@ -652,14 +652,14 @@ const ContentRow: React.FC<ContentRowProps> = ({ item, onUpdate, onDelete, onDem
             })() : (
               <button
                   onClick={() => setEditingField('style')}
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border transition-none cursor-pointer bg-transparent text-[#666666] border-[#3a3a3a] hover:text-[#9B9B9B] hover:border-[#4a4a4a]"
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-none-full text-xs font-medium border transition-none cursor-pointer bg-transparent text-[#666666] border-[#242424] hover:text-[#909090] hover:border-[#4a4a4a]"
               >
                   Set style
               </button>
             )}
 
             {editingField === 'style' && (
-                <div ref={styleDropdownRef} className="absolute top-full left-0 mt-2 w-40 bg-[#2f2f2f] border border-[#3a3a3a] rounded-xl shadow-2xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-100">
+                <div ref={styleDropdownRef} className="absolute top-full left-0 mt-2 w-40 bg-[#0d0d0d] border border-[#242424] rounded-none-none shadow-2xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-100">
                     {item.style && (
                       <button
                           onClick={() => updateStyle(undefined)}
@@ -676,9 +676,9 @@ const ContentRow: React.FC<ContentRowProps> = ({ item, onUpdate, onDelete, onDem
                                 onClick={() => updateStyle(style)}
                                 className={`w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-[rgba(255,255,255,0.05)] transition-none ${item.style === style ? 'bg-[rgba(255,255,255,0.05)]' : ''}`}
                             >
-                                <div className={`w-1.5 h-1.5 rounded-full ${conf.dot}`}></div>
+                                <div className={`w-1.5 h-1.5 rounded-none-full ${conf.dot}`}></div>
                                 <span className={conf.color}>{style}</span>
-                                {item.style === style && <Check size={12} className="ml-auto text-[#ECECEC]" />}
+                                {item.style === style && <Check size={12} className="ml-auto text-[#f4f4f4]" />}
                             </button>
                         );
                     })}
@@ -692,7 +692,7 @@ const ContentRow: React.FC<ContentRowProps> = ({ item, onUpdate, onDelete, onDem
         <div className="relative inline-block">
              <div
                 onClick={() => setEditingField('team')}
-                className="flex -space-x-2 overflow-hidden cursor-pointer hover:opacity-80 transition-opacity p-1 -m-1 rounded-lg hover:bg-[rgba(255,255,255,0.05)]"
+                className="flex -space-x-2 overflow-hidden cursor-pointer hover:opacity-80 transition-opacity p-1 -m-1 rounded-none-none hover:bg-[rgba(255,255,255,0.05)]"
                 title="Edit Team"
              >
                 {resolvedTeam.length > 0 ? resolvedTeam.map((member) => (
@@ -701,26 +701,26 @@ const ContentRow: React.FC<ContentRowProps> = ({ item, onUpdate, onDelete, onDem
                             key={member.id}
                             src={member.photoUrl}
                             alt={member.name}
-                            className="inline-block h-8 w-8 rounded-full ring-2 ring-[#2f2f2f] object-cover"
+                            className="inline-block h-8 w-8 rounded-none-full ring-2 ring-[#2f2f2f] object-cover"
                         />
                     ) : (
                         <div
                             key={member.id}
-                            className={`inline-block h-8 w-8 rounded-full ring-2 ring-[#2f2f2f] ${member.color} flex items-center justify-center text-[10px] font-bold text-[#ECECEC]`}
+                            className={`inline-block h-8 w-8 rounded-none-full ring-2 ring-[#2f2f2f] ${member.color} flex items-center justify-center text-[10px] font-bold text-[#f4f4f4]`}
                         >
                             {member.initials}
                         </div>
                     )
                 )) : (
-                    <div className="h-8 w-8 rounded-full bg-[#3a3a3a] border border-dashed border-[#4a4a4a] flex items-center justify-center text-[#9B9B9B]">
+                    <div className="h-8 w-8 rounded-none-full bg-[#3a3a3a] border border-dashed border-[#4a4a4a] flex items-center justify-center text-[#909090]">
                         <User size={14} />
                     </div>
                 )}
             </div>
 
             {editingField === 'team' && (
-                <div ref={teamDropdownRef} className="absolute top-full left-0 mt-2 w-56 bg-[#2f2f2f] border border-[#3a3a3a] rounded-xl shadow-2xl z-50 p-2 animate-in fade-in zoom-in-95 duration-100">
-                    <p className="text-xs font-semibold text-[#9B9B9B] mb-2 px-2">Assign Team</p>
+                <div ref={teamDropdownRef} className="absolute top-full left-0 mt-2 w-56 bg-[#0d0d0d] border border-[#242424] rounded-none-none shadow-2xl z-50 p-2 animate-in fade-in zoom-in-95 duration-100">
+                    <p className="text-xs font-semibold text-[#909090] mb-2 px-2">Assign Team</p>
                     <div className="space-y-1 max-h-48 overflow-y-auto custom-scrollbar">
                         {getPersistedTeamMembers(storagePrefix).map((member) => {
                             const memberName = normalizeMemberName(member.name);
@@ -729,21 +729,21 @@ const ContentRow: React.FC<ContentRowProps> = ({ item, onUpdate, onDelete, onDem
                                 <button
                                     key={memberName}
                                     onClick={() => toggleTeamMember(member)}
-                                    className={`w-full flex items-center gap-3 p-2 rounded-lg text-left transition-none ${
+                                    className={`w-full flex items-center gap-3 p-2 rounded-none-none text-left transition-none ${
                                         isSelected ? 'bg-[rgba(255,255,255,0.08)]' : 'hover:bg-[rgba(255,255,255,0.05)]'
                                     }`}
                                 >
                                     {member.photoUrl ? (
-                                        <img src={member.photoUrl} alt={member.name} className="w-6 h-6 rounded-full object-cover" />
+                                        <img src={member.photoUrl} alt={member.name} className="w-6 h-6 rounded-none-full object-cover" />
                                     ) : (
-                                        <div className={`w-6 h-6 rounded-full ${member.color} flex items-center justify-center text-[10px] font-bold text-[#ECECEC]`}>
+                                        <div className={`w-6 h-6 rounded-none-full ${member.color} flex items-center justify-center text-[10px] font-bold text-[#f4f4f4]`}>
                                             {member.initials}
                                         </div>
                                     )}
                                     <div className="flex-1 min-w-0">
-                                        <p className={`text-xs font-medium truncate ${isSelected ? 'text-[#ECECEC]' : 'text-[#b4b4b4]'}`}>{member.name}</p>
+                                        <p className={`text-xs font-medium truncate ${isSelected ? 'text-[#f4f4f4]' : 'text-[#b4b4b4]'}`}>{member.name}</p>
                                     </div>
-                                    {isSelected && <Check size={12} className="text-[#ECECEC]" />}
+                                    {isSelected && <Check size={12} className="text-[#f4f4f4]" />}
                                 </button>
                             );
                         })}
@@ -762,12 +762,12 @@ const ContentRow: React.FC<ContentRowProps> = ({ item, onUpdate, onDelete, onDem
                 onChange={saveDate}
                 onBlur={() => setEditingField(null)}
                 autoFocus
-                className="bg-[#2f2f2f] border border-[#4a4a4a] rounded px-2 py-1 text-xs text-[#ECECEC] focus:outline-none [color-scheme:dark]"
+                className="bg-[#0d0d0d] border border-[#4a4a4a] rounded-none px-2 py-1 text-xs text-[#f4f4f4] focus:outline-none [color-scheme:dark]"
              />
         ) : (
             <span
                 onClick={() => setEditingField('date')}
-                className="text-sm text-[#9B9B9B] font-mono cursor-pointer hover:text-[#ECECEC] hover:bg-[rgba(255,255,255,0.05)] px-2 py-1 rounded transition-none"
+                className="text-sm text-[#909090] font-mono cursor-pointer hover:text-[#f4f4f4] hover:bg-[rgba(255,255,255,0.05)] px-2 py-1 rounded-none transition-none"
                 title="Click to edit date"
             >
                 {item.postDate}
@@ -781,7 +781,7 @@ const ContentRow: React.FC<ContentRowProps> = ({ item, onUpdate, onDelete, onDem
             <button
                 type="button"
                 onClick={() => onEdit(item)}
-                className="text-[#666666] hover:text-[#ECECEC] transition-none p-1.5 hover:bg-[rgba(255,255,255,0.08)] rounded-lg cursor-pointer"
+                className="text-[#666666] hover:text-[#f4f4f4] transition-none p-1.5 hover:bg-[rgba(255,255,255,0.08)] rounded-none-none cursor-pointer"
                 title="Edit Details"
             >
                 <FilePenLine size={16} />
@@ -789,7 +789,7 @@ const ContentRow: React.FC<ContentRowProps> = ({ item, onUpdate, onDelete, onDem
             <button
                 type="button"
                 onClick={() => onDemote(item)}
-                className="text-[#666666] hover:text-blue-400 transition-none p-1.5 hover:bg-blue-500/10 rounded-lg cursor-pointer"
+                className="text-[#666666] hover:text-blue-400 transition-none p-1.5 hover:bg-blue-500/10 rounded-none-none cursor-pointer"
                 title="Move back to Ideation"
             >
                 <ArrowLeftCircle size={16} />
@@ -800,7 +800,7 @@ const ContentRow: React.FC<ContentRowProps> = ({ item, onUpdate, onDelete, onDem
                     e.stopPropagation();
                     onDelete(item.id);
                 }}
-                className="text-[#666666] hover:text-rose-400 transition-none p-1.5 hover:bg-rose-500/10 rounded-lg cursor-pointer"
+                className="text-[#666666] hover:text-rose-400 transition-none p-1.5 hover:bg-rose-500/10 rounded-none-none cursor-pointer"
                 title="Delete"
             >
                 <Trash2 size={16} />

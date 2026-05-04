@@ -176,7 +176,7 @@ const TriggerPill: React.FC<{ trigger: string }> = ({ trigger }) => (
 const NodeShell: React.FC<React.PropsWithChildren<{ width: number }>> = ({ width, children }) => (
   <div style={{
     width, background: INK.surface, border: `1px solid ${INK.border}`,
-    borderRadius: 12, overflow: 'hidden', color: INK.text,
+    borderRadius: 0, overflow: 'hidden', color: INK.text,
     fontSize: TYPE.body, boxShadow: '0 1px 2px rgba(0,0,0,0.4)',
   }}>
     {children}
@@ -261,7 +261,7 @@ const AdNode = memo<NodeProps<AdNodeData>>(({ data }) => {
         </div>
         <button style={{
           fontSize: TYPE.body, padding: `${SP.xs}px ${SP.md}px`,
-          borderRadius: 6, background: INK.surface, color: INK.text,
+          borderRadius: 0, background: INK.surface, color: INK.text,
           border: `1px solid ${INK.borderHi}`, fontWeight: 500,
         }}>
           {data.cta}
@@ -1197,7 +1197,7 @@ const AlignButton: React.FC<{ title: string; onClick: () => void; children: Reac
     onClick={onClick}
     title={title}
     style={{
-      width: 30, height: 30, borderRadius: 6,
+      width: 30, height: 30, borderRadius: 0,
       background: 'transparent', color: INK.text,
       border: `1px solid transparent`,
       display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -1218,7 +1218,7 @@ const AlignToolbar: React.FC<{ count: number; onAlign: (op: AlignOp) => void }> 
       display: 'flex', alignItems: 'center', gap: SP.sm,
       padding: `${SP.xs + 2}px ${SP.sm}px`,
       background: INK.surface, border: `1px solid ${INK.border}`,
-      borderRadius: 8, boxShadow: '0 2px 10px rgba(0,0,0,0.5)',
+      borderRadius: 0, boxShadow: '0 2px 10px rgba(0,0,0,0.5)',
     }}>
       <span style={{ ...labelStyle, padding: `0 ${SP.xs}px` }}>{count} selected</span>
       {divider}
@@ -1280,7 +1280,7 @@ const StatsBar: React.FC<{ stats: Stats }> = ({ stats }) => {
   return (
     <div style={{
       display: 'flex', background: INK.surface,
-      border: `1px solid ${INK.border}`, borderRadius: 12, overflow: 'hidden',
+      border: `1px solid ${INK.border}`, borderRadius: 0, overflow: 'hidden',
     }}>
       <StatItem label="Ad spend" value={`$${stats.adSpend.toLocaleString()}`} />
       {divider}
@@ -1403,7 +1403,7 @@ const LukeFlowView: React.FC<Props> = () => {
       <StatsBar stats={stats} />
 
       <div
-        className="flex-1 min-h-0 rounded-xl overflow-hidden border relative"
+        className="flex-1 min-h-0 rounded-none-none overflow-hidden border relative"
         style={{ background: INK.bg, borderColor: INK.border }}
       >
         <div style={{
@@ -1414,7 +1414,7 @@ const LukeFlowView: React.FC<Props> = () => {
           <button
             onClick={toggleMetrics}
             style={{
-              padding: `${SP.xs + 2}px ${SP.md}px`, borderRadius: 6,
+              padding: `${SP.xs + 2}px ${SP.md}px`, borderRadius: 0,
               fontSize: TYPE.body, fontWeight: 500,
               background: INK.surface,
               color: showMetrics ? INK.text : INK.textMuted,

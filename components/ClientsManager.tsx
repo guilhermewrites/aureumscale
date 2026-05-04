@@ -32,16 +32,16 @@ const DEFAULT_CLIENT_STATUSES = ['Happy', 'Moderate', 'Frustrated'];
 const DEFAULT_ACQUISITIONS = ['Inbound — DMs', 'Inbound — Organic', 'Inbound — Funnel', 'Outbound — DMs', 'Outbound — Cold Email', 'Paid Traffic — Ads', 'Social Media', 'Referral', 'Partnership'];
 
 const paymentColors: Record<string, string> = {
-  'Missing Invoice': 'text-[#fca5a5]',
-  'Pending': 'text-[#9B9B9B]',
-  'Paid': 'text-[#86efac]',
+  'Missing Invoice': 'text-[#d46d6d]',
+  'Pending': 'text-[#909090]',
+  'Paid': 'text-[#6dd49a]',
   'Late': 'text-[#fed7aa]',
 };
 
 const statusColors: Record<string, string> = {
-  'Happy': 'text-[#86efac]',
-  'Moderate': 'text-[#9B9B9B]',
-  'Frustrated': 'text-[#fca5a5]',
+  'Happy': 'text-[#6dd49a]',
+  'Moderate': 'text-[#909090]',
+  'Frustrated': 'text-[#d46d6d]',
 };
 
 const acquisitionColors: Record<string, string> = {
@@ -51,9 +51,9 @@ const acquisitionColors: Record<string, string> = {
   'Outbound — DMs': 'text-[#ddd6fe]',
   'Outbound — Cold Email': 'text-[#ddd6fe]',
   'Paid Traffic — Ads': 'text-[#fed7aa]',
-  'Social Media': 'text-[#86efac]',
-  'Referral': 'text-[#fde68a]',
-  'Partnership': 'text-[#fde68a]',
+  'Social Media': 'text-[#6dd49a]',
+  'Referral': 'text-[#e0c870]',
+  'Partnership': 'text-[#e0c870]',
 };
 
 function getInitials(name: string) {
@@ -203,7 +203,7 @@ function SelectCell({ value, options, onChange, colorMap, onAddOption, onEditOpt
     setEditValue('');
   };
 
-  const textColor = colorMap?.[value] ?? 'text-[#ECECEC]';
+  const textColor = colorMap?.[value] ?? 'text-[#f4f4f4]';
   const editable = !!(onAddOption || onEditOption || onDeleteOption);
 
   return (
@@ -222,7 +222,7 @@ function SelectCell({ value, options, onChange, colorMap, onAddOption, onEditOpt
         <div
           onMouseDown={e => e.stopPropagation()}
           style={{ position: 'fixed', top: coords.top, left: coords.left, zIndex: 9999 }}
-          className="min-w-[180px] bg-[#1e1e1e] border border-[#3a3a3a] rounded-xl shadow-2xl overflow-hidden py-1"
+          className="min-w-[180px] bg-[#0a0a0a] border border-[#242424] rounded-none-none shadow-2xl overflow-hidden py-1"
         >
           {options.map(o => (
             <div key={o} className="flex items-center group/opt">
@@ -233,10 +233,10 @@ function SelectCell({ value, options, onChange, colorMap, onAddOption, onEditOpt
                     value={editValue}
                     onChange={e => setEditValue(e.target.value)}
                     onKeyDown={e => { if (e.key === 'Enter') handleEditSave(o); if (e.key === 'Escape') setEditingItem(null); }}
-                    className="flex-1 text-xs bg-[#161616] text-[#ECECEC] rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#444]"
+                    className="flex-1 text-xs bg-[#060606] text-[#f4f4f4] rounded-none-none px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#444]"
                   />
-                  <button onClick={() => handleEditSave(o)} className="text-[#86efac] p-1 hover:bg-[#2a2a2a] rounded-lg"><Check size={12} /></button>
-                  <button onClick={() => setEditingItem(null)} className="text-[#555] p-1 hover:bg-[#2a2a2a] rounded-lg"><X size={12} /></button>
+                  <button onClick={() => handleEditSave(o)} className="text-[#6dd49a] p-1 hover:bg-[#0d0d0d] rounded-none-none"><Check size={12} /></button>
+                  <button onClick={() => setEditingItem(null)} className="text-[#5a5a5a] p-1 hover:bg-[#0d0d0d] rounded-none-none"><X size={12} /></button>
                 </div>
               ) : (
                 <>
@@ -244,26 +244,26 @@ function SelectCell({ value, options, onChange, colorMap, onAddOption, onEditOpt
                     type="button"
                     onMouseDown={e => e.stopPropagation()}
                     onClick={() => { if (!editingMode) { onChange(o); setOpen(false); setEditingMode(false); } }}
-                    className={`flex items-center justify-between flex-1 text-left text-xs px-3 py-2.5 transition-colors hover:bg-[#2a2a2a] ${
-                      o === value ? 'text-white font-semibold' : 'text-[#9B9B9B]'
+                    className={`flex items-center justify-between flex-1 text-left text-xs px-3 py-2.5 transition-colors hover:bg-[#0d0d0d] ${
+                      o === value ? 'text-white font-semibold' : 'text-[#909090]'
                     }`}
                   >
                     {o}
-                    {o === value && !editingMode && <span className="text-[#ECECEC] opacity-60">✓</span>}
+                    {o === value && !editingMode && <span className="text-[#f4f4f4] opacity-60">✓</span>}
                   </button>
                   {editingMode && (
                     <div className="flex items-center gap-0.5 pr-2 flex-shrink-0">
                       <button
                         onMouseDown={e => e.stopPropagation()}
                         onClick={() => { setEditingItem(o); setEditValue(o); }}
-                        className="text-[#555] hover:text-[#ECECEC] p-1 rounded-lg transition-colors"
+                        className="text-[#5a5a5a] hover:text-[#f4f4f4] p-1 rounded-none-none transition-colors"
                         title="Edit"
                       ><Pencil size={11} /></button>
                       {onDeleteOption && (
                         <button
                           onMouseDown={e => e.stopPropagation()}
                           onClick={() => { onDeleteOption(o); }}
-                          className="text-[#555] hover:text-[#fca5a5] p-1 rounded-lg transition-colors"
+                          className="text-[#5a5a5a] hover:text-[#d46d6d] p-1 rounded-none-none transition-colors"
                           title="Delete"
                         ><Trash2 size={11} /></button>
                       )}
@@ -276,32 +276,32 @@ function SelectCell({ value, options, onChange, colorMap, onAddOption, onEditOpt
 
           {/* Add new option */}
           {addingNew && (
-            <div className="flex items-center gap-1 px-2 py-1.5 border-t border-[#2a2a2a]" onMouseDown={e => e.stopPropagation()}>
+            <div className="flex items-center gap-1 px-2 py-1.5 border-t border-[#1a1a1a]" onMouseDown={e => e.stopPropagation()}>
               <input
                 ref={newInputRef}
                 value={newValue}
                 onChange={e => setNewValue(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Enter') handleAdd(); if (e.key === 'Escape') setAddingNew(false); }}
-                className="flex-1 text-xs bg-[#161616] text-[#ECECEC] rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#444] placeholder-[#444]"
+                className="flex-1 text-xs bg-[#060606] text-[#f4f4f4] rounded-none-none px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#444] placeholder-[#444]"
                 placeholder="New option…"
               />
-              <button onClick={handleAdd} className="text-[#86efac] p-1 hover:bg-[#2a2a2a] rounded-lg"><Check size={12} /></button>
-              <button onClick={() => setAddingNew(false)} className="text-[#555] p-1 hover:bg-[#2a2a2a] rounded-lg"><X size={12} /></button>
+              <button onClick={handleAdd} className="text-[#6dd49a] p-1 hover:bg-[#0d0d0d] rounded-none-none"><Check size={12} /></button>
+              <button onClick={() => setAddingNew(false)} className="text-[#5a5a5a] p-1 hover:bg-[#0d0d0d] rounded-none-none"><X size={12} /></button>
             </div>
           )}
 
           {/* Action buttons */}
           {editable && !addingNew && (
-            <div className="flex items-center border-t border-[#2a2a2a] mt-0.5">
+            <div className="flex items-center border-t border-[#1a1a1a] mt-0.5">
               <button
                 onMouseDown={e => e.stopPropagation()}
                 onClick={() => setAddingNew(true)}
-                className="flex items-center gap-1.5 flex-1 text-left text-[10px] font-medium px-3 py-2 transition-colors hover:bg-[#2a2a2a] text-[#555] hover:text-[#ECECEC]"
+                className="flex items-center gap-1.5 flex-1 text-left text-[10px] font-medium px-3 py-2 transition-colors hover:bg-[#0d0d0d] text-[#5a5a5a] hover:text-[#f4f4f4]"
               ><Plus size={10} /> Add</button>
               <button
                 onMouseDown={e => e.stopPropagation()}
                 onClick={() => setEditingMode(m => !m)}
-                className={`flex items-center gap-1.5 flex-1 text-left text-[10px] font-medium px-3 py-2 transition-colors hover:bg-[#2a2a2a] ${editingMode ? 'text-[#ECECEC]' : 'text-[#555] hover:text-[#ECECEC]'}`}
+                className={`flex items-center gap-1.5 flex-1 text-left text-[10px] font-medium px-3 py-2 transition-colors hover:bg-[#0d0d0d] ${editingMode ? 'text-[#f4f4f4]' : 'text-[#5a5a5a] hover:text-[#f4f4f4]'}`}
               ><Pencil size={10} /> {editingMode ? 'Done' : 'Edit'}</button>
             </div>
           )}
@@ -344,16 +344,16 @@ function MoveToMenu({ currentType, onMove }: { currentType: ClientType; onMove: 
 
   return (
     <>
-      <button ref={btnRef} onClick={toggle} className="text-[#555] hover:text-[#ECECEC] transition-colors p-1" title="Move to section">
+      <button ref={btnRef} onClick={toggle} className="text-[#5a5a5a] hover:text-[#f4f4f4] transition-colors p-1" title="Move to section">
         <ArrowRightLeft size={13} />
       </button>
       {open && createPortal(
-        <div onClick={e => e.stopPropagation()} className="fixed z-[9999] rounded-xl py-1 shadow-2xl border" style={{ top: coords.top, left: coords.left, background: '#1c1c1c', borderColor: '#2f2f2f', minWidth: 140 }}>
-          <p className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-widest" style={{ color: '#444' }}>Move to</p>
+        <div onClick={e => e.stopPropagation()} className="fixed z-[9999] rounded-none-none py-1 shadow-2xl border" style={{ top: coords.top, left: coords.left, background: '#0a0a0a', borderColor: '#2f2f2f', minWidth: 140 }}>
+          <p className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-widest" style={{ color: '#3a3a3a' }}>Move to</p>
           {allTypes.filter(t => t !== currentType).map(t => (
             <button key={t} onClick={e => { e.stopPropagation(); onMove(t); setOpen(false); }}
-              className="w-full text-left px-3 py-2 text-xs font-medium hover:bg-[#2a2a2a] transition-colors"
-              style={{ color: '#ECECEC' }}
+              className="w-full text-left px-3 py-2 text-xs font-medium hover:bg-[#0d0d0d] transition-colors"
+              style={{ color: '#f4f4f4' }}
             >{labels[t]}</button>
           ))}
         </div>,
@@ -382,13 +382,13 @@ function Avatar({ name, photoUrl, onPhotoChange, size = 36 }: AvatarProps) {
     >
       <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={handleFile} />
       {photoUrl ? (
-        <img src={photoUrl} alt={name} className="w-full h-full rounded-full object-cover" />
+        <img src={photoUrl} alt={name} className="w-full h-full rounded-none-full object-cover" />
       ) : (
-        <div className="w-full h-full rounded-full bg-[#3a3a3a] flex items-center justify-center text-[#ECECEC] text-xs font-semibold">
+        <div className="w-full h-full rounded-none-full bg-[#3a3a3a] flex items-center justify-center text-[#f4f4f4] text-xs font-semibold">
           {getInitials(name) || <Camera size={14} className="text-[#666666]" />}
         </div>
       )}
-      <div className="absolute inset-0 rounded-full bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+      <div className="absolute inset-0 rounded-none-full bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
         <Camera size={12} className="text-white" />
       </div>
     </div>
@@ -796,7 +796,7 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
         <button
           onClick={() => navigate('/clients')}
           className="flex items-center gap-2 text-sm font-medium transition-colors px-1 py-1"
-          style={{ color: '#555' }}
+          style={{ color: '#5a5a5a' }}
           onMouseEnter={e => (e.currentTarget.style.color = '#ECECEC')}
           onMouseLeave={e => (e.currentTarget.style.color = '#555')}
         >
@@ -847,7 +847,7 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
             const num = parseFloat(raw) || 0;
             updateClient(client.id, { amount: num });
           }}
-          className="bg-transparent text-xs font-medium text-[#86efac] focus:outline-none w-[80px] placeholder-[#3a3a3a]"
+          className="bg-transparent text-xs font-medium text-[#6dd49a] focus:outline-none w-[80px] placeholder-[#3a3a3a]"
           placeholder="0"
         />
       </div>
@@ -908,7 +908,7 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
 
   // ── Shared table renderer ─────────────────────────────────────────────────
   const renderTable = (clientList: Client[], sectionType: ClientType) => (
-    <div className="rounded-xl border border-[#2f2f2f] overflow-visible">
+    <div className="rounded-none border border-[#2f2f2f] overflow-visible">
       <table className="w-full text-sm" style={{ borderCollapse: 'separate', borderSpacing: 0, tableLayout: 'fixed' }}>
         <colgroup>
           <col style={{ width: '19%' }} />
@@ -919,7 +919,7 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
         </colgroup>
         <thead>
           <tr className="border-b border-[#2f2f2f]" style={{ background: '#1a1a1a' }}>
-            <th className="text-left px-5 py-3 text-xs font-semibold text-[#555] uppercase tracking-wider rounded-tl-xl">Name</th>
+            <th className="text-left px-5 py-3 text-xs font-semibold text-[#5a5a5a] uppercase tracking-wider rounded-none-none">Name</th>
             {columnOrder.map(col => (
               <th
                 key={col}
@@ -927,7 +927,7 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
                 onDragStart={() => handleColumnDragStart(col)}
                 onDragOver={e => handleColumnDragOver(e, col)}
                 onDrop={handleColumnDrop}
-                className="text-left px-5 py-3 text-xs font-semibold text-[#555] uppercase tracking-wider select-none cursor-grab active:cursor-grabbing"
+                className="text-left px-5 py-3 text-xs font-semibold text-[#5a5a5a] uppercase tracking-wider select-none cursor-grab active:cursor-grabbing"
               >
                 <div className="flex items-center gap-1.5">
                   <GripVertical size={10} className="flex-shrink-0" style={{ opacity: 0.2 }} />
@@ -935,7 +935,7 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
                 </div>
               </th>
             ))}
-            <th className="px-3 py-3 rounded-tr-xl"></th>
+            <th className="px-3 py-3 rounded-none-none"></th>
           </tr>
         </thead>
         <tbody className="divide-y divide-[#2f2f2f]">
@@ -944,7 +944,7 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
             return (
               <tr
                 key={client.id}
-                className="group bg-[#212121] hover:bg-[#1e1e1e] transition-colors cursor-pointer"
+                className="group bg-[#000] hover:bg-[#0a0a0a] transition-colors cursor-pointer"
                 onClick={() => navigate(`/clients/${client.id}`)}
               >
                 <td className="px-5 py-3.5">
@@ -957,7 +957,7 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
                       />
                     </div>
                     <span
-                      className="text-[#ECECEC] text-sm font-medium flex-1 min-w-0 cursor-pointer truncate"
+                      className="text-[#f4f4f4] text-sm font-medium flex-1 min-w-0 cursor-pointer truncate"
                     >{client.name || 'Unnamed'}</span>
                   </div>
                 </td>
@@ -973,19 +973,19 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
                     {!showingInactive ? (
                       <button
                         onClick={e => { e.stopPropagation(); toggleClientActive(client.id, false); }}
-                        className="text-[#555] hover:text-[#ECECEC] transition-colors p-1"
+                        className="text-[#5a5a5a] hover:text-[#f4f4f4] transition-colors p-1"
                         title="Archive client"
                       ><Archive size={13} /></button>
                     ) : (
                       <button
                         onClick={e => { e.stopPropagation(); toggleClientActive(client.id, true); }}
-                        className="text-[#555] hover:text-[#86efac] transition-colors p-1"
+                        className="text-[#5a5a5a] hover:text-[#6dd49a] transition-colors p-1"
                         title="Reactivate client"
                       ><RotateCcw size={13} /></button>
                     )}
                     <button
                       onClick={e => { e.stopPropagation(); deleteClient(client.id); }}
-                      className="text-[#555] hover:text-[#fca5a5] transition-colors p-1"
+                      className="text-[#5a5a5a] hover:text-[#d46d6d] transition-colors p-1"
                       title="Delete client"
                     ><Trash2 size={13} /></button>
                   </div>
@@ -996,7 +996,7 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
 
           {/* Add new row */}
           {isAdding && addingType === sectionType && (
-            <tr className="bg-[#1e1e1e]">
+            <tr className="bg-[#0a0a0a]">
               <td className="px-5 py-3.5" colSpan={columnOrder.length + 2}>
                 <div className="flex items-center gap-4">
                   <Avatar
@@ -1009,7 +1009,7 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
                     value={draft.name}
                     onChange={e => setDraft(d => ({ ...d, name: e.target.value }))}
                     onKeyDown={e => { if (e.key === 'Enter') handleAddSave(); if (e.key === 'Escape') handleAddCancel(); }}
-                    className="bg-transparent text-[#ECECEC] text-sm font-medium flex-1 min-w-0 focus:outline-none placeholder-[#555]"
+                    className="bg-transparent text-[#f4f4f4] text-sm font-medium flex-1 min-w-0 focus:outline-none placeholder-[#555]"
                     placeholder="Client name..."
                   />
                   <div className="flex items-center gap-2 flex-shrink-0">
@@ -1021,8 +1021,8 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
                     <SelectCell value={draft.acquisition} options={columnOptions.acquisition} onChange={v => setDraft(d => ({ ...d, acquisition: v }))} colorMap={acquisitionColors} />
                   </div>
                   <div className="flex items-center gap-2 flex-shrink-0">
-                    <button onClick={handleAddSave} className="text-xs text-[#86efac] hover:text-[#bbf7d0] font-semibold px-3 py-1.5 rounded-lg transition-colors" style={{ background: '#2a2a2a' }}>Save</button>
-                    <button onClick={handleAddCancel} className="text-xs text-[#555] hover:text-[#ECECEC] px-3 py-1.5 rounded-lg transition-colors">Cancel</button>
+                    <button onClick={handleAddSave} className="text-xs text-[#6dd49a] hover:text-[#bbf7d0] font-semibold px-3 py-1.5 rounded-none-none transition-colors" style={{ background: '#0d0d0d' }}>Save</button>
+                    <button onClick={handleAddCancel} className="text-xs text-[#5a5a5a] hover:text-[#f4f4f4] px-3 py-1.5 rounded-none-none transition-colors">Cancel</button>
                   </div>
                 </div>
               </td>
@@ -1046,48 +1046,48 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
     <div className="space-y-8">
       {/* ── Revenue Bar ───────────────────────────────────────────────────── */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <div className="rounded-xl p-4" style={{ background: 'linear-gradient(135deg,#1a2f1e 0%,#162018 100%)', border: '1px solid #1f3a25' }}>
+        <div className="rounded-none p-4" style={{ background: 'linear-gradient(135deg,#1a2f1e 0%,#162018 100%)', border: '1px solid #1f3a25' }}>
           <div className="flex items-center gap-2 mb-1">
-            <TrendingUp size={12} style={{ color: '#86efac' }} />
+            <TrendingUp size={12} style={{ color: '#6dd49a' }} />
             <span className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'rgba(134,239,172,0.8)' }}>Monthly Recurring</span>
           </div>
-          <p className="text-2xl font-bold" style={{ color: '#86efac' }}>${mrr.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
-          <p className="text-[10px] mt-0.5 text-[#666]">Projected: ${(mrr * 12).toLocaleString(undefined, { maximumFractionDigits: 0 })}/yr</p>
+          <p className="text-2xl font-bold" style={{ color: '#6dd49a' }}>${mrr.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
+          <p className="text-[10px] mt-0.5 text-[#5a5a5a]">Projected: ${(mrr * 12).toLocaleString(undefined, { maximumFractionDigits: 0 })}/yr</p>
         </div>
-        <div className="rounded-xl p-4" style={{ background: '#1c1c1c', border: '1px solid #2a2a2a' }}>
+        <div className="rounded-none p-4" style={{ background: '#0a0a0a', border: '1px solid #1a1a1a' }}>
           <div className="flex items-center gap-2 mb-1">
-            <Users size={12} className="text-[#9B9B9B]" />
-            <span className="text-[10px] font-semibold uppercase tracking-wider text-[#9B9B9B]">Recurring Clients</span>
+            <Users size={12} className="text-[#909090]" />
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-[#909090]">Recurring Clients</span>
           </div>
-          <p className="text-2xl font-bold text-[#ECECEC]">{recurringCount}</p>
-          <p className="text-[10px] mt-0.5 text-[#666]">{activeClients.length} total active</p>
+          <p className="text-2xl font-bold text-[#f4f4f4]">{recurringCount}</p>
+          <p className="text-[10px] mt-0.5 text-[#5a5a5a]">{activeClients.length} total active</p>
         </div>
-        <div className="rounded-xl p-4" style={{ background: '#1c1c1c', border: '1px solid #2a2a2a' }}>
+        <div className="rounded-none p-4" style={{ background: '#0a0a0a', border: '1px solid #1a1a1a' }}>
           <div className="flex items-center gap-2 mb-1">
             <DollarSign size={12} style={{ color: '#fde68a' }} />
             <span className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'rgba(253,230,138,0.8)' }}>One-Time Revenue</span>
           </div>
           <p className="text-2xl font-bold" style={{ color: '#fde68a' }}>${oneTimeRevenue.toLocaleString()}</p>
-          <p className="text-[10px] mt-0.5 text-[#666]">{activeClients.filter(c => c.clientType === 'one-time').length} project(s)</p>
+          <p className="text-[10px] mt-0.5 text-[#5a5a5a]">{activeClients.filter(c => c.clientType === 'one-time').length} project(s)</p>
         </div>
-        <div className="rounded-xl p-4" style={{ background: '#1c1c1c', border: '1px solid #2a2a2a' }}>
+        <div className="rounded-none p-4" style={{ background: '#0a0a0a', border: '1px solid #1a1a1a' }}>
           <div className="flex items-center gap-2 mb-1">
-            <Target size={12} className="text-[#9B9B9B]" />
-            <span className="text-[10px] font-semibold uppercase tracking-wider text-[#9B9B9B]">Avg. Client Value</span>
+            <Target size={12} className="text-[#909090]" />
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-[#909090]">Avg. Client Value</span>
           </div>
-          <p className="text-2xl font-bold text-[#ECECEC]">
+          <p className="text-2xl font-bold text-[#f4f4f4]">
             ${recurringCount > 0 ? Math.round(mrr / recurringCount).toLocaleString() : 0}
           </p>
-          <p className="text-[10px] mt-0.5 text-[#666]">MRR per recurring client</p>
+          <p className="text-[10px] mt-0.5 text-[#5a5a5a]">MRR per recurring client</p>
         </div>
       </div>
 
       {/* Header — tabs */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-1 p-1 rounded-xl" style={{ background: '#1a1a1a' }}>
+        <div className="flex items-center gap-1 p-1 rounded-none-none" style={{ background: '#1a1a1a' }}>
           <button
             onClick={() => setActiveTab('active')}
-            className="px-4 py-1.5 text-xs font-semibold rounded-lg transition-all"
+            className="px-4 py-1.5 text-xs font-semibold rounded-none-none transition-all"
             style={{
               background: activeTab === 'active' ? '#2a2a2a' : 'transparent',
               color: activeTab === 'active' ? '#ECECEC' : '#555',
@@ -1097,7 +1097,7 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
           </button>
           <button
             onClick={() => setActiveTab('inactive')}
-            className="px-4 py-1.5 text-xs font-semibold rounded-lg transition-all"
+            className="px-4 py-1.5 text-xs font-semibold rounded-none-none transition-all"
             style={{
               background: activeTab === 'inactive' ? '#2a2a2a' : 'transparent',
               color: activeTab === 'inactive' ? '#ECECEC' : '#555',
@@ -1120,11 +1120,11 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
       {/* ── Recurring Clients ──────────────────────────────────────────────── */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold" style={{ color: '#ECECEC' }}>Recurring Clients</h2>
+          <h2 className="text-sm font-semibold" style={{ color: '#f4f4f4' }}>Recurring Clients</h2>
           <button
             onClick={() => { setAddingType('recurring'); setDraft(newClient(clients.length, 'recurring')); setIsAdding(true); }}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition-colors"
-            style={{ background: '#2a2a2a', color: '#ECECEC' }}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-none-none transition-colors"
+            style={{ background: '#0d0d0d', color: '#f4f4f4' }}
             onMouseEnter={e => (e.currentTarget.style.background = '#333')}
             onMouseLeave={e => (e.currentTarget.style.background = '#2a2a2a')}
           >
@@ -1137,11 +1137,11 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
       {/* ── One-time Services ──────────────────────────────────────────────── */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold" style={{ color: '#ECECEC' }}>One-Time Services</h2>
+          <h2 className="text-sm font-semibold" style={{ color: '#f4f4f4' }}>One-Time Services</h2>
           <button
             onClick={() => { setAddingType('one-time'); setDraft(newClient(clients.length, 'one-time')); setIsAdding(true); }}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition-colors"
-            style={{ background: '#2a2a2a', color: '#ECECEC' }}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-none-none transition-colors"
+            style={{ background: '#0d0d0d', color: '#f4f4f4' }}
             onMouseEnter={e => (e.currentTarget.style.background = '#333')}
             onMouseLeave={e => (e.currentTarget.style.background = '#2a2a2a')}
           >
@@ -1154,11 +1154,11 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
       {/* ── Profit Share ──────────────────────────────────────────────────── */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold" style={{ color: '#ECECEC' }}>Profit Share</h2>
+          <h2 className="text-sm font-semibold" style={{ color: '#f4f4f4' }}>Profit Share</h2>
           <button
             onClick={() => { setAddingType('profit-share'); setDraft(newClient(clients.length, 'profit-share')); setIsAdding(true); }}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition-colors"
-            style={{ background: '#2a2a2a', color: '#ECECEC' }}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-none-none transition-colors"
+            style={{ background: '#0d0d0d', color: '#f4f4f4' }}
             onMouseEnter={e => (e.currentTarget.style.background = '#333')}
             onMouseLeave={e => (e.currentTarget.style.background = '#2a2a2a')}
           >
@@ -1171,7 +1171,7 @@ const ClientsManager: React.FC<ClientsManagerProps> = ({ storagePrefix }) => {
 
       {/* Error toast */}
       {error && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-[#4a2b2b]/90 border border-[#fca5a5]/40 text-[#fecaca] text-sm px-4 py-2 rounded-lg shadow-lg">
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-[#4a2b2b]/90 border border-[#fca5a5]/40 text-[#fecaca] text-sm px-4 py-2 rounded-none-none shadow-lg">
           {error}
         </div>
       )}

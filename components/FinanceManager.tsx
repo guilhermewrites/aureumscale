@@ -74,10 +74,10 @@ const FinanceManager: React.FC<FinanceManagerProps> = ({
 
   const getStatusColor = (status: InvoiceStatus) => {
     switch(status) {
-        case InvoiceStatus.PAID: return 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20';
+        case InvoiceStatus.PAID: return 'text-[#6dd49a] bg-emerald-500/10 border-emerald-500/20';
         case InvoiceStatus.SENT: return 'text-blue-400 bg-blue-500/10 border-blue-500/20';
-        case InvoiceStatus.NOT_PAID: return 'text-amber-400 bg-amber-500/10 border-amber-500/20';
-        default: return 'text-[#9B9B9B]';
+        case InvoiceStatus.NOT_PAID: return 'text-[#e0c870] bg-amber-500/10 border-amber-500/20';
+        default: return 'text-[#909090]';
     }
   };
 
@@ -90,33 +90,33 @@ const FinanceManager: React.FC<FinanceManagerProps> = ({
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-[#2f2f2f] border border-[#3a3a3a] p-6 rounded-xl relative overflow-hidden group">
-            <div className="absolute top-0 right-0 w-24 h-24 bg-[rgba(255,255,255,0.05)] rounded-full -translate-y-1/2 translate-x-1/2"></div>
-            <p className="text-[#9B9B9B] text-sm font-medium mb-2 flex items-center gap-2">
+        <div className="bg-[#0d0d0d] border border-[#242424] p-6 rounded-none-none relative overflow-hidden group">
+            <div className="absolute top-0 right-0 w-24 h-24 bg-[rgba(255,255,255,0.05)] rounded-none-full -translate-y-1/2 translate-x-1/2"></div>
+            <p className="text-[#909090] text-sm font-medium mb-2 flex items-center gap-2">
                 <DollarSign size={16} /> Total Revenue (Paid)
             </p>
-            <h3 className="text-3xl font-bold text-[#ECECEC] mb-2">${totalRevenue.toLocaleString()}</h3>
-            <div className="w-full bg-[#3a3a3a] h-1.5 rounded-full overflow-hidden">
-                <div className="bg-emerald-500 h-full rounded-full transition-all duration-1000" style={{ width: `${progress}%` }}></div>
+            <h3 className="text-3xl font-bold text-[#f4f4f4] mb-2">${totalRevenue.toLocaleString()}</h3>
+            <div className="w-full bg-[#3a3a3a] h-1.5 rounded-none-full overflow-hidden">
+                <div className="bg-emerald-500 h-full rounded-none-full transition-all duration-1000" style={{ width: `${progress}%` }}></div>
             </div>
-            <p className="text-xs text-[#9B9B9B] mt-2">{progress.toFixed(1)}% of $100k Goal</p>
+            <p className="text-xs text-[#909090] mt-2">{progress.toFixed(1)}% of $100k Goal</p>
         </div>
 
-        <div className="bg-[#2f2f2f] border border-[#3a3a3a] p-6 rounded-xl relative overflow-hidden group">
-            <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/10 rounded-full -translate-y-1/2 translate-x-1/2"></div>
-            <p className="text-[#9B9B9B] text-sm font-medium mb-2 flex items-center gap-2">
+        <div className="bg-[#0d0d0d] border border-[#242424] p-6 rounded-none-none relative overflow-hidden group">
+            <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/10 rounded-none-full -translate-y-1/2 translate-x-1/2"></div>
+            <p className="text-[#909090] text-sm font-medium mb-2 flex items-center gap-2">
                 <Clock size={16} /> Outstanding Invoices
             </p>
-            <h3 className="text-3xl font-bold text-[#ECECEC] mb-2">${pendingRevenue.toLocaleString()}</h3>
+            <h3 className="text-3xl font-bold text-[#f4f4f4] mb-2">${pendingRevenue.toLocaleString()}</h3>
             <p className="text-xs text-amber-500/80 mt-1">Pending payment</p>
         </div>
 
-        <div className="bg-[#2f2f2f] border border-[#3a3a3a] p-6 rounded-xl relative overflow-hidden group flex flex-col justify-center items-center text-center">
-            <div className="w-12 h-12 bg-[#3a3a3a] rounded-full flex items-center justify-center mb-3">
+        <div className="bg-[#0d0d0d] border border-[#242424] p-6 rounded-none-none relative overflow-hidden group flex flex-col justify-center items-center text-center">
+            <div className="w-12 h-12 bg-[#3a3a3a] rounded-none-full flex items-center justify-center mb-3">
                 <TrendingUp size={24} className="text-blue-400" />
             </div>
-            <p className="text-[#ECECEC] font-medium">Goal: $100,000 / mo</p>
-            <p className="text-sm text-[#9B9B9B] mt-1">Keep pushing!</p>
+            <p className="text-[#f4f4f4] font-medium">Goal: $100,000 / mo</p>
+            <p className="text-sm text-[#909090] mt-1">Keep pushing!</p>
         </div>
       </div>
 
@@ -128,27 +128,27 @@ const FinanceManager: React.FC<FinanceManagerProps> = ({
       />
 
       {/* Inputs / Table */}
-      <div className="bg-[#2f2f2f] border border-[#3a3a3a] rounded-xl overflow-hidden shadow-sm">
-         <div className="p-6 border-b border-[#3a3a3a] flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div className="bg-[#0d0d0d] border border-[#242424] rounded-none-none overflow-hidden shadow-sm">
+         <div className="p-6 border-b border-[#242424] flex flex-col sm:flex-row items-center justify-between gap-4">
             <div>
-                <h2 className="text-lg font-semibold text-[#ECECEC]">Invoices & Payments</h2>
-                <p className="text-sm text-[#9B9B9B]">Manage your revenue streams.</p>
+                <h2 className="text-lg font-semibold text-[#f4f4f4]">Invoices & Payments</h2>
+                <p className="text-sm text-[#909090]">Manage your revenue streams.</p>
             </div>
             <div className="flex items-center gap-3 w-full sm:w-auto">
                 <div className="relative flex-1 sm:flex-none">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9B9B9B]" size={14} />
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[#909090]" size={14} />
                     <input
                         type="text"
                         placeholder="Search client..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="bg-[#212121] border border-[#3a3a3a] rounded-lg pl-9 pr-3 py-2 text-sm text-[#ECECEC] focus:outline-none focus:ring-1 focus:ring-[#555555] w-full sm:w-48 placeholder-[#666666]"
+                        className="bg-[#000] border border-[#242424] rounded-none-none pl-9 pr-3 py-2 text-sm text-[#f4f4f4] focus:outline-none focus:ring-1 focus:ring-[#555555] w-full sm:w-48 placeholder-[#666666]"
                     />
                 </div>
                 <button
                     onClick={() => setIsAdding(!isAdding)}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-none ${
-                        isAdding ? 'bg-[#3a3a3a] text-[#ECECEC]' : 'bg-white text-[#212121] hover:bg-[#e5e5e5]'
+                    className={`flex items-center gap-2 px-4 py-2 rounded-none-none text-sm font-medium transition-none ${
+                        isAdding ? 'bg-[#3a3a3a] text-[#f4f4f4]' : 'bg-white text-[#212121] hover:bg-[#e5e5e5]'
                     }`}
                 >
                     <Plus size={16} className={isAdding ? 'rotate-45 transition-transform' : 'transition-transform'} />
@@ -159,43 +159,43 @@ const FinanceManager: React.FC<FinanceManagerProps> = ({
 
          {/* Add Form */}
          {isAdding && (
-            <div className="p-6 bg-[#212121] border-b border-[#3a3a3a] animate-in slide-in-from-top-2">
+            <div className="p-6 bg-[#000] border-b border-[#242424] animate-in slide-in-from-top-2">
                 <form onSubmit={handleAddItem} className="grid grid-cols-1 sm:grid-cols-5 gap-4 items-end">
                     <div className="sm:col-span-2 space-y-1.5">
-                        <label className="text-xs text-[#9B9B9B] font-medium ml-1">Client Name</label>
+                        <label className="text-xs text-[#909090] font-medium ml-1">Client Name</label>
                         <input
                             type="text"
                             required
                             placeholder="e.g. Acme Corp"
                             value={newItem.clientName}
                             onChange={e => setNewItem({...newItem, clientName: e.target.value})}
-                            className="w-full bg-[#2f2f2f] border border-[#3a3a3a] rounded-lg px-3 py-2 text-sm text-[#ECECEC] focus:outline-none focus:ring-1 focus:ring-[#555555]"
+                            className="w-full bg-[#0d0d0d] border border-[#242424] rounded-none-none px-3 py-2 text-sm text-[#f4f4f4] focus:outline-none focus:ring-1 focus:ring-[#555555]"
                         />
                     </div>
                     <div className="space-y-1.5">
-                        <label className="text-xs text-[#9B9B9B] font-medium ml-1">Amount ($)</label>
+                        <label className="text-xs text-[#909090] font-medium ml-1">Amount ($)</label>
                         <input
                             type="number"
                             required
                             placeholder="0.00"
                             value={newItem.amount || ''}
                             onChange={e => setNewItem({...newItem, amount: parseFloat(e.target.value)})}
-                            className="w-full bg-[#2f2f2f] border border-[#3a3a3a] rounded-lg px-3 py-2 text-sm text-[#ECECEC] focus:outline-none focus:ring-1 focus:ring-[#555555]"
+                            className="w-full bg-[#0d0d0d] border border-[#242424] rounded-none-none px-3 py-2 text-sm text-[#f4f4f4] focus:outline-none focus:ring-1 focus:ring-[#555555]"
                         />
                     </div>
                     <div className="space-y-1.5">
-                        <label className="text-xs text-[#9B9B9B] font-medium ml-1">Status</label>
+                        <label className="text-xs text-[#909090] font-medium ml-1">Status</label>
                         <select
                             value={newItem.status}
                             onChange={e => setNewItem({...newItem, status: e.target.value as InvoiceStatus})}
-                            className="w-full bg-[#2f2f2f] border border-[#3a3a3a] rounded-lg px-3 py-2 text-sm text-[#ECECEC] focus:outline-none focus:ring-1 focus:ring-[#555555] appearance-none"
+                            className="w-full bg-[#0d0d0d] border border-[#242424] rounded-none-none px-3 py-2 text-sm text-[#f4f4f4] focus:outline-none focus:ring-1 focus:ring-[#555555] appearance-none"
                         >
                             {Object.values(InvoiceStatus).map(s => <option key={s} value={s}>{s}</option>)}
                         </select>
                     </div>
                     <button
                         type="submit"
-                        className="bg-white hover:bg-[#e5e5e5] text-[#212121] py-2 rounded-lg text-sm font-medium transition-none"
+                        className="bg-white hover:bg-[#e5e5e5] text-[#212121] py-2 rounded-none-none text-sm font-medium transition-none"
                     >
                         Add Entry
                     </button>
@@ -207,7 +207,7 @@ const FinanceManager: React.FC<FinanceManagerProps> = ({
          <div className="overflow-x-auto min-h-[300px]">
             <table className="w-full text-left border-collapse">
                 <thead>
-                    <tr className="bg-[#212121] text-xs uppercase tracking-wider text-[#9B9B9B] font-medium border-b border-[#3a3a3a]">
+                    <tr className="bg-[#000] text-xs uppercase tracking-wider text-[#909090] font-medium border-b border-[#242424]">
                         <th className="px-6 py-4">Client</th>
                         <th className="px-6 py-4">Date Sent</th>
                         <th className="px-6 py-4">Status</th>
@@ -219,20 +219,20 @@ const FinanceManager: React.FC<FinanceManagerProps> = ({
                     {filteredItems.length > 0 ? (
                         filteredItems.map(item => (
                             <tr key={item.id} className="group hover:bg-[rgba(255,255,255,0.05)] transition-none">
-                                <td className="px-6 py-4 font-medium text-[#ECECEC]">
+                                <td className="px-6 py-4 font-medium text-[#f4f4f4]">
                                     <div className="flex items-center gap-2">
-                                        <div className="w-8 h-8 rounded bg-[#3a3a3a] flex items-center justify-center text-[#9B9B9B]">
+                                        <div className="w-8 h-8 rounded-none bg-[#3a3a3a] flex items-center justify-center text-[#909090]">
                                             <FileText size={14} />
                                         </div>
                                         {item.clientName}
                                     </div>
                                 </td>
-                                <td className="px-6 py-4 text-sm text-[#9B9B9B] font-mono">
+                                <td className="px-6 py-4 text-sm text-[#909090] font-mono">
                                     {new Date(item.invoiceDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                                 </td>
                                 <td className="px-6 py-4">
                                     <div className="relative group/status inline-block">
-                                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border cursor-pointer ${getStatusColor(item.status)}`}>
+                                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-none-full text-xs font-medium border cursor-pointer ${getStatusColor(item.status)}`}>
                                             {item.status === InvoiceStatus.PAID && <CheckCircle2 size={12} />}
                                             {item.status === InvoiceStatus.NOT_PAID && <AlertCircle size={12} />}
                                             {item.status === InvoiceStatus.SENT && <Clock size={12} />}
@@ -249,7 +249,7 @@ const FinanceManager: React.FC<FinanceManagerProps> = ({
                                         </select>
                                     </div>
                                 </td>
-                                <td className="px-6 py-4 text-right text-sm font-semibold text-[#ECECEC] font-mono">
+                                <td className="px-6 py-4 text-right text-sm font-semibold text-[#f4f4f4] font-mono">
                                     ${item.amount.toLocaleString()}
                                 </td>
                                 <td className="px-6 py-4 text-right">
@@ -257,7 +257,7 @@ const FinanceManager: React.FC<FinanceManagerProps> = ({
                                         onClick={() => {
                                             if(window.confirm('Delete this invoice?')) onDelete(item.id);
                                         }}
-                                        className="text-[#666666] hover:text-rose-500 p-1.5 hover:bg-rose-500/10 rounded-lg transition-none"
+                                        className="text-[#666666] hover:text-rose-500 p-1.5 hover:bg-rose-500/10 rounded-none-none transition-none"
                                     >
                                         <Trash2 size={16} />
                                     </button>
@@ -266,7 +266,7 @@ const FinanceManager: React.FC<FinanceManagerProps> = ({
                         ))
                     ) : (
                         <tr>
-                            <td colSpan={5} className="px-6 py-12 text-center text-[#9B9B9B]">
+                            <td colSpan={5} className="px-6 py-12 text-center text-[#909090]">
                                 No invoices found. Add one to track your revenue.
                             </td>
                         </tr>

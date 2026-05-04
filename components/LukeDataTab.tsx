@@ -33,6 +33,11 @@ const AD_SPEND_KEY = 'aureum_luke_ad_spend_v2';
 // commission blend). Set per Guilherme's spec; if Luke renegotiates, update here.
 const AFFILIATE_AOV = 500;
 
+// Manual override for total affiliate revenue. The receipt-based attribution
+// over-counts (only a fraction of submissions are genuine), so until that's
+// fixed Luke wants this hard-pinned to the verified payout figure.
+const AFFILIATE_REVENUE_OVERRIDE = 6350;
+
 // ---------------------------------------------------------------- types
 
 type Person = {
@@ -463,10 +468,12 @@ const LukeDataTab: React.FC = () => {
     };
   }, [people, dateRange]);
 
-  // Affiliate revenue: every /receipt submission within the window = $500.
-  // Treated as its own income stream alongside webinar + organic.
+  // Affiliate revenue: receipt-based attribution is currently noisy (lots of
+  // false-positive submissions), so we display the manually-verified payout
+  // figure instead of `affiliateCount * AFFILIATE_AOV`. Receipt count is still
+  // shown for context. Swap back to the formula once attribution is cleaned up.
   const affiliateCount = dateScopedReceipts.length;
-  const affiliateRevenue = affiliateCount * AFFILIATE_AOV;
+  const affiliateRevenue = AFFILIATE_REVENUE_OVERRIDE;
   // Buyers who already had AIF Whop access at submission time — useful signal
   // for "are these net-new customers or upsells of existing AIF buyers".
   const affiliateAifOverlap = dateScopedReceipts.filter((r) => r.has_aif_access).length;
@@ -495,15 +502,16 @@ const LukeDataTab: React.FC = () => {
   const adSpend = adSpendByRange[dateRange] ?? 0;
   const grossProfit = profit.webRev - adSpend;
   const roas = adSpend > 0 ? profit.webRev / adSpend : 0;
-  // Net cash is strictly the WEBINAR FUNNEL cash flow: (Webinar revenue − ad
-  // spend) + Organic, minus blended processor fees. Affiliate (Wix/Base44
-  // receipts) and Ascended (AI Insiders subs) are separate revenue streams
-  // not driven by the webinar ads — they're displayed in their own cards
-  // but NOT mixed into Net cash, otherwise a few high-ticket recurring subs
-  // make the funnel look 10x more profitable than it actually is.
+  // Net cash = webinar funnel cash flow + affiliate payouts.
+  //   Funnel cash: (Webinar revenue − ad spend) + Organic, minus blended
+  //   processor fees. Affiliate revenue is added on top — it's already a net
+  //   payout from Wix/Base44 so no extra processor fee is applied. Ascended
+  //   (AI Insiders subs) is still kept out of Net cash because a few
+  //   high-ticket recurring subs would make the funnel look 10x more
+  //   profitable than it actually is.
   const funnelCash = grossProfit + profit.orgRev;
   const fees = funnelCash > 0 ? funnelCash * PROCESSING_FEE_RATE : 0;
-  const netCash = funnelCash - fees;
+  const netCash = funnelCash - fees + affiliateRevenue;
   // Funnel-only revenue total — the number directly attributable to the ads.
   const funnelRevenue = profit.webRev + profit.orgRev;
   // Grand-total revenue across every stream — informational only.
@@ -938,16 +946,16 @@ const LukeDataTab: React.FC = () => {
 
       {/* header row */}
       <div className="flex items-center justify-between flex-shrink-0">
-        <div className="flex items-center gap-3 text-xs text-[#666]">
+        <div className="flex items-center gap-3 text-xs text-[#5a5a5a]">
           {syncing ? (
-            <span className="flex items-center gap-1.5 text-emerald-300">
+            <span className="flex items-center gap-1.5 text-[#6dd49a]">
               <Loader2 size={12} className="animate-spin" />
               Refreshing… {syncElapsed}s · pulling WebinarJam, Close, Kit, Whop & Calendly
             </span>
           ) : lastRun ? (
             lastRun.status === 'ok' ? (
-              <span className="flex items-center gap-1.5 text-[#888]">
-                <CheckCircle2 size={12} className="text-emerald-500" />
+              <span className="flex items-center gap-1.5 text-[#909090]">
+                <CheckCircle2 size={12} className="text-[#6dd49a]" />
                 Synced {formatRelative(lastRun.finished_at || lastRun.started_at)} · {lastRun.upserted_count ?? '?'} people · {lastRun.whop_attempts_count ?? 0} failed payments
               </span>
             ) : lastRun.status === 'error' ? (
@@ -956,7 +964,7 @@ const LukeDataTab: React.FC = () => {
                 Last sync failed: {lastRun.error?.slice(0, 80)}
               </span>
             ) : (
-              <span className="flex items-center gap-1.5 text-amber-400">
+              <span className="flex items-center gap-1.5 text-[#e0c870]">
                 <Loader2 size={12} className="animate-spin" /> Sync in progress…
               </span>
             )
@@ -969,7 +977,7 @@ const LukeDataTab: React.FC = () => {
           type="button"
           onClick={refresh}
           disabled={syncing || !canSync}
-          className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#2a2a2a] hover:bg-[#333] text-[#ECECEC] text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex items-center gap-2 px-3 py-1.5 rounded-none-none bg-[#0d0d0d] hover:bg-[#333] text-[#f4f4f4] text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <RefreshCw size={12} className={syncing ? 'animate-spin' : ''} />
           {syncing ? `Refreshing… ${syncElapsed}s` : 'Refresh now'}
@@ -978,55 +986,55 @@ const LukeDataTab: React.FC = () => {
 
       {/* view toggle: people / failed / needs-call / needs-recovery */}
       <div className="flex items-center justify-between gap-3 flex-shrink-0">
-        <div className="flex gap-1 bg-[#1a1a1a] rounded-lg p-1 flex-wrap">
+        <div className="flex gap-1 bg-[#1a1a1a] rounded-none-none p-1 flex-wrap">
           <button
             onClick={() => setView('people')}
-            className={`flex items-center gap-1.5 px-4 py-1.5 rounded-md text-xs font-medium transition-colors ${
-              view === 'people' ? 'bg-[#2a2a2a] text-[#ECECEC]' : 'text-[#666] hover:text-[#999]'
+            className={`flex items-center gap-1.5 px-4 py-1.5 rounded-none-none text-xs font-medium transition-colors ${
+              view === 'people' ? 'bg-[#0d0d0d] text-[#f4f4f4]' : 'text-[#5a5a5a] hover:text-[#999]'
             }`}
           >
-            <Users size={12} /> People <span className="text-[#555]">· {dateScopedPeople.length}</span>
+            <Users size={12} /> People <span className="text-[#5a5a5a]">· {dateScopedPeople.length}</span>
           </button>
           <button
             onClick={() => setView('needs_call')}
-            className={`flex items-center gap-1.5 px-4 py-1.5 rounded-md text-xs font-medium transition-colors ${
-              view === 'needs_call' ? 'bg-[#2a2a2a] text-[#ECECEC]' : 'text-[#666] hover:text-[#999]'
+            className={`flex items-center gap-1.5 px-4 py-1.5 rounded-none-none text-xs font-medium transition-colors ${
+              view === 'needs_call' ? 'bg-[#0d0d0d] text-[#f4f4f4]' : 'text-[#5a5a5a] hover:text-[#999]'
             }`}
           >
-            <Calendar size={12} /> Needs to book call <span className={needsCallList.length > 0 ? 'text-amber-300' : 'text-[#555]'}>· {needsCallList.length}</span>
+            <Calendar size={12} /> Needs to book call <span className={needsCallList.length > 0 ? 'text-amber-300' : 'text-[#5a5a5a]'}>· {needsCallList.length}</span>
           </button>
           <button
             onClick={() => setView('needs_recovery')}
-            className={`flex items-center gap-1.5 px-4 py-1.5 rounded-md text-xs font-medium transition-colors ${
-              view === 'needs_recovery' ? 'bg-[#2a2a2a] text-[#ECECEC]' : 'text-[#666] hover:text-[#999]'
+            className={`flex items-center gap-1.5 px-4 py-1.5 rounded-none-none text-xs font-medium transition-colors ${
+              view === 'needs_recovery' ? 'bg-[#0d0d0d] text-[#f4f4f4]' : 'text-[#5a5a5a] hover:text-[#999]'
             }`}
           >
-            <DollarSign size={12} /> Needs recovery <span className={needsRecoveryList.length > 0 ? 'text-rose-400' : 'text-[#555]'}>· {needsRecoveryList.length}</span>
+            <DollarSign size={12} /> Needs recovery <span className={needsRecoveryList.length > 0 ? 'text-rose-400' : 'text-[#5a5a5a]'}>· {needsRecoveryList.length}</span>
           </button>
           <button
             onClick={() => setView('affiliate')}
-            className={`flex items-center gap-1.5 px-4 py-1.5 rounded-md text-xs font-medium transition-colors ${
-              view === 'affiliate' ? 'bg-[#2a2a2a] text-[#ECECEC]' : 'text-[#666] hover:text-[#999]'
+            className={`flex items-center gap-1.5 px-4 py-1.5 rounded-none-none text-xs font-medium transition-colors ${
+              view === 'affiliate' ? 'bg-[#0d0d0d] text-[#f4f4f4]' : 'text-[#5a5a5a] hover:text-[#999]'
             }`}
           >
-            <DollarSign size={12} /> Affiliate <span className={dateScopedReceipts.length > 0 ? 'text-emerald-400' : 'text-[#555]'}>· {dateScopedReceipts.length}</span>
+            <DollarSign size={12} /> Affiliate <span className={dateScopedReceipts.length > 0 ? 'text-[#6dd49a]' : 'text-[#5a5a5a]'}>· {dateScopedReceipts.length}</span>
           </button>
           <button
             onClick={() => setView('failed')}
-            className={`flex items-center gap-1.5 px-4 py-1.5 rounded-md text-xs font-medium transition-colors ${
-              view === 'failed' ? 'bg-[#2a2a2a] text-[#ECECEC]' : 'text-[#666] hover:text-[#999]'
+            className={`flex items-center gap-1.5 px-4 py-1.5 rounded-none-none text-xs font-medium transition-colors ${
+              view === 'failed' ? 'bg-[#0d0d0d] text-[#f4f4f4]' : 'text-[#5a5a5a] hover:text-[#999]'
             }`}
           >
-            <XCircle size={12} /> Failed payments (raw) <span className="text-[#555]">· {dateScopedAttempts.length}</span>
+            <XCircle size={12} /> Failed payments (raw) <span className="text-[#5a5a5a]">· {dateScopedAttempts.length}</span>
           </button>
         </div>
-        <div className="flex gap-1 bg-[#1a1a1a] rounded-lg p-1">
+        <div className="flex gap-1 bg-[#1a1a1a] rounded-none-none p-1">
           {DATE_RANGES.map((r) => (
             <button
               key={r.key}
               onClick={() => setDateRange(r.key)}
-              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
-                dateRange === r.key ? 'bg-[#2a2a2a] text-[#ECECEC]' : 'text-[#666] hover:text-[#999]'
+              className={`px-3 py-1.5 rounded-none-none text-xs font-medium transition-colors ${
+                dateRange === r.key ? 'bg-[#0d0d0d] text-[#f4f4f4]' : 'text-[#5a5a5a] hover:text-[#999]'
               }`}
             >
               {r.label}
@@ -1043,20 +1051,20 @@ const LukeDataTab: React.FC = () => {
               icon={TrendingUp}
               label="Funnel net cash"
               value={fmtMoney(netCash)}
-              sub={`Webinar + Organic − ads − ~${(PROCESSING_FEE_RATE * 100).toFixed(0)}% fees · Affiliate + Ascended shown separately`}
+              sub={`Webinar + Organic − ads − ~${(PROCESSING_FEE_RATE * 100).toFixed(0)}% fees + Affiliate · Ascended shown separately`}
               accent="emerald"
               emphasized
             />
-            <div className="rounded-md px-3 py-2 border bg-[#121212] border-[#1f1f1f]">
+            <div className="rounded-none px-3 py-2 border bg-[#121212] border-[#1a1a1a]">
               <div className="flex items-center justify-between mb-0.5">
-                <p className="text-[10px] uppercase tracking-wider text-[#555]">Ad spend</p>
+                <p className="text-[10px] uppercase tracking-wider text-[#5a5a5a]">Ad spend</p>
                 <div className="flex items-center gap-1">
-                  <Target size={11} className="text-[#fca5a5]" />
+                  <Target size={11} className="text-[#d46d6d]" />
                   {!editingSpend && (
                     <button
                       type="button"
                       onClick={startEditSpend}
-                      className="p-0.5 rounded hover:bg-[rgba(255,255,255,0.05)] text-[#666] hover:text-[#ECECEC]"
+                      className="p-0.5 rounded-none hover:bg-[rgba(255,255,255,0.05)] text-[#5a5a5a] hover:text-[#f4f4f4]"
                       title="Edit ad spend for this period"
                     >
                       <Pencil size={10} />
@@ -1066,7 +1074,7 @@ const LukeDataTab: React.FC = () => {
               </div>
               {editingSpend ? (
                 <div className="flex items-center gap-1">
-                  <span className="text-[#666] text-sm">$</span>
+                  <span className="text-[#5a5a5a] text-sm">$</span>
                   <input
                     autoFocus
                     type="text"
@@ -1077,19 +1085,19 @@ const LukeDataTab: React.FC = () => {
                       if (e.key === 'Enter') saveEditSpend();
                       if (e.key === 'Escape') cancelEditSpend();
                     }}
-                    className="flex-1 min-w-0 bg-[#161616] border border-[#2a2a2a] rounded px-1.5 py-0.5 text-base font-semibold text-[#ECECEC] focus:outline-none focus:border-[#3a3a3a]"
+                    className="flex-1 min-w-0 bg-[#060606] border border-[#1a1a1a] rounded-none px-1.5 py-0.5 text-base font-semibold text-[#f4f4f4] focus:outline-none focus:border-[#242424]"
                   />
-                  <button type="button" onClick={saveEditSpend} className="p-1 rounded bg-emerald-500/10 text-emerald-400">
+                  <button type="button" onClick={saveEditSpend} className="p-1 rounded-none bg-emerald-500/10 text-[#6dd49a]">
                     <Check size={11} />
                   </button>
-                  <button type="button" onClick={cancelEditSpend} className="p-1 rounded bg-[#2a2a2a] text-[#888]">
+                  <button type="button" onClick={cancelEditSpend} className="p-1 rounded-none bg-[#0d0d0d] text-[#909090]">
                     <X size={11} />
                   </button>
                 </div>
               ) : (
                 <p className="font-semibold text-base text-[#bdbdbd]">{fmtMoney(adSpend)}</p>
               )}
-              <p className="text-[10px] text-[#555] leading-tight">
+              <p className="text-[10px] text-[#5a5a5a] leading-tight">
                 {DATE_RANGES.find((r) => r.key === dateRange)!.label} · click pencil to edit
               </p>
             </div>
@@ -1104,7 +1112,7 @@ const LukeDataTab: React.FC = () => {
               icon={DollarSign}
               label="Affiliate revenue"
               value={fmtMoney(affiliateRevenue)}
-              sub={`${affiliateCount} receipts × ${fmtMoney(AFFILIATE_AOV)}${affiliateAifOverlap > 0 ? ` · ${affiliateAifOverlap} also in AIF` : ''}`}
+              sub={`Verified payout · ${affiliateCount} receipts on file${affiliateAifOverlap > 0 ? ` · ${affiliateAifOverlap} also in AIF` : ''}`}
               accent="emerald"
             />
             <ProfitCard
@@ -1117,23 +1125,23 @@ const LukeDataTab: React.FC = () => {
           </div>
 
           {/* compact unit-economics strip — single line, small text, no card chrome */}
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 px-1 text-[11px] text-[#888] flex-shrink-0">
-            <span><span className="text-[#555]">Webinar</span> {fmtMoney(profit.webRev)} <span className="text-[#555]">· {profit.webBuyers} buyers</span></span>
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 px-1 text-[11px] text-[#909090] flex-shrink-0">
+            <span><span className="text-[#5a5a5a]">Webinar</span> {fmtMoney(profit.webRev)} <span className="text-[#5a5a5a]">· {profit.webBuyers} buyers</span></span>
             <span className="text-[#333]">|</span>
-            <span><span className="text-[#555]">Affiliate</span> {fmtMoney(affiliateRevenue)} <span className="text-[#555]">· {affiliateCount} receipts</span></span>
+            <span><span className="text-[#5a5a5a]">Affiliate</span> {fmtMoney(affiliateRevenue)} <span className="text-[#5a5a5a]">· {affiliateCount} receipts</span></span>
             <span className="text-[#333]">|</span>
-            <span><span className="text-[#555]">Ascended</span> {fmtMoney(ascendedRevenue)} <span className="text-[#555]">· {ascendedCount} buyers</span></span>
+            <span><span className="text-[#5a5a5a]">Ascended</span> {fmtMoney(ascendedRevenue)} <span className="text-[#5a5a5a]">· {ascendedCount} buyers</span></span>
             <span className="text-[#333]">|</span>
-            <span><span className="text-[#555]">Organic</span> {fmtMoney(profit.orgRev)} <span className="text-[#555]">· {profit.orgBuyers} buyers</span></span>
+            <span><span className="text-[#5a5a5a]">Organic</span> {fmtMoney(profit.orgRev)} <span className="text-[#5a5a5a]">· {profit.orgBuyers} buyers</span></span>
             <span className="text-[#333]">|</span>
-            <span><span className="text-[#555]">CAC / main</span> {profit.webMainN > 0 ? fmtMoney(cpaMain) : '—'}</span>
+            <span><span className="text-[#5a5a5a]">CAC / main</span> {profit.webMainN > 0 ? fmtMoney(cpaMain) : '—'}</span>
             <span className="text-[#333]">|</span>
-            <span><span className="text-[#555]">CAC / buyer</span> {profit.webBuyers > 0 ? fmtMoney(cpaWebBuyer) : '—'}</span>
+            <span><span className="text-[#5a5a5a]">CAC / buyer</span> {profit.webBuyers > 0 ? fmtMoney(cpaWebBuyer) : '—'}</span>
             <span className="text-[#333]">|</span>
-            <span><span className="text-[#555]">LTV / buyer</span> {profit.webBuyers > 0 ? fmtMoney(ltvWebBuyer) : '—'}</span>
+            <span><span className="text-[#5a5a5a]">LTV / buyer</span> {profit.webBuyers > 0 ? fmtMoney(ltvWebBuyer) : '—'}</span>
             <span className="text-[#333]">|</span>
-            <span className={ltvWebBuyer > cpaWebBuyer ? 'text-emerald-400' : 'text-rose-400'}>
-              <span className="text-[#555]">Profit / buyer</span> {profit.webBuyers > 0 ? fmtMoney(ltvWebBuyer - cpaWebBuyer) : '—'}
+            <span className={ltvWebBuyer > cpaWebBuyer ? 'text-[#6dd49a]' : 'text-rose-400'}>
+              <span className="text-[#5a5a5a]">Profit / buyer</span> {profit.webBuyers > 0 ? fmtMoney(ltvWebBuyer - cpaWebBuyer) : '—'}
             </span>
           </div>
 
@@ -1164,20 +1172,20 @@ const LukeDataTab: React.FC = () => {
           {/* search + export */}
           <div className="flex items-center gap-2 flex-shrink-0">
             <div className="relative flex-1">
-              <Search size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#555]" />
+              <Search size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#5a5a5a]" />
               <input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder={`Search ${activeBucketDef ? activeBucketDef.label.toLowerCase() : 'everyone'}…`}
-                className="w-full pl-8 pr-3 py-1.5 bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg text-xs text-[#ECECEC] placeholder:text-[#555] focus:outline-none focus:border-[#3a3a3a]"
+                className="w-full pl-8 pr-3 py-1.5 bg-[#1a1a1a] border border-[#1a1a1a] rounded-none-none text-xs text-[#f4f4f4] placeholder:text-[#5a5a5a] focus:outline-none focus:border-[#242424]"
               />
             </div>
-            <span className="text-xs text-[#555]">{filtered.length} of {counts.all}</span>
+            <span className="text-xs text-[#5a5a5a]">{filtered.length} of {counts.all}</span>
             <button
               type="button"
               onClick={exportCsv}
               disabled={filtered.length === 0}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#2a2a2a] hover:bg-[#333] text-[#ECECEC] text-xs font-medium disabled:opacity-40"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-none-none bg-[#0d0d0d] hover:bg-[#333] text-[#f4f4f4] text-xs font-medium disabled:opacity-40"
             >
               <Download size={12} /> CSV
             </button>
@@ -1191,10 +1199,10 @@ const LukeDataTab: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setFilterOpen((o) => !o)}
-                  className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border transition-colors ${
+                  className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-none-none border transition-colors ${
                     selectedTags.length > 0
                       ? 'bg-emerald-500/10 border-emerald-500/40 text-emerald-200 hover:bg-emerald-500/15'
-                      : 'bg-[#1a1a1a] border-[#2a2a2a] text-[#999] hover:text-[#ECECEC] hover:border-[#3a3a3a]'
+                      : 'bg-[#1a1a1a] border-[#1a1a1a] text-[#999] hover:text-[#f4f4f4] hover:border-[#242424]'
                   }`}
                   aria-expanded={filterOpen}
                   aria-haspopup="listbox"
@@ -1202,7 +1210,7 @@ const LukeDataTab: React.FC = () => {
                   <FilterIcon size={12} />
                   <span>Filter by tag</span>
                   {selectedTags.length > 0 && (
-                    <span className="ml-1 px-1.5 rounded-full bg-emerald-500/30 text-emerald-100 text-[10px] font-semibold leading-tight">
+                    <span className="ml-1 px-1.5 rounded-none-full bg-emerald-500/30 text-emerald-100 text-[10px] font-semibold leading-tight">
                       {selectedTags.length}
                     </span>
                   )}
@@ -1211,16 +1219,16 @@ const LukeDataTab: React.FC = () => {
 
                 {/* Popover panel */}
                 {filterOpen && (
-                  <div className="absolute z-50 left-0 top-full mt-2 w-72 rounded-lg border border-[#2a2a2a] bg-[#141414] shadow-xl shadow-black/50 overflow-hidden">
-                    <div className="flex items-center justify-between px-3 py-2 border-b border-[#222] bg-[#181818]">
-                      <span className="text-[10px] uppercase tracking-wider text-[#888] font-semibold">
+                  <div className="absolute z-50 left-0 top-full mt-2 w-72 rounded-none-none border border-[#1a1a1a] bg-[#141414] shadow-xl shadow-black/50 overflow-hidden">
+                    <div className="flex items-center justify-between px-3 py-2 border-b border-[#1a1a1a] bg-[#181818]">
+                      <span className="text-[10px] uppercase tracking-wider text-[#909090] font-semibold">
                         Filter by Kit tag
                       </span>
                       <button
                         type="button"
                         onClick={() => setSelectedTags([])}
                         disabled={selectedTags.length === 0}
-                        className="text-[10px] text-[#888] hover:text-[#ECECEC] disabled:opacity-30 disabled:cursor-not-allowed underline-offset-2 hover:underline"
+                        className="text-[10px] text-[#909090] hover:text-[#f4f4f4] disabled:opacity-30 disabled:cursor-not-allowed underline-offset-2 hover:underline"
                       >
                         Clear all
                       </button>
@@ -1237,30 +1245,30 @@ const LukeDataTab: React.FC = () => {
                                 prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag],
                               )
                             }
-                            className="w-full flex items-center justify-between gap-2 px-3 py-2 text-xs text-left hover:bg-[#1c1c1c]"
+                            className="w-full flex items-center justify-between gap-2 px-3 py-2 text-xs text-left hover:bg-[#0a0a0a]"
                             role="option"
                             aria-selected={on}
                           >
                             <span className="flex items-center gap-2 min-w-0">
                               <span
-                                className={`flex items-center justify-center w-4 h-4 rounded border flex-shrink-0 ${
+                                className={`flex items-center justify-center w-4 h-4 rounded-none border flex-shrink-0 ${
                                   on
                                     ? 'bg-emerald-500 border-emerald-500'
-                                    : 'bg-transparent border-[#3a3a3a]'
+                                    : 'bg-transparent border-[#242424]'
                                 }`}
                               >
                                 {on && <Check size={10} className="text-black" strokeWidth={3} />}
                               </span>
-                              <span className={`truncate ${on ? 'text-emerald-200' : 'text-[#ECECEC]'}`}>
+                              <span className={`truncate ${on ? 'text-emerald-200' : 'text-[#f4f4f4]'}`}>
                                 {tag}
                               </span>
                             </span>
-                            <span className="text-[10px] text-[#666] flex-shrink-0">{count}</span>
+                            <span className="text-[10px] text-[#5a5a5a] flex-shrink-0">{count}</span>
                           </button>
                         );
                       })}
                     </div>
-                    <div className="px-3 py-2 border-t border-[#222] bg-[#181818] text-[10px] text-[#666]">
+                    <div className="px-3 py-2 border-t border-[#1a1a1a] bg-[#181818] text-[10px] text-[#5a5a5a]">
                       Matches people with <span className="text-[#999]">any</span> selected tag.
                     </div>
                   </div>
@@ -1271,13 +1279,13 @@ const LukeDataTab: React.FC = () => {
               {selectedTags.map((tag) => (
                 <span
                   key={tag}
-                  className="inline-flex items-center gap-1 text-[11px] pl-2 pr-1 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/40 text-emerald-200"
+                  className="inline-flex items-center gap-1 text-[11px] pl-2 pr-1 py-1 rounded-none-full bg-emerald-500/15 border border-emerald-500/40 text-emerald-200"
                 >
                   {tag}
                   <button
                     type="button"
                     onClick={() => setSelectedTags((prev) => prev.filter((t) => t !== tag))}
-                    className="flex items-center justify-center w-4 h-4 rounded-full hover:bg-emerald-500/30 hover:text-white"
+                    className="flex items-center justify-center w-4 h-4 rounded-none-full hover:bg-emerald-500/30 hover:text-white"
                     aria-label={`Remove filter ${tag}`}
                   >
                     <X size={11} />
@@ -1288,7 +1296,7 @@ const LukeDataTab: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setSelectedTags([])}
-                  className="text-[11px] text-[#888] hover:text-[#ECECEC] underline underline-offset-2"
+                  className="text-[11px] text-[#909090] hover:text-[#f4f4f4] underline underline-offset-2"
                 >
                   Clear filters
                 </button>
@@ -1297,9 +1305,9 @@ const LukeDataTab: React.FC = () => {
           )}
 
           {/* table */}
-          <div className="flex-1 min-h-0 overflow-auto rounded-lg border border-[#222]">
+          <div className="flex-1 min-h-0 overflow-auto rounded-none-none border border-[#1a1a1a]">
             <table className="w-full text-xs text-left">
-              <thead className="sticky top-0 bg-[#181818] border-b border-[#222] text-[#666]">
+              <thead className="sticky top-0 bg-[#181818] border-b border-[#1a1a1a] text-[#5a5a5a]">
                 <tr>
                   <Th>Name</Th>
                   <Th>Email</Th>
@@ -1317,11 +1325,11 @@ const LukeDataTab: React.FC = () => {
               </thead>
               <tbody className="text-[#bdbdbd]">
                 {loading ? (
-                  <tr><td colSpan={11} className="p-6 text-center text-[#555]">
+                  <tr><td colSpan={11} className="p-6 text-center text-[#5a5a5a]">
                     <Loader2 size={14} className="inline-block animate-spin mr-2" /> Loading…
                   </td></tr>
                 ) : filtered.length === 0 ? (
-                  <tr><td colSpan={11} className="p-6 text-center text-[#555]">
+                  <tr><td colSpan={11} className="p-6 text-center text-[#5a5a5a]">
                     {people.length === 0
                       ? 'No data yet. Click "Refresh now" to pull from WebinarJam, Close, Kit, and Whop.'
                       : 'No rows match this filter.'}
@@ -1329,30 +1337,30 @@ const LukeDataTab: React.FC = () => {
                 ) : (
                   filtered.slice(0, 500).map((p) => (
                     <tr key={p.id} className="border-b border-[#1a1a1a] hover:bg-[#141414]">
-                      <Td>{[p.first_name, p.last_name].filter(Boolean).join(' ') || <span className="text-[#444]">—</span>}</Td>
-                      <Td><span className="text-[#888]">{p.email}</span></Td>
+                      <Td>{[p.first_name, p.last_name].filter(Boolean).join(' ') || <span className="text-[#3a3a3a]">—</span>}</Td>
+                      <Td><span className="text-[#909090]">{p.email}</span></Td>
                       <Td>
                         {p.instagram_handle ? (
                           <a
                             href={`https://instagram.com/${p.instagram_handle.replace(/^@/, '')}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 text-[#bdbdbd] hover:text-[#ECECEC]"
+                            className="inline-flex items-center gap-1 text-[#bdbdbd] hover:text-[#f4f4f4]"
                           >
                             <Instagram size={11} /> {p.instagram_handle}
                           </a>
-                        ) : <span className="text-[#444]">—</span>}
+                        ) : <span className="text-[#3a3a3a]">—</span>}
                       </Td>
                       <Td>
                         {(p.kit_tags || []).length === 0 ? (
-                          <span className="text-[#444]">—</span>
+                          <span className="text-[#3a3a3a]">—</span>
                         ) : (
                           <div className="flex flex-wrap gap-1">
                             {(p.kit_tags || []).slice(0, 3).map((t) => (
-                              <span key={t} className="text-[10px] px-1.5 py-0.5 rounded-full bg-[#1a1a1a] border border-[#2a2a2a] text-[#aaa]">{t}</span>
+                              <span key={t} className="text-[10px] px-1.5 py-0.5 rounded-none-full bg-[#1a1a1a] border border-[#1a1a1a] text-[#aaa]">{t}</span>
                             ))}
                             {(p.kit_tags || []).length > 3 && (
-                              <span className="text-[10px] text-[#555]" title={(p.kit_tags || []).slice(3).join(', ')}>+{(p.kit_tags || []).length - 3}</span>
+                              <span className="text-[10px] text-[#5a5a5a]" title={(p.kit_tags || []).slice(3).join(', ')}>+{(p.kit_tags || []).length - 3}</span>
                             )}
                           </div>
                         )}
@@ -1361,13 +1369,13 @@ const LukeDataTab: React.FC = () => {
                       <Td>{p.in_close ? <span className="text-[#bdbdbd]">{p.close_status || 'yes'}</span> : <Flag on={false} />}</Td>
                       <Td><Flag on={p.in_webinarjam} /></Td>
                       <Td>{p.wj_attended_live ? (
-                        <span className="text-emerald-500">{formatSeconds(p.wj_time_live_seconds)}</span>
+                        <span className="text-[#6dd49a]">{formatSeconds(p.wj_time_live_seconds)}</span>
                       ) : <Flag on={false} />}</Td>
-                      <Td>{p.bought_slo ? <span className="text-emerald-500">{fmtMoney(p.slo_amount || 0)}</span> : <Flag on={false} />}</Td>
-                      <Td>{p.bought_main ? <span className="text-emerald-500">{fmtMoney(p.main_amount || 0)}</span> : <Flag on={false} />}</Td>
-                      <Td>{p.bought_ascended ? <span className="text-amber-400 font-semibold">{fmtMoney(p.ascended_amount || 0)}</span> : <Flag on={false} />}</Td>
+                      <Td>{p.bought_slo ? <span className="text-[#6dd49a]">{fmtMoney(p.slo_amount || 0)}</span> : <Flag on={false} />}</Td>
+                      <Td>{p.bought_main ? <span className="text-[#6dd49a]">{fmtMoney(p.main_amount || 0)}</span> : <Flag on={false} />}</Td>
+                      <Td>{p.bought_ascended ? <span className="text-[#e0c870] font-semibold">{fmtMoney(p.ascended_amount || 0)}</span> : <Flag on={false} />}</Td>
                       <Td>{p.calendly_booked ? (
-                        <span className="text-emerald-500">
+                        <span className="text-[#6dd49a]">
                           {p.calendly_booking_time ? formatDate(p.calendly_booking_time) : 'booked'}
                         </span>
                       ) : <Flag on={false} />}</Td>
@@ -1377,7 +1385,7 @@ const LukeDataTab: React.FC = () => {
               </tbody>
             </table>
             {filtered.length > 500 && (
-              <div className="py-2 text-center text-[11px] text-[#555] bg-[#101010]">
+              <div className="py-2 text-center text-[11px] text-[#5a5a5a] bg-[#101010]">
                 Showing first 500 of {filtered.length} — use search to narrow, or export full CSV.
               </div>
             )}
@@ -1385,8 +1393,8 @@ const LukeDataTab: React.FC = () => {
 
           {/* calendly notice — only shows if none of the current buyers have booked a call yet */}
           {counts.booked === 0 && counts.slo + counts.main > 0 && (
-            <div className="flex-shrink-0 p-3 rounded-lg bg-[#1a1510] border border-amber-800/40 text-xs text-amber-200/80 flex items-start gap-2">
-              <AlertCircle size={14} className="flex-shrink-0 mt-0.5 text-amber-400" />
+            <div className="flex-shrink-0 p-3 rounded-none-none bg-[#1a1510] border border-amber-800/40 text-xs text-amber-200/80 flex items-start gap-2">
+              <AlertCircle size={14} className="flex-shrink-0 mt-0.5 text-[#e0c870]" />
               <div>
                 <p className="font-medium text-amber-200">No buyers have booked a Calendly call yet.</p>
                 <p className="mt-0.5 text-amber-200/60">
@@ -1431,29 +1439,29 @@ const LukeDataTab: React.FC = () => {
           {/* search + export */}
           <div className="flex items-center gap-2 flex-shrink-0">
             <div className="relative flex-1">
-              <Search size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#555]" />
+              <Search size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#5a5a5a]" />
               <input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search buyers needing a call…"
-                className="w-full pl-8 pr-3 py-1.5 bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg text-xs text-[#ECECEC] placeholder:text-[#555] focus:outline-none focus:border-[#3a3a3a]"
+                className="w-full pl-8 pr-3 py-1.5 bg-[#1a1a1a] border border-[#1a1a1a] rounded-none-none text-xs text-[#f4f4f4] placeholder:text-[#5a5a5a] focus:outline-none focus:border-[#242424]"
               />
             </div>
-            <span className="text-xs text-[#555]">{filteredNeedsCall.length} of {needsCallList.length}</span>
+            <span className="text-xs text-[#5a5a5a]">{filteredNeedsCall.length} of {needsCallList.length}</span>
             <button
               type="button"
               onClick={exportCsv}
               disabled={filteredNeedsCall.length === 0}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#2a2a2a] hover:bg-[#333] text-[#ECECEC] text-xs font-medium disabled:opacity-40"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-none-none bg-[#0d0d0d] hover:bg-[#333] text-[#f4f4f4] text-xs font-medium disabled:opacity-40"
             >
               <Download size={12} /> CSV
             </button>
           </div>
 
           {/* needs-call table */}
-          <div className="flex-1 min-h-0 overflow-auto rounded-lg border border-[#222]">
+          <div className="flex-1 min-h-0 overflow-auto rounded-none-none border border-[#1a1a1a]">
             <table className="w-full text-xs text-left">
-              <thead className="sticky top-0 bg-[#181818] border-b border-[#222] text-[#666]">
+              <thead className="sticky top-0 bg-[#181818] border-b border-[#1a1a1a] text-[#5a5a5a]">
                 <tr>
                   <Th>Name</Th>
                   <Th>Email</Th>
@@ -1466,47 +1474,47 @@ const LukeDataTab: React.FC = () => {
               </thead>
               <tbody className="text-[#bdbdbd]">
                 {loading ? (
-                  <tr><td colSpan={7} className="p-6 text-center text-[#555]">
+                  <tr><td colSpan={7} className="p-6 text-center text-[#5a5a5a]">
                     <Loader2 size={14} className="inline-block animate-spin mr-2" /> Loading…
                   </td></tr>
                 ) : filteredNeedsCall.length === 0 ? (
-                  <tr><td colSpan={7} className="p-6 text-center text-[#555]">
+                  <tr><td colSpan={7} className="p-6 text-center text-[#5a5a5a]">
                     {needsCallList.length === 0
                       ? 'Every buyer has booked a Calendly call. 🎉'
                       : 'No rows match this search.'}
                   </td></tr>
                 ) : (
                   filteredNeedsCall.slice(0, 500).map(({ person: p, daysSince, latestPurchaseMs }) => {
-                    const tone = daysSince == null ? 'text-[#888]'
+                    const tone = daysSince == null ? 'text-[#909090]'
                       : daysSince > 14 ? 'text-rose-300'
                       : daysSince > 7  ? 'text-amber-300'
                       : 'text-[#bdbdbd]';
                     return (
                       <tr key={p.id} className="border-b border-[#1a1a1a] hover:bg-[#141414]">
-                        <Td>{[p.first_name, p.last_name].filter(Boolean).join(' ') || <span className="text-[#444]">—</span>}</Td>
-                        <Td><span className="text-[#888]">{p.email}</span></Td>
+                        <Td>{[p.first_name, p.last_name].filter(Boolean).join(' ') || <span className="text-[#3a3a3a]">—</span>}</Td>
+                        <Td><span className="text-[#909090]">{p.email}</span></Td>
                         <Td>
                           {p.instagram_handle ? (
                             <a
                               href={`https://instagram.com/${p.instagram_handle.replace(/^@/, '')}`}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1 text-[#bdbdbd] hover:text-[#ECECEC]"
+                              className="inline-flex items-center gap-1 text-[#bdbdbd] hover:text-[#f4f4f4]"
                             >
                               <Instagram size={11} /> {p.instagram_handle}
                             </a>
-                          ) : <span className="text-[#444]">—</span>}
+                          ) : <span className="text-[#3a3a3a]">—</span>}
                         </Td>
-                        <Td>{p.phone || <span className="text-[#444]">—</span>}</Td>
+                        <Td>{p.phone || <span className="text-[#3a3a3a]">—</span>}</Td>
                         <Td>
                           {p.bought_main ? (
                             <span className="text-purple-300">Main {fmtMoney(p.main_amount || 0)}</span>
                           ) : p.bought_slo ? (
                             <span className="text-amber-300">SLO {fmtMoney(p.slo_amount || 0)}</span>
-                          ) : <span className="text-[#444]">—</span>}
+                          ) : <span className="text-[#3a3a3a]">—</span>}
                         </Td>
                         <Td>
-                          <span className="text-[#888]">
+                          <span className="text-[#909090]">
                             {latestPurchaseMs ? formatDate(new Date(latestPurchaseMs).toISOString()) : '—'}
                           </span>
                         </Td>
@@ -1520,7 +1528,7 @@ const LukeDataTab: React.FC = () => {
               </tbody>
             </table>
             {filteredNeedsCall.length > 500 && (
-              <div className="py-2 text-center text-[11px] text-[#555] bg-[#101010]">
+              <div className="py-2 text-center text-[11px] text-[#5a5a5a] bg-[#101010]">
                 Showing first 500 of {filteredNeedsCall.length} — use search to narrow, or export full CSV.
               </div>
             )}
@@ -1551,29 +1559,29 @@ const LukeDataTab: React.FC = () => {
           {/* search + export */}
           <div className="flex items-center gap-2 flex-shrink-0">
             <div className="relative flex-1">
-              <Search size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#555]" />
+              <Search size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#5a5a5a]" />
               <input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search by name, email, Instagram, reason…"
-                className="w-full pl-8 pr-3 py-1.5 bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg text-xs text-[#ECECEC] placeholder:text-[#555] focus:outline-none focus:border-[#3a3a3a]"
+                className="w-full pl-8 pr-3 py-1.5 bg-[#1a1a1a] border border-[#1a1a1a] rounded-none-none text-xs text-[#f4f4f4] placeholder:text-[#5a5a5a] focus:outline-none focus:border-[#242424]"
               />
             </div>
-            <span className="text-xs text-[#555]">{filteredNeedsRecovery.length} of {needsRecoveryList.length}</span>
+            <span className="text-xs text-[#5a5a5a]">{filteredNeedsRecovery.length} of {needsRecoveryList.length}</span>
             <button
               type="button"
               onClick={exportCsv}
               disabled={filteredNeedsRecovery.length === 0}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#2a2a2a] hover:bg-[#333] text-[#ECECEC] text-xs font-medium disabled:opacity-40"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-none-none bg-[#0d0d0d] hover:bg-[#333] text-[#f4f4f4] text-xs font-medium disabled:opacity-40"
             >
               <Download size={12} /> CSV
             </button>
           </div>
 
           {/* needs-recovery table */}
-          <div className="flex-1 min-h-0 overflow-auto rounded-lg border border-[#222]">
+          <div className="flex-1 min-h-0 overflow-auto rounded-none-none border border-[#1a1a1a]">
             <table className="w-full text-xs text-left">
-              <thead className="sticky top-0 bg-[#181818] border-b border-[#222] text-[#666]">
+              <thead className="sticky top-0 bg-[#181818] border-b border-[#1a1a1a] text-[#5a5a5a]">
                 <tr>
                   <Th>Name</Th>
                   <Th>Email</Th>
@@ -1587,11 +1595,11 @@ const LukeDataTab: React.FC = () => {
               </thead>
               <tbody className="text-[#bdbdbd]">
                 {loading ? (
-                  <tr><td colSpan={8} className="p-6 text-center text-[#555]">
+                  <tr><td colSpan={8} className="p-6 text-center text-[#5a5a5a]">
                     <Loader2 size={14} className="inline-block animate-spin mr-2" /> Loading…
                   </td></tr>
                 ) : filteredNeedsRecovery.length === 0 ? (
-                  <tr><td colSpan={8} className="p-6 text-center text-[#555]">
+                  <tr><td colSpan={8} className="p-6 text-center text-[#5a5a5a]">
                     {needsRecoveryList.length === 0
                       ? 'No outstanding declines. 🎉'
                       : 'No rows match this search.'}
@@ -1606,40 +1614,40 @@ const LukeDataTab: React.FC = () => {
                       : 'text-[#bdbdbd]';
                     return (
                       <tr key={r.email} className="border-b border-[#1a1a1a] hover:bg-[#141414]">
-                        <Td>{[r.first_name, r.last_name].filter(Boolean).join(' ') || <span className="text-[#444]">—</span>}</Td>
-                        <Td><span className="text-[#888]">{r.email}</span></Td>
+                        <Td>{[r.first_name, r.last_name].filter(Boolean).join(' ') || <span className="text-[#3a3a3a]">—</span>}</Td>
+                        <Td><span className="text-[#909090]">{r.email}</span></Td>
                         <Td>
                           {r.instagram_handle ? (
                             <a
                               href={`https://instagram.com/${r.instagram_handle.replace(/^@/, '')}`}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1 text-[#bdbdbd] hover:text-[#ECECEC]"
+                              className="inline-flex items-center gap-1 text-[#bdbdbd] hover:text-[#f4f4f4]"
                             >
                               <Instagram size={11} /> {r.instagram_handle}
                             </a>
-                          ) : <span className="text-[#444]">—</span>}
+                          ) : <span className="text-[#3a3a3a]">—</span>}
                         </Td>
-                        <Td>{r.phone || <span className="text-[#444]">—</span>}</Td>
+                        <Td>{r.phone || <span className="text-[#3a3a3a]">—</span>}</Td>
                         <Td>
                           {r.product_label === 'SLO' ? (
                             <span className="text-amber-300">SLO {r.amount ? fmtMoney(Number(r.amount)) : ''}</span>
                           ) : r.product_label === 'Main' ? (
                             <span className="text-purple-300">Main {r.amount ? fmtMoney(Number(r.amount)) : ''}</span>
-                          ) : <span className="text-[#888]">{r.product_label || '—'}</span>}
+                          ) : <span className="text-[#909090]">{r.product_label || '—'}</span>}
                         </Td>
                         <Td><span className={triesTone}>{triesLabel}</span></Td>
                         <Td>
-                          <span className="text-[#888]">
+                          <span className="text-[#909090]">
                             {r.last_attempt_at ? formatDate(r.last_attempt_at) : '—'}
                           </span>
                         </Td>
                         <Td>
                           {r.last_failure_reason ? (
-                            <span className="text-[#888]" title={r.last_failure_reason}>
+                            <span className="text-[#909090]" title={r.last_failure_reason}>
                               {r.last_failure_reason.length > 50 ? r.last_failure_reason.slice(0, 50) + '…' : r.last_failure_reason}
                             </span>
-                          ) : <span className="text-[#444]">—</span>}
+                          ) : <span className="text-[#3a3a3a]">—</span>}
                         </Td>
                       </tr>
                     );
@@ -1648,7 +1656,7 @@ const LukeDataTab: React.FC = () => {
               </tbody>
             </table>
             {filteredNeedsRecovery.length > 500 && (
-              <div className="py-2 text-center text-[11px] text-[#555] bg-[#101010]">
+              <div className="py-2 text-center text-[11px] text-[#5a5a5a] bg-[#101010]">
                 Showing first 500 of {filteredNeedsRecovery.length} — use search to narrow, or export full CSV.
               </div>
             )}
@@ -1661,7 +1669,7 @@ const LukeDataTab: React.FC = () => {
             <RevenueCard
               label="Affiliate revenue"
               value={fmtMoney(affiliateRevenue)}
-              sub={`${dateScopedReceipts.length} receipts × ${fmtMoney(AFFILIATE_AOV)}`}
+              sub={`Verified payout · ${dateScopedReceipts.length} receipts on file`}
               emphasized
             />
             <RevenueCard
@@ -1679,29 +1687,29 @@ const LukeDataTab: React.FC = () => {
           {/* search + export */}
           <div className="flex items-center gap-2 flex-shrink-0">
             <div className="relative flex-1">
-              <Search size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#555]" />
+              <Search size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#5a5a5a]" />
               <input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search by name, email, phone, status…"
-                className="w-full pl-8 pr-3 py-1.5 bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg text-xs text-[#ECECEC] placeholder:text-[#555] focus:outline-none focus:border-[#3a3a3a]"
+                className="w-full pl-8 pr-3 py-1.5 bg-[#1a1a1a] border border-[#1a1a1a] rounded-none-none text-xs text-[#f4f4f4] placeholder:text-[#5a5a5a] focus:outline-none focus:border-[#242424]"
               />
             </div>
-            <span className="text-xs text-[#555]">{filteredReceipts.length} of {dateScopedReceipts.length}</span>
+            <span className="text-xs text-[#5a5a5a]">{filteredReceipts.length} of {dateScopedReceipts.length}</span>
             <button
               type="button"
               onClick={exportCsv}
               disabled={filteredReceipts.length === 0}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#2a2a2a] hover:bg-[#333] text-[#ECECEC] text-xs font-medium disabled:opacity-40"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-none-none bg-[#0d0d0d] hover:bg-[#333] text-[#f4f4f4] text-xs font-medium disabled:opacity-40"
             >
               <Download size={12} /> CSV
             </button>
           </div>
 
           {/* receipts table */}
-          <div className="flex-1 min-h-0 overflow-auto rounded-lg border border-[#222]">
+          <div className="flex-1 min-h-0 overflow-auto rounded-none-none border border-[#1a1a1a]">
             <table className="w-full text-xs text-left">
-              <thead className="sticky top-0 bg-[#181818] border-b border-[#222] text-[#666]">
+              <thead className="sticky top-0 bg-[#181818] border-b border-[#1a1a1a] text-[#5a5a5a]">
                 <tr>
                   <Th>Name</Th>
                   <Th>Email</Th>
@@ -1714,11 +1722,11 @@ const LukeDataTab: React.FC = () => {
               </thead>
               <tbody className="text-[#bdbdbd]">
                 {loading ? (
-                  <tr><td colSpan={7} className="p-6 text-center text-[#555]">
+                  <tr><td colSpan={7} className="p-6 text-center text-[#5a5a5a]">
                     <Loader2 size={14} className="inline-block animate-spin mr-2" /> Loading…
                   </td></tr>
                 ) : filteredReceipts.length === 0 ? (
-                  <tr><td colSpan={7} className="p-6 text-center text-[#555]">
+                  <tr><td colSpan={7} className="p-6 text-center text-[#5a5a5a]">
                     {dateScopedReceipts.length === 0
                       ? 'No affiliate receipts yet — when buyers submit at /receipt they show up here.'
                       : 'No rows match this search.'}
@@ -1726,32 +1734,32 @@ const LukeDataTab: React.FC = () => {
                 ) : (
                   filteredReceipts.slice(0, 500).map((r) => {
                     const status = (r.status || 'pending').toLowerCase();
-                    const statusClass = status === 'approved' ? 'bg-emerald-950/40 text-emerald-300 border-emerald-900/40'
+                    const statusClass = status === 'approved' ? 'bg-emerald-950/40 text-[#6dd49a] border-emerald-900/40'
                       : status === 'rejected' ? 'bg-rose-950/40 text-rose-300 border-rose-900/40'
                       : 'bg-amber-950/40 text-amber-300 border-amber-900/40';
                     return (
                       <tr key={r.id} className="border-b border-[#1a1a1a] hover:bg-[#141414]">
-                        <Td>{r.name || <span className="text-[#444]">—</span>}</Td>
-                        <Td><span className="text-[#888]">{r.email}</span></Td>
-                        <Td>{r.phone || <span className="text-[#444]">—</span>}</Td>
+                        <Td>{r.name || <span className="text-[#3a3a3a]">—</span>}</Td>
+                        <Td><span className="text-[#909090]">{r.email}</span></Td>
+                        <Td>{r.phone || <span className="text-[#3a3a3a]">—</span>}</Td>
                         <Td>
                           <div className="flex flex-wrap gap-1">
                             {r.wix_receipt_url && (
-                              <a href={r.wix_receipt_url} target="_blank" rel="noopener noreferrer" className="text-[10px] px-1.5 py-0.5 rounded bg-[#1a1a1a] border border-[#2a2a2a] text-[#bdbdbd] hover:text-[#ECECEC] hover:border-[#3a3a3a]">Wix ↗</a>
+                              <a href={r.wix_receipt_url} target="_blank" rel="noopener noreferrer" className="text-[10px] px-1.5 py-0.5 rounded-none bg-[#1a1a1a] border border-[#1a1a1a] text-[#bdbdbd] hover:text-[#f4f4f4] hover:border-[#242424]">Wix ↗</a>
                             )}
                             {r.base44_receipt_url && (
-                              <a href={r.base44_receipt_url} target="_blank" rel="noopener noreferrer" className="text-[10px] px-1.5 py-0.5 rounded bg-[#1a1a1a] border border-[#2a2a2a] text-[#bdbdbd] hover:text-[#ECECEC] hover:border-[#3a3a3a]">Base44 ↗</a>
+                              <a href={r.base44_receipt_url} target="_blank" rel="noopener noreferrer" className="text-[10px] px-1.5 py-0.5 rounded-none bg-[#1a1a1a] border border-[#1a1a1a] text-[#bdbdbd] hover:text-[#f4f4f4] hover:border-[#242424]">Base44 ↗</a>
                             )}
-                            {!r.wix_receipt_url && !r.base44_receipt_url && (<span className="text-[#444]">—</span>)}
+                            {!r.wix_receipt_url && !r.base44_receipt_url && (<span className="text-[#3a3a3a]">—</span>)}
                           </div>
                         </Td>
-                        <Td>{r.has_aif_access ? <span className="text-emerald-400">yes</span> : <span className="text-[#555]">no</span>}</Td>
+                        <Td>{r.has_aif_access ? <span className="text-[#6dd49a]">yes</span> : <span className="text-[#5a5a5a]">no</span>}</Td>
                         <Td>
-                          <span className={`text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded border ${statusClass}`} title={r.status_notes || ''}>
+                          <span className={`text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded-none border ${statusClass}`} title={r.status_notes || ''}>
                             {status}
                           </span>
                         </Td>
-                        <Td><span className="text-[#888]">{r.submitted_at ? formatDate(r.submitted_at) : '—'}</span></Td>
+                        <Td><span className="text-[#909090]">{r.submitted_at ? formatDate(r.submitted_at) : '—'}</span></Td>
                       </tr>
                     );
                   })
@@ -1759,15 +1767,15 @@ const LukeDataTab: React.FC = () => {
               </tbody>
             </table>
             {filteredReceipts.length > 500 && (
-              <div className="py-2 text-center text-[11px] text-[#555] bg-[#101010]">
+              <div className="py-2 text-center text-[11px] text-[#5a5a5a] bg-[#101010]">
                 Showing first 500 of {filteredReceipts.length} — use search to narrow, or export full CSV.
               </div>
             )}
           </div>
 
           {/* admin overview link */}
-          <div className="flex-shrink-0 text-[11px] text-[#555]">
-            Need to approve / reject receipts? Use the admin page at <a href="https://aifreelancer.ai/adminreceiptsoverview" target="_blank" rel="noopener noreferrer" className="text-emerald-400 hover:text-emerald-300">aifreelancer.ai/adminreceiptsoverview</a>.
+          <div className="flex-shrink-0 text-[11px] text-[#5a5a5a]">
+            Need to approve / reject receipts? Use the admin page at <a href="https://aifreelancer.ai/adminreceiptsoverview" target="_blank" rel="noopener noreferrer" className="text-[#6dd49a] hover:text-[#6dd49a]">aifreelancer.ai/adminreceiptsoverview</a>.
           </div>
         </>
       ) : (
@@ -1793,9 +1801,9 @@ const LukeDataTab: React.FC = () => {
                 .map(([status, count]) => (
                   <span
                     key={status}
-                    className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full bg-[#1a1a1a] border border-[#2a2a2a] text-[#999]"
+                    className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-none-full bg-[#1a1a1a] border border-[#1a1a1a] text-[#999]"
                   >
-                    {status} <span className="text-[#666]">· {count}</span>
+                    {status} <span className="text-[#5a5a5a]">· {count}</span>
                   </span>
                 ))}
             </div>
@@ -1804,41 +1812,41 @@ const LukeDataTab: React.FC = () => {
           {/* search + recovered toggle + export */}
           <div className="flex items-center gap-2 flex-shrink-0">
             <div className="relative flex-1">
-              <Search size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#555]" />
+              <Search size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#5a5a5a]" />
               <input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search by name, email, Instagram, status…"
-                className="w-full pl-8 pr-3 py-1.5 bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg text-xs text-[#ECECEC] placeholder:text-[#555] focus:outline-none focus:border-[#3a3a3a]"
+                className="w-full pl-8 pr-3 py-1.5 bg-[#1a1a1a] border border-[#1a1a1a] rounded-none-none text-xs text-[#f4f4f4] placeholder:text-[#5a5a5a] focus:outline-none focus:border-[#242424]"
               />
             </div>
             <button
               type="button"
               onClick={() => setHideRecovered((v) => !v)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-none-none border text-xs font-medium transition-colors ${
                 hideRecovered
-                  ? 'bg-emerald-500/10 border-emerald-500/40 text-emerald-300 hover:bg-emerald-500/15'
-                  : 'bg-[#1a1a1a] border-[#2a2a2a] text-[#888] hover:text-[#ECECEC]'
+                  ? 'bg-emerald-500/10 border-emerald-500/40 text-[#6dd49a] hover:bg-emerald-500/15'
+                  : 'bg-[#1a1a1a] border-[#1a1a1a] text-[#909090] hover:text-[#f4f4f4]'
               }`}
               title="Hide attempts where the same email eventually bought"
             >
               {hideRecovered ? 'Showing unrecovered only' : 'Showing all attempts'}
             </button>
-            <span className="text-xs text-[#555]">{filteredAttempts.length} of {dateScopedAttempts.length}</span>
+            <span className="text-xs text-[#5a5a5a]">{filteredAttempts.length} of {dateScopedAttempts.length}</span>
             <button
               type="button"
               onClick={exportCsv}
               disabled={filteredAttempts.length === 0}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#2a2a2a] hover:bg-[#333] text-[#ECECEC] text-xs font-medium disabled:opacity-40"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-none-none bg-[#0d0d0d] hover:bg-[#333] text-[#f4f4f4] text-xs font-medium disabled:opacity-40"
             >
               <Download size={12} /> CSV
             </button>
           </div>
 
           {/* attempts table */}
-          <div className="flex-1 min-h-0 overflow-auto rounded-lg border border-[#222]">
+          <div className="flex-1 min-h-0 overflow-auto rounded-none-none border border-[#1a1a1a]">
             <table className="w-full text-xs text-left">
-              <thead className="sticky top-0 bg-[#181818] border-b border-[#222] text-[#666]">
+              <thead className="sticky top-0 bg-[#181818] border-b border-[#1a1a1a] text-[#5a5a5a]">
                 <tr>
                   <Th>Name</Th>
                   <Th>Email</Th>
@@ -1854,11 +1862,11 @@ const LukeDataTab: React.FC = () => {
               </thead>
               <tbody className="text-[#bdbdbd]">
                 {loading ? (
-                  <tr><td colSpan={10} className="p-6 text-center text-[#555]">
+                  <tr><td colSpan={10} className="p-6 text-center text-[#5a5a5a]">
                     <Loader2 size={14} className="inline-block animate-spin mr-2" /> Loading…
                   </td></tr>
                 ) : filteredAttempts.length === 0 ? (
-                  <tr><td colSpan={10} className="p-6 text-center text-[#555]">
+                  <tr><td colSpan={10} className="p-6 text-center text-[#5a5a5a]">
                     {attempts.length === 0
                       ? 'No failed payments yet. Click "Refresh now" to pull from Whop.'
                       : hideRecovered
@@ -1870,55 +1878,55 @@ const LukeDataTab: React.FC = () => {
                     const recovered = isRecovered(a);
                     return (
                     <tr key={a.id} className={`border-b border-[#1a1a1a] hover:bg-[#141414] ${recovered ? 'opacity-60' : ''}`}>
-                      <Td>{[a.first_name, a.last_name].filter(Boolean).join(' ') || <span className="text-[#444]">—</span>}</Td>
-                      <Td><span className="text-[#888]">{a.email || <span className="text-[#444]">—</span>}</span></Td>
+                      <Td>{[a.first_name, a.last_name].filter(Boolean).join(' ') || <span className="text-[#3a3a3a]">—</span>}</Td>
+                      <Td><span className="text-[#909090]">{a.email || <span className="text-[#3a3a3a]">—</span>}</span></Td>
                       <Td>
                         {a.instagram_handle ? (
                           <a
                             href={`https://instagram.com/${a.instagram_handle.replace(/^@/, '')}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 text-[#bdbdbd] hover:text-[#ECECEC]"
+                            className="inline-flex items-center gap-1 text-[#bdbdbd] hover:text-[#f4f4f4]"
                           >
                             <Instagram size={11} /> {a.instagram_handle}
                           </a>
-                        ) : <span className="text-[#444]">—</span>}
+                        ) : <span className="text-[#3a3a3a]">—</span>}
                       </Td>
-                      <Td>{a.phone || <span className="text-[#444]">—</span>}</Td>
+                      <Td>{a.phone || <span className="text-[#3a3a3a]">—</span>}</Td>
                       <Td>
                         {a.product_label === 'SLO' ? (
                           <span className="text-amber-300">SLO</span>
                         ) : a.product_label === 'Main' ? (
                           <span className="text-purple-300">Main</span>
                         ) : (
-                          <span className="text-[#888]">{a.product_label || '—'}</span>
+                          <span className="text-[#909090]">{a.product_label || '—'}</span>
                         )}
                       </Td>
-                      <Td>{a.amount ? <span className="text-rose-300">{fmtMoney(Number(a.amount))}</span> : <span className="text-[#444]">—</span>}</Td>
+                      <Td>{a.amount ? <span className="text-rose-300">{fmtMoney(Number(a.amount))}</span> : <span className="text-[#3a3a3a]">—</span>}</Td>
                       <Td>
-                        <span className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-rose-950/40 text-rose-300 border border-rose-900/40">
+                        <span className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded-none bg-rose-950/40 text-rose-300 border border-rose-900/40">
                           {a.status || 'unknown'}
                         </span>
                       </Td>
                       <Td>
                         {recovered ? (
-                          <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-emerald-950/40 text-emerald-300 border border-emerald-900/40">
+                          <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded-none bg-emerald-950/40 text-[#6dd49a] border border-emerald-900/40">
                             <CheckCircle2 size={10} /> Yes
                           </span>
                         ) : (
-                          <span className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-[#1a1a1a] text-[#888] border border-[#2a2a2a]">
+                          <span className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded-none bg-[#1a1a1a] text-[#909090] border border-[#1a1a1a]">
                             Open
                           </span>
                         )}
                       </Td>
                       <Td>
                         {a.failure_reason ? (
-                          <span className="text-[#888]" title={a.failure_reason}>
+                          <span className="text-[#909090]" title={a.failure_reason}>
                             {a.failure_reason.length > 50 ? a.failure_reason.slice(0, 50) + '…' : a.failure_reason}
                           </span>
-                        ) : <span className="text-[#444]">—</span>}
+                        ) : <span className="text-[#3a3a3a]">—</span>}
                       </Td>
-                      <Td>{a.attempted_at ? <span className="text-[#888]">{formatDate(a.attempted_at)}</span> : <span className="text-[#444]">—</span>}</Td>
+                      <Td>{a.attempted_at ? <span className="text-[#909090]">{formatDate(a.attempted_at)}</span> : <span className="text-[#3a3a3a]">—</span>}</Td>
                     </tr>
                     );
                   })
@@ -1926,7 +1934,7 @@ const LukeDataTab: React.FC = () => {
               </tbody>
             </table>
             {filteredAttempts.length > 500 && (
-              <div className="py-2 text-center text-[11px] text-[#555] bg-[#101010]">
+              <div className="py-2 text-center text-[11px] text-[#5a5a5a] bg-[#101010]">
                 Showing first 500 of {filteredAttempts.length} — use search to narrow, or export full CSV.
               </div>
             )}
@@ -1945,13 +1953,13 @@ const RevenueCard: React.FC<{ label: string; value: string; sub: string; emphasi
   label, value, sub, emphasized,
 }) => (
   <div
-    className={`rounded-lg p-3 border ${
-      emphasized ? 'bg-[#151515] border-[#2a2a2a]' : 'bg-[#121212] border-[#1f1f1f]'
+    className={`rounded-none p-3 border ${
+      emphasized ? 'bg-[#151515] border-[#1a1a1a]' : 'bg-[#121212] border-[#1a1a1a]'
     }`}
   >
-    <p className="text-[10px] uppercase tracking-wider text-[#555] mb-1">{label}</p>
-    <p className={`font-semibold ${emphasized ? 'text-[#ECECEC] text-xl' : 'text-[#bdbdbd] text-lg'}`}>{value}</p>
-    <p className="text-[10px] text-[#555] mt-0.5">{sub}</p>
+    <p className="text-[10px] uppercase tracking-wider text-[#5a5a5a] mb-1">{label}</p>
+    <p className={`font-semibold ${emphasized ? 'text-[#f4f4f4] text-xl' : 'text-[#bdbdbd] text-lg'}`}>{value}</p>
+    <p className="text-[10px] text-[#5a5a5a] mt-0.5">{sub}</p>
   </div>
 );
 
@@ -1964,22 +1972,22 @@ const ProfitCard: React.FC<{
   emphasized?: boolean;
 }> = ({ icon: Icon, label, value, sub, accent, emphasized }) => {
   const tint = accent === 'emerald'
-    ? 'text-[#86efac]'
+    ? 'text-[#6dd49a]'
     : accent === 'amber'
-      ? 'text-[#fde68a]'
+      ? 'text-[#e0c870]'
       : accent === 'rose'
-        ? 'text-[#fca5a5]'
-        : 'text-[#888]';
+        ? 'text-[#d46d6d]'
+        : 'text-[#909090]';
   return (
-    <div className={`rounded-md px-3 py-2 border ${emphasized ? 'bg-[#151515] border-[#2a2a2a]' : 'bg-[#121212] border-[#1f1f1f]'}`}>
+    <div className={`rounded-none px-3 py-2 border ${emphasized ? 'bg-[#151515] border-[#1a1a1a]' : 'bg-[#121212] border-[#1a1a1a]'}`}>
       <div className="flex items-center justify-between mb-0.5">
-        <p className="text-[10px] uppercase tracking-wider text-[#555]">{label}</p>
+        <p className="text-[10px] uppercase tracking-wider text-[#5a5a5a]">{label}</p>
         <Icon size={11} className={tint} />
       </div>
-      <p className={`font-semibold ${emphasized ? 'text-[#ECECEC] text-lg' : `${tint === 'text-[#888]' ? 'text-[#bdbdbd]' : tint} text-base`}`}>
+      <p className={`font-semibold ${emphasized ? 'text-[#f4f4f4] text-lg' : `${tint === 'text-[#909090]' ? 'text-[#bdbdbd]' : tint} text-base`}`}>
         {value}
       </p>
-      <p className="text-[10px] text-[#555] leading-tight">{sub}</p>
+      <p className="text-[10px] text-[#5a5a5a] leading-tight">{sub}</p>
     </div>
   );
 };
@@ -1996,17 +2004,17 @@ const KpiCard: React.FC<{
     type="button"
     onClick={onClick}
     title={hint}
-    className={`text-left rounded-md px-2 py-1.5 border transition-colors ${
+    className={`text-left rounded-none-none px-2 py-1.5 border transition-colors ${
       active
-        ? 'bg-[#1c1c1c] border-[#444]'
-        : 'bg-[#121212] border-[#1f1f1f] hover:border-[#2a2a2a]'
+        ? 'bg-[#0a0a0a] border-[#444]'
+        : 'bg-[#121212] border-[#1a1a1a] hover:border-[#1a1a1a]'
     }`}
   >
-    <div className="flex items-center gap-1 mb-0.5 text-[#666]">
+    <div className="flex items-center gap-1 mb-0.5 text-[#5a5a5a]">
       <Icon size={10} />
       <span className="text-[9px] uppercase tracking-wider truncate">{label}</span>
     </div>
-    <p className={`text-base font-semibold ${active ? 'text-[#ECECEC]' : 'text-[#bdbdbd]'}`}>{value}</p>
+    <p className={`text-base font-semibold ${active ? 'text-[#f4f4f4]' : 'text-[#bdbdbd]'}`}>{value}</p>
   </button>
 );
 
@@ -2017,7 +2025,7 @@ const Td: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <td className="px-3 py-2 whitespace-nowrap">{children}</td>
 );
 const Flag: React.FC<{ on: boolean }> = ({ on }) => (
-  on ? <span className="text-emerald-500">yes</span> : <span className="text-[#444]">—</span>
+  on ? <span className="text-[#6dd49a]">yes</span> : <span className="text-[#3a3a3a]">—</span>
 );
 
 // ---------------------------------------------------------------- formatters

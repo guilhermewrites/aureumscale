@@ -17,12 +17,12 @@ import {
   Camera,
   Settings,
   LogOut,
-  ExternalLink,
   Globe,
   CalendarDays,
   Brain,
   Target,
   BarChart3,
+  BookOpen,
 } from 'lucide-react';
 import { NavigationItem, AppUser } from '../types';
 import useLocalStorage from '../hooks/useLocalStorage';
@@ -49,6 +49,7 @@ const navToRoute: Record<string, string> = {
   [NavigationItem.THERESA_THE_READER_DATA]: '/theresa-the-reader/data',
   [NavigationItem.CALENDAR]: '/calendar',
   [NavigationItem.MENTOR]: '/mentor',
+  [NavigationItem.STUDY]: '/study',
 };
 
 const routeToNavItem: Record<string, NavigationItem> = {
@@ -69,11 +70,12 @@ const routeToNavItem: Record<string, NavigationItem> = {
   '/theresa-the-reader/data': NavigationItem.THERESA_THE_READER_DATA,
   '/calendar': NavigationItem.CALENDAR,
   '/mentor': NavigationItem.MENTOR,
+  '/study': NavigationItem.STUDY,
 };
 
-// Brand SVG icons for resources
+// Brand SVG icons for resources (kept colored — they're brand marks)
 const FigmaIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 38 57" fill="none">
+  <svg width="14" height="14" viewBox="0 0 38 57" fill="none">
     <path d="M19 28.5C19 23.2533 23.2533 19 28.5 19C33.7467 19 38 23.2533 38 28.5C38 33.7467 33.7467 38 28.5 38C23.2533 38 19 33.7467 19 28.5Z" fill="#1ABCFE"/>
     <path d="M0 47.5C0 42.2533 4.25329 38 9.5 38H19V47.5C19 52.7467 14.7467 57 9.5 57C4.25329 57 0 52.7467 0 47.5Z" fill="#0ACF83"/>
     <path d="M19 0V19H28.5C33.7467 19 38 14.7467 38 9.5C38 4.25329 33.7467 0 28.5 0H19Z" fill="#FF7262"/>
@@ -83,27 +85,24 @@ const FigmaIcon = () => (
 );
 
 const GoogleCalIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 48 48" fill="none">
+  <svg width="14" height="14" viewBox="0 0 48 48" fill="none">
     <path d="M36 4H12C7.58 4 4 7.58 4 12V36C4 40.42 7.58 44 12 44H36C40.42 44 44 40.42 44 36V12C44 7.58 40.42 4 36 4Z" fill="#fff"/>
     <path d="M36 4H12C7.58 4 4 7.58 4 12V36C4 40.42 7.58 44 12 44H36C40.42 44 44 40.42 44 36V12C44 7.58 40.42 4 36 4Z" stroke="#4285F4" strokeWidth="2"/>
-    <path d="M33 14H15C14.45 14 14 14.45 14 15V33C14 33.55 14.45 34 15 34H33C33.55 34 34 33.55 34 33V15C34 14.45 33.55 14 33 14Z" fill="#4285F4" fillOpacity="0.12"/>
     <rect x="14" y="14" width="20" height="4" fill="#4285F4"/>
     <text x="24" y="29" textAnchor="middle" fill="#4285F4" fontSize="11" fontWeight="bold" fontFamily="sans-serif">22</text>
   </svg>
 );
 
 const GmailIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 48 48" fill="none">
+  <svg width="14" height="14" viewBox="0 0 48 48" fill="none">
     <path d="M6 12L24 26L42 12V36C42 37.1 41.1 38 40 38H8C6.9 38 6 37.1 6 36V12Z" fill="#fff"/>
     <path d="M42 12L24 26L6 12C6 10.9 6.9 10 8 10H40C41.1 10 42 10.9 42 12Z" fill="#EA4335"/>
-    <path d="M6 12L24 26L42 12" stroke="#EA4335" strokeWidth="1.5" fill="none"/>
-    <path d="M6 12V36C6 37.1 6.9 38 8 38H12V18L24 26L36 18V38H40C41.1 38 42 37.1 42 36V12L24 26L6 12Z" fill="#FBBC05" fillOpacity="0"/>
     <rect x="6" y="10" width="36" height="28" rx="2" stroke="#ccc" strokeWidth="1.5" fill="none"/>
   </svg>
 );
 
 const SlackIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 54 54" fill="none">
+  <svg width="14" height="14" viewBox="0 0 54 54" fill="none">
     <path d="M19.7 34.3C19.7 36.9 17.6 39 15 39C12.4 39 10.3 36.9 10.3 34.3C10.3 31.7 12.4 29.6 15 29.6H19.7V34.3Z" fill="#E01E5A"/>
     <path d="M22.1 34.3C22.1 31.7 24.2 29.6 26.8 29.6C29.4 29.6 31.5 31.7 31.5 34.3V42.2C31.5 44.8 29.4 46.9 26.8 46.9C24.2 46.9 22.1 44.8 22.1 42.2V34.3Z" fill="#E01E5A"/>
     <path d="M26.8 19.7C24.2 19.7 22.1 17.6 22.1 15C22.1 12.4 24.2 10.3 26.8 10.3C29.4 10.3 31.5 12.4 31.5 15V19.7H26.8Z" fill="#36C5F0"/>
@@ -115,7 +114,6 @@ const SlackIcon = () => (
   </svg>
 );
 
-// External resources
 const RESOURCES: { label: string; url: string; icon: React.ReactNode }[] = [
   { label: 'Figma', url: 'https://figma.com', icon: <FigmaIcon /> },
   { label: 'Google Calendar', url: 'https://calendar.google.com', icon: <GoogleCalIcon /> },
@@ -132,6 +130,51 @@ interface SidebarProps {
   userEmail?: string;
   storagePrefix?: string;
 }
+
+// ── Reusable nav item with vertical accent border on active ────────
+interface NavItemProps {
+  icon: React.ComponentType<{ size?: number; strokeWidth?: number; className?: string }>;
+  label: string;
+  active: boolean;
+  collapsed: boolean;
+  onClick: () => void;
+  count?: number;
+  small?: boolean;
+}
+const NavItem: React.FC<NavItemProps> = ({ icon: Icon, label, active, collapsed, onClick, count, small }) => (
+  <button
+    onClick={onClick}
+    title={collapsed ? label : undefined}
+    style={{
+      width: '100%',
+      display: 'flex',
+      alignItems: 'center',
+      gap: collapsed ? 0 : 11,
+      justifyContent: collapsed ? 'center' : 'flex-start',
+      padding: collapsed ? '8px 0' : (small ? '6px 10px' : '7px 10px'),
+      background: active ? '#0a0a0a' : 'transparent',
+      color: active ? 'var(--au-text)' : 'var(--au-text-2)',
+      borderLeft: active ? '2px solid var(--au-text)' : '2px solid transparent',
+      borderRadius: 0,
+      fontSize: small ? 12 : 12.5,
+      cursor: 'pointer',
+      transition: 'color 0.12s, background 0.12s, border-color 0.12s',
+      textAlign: 'left',
+    }}
+    onMouseEnter={e => { if (!active) e.currentTarget.style.color = 'var(--au-text)'; }}
+    onMouseLeave={e => { if (!active) e.currentTarget.style.color = 'var(--au-text-2)'; }}
+  >
+    <span style={{ display: 'inline-flex', opacity: active ? 1 : 0.75 }}>
+      <Icon size={small ? 12 : 14} strokeWidth={1.75} />
+    </span>
+    {!collapsed && <span style={{ flex: 1 }}>{label}</span>}
+    {!collapsed && count != null && (
+      <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 10, color: 'var(--au-text-3)', letterSpacing: '0.05em' }}>
+        {String(count).padStart(2, '0')}
+      </span>
+    )}
+  </button>
+);
 
 const Sidebar: React.FC<SidebarProps> = ({ activeUserId, onUserChange, collapsed, onToggleCollapse, onSignOut, userEmail, storagePrefix }) => {
   const navigate = useNavigate();
@@ -234,7 +277,6 @@ const Sidebar: React.FC<SidebarProps> = ({ activeUserId, onUserChange, collapsed
     } : u));
     setIsProfileOpen(false);
 
-    // Persist to Supabase
     if (storagePrefix) {
       await supabase.from('user_profiles').upsert({
         user_id: storagePrefix,
@@ -276,6 +318,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeUserId, onUserChange, collapsed
     { id: NavigationItem.BRANDING, icon: Megaphone, label: 'Branding' },
     { id: NavigationItem.CALENDAR, icon: CalendarDays, label: 'Calendar' },
     { id: NavigationItem.MENTOR, icon: Brain, label: 'Mentor' },
+    { id: NavigationItem.STUDY, icon: BookOpen, label: 'Study' },
   ];
 
   type FunnelChild = { id: NavigationItem; icon: React.ComponentType<{ size?: number; strokeWidth?: number; className?: string }>; label: string };
@@ -304,319 +347,339 @@ const Sidebar: React.FC<SidebarProps> = ({ activeUserId, onUserChange, collapsed
     },
   ];
 
+  const sidebarWidth = collapsed ? 56 : 220;
+
   return (
-    <aside className={`fixed left-0 top-0 h-full ${collapsed ? 'w-16' : 'w-64'} bg-[#171717] border-r border-[#2a2a2a] flex flex-col z-20 transition-none`}>
-      {/* Logo / Brand */}
-      <div className={`px-5 py-5 flex items-center ${collapsed ? 'justify-center' : 'gap-3'} relative`}>
-        <label className="cursor-pointer group relative flex-shrink-0">
-          <input
-            ref={logoInputRef}
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={handleLogoUpload}
-          />
+    <aside
+      style={{
+        position: 'fixed',
+        left: 0, top: 0,
+        height: '100vh',
+        width: sidebarWidth,
+        background: '#000',
+        borderRight: '1px solid var(--au-line)',
+        display: 'flex',
+        flexDirection: 'column',
+        zIndex: 20,
+        fontFamily: 'Inter, sans-serif',
+      }}
+    >
+      {/* Brand row */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: collapsed ? 0 : 10,
+          justifyContent: collapsed ? 'center' : 'flex-start',
+          padding: '18px 14px 16px',
+          borderBottom: '1px solid var(--au-line)',
+          color: 'var(--au-text)',
+          position: 'relative',
+        }}
+      >
+        <label style={{ cursor: 'pointer', position: 'relative', flexShrink: 0, display: 'inline-flex' }} className="group">
+          <input ref={logoInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleLogoUpload} />
           {customLogo ? (
-            <img src={customLogo} alt="Logo" className="w-6 h-6 object-contain rounded" />
+            <img src={customLogo} alt="Logo" style={{ width: 18, height: 18, objectFit: 'contain' }} />
           ) : (
-            <img src="/aureum-logo.svg" alt="Aureum Logo" className="w-6 h-6 object-contain" />
+            <img src="/aureum-logo.svg" alt="Aureum" style={{ width: 18, height: 18, objectFit: 'contain' }} />
           )}
-          <div className="absolute inset-0 bg-black/50 rounded opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-            <Camera size={10} className="text-white" />
-          </div>
         </label>
-        {!collapsed && <span className="text-[15px] font-semibold tracking-wide text-[#ECECEC] flex-1 min-w-0 truncate" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>Aureum</span>}
+        {!collapsed && (
+          <>
+            <span style={{ fontWeight: 600, fontSize: 13, letterSpacing: '0.04em', textTransform: 'uppercase' }}>Aureum</span>
+            <span
+              style={{
+                marginLeft: 'auto',
+                minWidth: 18, height: 18,
+                background: 'transparent',
+                border: '1px solid var(--au-line-2)',
+                display: 'grid', placeItems: 'center',
+                color: 'var(--au-text-2)',
+                fontSize: 10,
+                fontFamily: 'JetBrains Mono, monospace',
+              }}
+            >
+              03
+            </span>
+          </>
+        )}
         <button
           onClick={onToggleCollapse}
-          className={`${collapsed ? 'absolute -right-3 top-5' : ''} w-6 h-6 rounded-full bg-[#2a2a2a] border border-[#333] flex items-center justify-center text-[#666] hover:text-[#ECECEC] hover:bg-[#333] flex-shrink-0`}
-          title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          title={collapsed ? 'Expand' : 'Collapse'}
+          style={{
+            position: 'absolute',
+            right: collapsed ? -10 : 6,
+            top: collapsed ? 18 : 18,
+            width: 18, height: 18,
+            background: '#000',
+            border: '1px solid var(--au-line-2)',
+            color: 'var(--au-text-3)',
+            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+            borderRadius: 0,
+            cursor: 'pointer',
+          }}
         >
-          {collapsed ? <ChevronRight size={12} /> : <ChevronLeft size={12} />}
+          {collapsed ? <ChevronRight size={11} /> : <ChevronLeft size={11} />}
         </button>
       </div>
 
-      {/* Navigation */}
-      <nav className="flex-1 px-3 pt-2 overflow-y-auto custom-scrollbar">
-        <div className="space-y-0">
-          {menuItems.map((item) => {
-            const isActive = activeItem === item.id;
-            return (
-              <button
-                key={item.id}
+      {/* Scroll area */}
+      <nav style={{ flex: 1, overflowY: 'auto', padding: '10px 6px' }}>
+        {menuItems.map(item => (
+          <NavItem
+            key={item.id}
+            icon={item.icon}
+            label={item.label}
+            active={activeItem === item.id}
+            collapsed={collapsed}
+            onClick={() => navigate(navToRoute[item.id] || '/dashboard')}
+          />
+        ))}
+
+        {/* Funnels */}
+        {!collapsed && (
+          <div style={{ padding: '14px 8px 6px', color: 'var(--au-text-3)', fontSize: 10, letterSpacing: '0.18em', fontWeight: 500, textTransform: 'uppercase', fontFamily: 'JetBrains Mono, monospace' }}>
+            — Funnels
+          </div>
+        )}
+        {collapsed && <div style={{ height: 1, background: 'var(--au-line)', margin: '10px 8px' }} />}
+        {funnelItems.map(item => {
+          const isActive = activeItem === item.id || (item.children?.items.some(c => c.id === activeItem) ?? false);
+          return (
+            <React.Fragment key={item.id}>
+              <NavItem
+                icon={item.icon}
+                label={item.label}
+                active={isActive}
+                collapsed={collapsed}
                 onClick={() => navigate(navToRoute[item.id] || '/dashboard')}
-                title={collapsed ? item.label : undefined}
-                className={`w-full flex items-center ${collapsed ? 'justify-center px-2' : 'gap-4 px-3'} py-3 rounded-lg transition-none group ${
-                  isActive
-                    ? 'text-[#ECECEC]'
-                    : 'text-[#888] hover:text-[#ECECEC]'
-                }`}
-              >
-                <item.icon
-                  size={18}
-                  strokeWidth={1.75}
-                  className={isActive ? 'text-[#ECECEC]' : 'text-[#888] group-hover:text-[#ECECEC]'}
-                />
-                {!collapsed && <span className="text-[15px] font-normal tracking-[-0.01em]">{item.label}</span>}
-              </button>
-            );
-          })}
-        </div>
+              />
+              {!collapsed && item.children?.open && (
+                <div style={{ marginLeft: 14, paddingLeft: 8, borderLeft: '1px solid var(--au-line)' }}>
+                  {item.children.items.map(child => (
+                    <NavItem
+                      key={child.id}
+                      icon={child.icon}
+                      label={child.label}
+                      active={activeItem === child.id}
+                      collapsed={false}
+                      small
+                      onClick={() => navigate(navToRoute[child.id] || '/dashboard')}
+                    />
+                  ))}
+                </div>
+              )}
+            </React.Fragment>
+          );
+        })}
 
-        {/* Funnels section */}
+        {/* Resources */}
         {!collapsed && (
-          <div className="mt-6 pt-5 border-t border-[#2a2a2a]">
-            <p className="px-3 mb-3 text-[11px] uppercase tracking-[0.08em] text-[#555] font-medium">Funnels</p>
-            <div className="space-y-0">
-              {funnelItems.map((item) => {
-                const isActive = activeItem === item.id;
-                return (
-                  <React.Fragment key={item.id}>
-                    <button
-                      onClick={() => navigate(navToRoute[item.id] || '/dashboard')}
-                      className={`w-full flex items-center gap-4 px-3 py-3 rounded-lg transition-none group ${
-                        isActive ? 'text-[#ECECEC]' : 'text-[#888] hover:text-[#ECECEC]'
-                      }`}
-                    >
-                      <item.icon
-                        size={18}
-                        strokeWidth={1.75}
-                        className={isActive ? 'text-[#ECECEC]' : 'text-[#888] group-hover:text-[#ECECEC]'}
-                      />
-                      <span className="text-[15px] font-normal tracking-[-0.01em]">{item.label}</span>
-                    </button>
-                    {item.children?.open && (
-                      <div className="ml-3 pl-4 border-l border-[#2a2a2a] space-y-0">
-                        {item.children.items.map((child) => {
-                          const childActive = activeItem === child.id;
-                          return (
-                            <button
-                              key={child.id}
-                              onClick={() => navigate(navToRoute[child.id] || '/dashboard')}
-                              className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-none group ${
-                                childActive ? 'text-[#ECECEC]' : 'text-[#777] hover:text-[#ECECEC]'
-                              }`}
-                            >
-                              <child.icon
-                                size={14}
-                                strokeWidth={1.75}
-                                className={childActive ? 'text-[#ECECEC]' : 'text-[#777] group-hover:text-[#ECECEC]'}
-                              />
-                              <span className="text-[13px] font-normal tracking-[-0.01em]">{child.label}</span>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </React.Fragment>
-                );
-              })}
-            </div>
+          <div style={{ padding: '14px 8px 6px', color: 'var(--au-text-3)', fontSize: 10, letterSpacing: '0.18em', fontWeight: 500, textTransform: 'uppercase', fontFamily: 'JetBrains Mono, monospace' }}>
+            — Resources
           </div>
         )}
-        {collapsed && (
-          <div className="mt-4 pt-4 border-t border-[#2a2a2a] space-y-0">
-            {funnelItems.map((item) => {
-              const isActive = activeItem === item.id || (item.children?.items.some(c => c.id === activeItem) ?? false);
-              return (
-                <React.Fragment key={item.id}>
-                  <button
-                    onClick={() => navigate(navToRoute[item.id] || '/dashboard')}
-                    title={item.label}
-                    className={`w-full flex items-center justify-center px-2 py-3 rounded-lg transition-none ${
-                      isActive ? 'text-[#ECECEC]' : 'text-[#888] hover:text-[#ECECEC]'
-                    }`}
-                  >
-                    <item.icon size={18} strokeWidth={1.75} />
-                  </button>
-                  {item.children?.open && item.children.items.map((child) => {
-                    const childActive = activeItem === child.id;
-                    return (
-                      <button
-                        key={child.id}
-                        onClick={() => navigate(navToRoute[child.id] || '/dashboard')}
-                        title={child.label}
-                        className={`w-full flex items-center justify-center px-2 py-2 rounded-lg transition-none ${
-                          childActive ? 'text-[#ECECEC]' : 'text-[#777] hover:text-[#ECECEC]'
-                        }`}
-                      >
-                        <child.icon size={14} strokeWidth={1.75} />
-                      </button>
-                    );
-                  })}
-                </React.Fragment>
-              );
-            })}
-          </div>
-        )}
-
-        {/* Resources section */}
-        {!collapsed && (
-          <div className="mt-6 pt-5 border-t border-[#2a2a2a]">
-            <p className="px-3 mb-3 text-[11px] uppercase tracking-[0.08em] text-[#555] font-medium">Resources</p>
-            <div className="space-y-0">
-              {RESOURCES.map(res => (
-                <a
-                  key={res.label}
-                  href={res.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-full flex items-center gap-4 px-3 py-3 rounded-lg text-[#888] hover:text-[#ECECEC] transition-none group"
-                >
-                  <span className="w-[18px] flex items-center justify-center flex-shrink-0">{res.icon}</span>
-                  <span className="text-[15px] font-normal tracking-[-0.01em] flex-1">{res.label}</span>
-                </a>
-              ))}
-            </div>
-          </div>
-        )}
-        {collapsed && (
-          <div className="mt-4 pt-4 border-t border-[#2a2a2a] space-y-0">
-            {RESOURCES.map(res => (
-              <a
-                key={res.label}
-                href={res.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                title={res.label}
-                className="w-full flex items-center justify-center px-2 py-3 rounded-lg text-[#888] hover:text-[#ECECEC] transition-none"
-              >
-                <span className="flex items-center justify-center">{res.icon}</span>
-              </a>
-            ))}
-          </div>
-        )}
+        {collapsed && <div style={{ height: 1, background: 'var(--au-line)', margin: '10px 8px' }} />}
+        {RESOURCES.map(res => (
+          <a
+            key={res.label}
+            href={res.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            title={collapsed ? res.label : undefined}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: collapsed ? 0 : 11,
+              justifyContent: collapsed ? 'center' : 'flex-start',
+              padding: collapsed ? '8px 0' : '7px 10px',
+              color: 'var(--au-text-2)',
+              fontSize: 12.5,
+              borderLeft: '2px solid transparent',
+              textDecoration: 'none',
+              transition: 'color 0.12s',
+            }}
+            onMouseEnter={e => e.currentTarget.style.color = 'var(--au-text)'}
+            onMouseLeave={e => e.currentTarget.style.color = 'var(--au-text-2)'}
+          >
+            <span style={{ display: 'inline-flex', width: 14, justifyContent: 'center' }}>{res.icon}</span>
+            {!collapsed && <span style={{ flex: 1 }}>{res.label}</span>}
+          </a>
+        ))}
       </nav>
 
-      {/* User Switcher */}
-      <div className="px-3 py-3 border-t border-[#2a2a2a] relative">
+      {/* Profile box */}
+      <div style={{ padding: '10px 8px 6px', position: 'relative' }}>
         <button
           onClick={() => setUserDropdownOpen(!userDropdownOpen)}
           title={collapsed ? activeUser.name : undefined}
-          className={`w-full flex items-center ${collapsed ? 'justify-center px-1 py-2' : 'gap-3 px-3 py-2'} rounded-lg bg-[#1e1e1e] hover:bg-[#252525] transition-none`}
+          style={{
+            width: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            gap: collapsed ? 0 : 10,
+            justifyContent: collapsed ? 'center' : 'flex-start',
+            padding: collapsed ? '8px' : '10px',
+            background: 'transparent',
+            border: '1px solid var(--au-line)',
+            color: 'var(--au-text)',
+            cursor: 'pointer',
+            borderRadius: 0,
+            textAlign: 'left',
+          }}
         >
-           {activeUser.photoUrl ? (
-             <img src={activeUser.photoUrl} alt={activeUser.name} className="w-8 h-8 rounded-full object-cover flex-shrink-0" />
-           ) : (
-             <div className={`w-8 h-8 rounded-full ${activeUser.color} flex items-center justify-center text-xs font-bold text-white flex-shrink-0`}>
-               {activeUser.initials}
-             </div>
-           )}
-           {!collapsed && (
-             <>
-               <div className="flex flex-col text-left flex-1 min-w-0">
-                 <div className="flex items-center gap-2">
-                   <span className="text-xs font-semibold text-[#ECECEC] truncate">{activeUser.name}</span>
-                   <button
-                     onClick={(e) => { e.stopPropagation(); openProfileEditor(); }}
-                     className="p-0.5 text-[#666] hover:text-[#ECECEC] transition-none"
-                     title="Edit profile"
-                   >
-                     <Settings size={12} />
-                   </button>
-                 </div>
-                 <span className="text-[10px] text-[#555]">Switch workspace</span>
-               </div>
-               <ChevronDown size={14} className={`text-[#666] transition-transform ${userDropdownOpen ? 'rotate-180' : ''}`} />
-             </>
-           )}
+          {activeUser.photoUrl ? (
+            <img src={activeUser.photoUrl} alt="" style={{ width: 24, height: 24, objectFit: 'cover', flexShrink: 0 }} />
+          ) : (
+            <div style={{ width: 24, height: 24, background: '#111', border: '1px solid var(--au-line-2)', display: 'grid', placeItems: 'center', fontSize: 11, fontWeight: 600, color: 'var(--au-text)', fontFamily: 'JetBrains Mono, monospace', flexShrink: 0 }}>
+              {activeUser.initials}
+            </div>
+          )}
+          {!collapsed && (
+            <>
+              <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0, flex: 1 }}>
+                <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--au-text)' }}>{activeUser.name}</span>
+                <span style={{ fontSize: 10, color: 'var(--au-text-3)', fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.05em' }}>OWNER</span>
+              </div>
+              <button
+                onClick={(e) => { e.stopPropagation(); openProfileEditor(); }}
+                style={{ background: 'transparent', border: 'none', padding: 2, color: 'var(--au-text-3)', cursor: 'pointer', display: 'inline-flex' }}
+                title="Edit profile"
+              >
+                <Settings size={11} />
+              </button>
+              <ChevronDown size={11} style={{ color: 'var(--au-text-3)', transform: userDropdownOpen ? 'rotate(180deg)' : 'rotate(0)' }} />
+            </>
+          )}
         </button>
 
-        {userDropdownOpen && (
-          <div className="absolute bottom-full left-3 right-3 mb-2 bg-[#1e1e1e] border border-[#2a2a2a] rounded-xl shadow-2xl overflow-hidden z-50">
-            <div className="px-3 py-2 border-b border-[#2a2a2a]">
-              <p className="text-[10px] uppercase tracking-wider text-[#555] font-medium">Workspace</p>
+        {userDropdownOpen && !collapsed && (
+          <div style={{ position: 'absolute', bottom: '100%', left: 8, right: 8, marginBottom: 6, background: '#000', border: '1px solid var(--au-line-2)', zIndex: 50 }}>
+            <div style={{ padding: '8px 10px', borderBottom: '1px solid var(--au-line)', fontFamily: 'JetBrains Mono, monospace', fontSize: 10, letterSpacing: '0.18em', color: 'var(--au-text-3)', textTransform: 'uppercase' }}>
+              — Workspace
             </div>
             {users.map(user => (
               <button
                 key={user.id}
                 onClick={() => { onUserChange(user.id); setUserDropdownOpen(false); }}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 hover:bg-[rgba(255,255,255,0.05)] transition-none ${
-                  user.id === activeUserId ? 'bg-[rgba(255,255,255,0.05)]' : ''
-                }`}
+                style={{
+                  width: '100%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 10,
+                  padding: '8px 10px',
+                  background: user.id === activeUserId ? '#0a0a0a' : 'transparent',
+                  color: 'var(--au-text)',
+                  border: 'none',
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                }}
               >
                 {user.photoUrl ? (
-                  <img src={user.photoUrl} alt={user.name} className="w-7 h-7 rounded-full object-cover" />
+                  <img src={user.photoUrl} alt="" style={{ width: 20, height: 20, objectFit: 'cover' }} />
                 ) : (
-                  <div className={`w-7 h-7 rounded-full ${user.color} flex items-center justify-center text-[10px] font-bold text-white`}>
+                  <div style={{ width: 20, height: 20, background: '#111', border: '1px solid var(--au-line-2)', display: 'grid', placeItems: 'center', fontSize: 10, fontWeight: 600, color: 'var(--au-text)', fontFamily: 'JetBrains Mono, monospace' }}>
                     {user.initials}
                   </div>
                 )}
-                <span className="text-xs font-medium text-[#ECECEC] flex-1 text-left">{user.name}</span>
-                {user.id === activeUserId && <Check size={14} className="text-[#ECECEC]" />}
+                <span style={{ fontSize: 12, flex: 1 }}>{user.name}</span>
+                {user.id === activeUserId && <Check size={12} />}
               </button>
             ))}
           </div>
         )}
       </div>
 
-      {isProfileOpen && (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-          <div className="bg-[#1e1e1e] border border-[#2a2a2a] rounded-xl w-full max-w-md overflow-hidden">
-            <div className="p-5 border-b border-[#2a2a2a]">
-              <h3 className="text-sm font-semibold text-[#ECECEC]">Edit profile</h3>
-              <p className="text-xs text-[#888] mt-1">Update your name and photo.</p>
+      {/* Sign out */}
+      {onSignOut && (
+        <button
+          onClick={onSignOut}
+          title={collapsed ? 'Sign out' : undefined}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: collapsed ? 0 : 10,
+            justifyContent: collapsed ? 'center' : 'flex-start',
+            padding: collapsed ? '12px' : '12px 14px 14px',
+            color: 'var(--au-text-3)',
+            background: 'transparent',
+            border: 'none',
+            borderTop: '1px solid var(--au-line)',
+            cursor: 'pointer',
+            fontSize: 11,
+            fontFamily: 'JetBrains Mono, monospace',
+            letterSpacing: '0.14em',
+            textTransform: 'uppercase',
+            textAlign: 'left',
+          }}
+        >
+          <LogOut size={12} />
+          {!collapsed && (
+            <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0, flex: 1 }}>
+              <span>Sign out</span>
+              {userEmail && <span style={{ fontSize: 9, color: 'var(--au-text-4)', textTransform: 'none', letterSpacing: 0, fontFamily: 'Inter, sans-serif' }}>{userEmail}</span>}
             </div>
-            <div className="p-5 space-y-4">
-              <div className="flex items-center gap-4">
+          )}
+        </button>
+      )}
+
+      {/* Profile editor modal */}
+      {isProfileOpen && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 70, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)', padding: 16 }}>
+          <div style={{ background: '#000', border: '1px solid var(--au-line-2)', width: '100%', maxWidth: 420, borderRadius: 0 }}>
+            <div style={{ padding: 18, borderBottom: '1px solid var(--au-line)' }}>
+              <div className="au-eyebrow" style={{ marginBottom: 6 }}>— Edit · Profile</div>
+              <h3 style={{ margin: 0, fontSize: 16, fontWeight: 600, color: 'var(--au-text)', letterSpacing: '-0.015em' }}>Update your details</h3>
+            </div>
+            <div style={{ padding: 18, display: 'flex', flexDirection: 'column', gap: 16 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
                 <button
                   onClick={() => photoInputRef.current?.click()}
-                  className="w-16 h-16 rounded-full overflow-hidden bg-[#2a2a2a] flex items-center justify-center text-[#888]"
+                  style={{ width: 56, height: 56, background: '#0a0a0a', border: '1px solid var(--au-line-2)', display: 'grid', placeItems: 'center', color: 'var(--au-text-3)', cursor: 'pointer', overflow: 'hidden', borderRadius: 0 }}
                 >
                   {profilePhotoUrl ? (
-                    <img src={profilePhotoUrl} alt="Profile" className="w-full h-full object-cover" />
+                    <img src={profilePhotoUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   ) : (
-                    <Camera size={18} />
+                    <Camera size={16} />
                   )}
                 </button>
                 <div>
-                  <p className="text-xs text-[#888]">Profile photo</p>
+                  <div className="au-label" style={{ marginBottom: 4 }}>— Profile photo</div>
                   <button
                     onClick={() => photoInputRef.current?.click()}
-                    className="text-xs text-[#ECECEC] hover:text-white"
+                    style={{ background: 'transparent', border: 'none', color: 'var(--au-text)', fontSize: 12, cursor: 'pointer', padding: 0 }}
                   >
                     Upload photo
                   </button>
                 </div>
-                <input ref={photoInputRef} type="file" accept="image/*" className="hidden" onChange={handlePhotoChange} />
+                <input ref={photoInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handlePhotoChange} />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                 <div>
-                  <label className="text-[10px] uppercase tracking-wider text-[#555] font-medium">First name</label>
-                  <input value={profileFirstName} onChange={e => setProfileFirstName(e.target.value)}
-                    className="w-full mt-1 bg-[#2a2a2a] border border-[#333] rounded-lg px-3 py-2 text-sm text-[#ECECEC] focus:outline-none focus:ring-1 focus:ring-[#444]" />
+                  <div className="au-label" style={{ marginBottom: 6 }}>— First name</div>
+                  <input
+                    value={profileFirstName}
+                    onChange={e => setProfileFirstName(e.target.value)}
+                    style={{ width: '100%', background: '#0a0a0a', border: '1px solid var(--au-line-2)', padding: '8px 10px', color: 'var(--au-text)', fontSize: 13, borderRadius: 0, outline: 'none', fontFamily: 'Inter, sans-serif' }}
+                  />
                 </div>
                 <div>
-                  <label className="text-[10px] uppercase tracking-wider text-[#555] font-medium">Last name</label>
-                  <input value={profileLastName} onChange={e => setProfileLastName(e.target.value)}
-                    className="w-full mt-1 bg-[#2a2a2a] border border-[#333] rounded-lg px-3 py-2 text-sm text-[#ECECEC] focus:outline-none focus:ring-1 focus:ring-[#444]" />
+                  <div className="au-label" style={{ marginBottom: 6 }}>— Last name</div>
+                  <input
+                    value={profileLastName}
+                    onChange={e => setProfileLastName(e.target.value)}
+                    style={{ width: '100%', background: '#0a0a0a', border: '1px solid var(--au-line-2)', padding: '8px 10px', color: 'var(--au-text)', fontSize: 13, borderRadius: 0, outline: 'none', fontFamily: 'Inter, sans-serif' }}
+                  />
                 </div>
               </div>
             </div>
-            <div className="flex justify-end gap-3 p-4 border-t border-[#2a2a2a]">
-              <button onClick={() => setIsProfileOpen(false)} className="px-4 py-2 bg-[#2a2a2a] hover:bg-[#333] text-[#ECECEC] rounded-lg text-sm font-medium transition-none">Cancel</button>
-              <button onClick={saveProfile} className="px-4 py-2 bg-white hover:bg-[#e5e5e5] text-[#212121] rounded-lg text-sm font-medium transition-none">Save</button>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, padding: 14, borderTop: '1px solid var(--au-line)' }}>
+              <button onClick={() => setIsProfileOpen(false)} className="au-btn-ghost">Cancel</button>
+              <button onClick={saveProfile} className="au-btn-primary">Save</button>
             </div>
           </div>
-        </div>
-      )}
-
-      {/* Sign Out Button */}
-      {onSignOut && (
-        <div className="px-3 pb-3">
-          <button
-            onClick={onSignOut}
-            title={collapsed ? 'Sign out' : undefined}
-            className={`w-full flex items-center ${collapsed ? 'justify-center px-1 py-2' : 'gap-3 px-3 py-2'} rounded-lg text-[#666] hover:text-[#ECECEC] transition-none`}
-          >
-            <LogOut size={16} strokeWidth={1.75} />
-            {!collapsed && (
-              <div className="flex flex-col text-left flex-1 min-w-0">
-                <span className="text-xs font-normal">Sign out</span>
-                {userEmail && <span className="text-[10px] text-[#444] truncate">{userEmail}</span>}
-              </div>
-            )}
-          </button>
         </div>
       )}
     </aside>

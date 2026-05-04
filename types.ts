@@ -58,6 +58,7 @@ export enum NavigationItem {
   THERESA_THE_READER_DATA = 'Theresa The Reader — Data',
   CALENDAR = 'Calendar',
   MENTOR = 'Mentor',
+  STUDY = 'Study',
   // Legacy (kept to avoid breaking existing data)
   PLANNER = 'Planner',
   CONTENT = 'Content',

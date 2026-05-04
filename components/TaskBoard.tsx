@@ -210,16 +210,16 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storagePrefix, clients }) => {
           <ChevronDown
             size={14}
             className="transition-transform"
-            style={{ color: '#888', transform: collapsed ? 'rotate(-90deg)' : 'rotate(0deg)' }}
+            style={{ color: '#909090', transform: collapsed ? 'rotate(-90deg)' : 'rotate(0deg)' }}
           />
-          <h2 className="text-sm font-semibold" style={{ color: '#ECECEC' }}>
+          <h2 className="text-sm font-semibold" style={{ color: '#f4f4f4' }}>
             Task Board
           </h2>
-          <span className="text-xs font-medium px-2 py-0.5 rounded-full" style={{ background: '#2a2a2a', color: '#888' }}>
+          <span className="text-xs font-medium px-2 py-0.5 rounded-none-full" style={{ background: '#0d0d0d', color: '#909090' }}>
             {tasks.length} tasks
           </span>
           {totalRevenue > 0 && (
-            <span className="text-xs font-medium px-2 py-0.5 rounded-full" style={{ background: '#1a2e1a', color: '#86efac' }}>
+            <span className="text-xs font-medium px-2 py-0.5 rounded-none-full" style={{ background: '#1a2e1a', color: '#6dd49a' }}>
               {formatMoney(totalRevenue)} total value
             </span>
           )}
@@ -235,7 +235,7 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storagePrefix, clients }) => {
             return (
               <div
                 key={col}
-                className="flex-shrink-0 rounded-xl flex flex-col backdrop-blur-sm"
+                className="flex-shrink-0 rounded-none-none flex flex-col backdrop-blur-sm"
                 style={{
                   width: 320,
                   background: isDragOver
@@ -252,14 +252,14 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storagePrefix, clients }) => {
                 {/* Column header */}
                 <div className="flex items-center justify-between px-3 pt-3 pb-2">
                   <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full" style={{ background: COLUMN_COLORS[col] }} />
-                    <span className="text-xs font-semibold" style={{ color: '#ECECEC' }}>{col}</span>
-                    <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full" style={{ background: '#2a2a2a', color: '#777' }}>
+                    <div className="w-2 h-2 rounded-none-full" style={{ background: COLUMN_COLORS[col] }} />
+                    <span className="text-xs font-semibold" style={{ color: '#f4f4f4' }}>{col}</span>
+                    <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-none-full" style={{ background: '#0d0d0d', color: '#777' }}>
                       {colTasks.length}
                     </span>
                   </div>
                   {rev > 0 && (
-                    <span className="text-[10px] font-medium" style={{ color: '#86efac' }}>
+                    <span className="text-[10px] font-medium" style={{ color: '#6dd49a' }}>
                       {formatMoney(rev)}
                     </span>
                   )}
@@ -290,8 +290,8 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ storagePrefix, clients }) => {
                 {/* Add button */}
                 <button
                   onClick={() => addTask(col)}
-                  className="flex items-center gap-1 px-3 py-2 text-[11px] font-medium rounded-b-xl transition-colors"
-                  style={{ color: '#666' }}
+                  className="flex items-center gap-1 px-3 py-2 text-[11px] font-medium rounded-none-none transition-colors"
+                  style={{ color: '#5a5a5a' }}
                   onMouseEnter={e => (e.currentTarget.style.color = '#999')}
                   onMouseLeave={e => (e.currentTarget.style.color = '#666')}
                 >
@@ -333,8 +333,8 @@ const TaskCard: React.FC<TaskCardProps> = ({
   if (isEditing) {
     return (
       <div
-        className="rounded-lg p-3 space-y-2"
-        style={{ background: '#232323', border: '1px solid #3a3a3a' }}
+        className="rounded-none p-3 space-y-2"
+        style={{ background: '#232323', border: '1px solid #242424' }}
       >
         {/* Title */}
         <input
@@ -343,7 +343,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
           onChange={e => onUpdate({ title: e.target.value })}
           placeholder="Task title..."
           className="w-full bg-transparent text-xs font-semibold outline-none"
-          style={{ color: '#ECECEC' }}
+          style={{ color: '#f4f4f4' }}
           onKeyDown={e => { if (e.key === 'Enter') onClose(); }}
         />
 
@@ -361,21 +361,21 @@ const TaskCard: React.FC<TaskCardProps> = ({
         <div className="relative">
           <button
             onClick={() => setShowClientPicker(!showClientPicker)}
-            className="flex items-center gap-1 text-[10px] px-2 py-1 rounded-md transition-colors"
-            style={{ background: '#2a2a2a', color: task.client_name ? '#ECECEC' : '#666' }}
+            className="flex items-center gap-1 text-[10px] px-2 py-1 rounded-none-none transition-colors"
+            style={{ background: '#0d0d0d', color: task.client_name ? '#ECECEC' : '#666' }}
           >
             {task.client_name || 'Assign client'}
             <ChevronDown size={10} />
           </button>
           {showClientPicker && (
             <div
-              className="absolute left-0 top-full mt-1 z-50 rounded-lg py-1 shadow-xl overflow-y-auto"
-              style={{ background: '#2a2a2a', border: '1px solid #3a3a3a', maxHeight: 160, minWidth: 160 }}
+              className="absolute left-0 top-full mt-1 z-50 rounded-none-none py-1 shadow-xl overflow-y-auto"
+              style={{ background: '#0d0d0d', border: '1px solid #242424', maxHeight: 160, minWidth: 160 }}
             >
               <button
                 onClick={() => { onUpdate({ client_id: '', client_name: '' }); setShowClientPicker(false); }}
                 className="w-full text-left px-3 py-1.5 text-[11px] transition-colors"
-                style={{ color: '#888' }}
+                style={{ color: '#909090' }}
                 onMouseEnter={e => (e.currentTarget.style.background = '#333')}
                 onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
               >
@@ -386,7 +386,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
                   key={c.id}
                   onClick={() => { onUpdate({ client_id: c.id, client_name: c.name }); setShowClientPicker(false); }}
                   className="w-full text-left px-3 py-1.5 text-[11px] transition-colors"
-                  style={{ color: '#ECECEC' }}
+                  style={{ color: '#f4f4f4' }}
                   onMouseEnter={e => (e.currentTarget.style.background = '#333')}
                   onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
                 >
@@ -399,14 +399,14 @@ const TaskCard: React.FC<TaskCardProps> = ({
 
         {/* Revenue */}
         <div className="flex items-center gap-1">
-          <DollarSign size={11} style={{ color: '#86efac' }} />
+          <DollarSign size={11} style={{ color: '#6dd49a' }} />
           <input
             type="number"
             value={task.estimated_revenue || ''}
             onChange={e => onUpdate({ estimated_revenue: parseFloat(e.target.value) || 0 })}
             placeholder="0"
             className="w-20 bg-transparent text-[11px] outline-none"
-            style={{ color: '#86efac' }}
+            style={{ color: '#6dd49a' }}
           />
         </div>
 
@@ -416,7 +416,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
             <button
               key={col}
               onClick={() => onUpdate({ status: col })}
-              className="text-[9px] px-1.5 py-0.5 rounded-md font-medium transition-all"
+              className="text-[9px] px-1.5 py-0.5 rounded-none-none font-medium transition-all"
               style={{
                 background: task.status === col ? COLUMN_COLORS[col] + '33' : '#2a2a2a',
                 color: task.status === col ? COLUMN_COLORS[col] : '#666',
@@ -433,8 +433,8 @@ const TaskCard: React.FC<TaskCardProps> = ({
           {!confirmDelete ? (
             <button
               onClick={() => setConfirmDelete(true)}
-              className="text-[10px] px-2 py-1 rounded-md transition-colors"
-              style={{ color: '#fca5a5' }}
+              className="text-[10px] px-2 py-1 rounded-none-none transition-colors"
+              style={{ color: '#d46d6d' }}
               onMouseEnter={e => (e.currentTarget.style.background = '#2a1a1a')}
               onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
             >
@@ -444,15 +444,15 @@ const TaskCard: React.FC<TaskCardProps> = ({
             <div className="flex gap-1">
               <button
                 onClick={onDelete}
-                className="text-[10px] px-2 py-1 rounded-md"
-                style={{ background: '#3a1a1a', color: '#fca5a5' }}
+                className="text-[10px] px-2 py-1 rounded-none-none"
+                style={{ background: '#3a1a1a', color: '#d46d6d' }}
               >
                 Delete
               </button>
               <button
                 onClick={() => setConfirmDelete(false)}
-                className="text-[10px] px-2 py-1 rounded-md"
-                style={{ color: '#888' }}
+                className="text-[10px] px-2 py-1 rounded-none-none"
+                style={{ color: '#909090' }}
               >
                 Cancel
               </button>
@@ -460,8 +460,8 @@ const TaskCard: React.FC<TaskCardProps> = ({
           )}
           <button
             onClick={onClose}
-            className="text-[10px] px-2 py-1 rounded-md transition-colors"
-            style={{ background: '#2a2a2a', color: '#ECECEC' }}
+            className="text-[10px] px-2 py-1 rounded-none-none transition-colors"
+            style={{ background: '#0d0d0d', color: '#f4f4f4' }}
           >
             Done
           </button>
@@ -478,7 +478,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
       onDragOver={onCardDragOver}
       onDragEnd={onDragEnd}
       onClick={onEdit}
-      className="rounded-lg p-2.5 cursor-grab active:cursor-grabbing group transition-all"
+      className="rounded-none p-2.5 cursor-grab active:cursor-grabbing group transition-all"
       style={{
         background: '#232323',
         border: isDragOver ? '1px solid #555' : '1px solid #2a2a2a',
@@ -487,21 +487,21 @@ const TaskCard: React.FC<TaskCardProps> = ({
         marginTop: isDragOver ? -1 : undefined,
       }}
       onMouseEnter={e => { if (!isDragOver) e.currentTarget.style.borderColor = '#3a3a3a'; }}
-      onMouseLeave={e => { if (!isDragOver) e.currentTarget.style.borderColor = '#2a2a2a'; }}
+      onMouseLeave={e => { if (!isDragOver) e.currentTarget.style.borderColor = '#1a1a1a'; }}
     >
       <div className="flex items-start gap-1.5">
-        <GripVertical size={12} className="mt-0.5 opacity-0 group-hover:opacity-40 transition-opacity flex-shrink-0" style={{ color: '#888' }} />
+        <GripVertical size={12} className="mt-0.5 opacity-0 group-hover:opacity-40 transition-opacity flex-shrink-0" style={{ color: '#909090' }} />
         <div className="flex-1 min-w-0">
           <p className="text-[11px] font-medium truncate" style={{ color: task.title ? '#ECECEC' : '#666' }}>
             {task.title || 'Untitled task'}
           </p>
           {task.client_name && (
-            <p className="text-[10px] mt-0.5 truncate" style={{ color: '#888' }}>
+            <p className="text-[10px] mt-0.5 truncate" style={{ color: '#909090' }}>
               {task.client_name}
             </p>
           )}
           {task.estimated_revenue > 0 && (
-            <p className="text-[10px] mt-0.5 font-medium" style={{ color: '#86efac' }}>
+            <p className="text-[10px] mt-0.5 font-medium" style={{ color: '#6dd49a' }}>
               ${task.estimated_revenue.toLocaleString()}
             </p>
           )}
@@ -510,7 +510,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
           onClick={e => { e.stopPropagation(); onDelete(); }}
           className="opacity-0 group-hover:opacity-60 hover:!opacity-100 transition-opacity"
         >
-          <X size={12} style={{ color: '#888' }} />
+          <X size={12} style={{ color: '#909090' }} />
         </button>
       </div>
     </div>

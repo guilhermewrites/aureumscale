@@ -357,9 +357,9 @@ const GeneralRoom: React.FC<GeneralRoomProps> = ({ storagePrefix, projectedReven
   // --- Status helpers ---
   const statusIcon = (status: TaskStatus) => {
     switch (status) {
-      case 'done': return <CheckCircle2 size={14} className="text-emerald-400" />;
-      case 'in_progress': return <Clock size={14} className="text-amber-400" />;
-      default: return <div className="w-3.5 h-3.5 rounded-full border-2 border-[#555]" />;
+      case 'done': return <CheckCircle2 size={13} style={{ color: 'var(--au-good)' }} />;
+      case 'in_progress': return <Clock size={13} style={{ color: '#e0c870' }} />;
+      default: return <div style={{ width: 12, height: 12, border: '1px solid var(--au-text-3)' }} />;
     }
   };
 
@@ -373,9 +373,9 @@ const GeneralRoom: React.FC<GeneralRoomProps> = ({ storagePrefix, projectedReven
 
   const priorityColor = (p: string) => {
     switch (p) {
-      case 'high': return 'text-[#ccc]';
-      case 'medium': return 'text-[#777]';
-      default: return 'text-[#555]';
+      case 'high': return 'var(--au-text)';
+      case 'medium': return 'var(--au-text-2)';
+      default: return 'var(--au-text-3)';
     }
   };
 
@@ -385,168 +385,151 @@ const GeneralRoom: React.FC<GeneralRoomProps> = ({ storagePrefix, projectedReven
   };
 
   return (
-    <div className="space-y-6">
-      {/* --- HERO: $100K Goal Progress --- */}
-      <div className="bg-[#1c1c1c] rounded-2xl border border-[#2a2a2a] p-6 relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-emerald-500/5 to-transparent rounded-full -translate-y-1/2 translate-x-1/2" />
-        <div className="relative">
-          <div className="flex items-center justify-between mb-1">
-            <div>
-              <h2 className="text-2xl font-bold text-[#ECECEC]" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-                Road to $100K<span className="text-[#555] text-lg font-normal">/mo</span>
-              </h2>
-              <p className="text-xs text-[#666] mt-1">Your command center for scaling revenue</p>
-            </div>
-            <div className="text-right">
-              <div className="text-3xl font-bold text-emerald-400">{formatCurrency(displayRevenue)}</div>
-              <div className="text-xs text-[#666]">
-                of {formatCurrency(goalAmount)} goal
-                {revenueSource === 'clients' && ' · from clients'}
-                {revenueSource === 'projected' && ' · this month'}
-                {revenueSource === 'avg' && ' · monthly avg'}
-              </div>
-            </div>
-          </div>
-
-          {/* Progress bar */}
-          <div className="mt-4 mb-2">
-            <div className="h-3 bg-[#2a2a2a] rounded-full overflow-hidden relative">
-              <div
-                className="h-full rounded-full bg-gradient-to-r from-emerald-600 to-emerald-400 transition-all duration-700 relative"
-                style={{ width: `${progressPercent}%` }}
-              >
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent to-white/10" />
-              </div>
-              {/* Milestone markers */}
-              {milestones.map(ms => (
-                <div
-                  key={ms.id}
-                  className="absolute top-0 h-full flex items-center"
-                  style={{ left: `${(ms.amount / goalAmount) * 100}%` }}
-                >
-                  <div className={`w-0.5 h-full ${ms.status === 'reached' ? 'bg-emerald-400' : 'bg-[#444]'}`} />
-                </div>
-              ))}
-            </div>
-            {/* Milestone labels */}
-            <div className="relative h-5 mt-1">
-              {milestones.map((ms, idx) => {
-                const pct = (ms.amount / goalAmount) * 100;
-                const isLast = idx === milestones.length - 1;
-                const isFirst = idx === 0;
-                return (
-                  <div
-                    key={ms.id}
-                    className={`absolute text-[9px] font-medium ${isLast ? '' : isFirst ? '' : '-translate-x-1/2'}`}
-                    style={{
-                      ...(isLast
-                        ? { right: 0 }
-                        : isFirst
-                          ? { left: 0 }
-                          : { left: `${pct}%` }),
-                      color: ms.status === 'reached' ? '#10b981' : ms.status === 'current' ? '#ECECEC' : '#555',
-                    }}
-                  >
-                    {ms.label}
-                  </div>
-                );
-              })}
-            </div>
+    <div style={{ paddingTop: 36, paddingBottom: 80, maxWidth: 1280, margin: '0 auto' }}>
+      {/* === Page header === */}
+      <div style={{ display: 'flex', alignItems: 'flex-end', gap: 16, marginBottom: 28, paddingBottom: 22, borderBottom: '1px solid var(--au-line)' }}>
+        <div style={{ flex: 1 }}>
+          <div className="au-eyebrow" style={{ marginBottom: 10 }}>— Index · 002 · Subject · General Room</div>
+          <h1 style={{ margin: 0, fontSize: 34, fontWeight: 600, letterSpacing: '-0.025em', color: 'var(--au-text)', lineHeight: 1 }}>
+            The plan to <span style={{ color: 'var(--au-good)' }}>$100K/mo</span>.
+          </h1>
+          <p style={{ margin: '10px 0 0', fontSize: 13.5, color: 'var(--au-text-2)', maxWidth: 520 }}>Channels, strategies, milestones. The command center for scaling revenue.</p>
+        </div>
+        <div style={{ textAlign: 'right' }}>
+          <div className="au-label" style={{ marginBottom: 6 }}>— Current</div>
+          <div style={{ fontSize: 32, fontWeight: 600, color: 'var(--au-good)', letterSpacing: '-0.02em', lineHeight: 1, fontFamily: 'JetBrains Mono, monospace' }}>{formatCurrency(displayRevenue)}</div>
+          <div style={{ fontSize: 10.5, color: 'var(--au-text-3)', marginTop: 6, fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+            OF {formatCurrency(goalAmount)}
+            {revenueSource === 'clients' && ' · CLIENTS'}
+            {revenueSource === 'projected' && ' · MONTH'}
+            {revenueSource === 'avg' && ' · AVG'}
           </div>
         </div>
       </div>
 
-      {/* --- Gameplan Note --- */}
-      <div className="bg-[#1c1c1c] rounded-2xl border border-[#2a2a2a] p-5">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <Edit3 size={14} className="text-[#666]" />
-            <span className="text-xs font-semibold text-[#ECECEC]">The Gameplan</span>
-          </div>
+      {/* === Milestone progress === */}
+      <div style={{ marginBottom: 36, border: '1px solid var(--au-line)', padding: 24 }}>
+        <div className="au-label" style={{ marginBottom: 18 }}>— Milestones · {String(Math.round(progressPercent)).padStart(2, '0')}% complete</div>
+        <div style={{ position: 'relative', height: 1, background: 'var(--au-line-2)' }}>
+          <div style={{ position: 'absolute', top: 0, left: 0, height: '100%', background: 'var(--au-good)', width: `${progressPercent}%`, transition: 'width 0.7s' }} />
+          {milestones.map(ms => (
+            <div
+              key={ms.id}
+              style={{
+                position: 'absolute',
+                top: -3,
+                left: `${(ms.amount / goalAmount) * 100}%`,
+                width: 1, height: 7,
+                background: ms.status === 'reached' ? 'var(--au-good)' : 'var(--au-text-3)',
+              }}
+            />
+          ))}
+        </div>
+        <div style={{ position: 'relative', height: 18, marginTop: 10 }}>
+          {milestones.map((ms, idx) => {
+            const pct = (ms.amount / goalAmount) * 100;
+            const isLast = idx === milestones.length - 1;
+            const isFirst = idx === 0;
+            return (
+              <div
+                key={ms.id}
+                style={{
+                  position: 'absolute',
+                  fontFamily: 'JetBrains Mono, monospace',
+                  fontSize: 9.5,
+                  letterSpacing: '0.1em',
+                  textTransform: 'uppercase',
+                  ...(isLast ? { right: 0 } : isFirst ? { left: 0 } : { left: `${pct}%`, transform: 'translateX(-50%)' }),
+                  color: ms.status === 'reached' ? 'var(--au-good)' : ms.status === 'current' ? 'var(--au-text)' : 'var(--au-text-3)',
+                }}
+              >
+                {ms.label}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* === Gameplan note === */}
+      <div style={{ marginBottom: 36, border: '1px solid var(--au-line)', padding: 22 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+          <div className="au-label">— The gameplan</div>
           {!editingGameplan && (
             <button
               onClick={() => { setEditingGameplan(true); setTimeout(() => gameplanRef.current?.focus(), 50); }}
-              className="text-[10px] text-[#555] hover:text-[#999] transition-none"
+              style={{ background: 'transparent', border: 'none', color: 'var(--au-text-3)', cursor: 'pointer', fontFamily: 'JetBrains Mono, monospace', fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase' }}
             >
-              {gameplan ? 'Edit' : 'Write your mission'}
+              {gameplan ? 'Edit' : 'Write mission'}
             </button>
           )}
         </div>
         {editingGameplan ? (
-          <div>
+          <>
             <textarea
               ref={gameplanRef}
               value={gameplan}
               onChange={e => setGameplan(e.target.value)}
-              placeholder="Write your mission, your gameplan, the strategy to hit $100K/mo...&#10;&#10;Example:&#10;→ Build audience on X + YouTube to drive inbound leads&#10;→ Launch cold outreach system doing 100 DMs/day&#10;→ Run Meta Ads to VSL funnel once offer is validated&#10;→ Close 10 clients at $10K/mo average"
+              placeholder="Write your mission, your gameplan, the strategy to hit $100K/mo..."
               rows={6}
-              className="w-full bg-[#161616] border border-[#2a2a2a] rounded-xl px-4 py-3 text-sm text-[#ccc] placeholder-[#444] focus:outline-none focus:ring-1 focus:ring-[#3a3a3a] resize-none leading-relaxed"
+              style={{
+                width: '100%',
+                background: '#0a0a0a',
+                border: '1px solid var(--au-line-2)',
+                borderRadius: 0,
+                padding: '12px 14px',
+                fontSize: 13,
+                color: 'var(--au-text-2)',
+                outline: 'none',
+                resize: 'none',
+                lineHeight: 1.6,
+                fontFamily: 'Inter, sans-serif',
+                boxSizing: 'border-box',
+              }}
             />
-            <div className="flex justify-end gap-2 mt-2">
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 10 }}>
               <button
                 onClick={() => { setEditingGameplan(false); saveGameplan(gameplan); }}
-                className="px-3 py-1.5 bg-[#2a2a2a] text-[#ECECEC] rounded-lg text-xs font-medium hover:bg-[#333] transition-none"
+                className="au-btn-primary"
               >
                 Save
               </button>
             </div>
-          </div>
+          </>
         ) : (
-          <div
-            onClick={() => { setEditingGameplan(true); setTimeout(() => gameplanRef.current?.focus(), 50); }}
-            className="cursor-pointer"
-          >
+          <div onClick={() => { setEditingGameplan(true); setTimeout(() => gameplanRef.current?.focus(), 50); }} style={{ cursor: 'pointer' }}>
             {gameplan ? (
-              <p className="text-sm text-[#999] whitespace-pre-wrap leading-relaxed">{gameplan}</p>
+              <p style={{ fontSize: 13.5, color: 'var(--au-text-2)', whiteSpace: 'pre-wrap', lineHeight: 1.6, margin: 0 }}>{gameplan}</p>
             ) : (
-              <p className="text-sm text-[#444] italic">Click to write your mission and gameplan...</p>
+              <p style={{ fontSize: 13, color: 'var(--au-text-4)', fontStyle: 'italic', margin: 0 }}>Click to write your mission and gameplan...</p>
             )}
           </div>
         )}
       </div>
 
-      {/* --- Stat Cards --- */}
-      <div className="grid grid-cols-4 gap-4">
-        <div className="bg-[#1c1c1c] rounded-2xl border border-[#2a2a2a] p-5">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-[10px] uppercase tracking-wider text-[#666] font-semibold">CHANNELS ACTIVE</span>
-            <BarChart3 size={16} className="text-[#555]" />
+      {/* === Stat cards === */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', border: '1px solid var(--au-line)', borderRight: 'none', marginBottom: 36 }}>
+        {[
+          { label: 'Channels active', value: String(channels.length).padStart(2, '0'), hint: 'REVENUE CHANNELS' },
+          { label: 'Strategies', value: `${completedStrategies}/${totalStrategies}`, hint: `${inProgressStrategies} IN PROGRESS` },
+          { label: 'Target total', value: formatCurrency(totalTarget), hint: 'ACROSS ALL CHANNELS' },
+          { label: 'From clients', value: formatCurrency(totalFromClients), hint: 'MONTHLY REVENUE', accent: true },
+        ].map((s, i) => (
+          <div key={i} style={{ padding: '20px 22px', borderRight: '1px solid var(--au-line)' }}>
+            <div className="au-label" style={{ marginBottom: 12 }}>— {s.label}</div>
+            <div style={{ fontSize: 26, fontWeight: 600, color: s.accent ? 'var(--au-good)' : 'var(--au-text)', letterSpacing: '-0.025em', lineHeight: 1, fontFamily: 'JetBrains Mono, monospace' }}>{s.value}</div>
+            <div style={{ fontSize: 11, color: 'var(--au-text-3)', marginTop: 8, fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.05em' }}>{s.hint}</div>
           </div>
-          <div className="text-2xl font-bold text-[#ECECEC]">{channels.length}</div>
-          <div className="text-xs text-[#666] mt-1">Revenue channels</div>
-        </div>
-
-        <div className="bg-[#1c1c1c] rounded-2xl border border-[#2a2a2a] p-5">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-[10px] uppercase tracking-wider text-[#666] font-semibold">STRATEGIES</span>
-            <Target size={16} className="text-[#555]" />
-          </div>
-          <div className="text-2xl font-bold text-[#ECECEC]">{completedStrategies}<span className="text-sm text-[#666] font-normal">/{totalStrategies}</span></div>
-          <div className="text-xs text-[#666] mt-1">{inProgressStrategies} in progress</div>
-        </div>
-
-        <div className="bg-[#1c1c1c] rounded-2xl border border-[#2a2a2a] p-5">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-[10px] uppercase tracking-wider text-[#666] font-semibold">TARGET TOTAL</span>
-            <DollarSign size={16} className="text-[#555]" />
-          </div>
-          <div className="text-2xl font-bold text-[#ECECEC]">{formatCurrency(totalTarget)}</div>
-          <div className="text-xs text-[#666] mt-1">Across all channels</div>
-        </div>
-
-        <div className="bg-[#1c1c1c] rounded-2xl border border-[#2a2a2a] p-5">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-[10px] uppercase tracking-wider text-[#666] font-semibold">FROM CLIENTS</span>
-            <DollarSign size={16} className="text-[#555]" />
-          </div>
-          <div className="text-2xl font-bold text-emerald-400">{formatCurrency(totalFromClients)}</div>
-          <div className="text-xs text-[#666] mt-1">Monthly revenue</div>
-        </div>
+        ))}
       </div>
 
-      {/* === Channel Cards === */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-        {channels.map(ch => {
+      {/* === Channel grid === */}
+      <div className="au-label" style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+        <span>— Channels</span>
+        <span style={{ flex: 1, height: 1, background: 'var(--au-line)' }} />
+        <span>{String(channels.length).padStart(2, '0')} / {String(channels.length).padStart(2, '0')}</span>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', border: '1px solid var(--au-line)', borderRight: 'none', borderBottom: 'none' }}>
+        {channels.map((ch, idx) => {
           const cfg = CHANNEL_CONFIG[ch.type];
           const current = getChannelCurrent(ch.type);
           const doneCount = ch.strategies.filter(s => s.status === 'done').length;
@@ -554,77 +537,82 @@ const GeneralRoom: React.FC<GeneralRoomProps> = ({ storagePrefix, projectedReven
           const pct = ch.target > 0 ? Math.min((current / ch.target) * 100, 100) : 0;
 
           return (
-            <div key={ch.id} className="bg-[#1c1c1c] rounded-2xl border border-[#2a2a2a] overflow-hidden flex flex-col">
-              {/* Card top */}
+            <div key={ch.id} style={{ borderRight: '1px solid var(--au-line)', borderBottom: '1px solid var(--au-line)', display: 'flex', flexDirection: 'column' }}>
+              {/* Card top — clickable to expand */}
               <div
-                className="p-5 cursor-pointer hover:bg-[rgba(255,255,255,0.02)] transition-none"
+                style={{ padding: '20px 22px 16px', cursor: 'pointer', transition: 'background 0.15s' }}
                 onClick={() => toggleChannel(ch.id)}
+                onMouseEnter={e => e.currentTarget.style.background = '#080808'}
+                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
               >
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-lg bg-[#2a2a2a] flex items-center justify-center text-[#888]">
-                      {cfg.icon}
-                    </div>
-                    <div>
-                      <span className="text-sm font-semibold text-[#ECECEC] block leading-tight">{ch.name}</span>
-                      <span className="text-[10px] text-[#555]">{doneCount}/{totalCount} strategies done</span>
-                    </div>
-                  </div>
-                  {ch.expanded ? <ChevronDown size={14} className="text-[#555]" /> : <ChevronRight size={14} className="text-[#555]" />}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14, fontFamily: 'JetBrains Mono, monospace', fontSize: 10.5, color: 'var(--au-text-3)', letterSpacing: '0.18em' }}>
+                  <span>FILE / {String(idx + 1).padStart(3, '0')}</span>
+                  <span style={{ flex: 1, height: 1, background: 'var(--au-line)' }} />
+                  <span>{String(doneCount).padStart(2, '0')}/{String(totalCount).padStart(2, '0')}</span>
+                  {ch.expanded ? <ChevronDown size={11} /> : <ChevronRight size={11} />}
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+                  <span style={{ color: 'var(--au-text-2)' }}>{cfg.icon}</span>
+                  <span style={{ fontSize: 17, fontWeight: 600, color: 'var(--au-text)', letterSpacing: '-0.015em' }}>{ch.name}</span>
                 </div>
 
                 {/* Revenue */}
-                <div className="mb-3">
-                  <div className="text-2xl font-bold text-[#ECECEC] tracking-tight">{formatCurrency(current)}</div>
-                  <div className="flex items-center gap-1 mt-0.5">
-                    <span className="text-[10px] text-[#555]">of</span>
+                <div style={{ marginBottom: 12 }}>
+                  <div style={{ fontSize: 22, fontWeight: 600, color: 'var(--au-text)', letterSpacing: '-0.02em', fontFamily: 'JetBrains Mono, monospace' }}>{formatCurrency(current)}</div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 2, fontFamily: 'JetBrains Mono, monospace', fontSize: 10, color: 'var(--au-text-3)', letterSpacing: '0.06em' }}>
+                    <span>OF</span>
                     <input
                       type="number"
                       value={ch.target}
                       onClick={e => e.stopPropagation()}
                       onChange={e => { e.stopPropagation(); updateChannelTarget(ch.id, Number(e.target.value) || 0); }}
-                      className="w-16 bg-transparent text-[10px] text-[#666] font-medium focus:outline-none focus:text-[#999] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      style={{
+                        width: 64, background: 'transparent', border: 'none', outline: 'none',
+                        color: 'var(--au-text-3)', fontFamily: 'JetBrains Mono, monospace',
+                        fontSize: 10, letterSpacing: '0.06em',
+                      }}
                       placeholder="target"
                     />
-                    <span className="text-[10px] text-[#555]">target</span>
+                    <span>TARGET</span>
                   </div>
                 </div>
 
                 {/* Progress bar */}
-                <div className="h-1.5 bg-[#2a2a2a] rounded-full overflow-hidden">
-                  <div
-                    className="h-full rounded-full bg-emerald-500/60 transition-all duration-500"
-                    style={{ width: `${pct}%` }}
-                  />
-                </div>
-                <div className="text-right mt-1">
-                  <span className="text-[9px] text-[#555] font-medium">{Math.round(pct)}%</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <div style={{ flex: 1, height: 1, background: 'var(--au-line-2)', overflow: 'hidden' }}>
+                    <div style={{ height: '100%', width: `${pct}%`, background: 'var(--au-good)', transition: 'width 0.5s' }} />
+                  </div>
+                  <span style={{ fontSize: 10, color: 'var(--au-text-2)', fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.05em', minWidth: 32, textAlign: 'right' }}>{String(Math.round(pct)).padStart(2, '0')}%</span>
                 </div>
               </div>
 
               {/* Strategies (expanded) */}
               {ch.expanded && (
-                <div className="border-t border-[#2a2a2a] px-5 pb-4 flex-1">
+                <div style={{ borderTop: '1px solid var(--au-line)', padding: '4px 22px 16px', flex: 1 }}>
                   {ch.strategies.map(s => (
-                    <div key={s.id} className="flex items-center gap-2.5 py-2.5 border-b border-[#222] last:border-0 group">
-                      <button onClick={() => cycleStatus(ch.id, s.id)} title={statusLabel(s.status)} className="flex-shrink-0">
+                    <div key={s.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 0', borderBottom: '1px solid var(--au-line)' }} className="group">
+                      <button
+                        onClick={() => cycleStatus(ch.id, s.id)}
+                        title={statusLabel(s.status)}
+                        style={{ background: 'transparent', border: 'none', padding: 0, cursor: 'pointer', display: 'inline-flex', flexShrink: 0 }}
+                      >
                         {statusIcon(s.status)}
                       </button>
 
                       {editingStrategy === s.id ? (
-                        <div className="flex-1 flex items-center gap-2">
+                        <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 6 }}>
                           <input
                             autoFocus
                             value={editStrategyText}
                             onChange={e => setEditStrategyText(e.target.value)}
                             onKeyDown={e => { if (e.key === 'Enter') saveStrategyEdit(ch.id, s.id); if (e.key === 'Escape') setEditingStrategy(null); }}
-                            className="flex-1 bg-[#2a2a2a] border border-[#444] rounded-lg px-2 py-1 text-[11px] text-[#ECECEC] focus:outline-none focus:ring-1 focus:ring-emerald-500/30"
+                            style={{ flex: 1, background: '#0a0a0a', border: '1px solid var(--au-line-2)', padding: '4px 8px', fontSize: 12, color: 'var(--au-text)', outline: 'none', borderRadius: 0, fontFamily: 'Inter, sans-serif' }}
                           />
-                          <button onClick={() => saveStrategyEdit(ch.id, s.id)} className="text-emerald-400 hover:text-emerald-300"><Check size={12} /></button>
-                          <button onClick={() => setEditingStrategy(null)} className="text-[#666] hover:text-[#999]"><X size={12} /></button>
+                          <button onClick={() => saveStrategyEdit(ch.id, s.id)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--au-good)', display: 'inline-flex' }}><Check size={12} /></button>
+                          <button onClick={() => setEditingStrategy(null)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--au-text-3)', display: 'inline-flex' }}><X size={12} /></button>
                         </div>
                       ) : (
-                        <span className={`flex-1 text-[11px] leading-snug ${s.status === 'done' ? 'text-[#555] line-through' : 'text-[#bbb]'}`}>
+                        <span style={{ flex: 1, fontSize: 12, lineHeight: 1.5, color: s.status === 'done' ? 'var(--au-text-3)' : 'var(--au-text-2)', textDecoration: s.status === 'done' ? 'line-through' : 'none' }}>
                           {s.title}
                         </span>
                       )}
@@ -632,37 +620,48 @@ const GeneralRoom: React.FC<GeneralRoomProps> = ({ storagePrefix, projectedReven
                       <button
                         onClick={() => cyclePriority(ch.id, s.id)}
                         title={`Priority: ${s.priority}`}
-                        className={`text-[8px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ${priorityColor(s.priority)} opacity-50 hover:opacity-100`}
+                        style={{
+                          background: 'transparent', border: '1px solid var(--au-line-2)', padding: '2px 6px',
+                          color: priorityColor(s.priority), cursor: 'pointer',
+                          fontFamily: 'JetBrains Mono, monospace', fontSize: 9, fontWeight: 600,
+                          letterSpacing: '0.18em', textTransform: 'uppercase', borderRadius: 0,
+                        }}
                       >
                         {s.priority}
                       </button>
 
-                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button onClick={() => { setEditingStrategy(s.id); setEditStrategyText(s.title); }} className="text-[#555] hover:text-[#ccc]"><Edit3 size={11} /></button>
-                        <button onClick={() => deleteStrategy(ch.id, s.id)} className="text-[#555] hover:text-red-400"><Trash2 size={11} /></button>
+                      <div className="group-hover:opacity-100" style={{ display: 'flex', gap: 4, opacity: 0, transition: 'opacity 0.15s' }}>
+                        <button onClick={() => { setEditingStrategy(s.id); setEditStrategyText(s.title); }} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--au-text-3)', display: 'inline-flex' }}><Edit3 size={11} /></button>
+                        <button onClick={() => deleteStrategy(ch.id, s.id)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--au-text-3)', display: 'inline-flex' }}><Trash2 size={11} /></button>
                       </div>
                     </div>
                   ))}
 
                   {addingToChannel === ch.id ? (
-                    <div className="flex items-center gap-2 mt-2.5">
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 10 }}>
                       <input
                         autoFocus
                         value={newStrategyText}
                         onChange={e => setNewStrategyText(e.target.value)}
                         onKeyDown={e => { if (e.key === 'Enter') addStrategy(ch.id); if (e.key === 'Escape') { setAddingToChannel(null); setNewStrategyText(''); } }}
                         placeholder="New strategy..."
-                        className="flex-1 bg-[#2a2a2a] border border-[#333] rounded-lg px-2.5 py-1.5 text-[11px] text-[#ECECEC] focus:outline-none focus:ring-1 focus:ring-emerald-500/30"
+                        style={{ flex: 1, background: '#0a0a0a', border: '1px solid var(--au-line-2)', padding: '6px 10px', fontSize: 12, color: 'var(--au-text)', outline: 'none', borderRadius: 0, fontFamily: 'Inter, sans-serif' }}
                       />
-                      <button onClick={() => addStrategy(ch.id)} className="px-2.5 py-1.5 bg-emerald-500/10 text-emerald-400 rounded-lg text-[11px] font-medium hover:bg-emerald-500/20">Add</button>
-                      <button onClick={() => { setAddingToChannel(null); setNewStrategyText(''); }} className="text-[#555] hover:text-[#999]"><X size={12} /></button>
+                      <button onClick={() => addStrategy(ch.id)} className="au-btn-primary" style={{ padding: '6px 12px' }}>Add</button>
+                      <button onClick={() => { setAddingToChannel(null); setNewStrategyText(''); }} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--au-text-3)', display: 'inline-flex' }}><X size={12} /></button>
                     </div>
                   ) : (
                     <button
                       onClick={() => setAddingToChannel(ch.id)}
-                      className="flex items-center gap-1.5 mt-2.5 text-[11px] text-[#444] hover:text-[#888] transition-none"
+                      style={{
+                        display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 12,
+                        background: 'transparent', border: 'none', cursor: 'pointer',
+                        color: 'var(--au-text-3)', padding: 0,
+                        fontFamily: 'JetBrains Mono, monospace', fontSize: 10,
+                        letterSpacing: '0.14em', textTransform: 'uppercase',
+                      }}
                     >
-                      <Plus size={12} /> Add strategy
+                      <Plus size={11} /> Add strategy
                     </button>
                   )}
                 </div>

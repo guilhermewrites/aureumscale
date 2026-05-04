@@ -469,24 +469,24 @@ const ContentManager: React.FC<ContentManagerProps> = ({ storagePrefix }) => {
       {/* CONFIRMATION DIALOG */}
       {confirmState.isOpen && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="bg-[#2f2f2f] border border-[#3a3a3a] rounded-xl w-full max-w-sm shadow-2xl scale-100 animate-in zoom-in-95 duration-200">
+            <div className="bg-[#0d0d0d] border border-[#242424] rounded-none-none w-full max-w-sm shadow-2xl scale-100 animate-in zoom-in-95 duration-200">
                 <div className="p-6 text-center">
-                    <div className="w-12 h-12 bg-[#3a3a3a] rounded-full flex items-center justify-center mx-auto mb-4">
+                    <div className="w-12 h-12 bg-[#3a3a3a] rounded-none-full flex items-center justify-center mx-auto mb-4">
                         <AlertTriangle size={24} className="text-amber-500" />
                     </div>
-                    <h3 className="text-lg font-bold text-[#ECECEC] mb-2">{confirmState.title}</h3>
-                    <p className="text-[#9B9B9B] text-sm mb-6">{confirmState.message}</p>
+                    <h3 className="text-lg font-bold text-[#f4f4f4] mb-2">{confirmState.title}</h3>
+                    <p className="text-[#909090] text-sm mb-6">{confirmState.message}</p>
 
                     <div className="flex gap-3 justify-center">
                         <button
                             onClick={() => setConfirmState(prev => ({...prev, isOpen: false}))}
-                            className="px-4 py-2 bg-[#3a3a3a] hover:bg-[#3a3a3a] text-[#ECECEC] rounded-lg text-sm font-medium transition-none"
+                            className="px-4 py-2 bg-[#3a3a3a] hover:bg-[#3a3a3a] text-[#f4f4f4] rounded-none-none text-sm font-medium transition-none"
                         >
                             Cancel
                         </button>
                         <button
                             onClick={handleConfirmAction}
-                            className="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-[#ECECEC] rounded-lg text-sm font-medium transition-none shadow-lg shadow-rose-900/20"
+                            className="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-[#f4f4f4] rounded-none-none text-sm font-medium transition-none shadow-lg shadow-rose-900/20"
                         >
                             Confirm
                         </button>
@@ -509,13 +509,13 @@ const ContentManager: React.FC<ContentManagerProps> = ({ storagePrefix }) => {
       {/* Header Actions */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-           <h2 className="text-xl font-bold text-[#ECECEC]">Content Hub</h2>
-           <p className="text-[#9B9B9B] text-sm">Manage creation, review, and publishing schedules.</p>
+           <h2 className="text-xl font-bold text-[#f4f4f4]">Content Hub</h2>
+           <p className="text-[#909090] text-sm">Manage creation, review, and publishing schedules.</p>
         </div>
         {viewMode === 'pipeline' && (
           <button
               onClick={handleAddNewContent}
-              className="flex items-center justify-center gap-2 px-4 py-2 bg-white text-[#212121] rounded-lg text-sm font-semibold hover:bg-[#e5e5e5] transition-none"
+              className="flex items-center justify-center gap-2 px-4 py-2 bg-white text-[#212121] rounded-none-none text-sm font-semibold hover:bg-[#e5e5e5] transition-none"
           >
             <Plus size={16} />
             <span>Add Content</span>
@@ -524,7 +524,7 @@ const ContentManager: React.FC<ContentManagerProps> = ({ storagePrefix }) => {
         {viewMode === 'trash' && trash.length > 0 && (
           <button
               onClick={requestEmptyTrash}
-              className="flex items-center justify-center gap-2 px-4 py-2 bg-rose-500/10 text-rose-500 hover:bg-rose-500/20 hover:text-rose-400 rounded-lg text-sm font-semibold transition-none cursor-pointer"
+              className="flex items-center justify-center gap-2 px-4 py-2 bg-rose-500/10 text-rose-500 hover:bg-rose-500/20 hover:text-rose-400 rounded-none-none text-sm font-semibold transition-none cursor-pointer"
           >
             <Trash2 size={16} />
             <span>Empty Trash</span>
@@ -536,7 +536,7 @@ const ContentManager: React.FC<ContentManagerProps> = ({ storagePrefix }) => {
       <div className="flex flex-col space-y-4">
         {/* Only show Platform tabs if NOT in Trash mode */}
         {viewMode !== 'trash' && (
-            <div className="border-b border-[#3a3a3a]">
+            <div className="border-b border-[#242424]">
             <div className="flex gap-1 overflow-x-auto pb-1">
                 {tabs.map((tab) => {
                 const isActive = activePlatform === tab.id;
@@ -546,11 +546,11 @@ const ContentManager: React.FC<ContentManagerProps> = ({ storagePrefix }) => {
                     onClick={() => setActivePlatform(tab.id)}
                     className={`flex items-center gap-2 px-6 py-3 border-b-2 text-sm font-medium transition-none whitespace-nowrap ${
                         isActive
-                        ? 'border-[#ECECEC] text-[#ECECEC] bg-[rgba(255,255,255,0.05)] rounded-t-lg'
-                        : 'border-transparent text-[#9B9B9B] hover:text-[#ECECEC] hover:bg-[rgba(255,255,255,0.05)] rounded-t-lg'
+                        ? 'border-[#ECECEC] text-[#f4f4f4] bg-[rgba(255,255,255,0.05)] rounded-none-none'
+                        : 'border-transparent text-[#909090] hover:text-[#f4f4f4] hover:bg-[rgba(255,255,255,0.05)] rounded-none-none'
                     }`}
                     >
-                    <tab.icon size={18} className={isActive ? 'text-[#ECECEC]' : ''} />
+                    <tab.icon size={18} className={isActive ? 'text-[#f4f4f4]' : ''} />
                     {tab.label}
                     </button>
                 );
@@ -561,13 +561,13 @@ const ContentManager: React.FC<ContentManagerProps> = ({ storagePrefix }) => {
 
         {/* View Switcher (Pipeline vs Ideation vs Trash) */}
         <div className="flex justify-start">
-          <div className="bg-[#2f2f2f] p-1 rounded-lg border border-[#3a3a3a] flex items-center">
+          <div className="bg-[#0d0d0d] p-1 rounded-none-none border border-[#242424] flex items-center">
              <button
                 onClick={() => setViewMode('pipeline')}
-                className={`flex items-center gap-2 px-4 py-1.5 rounded-md text-sm font-medium transition-none ${
+                className={`flex items-center gap-2 px-4 py-1.5 rounded-none-none text-sm font-medium transition-none ${
                    viewMode === 'pipeline'
-                      ? 'bg-[#3a3a3a] text-[#ECECEC] shadow-sm'
-                      : 'text-[#9B9B9B] hover:text-[#ECECEC]'
+                      ? 'bg-[#3a3a3a] text-[#f4f4f4] shadow-sm'
+                      : 'text-[#909090] hover:text-[#f4f4f4]'
                 }`}
              >
                 <LayoutList size={16} />
@@ -575,10 +575,10 @@ const ContentManager: React.FC<ContentManagerProps> = ({ storagePrefix }) => {
              </button>
              <button
                 onClick={() => setViewMode('ideation')}
-                className={`flex items-center gap-2 px-4 py-1.5 rounded-md text-sm font-medium transition-none ${
+                className={`flex items-center gap-2 px-4 py-1.5 rounded-none-none text-sm font-medium transition-none ${
                    viewMode === 'ideation'
-                      ? 'bg-[#3a3a3a] text-[#ECECEC] shadow-sm'
-                      : 'text-[#9B9B9B] hover:text-[#ECECEC]'
+                      ? 'bg-[#3a3a3a] text-[#f4f4f4] shadow-sm'
+                      : 'text-[#909090] hover:text-[#f4f4f4]'
                 }`}
              >
                 <Lightbulb size={16} />
@@ -586,10 +586,10 @@ const ContentManager: React.FC<ContentManagerProps> = ({ storagePrefix }) => {
              </button>
              <button
                 onClick={() => setViewMode('trash')}
-                className={`flex items-center gap-2 px-4 py-1.5 rounded-md text-sm font-medium transition-none ${
+                className={`flex items-center gap-2 px-4 py-1.5 rounded-none-none text-sm font-medium transition-none ${
                    viewMode === 'trash'
                       ? 'bg-rose-900/20 text-rose-400 shadow-sm'
-                      : 'text-[#9B9B9B] hover:text-rose-400 hover:bg-rose-900/10'
+                      : 'text-[#909090] hover:text-rose-400 hover:bg-rose-900/10'
                 }`}
              >
                 <Trash2 size={16} />
@@ -601,11 +601,11 @@ const ContentManager: React.FC<ContentManagerProps> = ({ storagePrefix }) => {
 
       {/* Main Content Area */}
       {viewMode === 'pipeline' && (
-        <div className="bg-[#2f2f2f] border border-[#3a3a3a] rounded-xl overflow-hidden shadow-sm animate-in fade-in duration-300">
+        <div className="bg-[#0d0d0d] border border-[#242424] rounded-none-none overflow-hidden shadow-sm animate-in fade-in duration-300">
           <div className="overflow-x-auto min-h-[400px]">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="bg-[#212121] text-xs uppercase tracking-wider text-[#9B9B9B] font-medium border-b border-[#3a3a3a]">
+                <tr className="bg-[#000] text-xs uppercase tracking-wider text-[#909090] font-medium border-b border-[#242424]">
                   <th className="px-6 py-4 w-[40%]">Title</th>
                   <th className="px-3 py-4 text-center w-16">Drive</th>
                   <th className="px-3 py-4 text-center w-16">Script</th>
@@ -638,13 +638,13 @@ const ContentManager: React.FC<ContentManagerProps> = ({ storagePrefix }) => {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={8} className="px-6 py-12 text-center text-[#9B9B9B]">
+                    <td colSpan={8} className="px-6 py-12 text-center text-[#909090]">
                       <div className="flex flex-col items-center justify-center gap-3">
-                        <div className="w-12 h-12 rounded-full bg-[rgba(255,255,255,0.05)] flex items-center justify-center text-[#666666]">
+                        <div className="w-12 h-12 rounded-none-full bg-[rgba(255,255,255,0.05)] flex items-center justify-center text-[#666666]">
                           <Plus size={24} />
                         </div>
                         <p>No content scheduled for {activePlatform}.</p>
-                        <button onClick={handleAddNewContent} className="text-sm text-[#ECECEC] hover:text-[#ECECEC] font-medium">Create your first post</button>
+                        <button onClick={handleAddNewContent} className="text-sm text-[#f4f4f4] hover:text-[#f4f4f4] font-medium">Create your first post</button>
                       </div>
                     </td>
                   </tr>
@@ -667,12 +667,12 @@ const ContentManager: React.FC<ContentManagerProps> = ({ storagePrefix }) => {
       )}
 
       {viewMode === 'trash' && (
-        <div className="bg-[#2f2f2f] border border-[#3a3a3a] rounded-xl overflow-hidden shadow-sm animate-in fade-in duration-300">
+        <div className="bg-[#0d0d0d] border border-[#242424] rounded-none-none overflow-hidden shadow-sm animate-in fade-in duration-300">
              <div className="overflow-x-auto min-h-[400px]">
                 {trash.length > 0 ? (
                     <table className="w-full text-left border-collapse">
                     <thead>
-                        <tr className="bg-[#212121] text-xs uppercase tracking-wider text-[#9B9B9B] font-medium border-b border-[#3a3a3a]">
+                        <tr className="bg-[#000] text-xs uppercase tracking-wider text-[#909090] font-medium border-b border-[#242424]">
                         <th className="px-6 py-4">Platform</th>
                         <th className="px-6 py-4 w-1/3">Title</th>
                         <th className="px-6 py-4">Original Date</th>
@@ -683,7 +683,7 @@ const ContentManager: React.FC<ContentManagerProps> = ({ storagePrefix }) => {
                         {trash.map((item) => (
                             <tr key={item.id} className="group hover:bg-[rgba(255,255,255,0.05)] transition-none">
                                 <td className="px-6 py-4">
-                                    <div className="flex items-center gap-2 text-[#9B9B9B]">
+                                    <div className="flex items-center gap-2 text-[#909090]">
                                         {getPlatformIcon(item.platform)}
                                         <span className="text-sm">{item.platform}</span>
                                     </div>
@@ -692,21 +692,21 @@ const ContentManager: React.FC<ContentManagerProps> = ({ storagePrefix }) => {
                                     <span className="text-[#b4b4b4] font-medium line-through decoration-[#666666] decoration-2">{item.title}</span>
                                     {item.description && <p className="text-xs text-[#666666] truncate max-w-xs">{item.description}</p>}
                                 </td>
-                                <td className="px-6 py-4 text-sm text-[#9B9B9B]">
+                                <td className="px-6 py-4 text-sm text-[#909090]">
                                     {item.postDate}
                                 </td>
                                 <td className="px-6 py-4 text-right">
                                     <div className="flex items-center justify-end gap-3">
                                         <button
                                             onClick={() => requestRestore(item.id)}
-                                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20 transition-none"
+                                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-none-none text-xs font-medium bg-emerald-500/10 text-[#6dd49a] hover:bg-emerald-500/20 transition-none"
                                             title="Restore to Pipeline"
                                         >
                                             <RefreshCcw size={14} /> Restore
                                         </button>
                                         <button
                                             onClick={() => requestDeleteForever(item.id)}
-                                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-rose-500/10 text-rose-500 hover:bg-rose-500/20 transition-none"
+                                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-none-none text-xs font-medium bg-rose-500/10 text-rose-500 hover:bg-rose-500/20 transition-none"
                                             title="Delete Forever"
                                         >
                                             <Ban size={14} /> Delete Forever
@@ -719,10 +719,10 @@ const ContentManager: React.FC<ContentManagerProps> = ({ storagePrefix }) => {
                     </table>
                 ) : (
                     <div className="flex flex-col items-center justify-center py-20 text-[#666666]">
-                        <div className="w-16 h-16 bg-[rgba(255,255,255,0.05)] rounded-full flex items-center justify-center mb-4 text-[#666666]">
+                        <div className="w-16 h-16 bg-[rgba(255,255,255,0.05)] rounded-none-full flex items-center justify-center mb-4 text-[#666666]">
                             <Trash2 size={32} />
                         </div>
-                        <p className="text-lg font-medium text-[#9B9B9B]">Trash is empty</p>
+                        <p className="text-lg font-medium text-[#909090]">Trash is empty</p>
                         <p className="text-sm">Items moved to trash will appear here.</p>
                     </div>
                 )}

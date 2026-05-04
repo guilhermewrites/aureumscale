@@ -174,11 +174,11 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ task, onClose, onSave
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-[#2f2f2f] border border-[#3a3a3a] rounded-xl w-full max-w-lg shadow-2xl flex flex-col max-h-[90vh]">
+      <div className="bg-[#0d0d0d] border border-[#242424] rounded-none-none w-full max-w-lg shadow-2xl flex flex-col max-h-[90vh]">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-[#3a3a3a]">
-          <h2 className="text-xl font-bold text-[#ECECEC]">Edit Task</h2>
-          <button onClick={onClose} className="text-[#9B9B9B] hover:text-[#ECECEC] transition-none">
+        <div className="flex items-center justify-between p-6 border-b border-[#242424]">
+          <h2 className="text-xl font-bold text-[#f4f4f4]">Edit Task</h2>
+          <button onClick={onClose} className="text-[#909090] hover:text-[#f4f4f4] transition-none">
             <X size={24} />
           </button>
         </div>
@@ -187,24 +187,24 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ task, onClose, onSave
         <div className="p-6 overflow-y-auto custom-scrollbar flex-1 space-y-5">
           {/* Title */}
           <div>
-            <label className="text-[10px] uppercase tracking-wider text-[#9B9B9B] font-medium">Title</label>
+            <label className="text-[10px] uppercase tracking-wider text-[#909090] font-medium">Title</label>
             <input
               type="text"
               value={title}
               onChange={e => setTitle(e.target.value)}
-              className="w-full mt-1 bg-[#212121] border border-[#3a3a3a] rounded-lg px-4 py-3 text-[#ECECEC] focus:outline-none focus:ring-2 focus:ring-[#555555] transition-none placeholder-[#666666]"
+              className="w-full mt-1 bg-[#000] border border-[#242424] rounded-none-none px-4 py-3 text-[#f4f4f4] focus:outline-none focus:ring-2 focus:ring-[#555555] transition-none placeholder-[#666666]"
               placeholder="Task title..."
             />
           </div>
 
           {/* Notes */}
           <div>
-            <label className="text-[10px] uppercase tracking-wider text-[#9B9B9B] font-medium">Notes</label>
+            <label className="text-[10px] uppercase tracking-wider text-[#909090] font-medium">Notes</label>
             <textarea
               value={notes}
               onChange={e => setNotes(e.target.value)}
               rows={5}
-              className="w-full mt-1 bg-[#212121] border border-[#3a3a3a] rounded-lg px-4 py-3 text-[#ECECEC] focus:outline-none focus:ring-2 focus:ring-[#555555] transition-none placeholder-[#666666] resize-none"
+              className="w-full mt-1 bg-[#000] border border-[#242424] rounded-none-none px-4 py-3 text-[#f4f4f4] focus:outline-none focus:ring-2 focus:ring-[#555555] transition-none placeholder-[#666666] resize-none"
               placeholder="Add notes, context, links..."
             />
           </div>
@@ -212,15 +212,15 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ task, onClose, onSave
           {/* Subtasks */}
           <div>
             <div className="flex items-center justify-between mb-2">
-              <label className="text-[10px] uppercase tracking-wider text-[#9B9B9B] font-medium">Subtasks</label>
+              <label className="text-[10px] uppercase tracking-wider text-[#909090] font-medium">Subtasks</label>
               {subtasks.length > 0 && (
                 <span className="text-[10px] text-[#666666]">{completedSubs}/{subtasks.length}</span>
               )}
             </div>
 
-            <div className="bg-[#212121] border border-[#3a3a3a] rounded-lg overflow-hidden">
+            <div className="bg-[#000] border border-[#242424] rounded-none-none overflow-hidden">
               {/* Add subtask input */}
-              <div className="flex items-center gap-2 px-3 py-2.5 border-b border-[#3a3a3a]">
+              <div className="flex items-center gap-2 px-3 py-2.5 border-b border-[#242424]">
                 <Plus size={12} className="text-[#666666] flex-shrink-0" />
                 <input
                   ref={subtaskInputRef}
@@ -229,16 +229,16 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ task, onClose, onSave
                   onChange={e => setNewSubtask(e.target.value)}
                   onKeyDown={e => { if (e.key === 'Enter') addSubtask(); }}
                   placeholder="Add subtask..."
-                  className="flex-1 bg-transparent text-sm text-[#ECECEC] placeholder-[#666666] focus:outline-none"
+                  className="flex-1 bg-transparent text-sm text-[#f4f4f4] placeholder-[#666666] focus:outline-none"
                 />
               </div>
 
               {/* Subtask items */}
               {subtasks.map(sub => (
-                <div key={sub.id} className="flex items-center gap-2 px-3 py-2 border-b border-[#3a3a3a] last:border-b-0 group">
+                <div key={sub.id} className="flex items-center gap-2 px-3 py-2 border-b border-[#242424] last:border-b-0 group">
                   <button
                     onClick={() => toggleSubtask(sub.id)}
-                    className={`w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 transition-none ${
+                    className={`w-4 h-4 rounded-none border flex items-center justify-center flex-shrink-0 transition-none ${
                       sub.completed ? 'bg-emerald-500 border-emerald-500' : 'border-[#4a4a4a] hover:border-[#9B9B9B]'
                     }`}
                   >
@@ -248,7 +248,7 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ task, onClose, onSave
                       </svg>
                     )}
                   </button>
-                  <span className={`flex-1 text-sm ${sub.completed ? 'line-through text-emerald-500/60' : 'text-[#ECECEC]'}`}>
+                  <span className={`flex-1 text-sm ${sub.completed ? 'line-through text-[#6dd49a]/60' : 'text-[#f4f4f4]'}`}>
                     {sub.title}
                   </span>
                   <button
@@ -270,7 +270,7 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ task, onClose, onSave
         </div>
 
         {/* Footer */}
-        <div className="p-6 border-t border-[#3a3a3a] flex items-center justify-between bg-[rgba(255,255,255,0.03)]">
+        <div className="p-6 border-t border-[#242424] flex items-center justify-between bg-[rgba(255,255,255,0.03)]">
           <button
             onClick={() => onDelete(task.id)}
             className="flex items-center gap-2 text-sm text-rose-500 hover:text-rose-400 transition-none"
@@ -281,13 +281,13 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ task, onClose, onSave
           <div className="flex gap-3">
             <button
               onClick={onClose}
-              className="px-4 py-2 text-[#9B9B9B] hover:text-[#ECECEC] text-sm font-medium transition-none"
+              className="px-4 py-2 text-[#909090] hover:text-[#f4f4f4] text-sm font-medium transition-none"
             >
               Cancel
             </button>
             <button
               onClick={handleSave}
-              className="px-6 py-2 bg-white hover:bg-[#e5e5e5] text-[#212121] rounded-lg text-sm font-semibold transition-none flex items-center gap-2"
+              className="px-6 py-2 bg-white hover:bg-[#e5e5e5] text-[#212121] rounded-none-none text-sm font-semibold transition-none flex items-center gap-2"
             >
               <Save size={16} />
               Save
@@ -418,29 +418,29 @@ const PlannerManager: React.FC<PlannerManagerProps> = ({ storagePrefix }) => {
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
       {/* Hero Countdown Timer */}
-      <div className="bg-[#2f2f2f] border border-[#3a3a3a] rounded-xl px-6 py-10 flex flex-col items-center">
+      <div className="bg-[#0d0d0d] border border-[#242424] rounded-none-none px-6 py-10 flex flex-col items-center">
         <p className="text-[10px] uppercase tracking-[0.2em] text-[#666666] font-medium mb-8">
           Time remaining today
         </p>
         <div className="flex items-end gap-4">
           <div className="flex flex-col items-center">
-            <span className="text-7xl md:text-8xl font-black text-[#ECECEC] leading-none tabular-nums">
+            <span className="text-7xl md:text-8xl font-black text-[#f4f4f4] leading-none tabular-nums">
               {String(spTime.totalMinutesLeft).padStart(3, '0')}
             </span>
             <span className="text-[10px] uppercase tracking-[0.15em] text-[#666666] font-medium mt-3">min</span>
           </div>
           <span className="text-5xl md:text-6xl font-black text-[#3a3a3a] leading-none mb-8">:</span>
           <div className="flex flex-col items-center">
-            <span className="text-7xl md:text-8xl font-black text-[#ECECEC] leading-none tabular-nums">
+            <span className="text-7xl md:text-8xl font-black text-[#f4f4f4] leading-none tabular-nums">
               {String(spTime.secondsLeft).padStart(2, '0')}
             </span>
             <span className="text-[10px] uppercase tracking-[0.15em] text-[#666666] font-medium mt-3">sec</span>
           </div>
         </div>
         <div className="w-full max-w-sm mt-10">
-          <div className="w-full h-1.5 rounded-full bg-[#212121] overflow-hidden">
+          <div className="w-full h-1.5 rounded-none-full bg-[#000] overflow-hidden">
             <div
-              className="h-full rounded-full"
+              className="h-full rounded-none-full"
               style={{
                 width: `${Math.max(spTime.fraction * 100, 0.5)}%`,
                 backgroundColor: barColor,
@@ -457,17 +457,17 @@ const PlannerManager: React.FC<PlannerManagerProps> = ({ storagePrefix }) => {
 
       {/* Summary cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-[#2f2f2f] border border-[#3a3a3a] p-6 rounded-xl">
-          <p className="text-[#9B9B9B] text-sm font-medium mb-2">Total Tasks</p>
-          <h3 className="text-3xl font-bold text-[#ECECEC] mb-1">{tasks.length}</h3>
+        <div className="bg-[#0d0d0d] border border-[#242424] p-6 rounded-none-none">
+          <p className="text-[#909090] text-sm font-medium mb-2">Total Tasks</p>
+          <h3 className="text-3xl font-bold text-[#f4f4f4] mb-1">{tasks.length}</h3>
           <div className="flex items-center gap-2 text-xs">
             <span className="text-[#666666]">for today</span>
           </div>
         </div>
 
-        <div className="bg-[#2f2f2f] border border-[#3a3a3a] p-6 rounded-xl">
-          <p className="text-[#9B9B9B] text-sm font-medium mb-2">Completed</p>
-          <h3 className="text-3xl font-bold text-[#ECECEC] mb-1">{completedCount}</h3>
+        <div className="bg-[#0d0d0d] border border-[#242424] p-6 rounded-none-none">
+          <p className="text-[#909090] text-sm font-medium mb-2">Completed</p>
+          <h3 className="text-3xl font-bold text-[#f4f4f4] mb-1">{completedCount}</h3>
           <div className="flex items-center gap-2 text-xs">
             <span className="text-[#666666]">
               {tasks.length > 0 ? `${Math.round(progress * 100)}% done` : 'no tasks yet'}
@@ -479,17 +479,17 @@ const PlannerManager: React.FC<PlannerManagerProps> = ({ storagePrefix }) => {
 
       {/* Task list */}
       <section>
-        <div ref={listRef} className="relative bg-[#2f2f2f] border border-[#3a3a3a] rounded-xl overflow-hidden">
+        <div ref={listRef} className="relative bg-[#0d0d0d] border border-[#242424] rounded-none-none overflow-hidden">
           <canvas
             ref={canvasRef}
             className="absolute inset-0 z-10 pointer-events-none"
           />
 
           {/* Add task row */}
-          <div className="flex items-center gap-3 px-5 py-4 border-b border-[#3a3a3a]">
+          <div className="flex items-center gap-3 px-5 py-4 border-b border-[#242424]">
             <button
               onClick={addTask}
-              className="w-5 h-5 rounded border border-[#4a4a4a] flex items-center justify-center text-[#666666] hover:border-[#9B9B9B] hover:text-[#9B9B9B] transition-none flex-shrink-0"
+              className="w-5 h-5 rounded-none border border-[#4a4a4a] flex items-center justify-center text-[#666666] hover:border-[#9B9B9B] hover:text-[#909090] transition-none flex-shrink-0"
             >
               <Plus size={12} />
             </button>
@@ -500,12 +500,12 @@ const PlannerManager: React.FC<PlannerManagerProps> = ({ storagePrefix }) => {
               onChange={e => setNewTaskTitle(e.target.value)}
               onKeyDown={e => { if (e.key === 'Enter') addTask(); }}
               placeholder="Add a new task..."
-              className="flex-1 bg-transparent text-sm text-[#ECECEC] placeholder-[#666666] focus:outline-none"
+              className="flex-1 bg-transparent text-sm text-[#f4f4f4] placeholder-[#666666] focus:outline-none"
             />
             {newTaskTitle.trim() && (
               <button
                 onClick={addTask}
-                className="px-3 py-1.5 bg-white hover:bg-[#e5e5e5] text-[#212121] rounded-lg text-xs font-medium transition-none"
+                className="px-3 py-1.5 bg-white hover:bg-[#e5e5e5] text-[#212121] rounded-none-none text-xs font-medium transition-none"
               >
                 Add
               </button>
@@ -527,14 +527,14 @@ const PlannerManager: React.FC<PlannerManagerProps> = ({ storagePrefix }) => {
                 return (
                   <div
                     key={task.id}
-                    className={`flex items-center gap-3 px-5 py-3.5 border-b border-[#3a3a3a] last:border-b-0 group hover:bg-[rgba(255,255,255,0.02)] transition-none ${
+                    className={`flex items-center gap-3 px-5 py-3.5 border-b border-[#242424] last:border-b-0 group hover:bg-[rgba(255,255,255,0.02)] transition-none ${
                       justCompleted.has(task.id) ? 'bg-[rgba(74,222,128,0.06)]' : ''
                     }`}
                   >
                     {/* Checkbox */}
                     <button
                       onClick={(e) => toggleTask(task.id, e)}
-                      className={`w-5 h-5 rounded border flex items-center justify-center flex-shrink-0 transition-none ${
+                      className={`w-5 h-5 rounded-none border flex items-center justify-center flex-shrink-0 transition-none ${
                         task.completed
                           ? 'bg-emerald-500 border-emerald-500'
                           : 'border-[#4a4a4a] hover:border-[#9B9B9B]'
@@ -559,15 +559,15 @@ const PlannerManager: React.FC<PlannerManagerProps> = ({ storagePrefix }) => {
                           if (e.key === 'Escape') cancelEdit();
                         }}
                         onBlur={commitEdit}
-                        className="flex-1 bg-[#3a3a3a] border border-[#4a4a4a] rounded-lg px-3 py-1.5 text-sm text-[#ECECEC] focus:outline-none focus:ring-1 focus:ring-[#555555]"
+                        className="flex-1 bg-[#3a3a3a] border border-[#4a4a4a] rounded-none-none px-3 py-1.5 text-sm text-[#f4f4f4] focus:outline-none focus:ring-1 focus:ring-[#555555]"
                       />
                     ) : (
                       <span
                         onClick={() => startEditing(task)}
                         className={`flex-1 text-sm cursor-pointer ${
                           task.completed
-                            ? 'line-through text-emerald-500/60'
-                            : 'text-[#ECECEC] hover:text-white'
+                            ? 'line-through text-[#6dd49a]/60'
+                            : 'text-[#f4f4f4] hover:text-white'
                         }`}
                       >
                         {task.title}
@@ -582,10 +582,10 @@ const PlannerManager: React.FC<PlannerManagerProps> = ({ storagePrefix }) => {
                     {/* Notes/detail indicator + open modal */}
                     <button
                       onClick={() => openDetail(task)}
-                      className={`p-1.5 rounded-lg transition-none flex-shrink-0 ${
+                      className={`p-1.5 rounded-none-none transition-none flex-shrink-0 ${
                         hasDetails
-                          ? 'text-[#9B9B9B] hover:text-[#ECECEC] hover:bg-[rgba(255,255,255,0.05)]'
-                          : 'opacity-0 group-hover:opacity-100 text-[#666666] hover:text-[#ECECEC] hover:bg-[rgba(255,255,255,0.05)]'
+                          ? 'text-[#909090] hover:text-[#f4f4f4] hover:bg-[rgba(255,255,255,0.05)]'
+                          : 'opacity-0 group-hover:opacity-100 text-[#666666] hover:text-[#f4f4f4] hover:bg-[rgba(255,255,255,0.05)]'
                       }`}
                       title="Edit details"
                     >
@@ -595,7 +595,7 @@ const PlannerManager: React.FC<PlannerManagerProps> = ({ storagePrefix }) => {
                     {/* Delete */}
                     <button
                       onClick={() => deleteTask(task.id)}
-                      className="opacity-0 group-hover:opacity-100 p-1.5 text-[#666666] hover:text-rose-400 rounded-lg hover:bg-[rgba(255,255,255,0.05)] transition-none flex-shrink-0"
+                      className="opacity-0 group-hover:opacity-100 p-1.5 text-[#666666] hover:text-rose-400 rounded-none-none hover:bg-[rgba(255,255,255,0.05)] transition-none flex-shrink-0"
                     >
                       <Trash2 size={14} />
                     </button>
@@ -609,10 +609,10 @@ const PlannerManager: React.FC<PlannerManagerProps> = ({ storagePrefix }) => {
 
       {/* Motivational GIF banner */}
       <section>
-        <div className={`bg-[#2f2f2f] border rounded-xl overflow-hidden flex items-center gap-6 p-5 ${
-          allDone ? 'border-emerald-500/30' : 'border-[#3a3a3a]'
+        <div className={`bg-[#0d0d0d] border rounded-none-none overflow-hidden flex items-center gap-6 p-5 ${
+          allDone ? 'border-emerald-500/30' : 'border-[#242424]'
         }`}>
-          <div className="w-28 h-28 rounded-lg overflow-hidden flex-shrink-0 bg-[#212121]">
+          <div className="w-28 h-28 rounded-none-none overflow-hidden flex-shrink-0 bg-[#000]">
             <img
               src={motivation.url}
               alt="Motivation"
@@ -621,12 +621,12 @@ const PlannerManager: React.FC<PlannerManagerProps> = ({ storagePrefix }) => {
             />
           </div>
           <div className="flex-1 min-w-0">
-            <p className={`text-sm font-semibold mb-1 ${allDone ? 'text-emerald-400' : 'text-[#ECECEC]'}`}>
+            <p className={`text-sm font-semibold mb-1 ${allDone ? 'text-[#6dd49a]' : 'text-[#f4f4f4]'}`}>
               {motivation.caption}
             </p>
-            <div className="w-full h-1.5 rounded-full bg-[#212121] overflow-hidden mt-3">
+            <div className="w-full h-1.5 rounded-none-full bg-[#000] overflow-hidden mt-3">
               <div
-                className="h-full rounded-full"
+                className="h-full rounded-none-full"
                 style={{
                   width: `${Math.round(progress * 100)}%`,
                   backgroundColor: allDone ? '#4ade80' : '#ECECEC',

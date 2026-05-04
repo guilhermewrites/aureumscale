@@ -151,7 +151,7 @@ const CRMBoard: React.FC<CRMBoardProps> = ({ storagePrefix, onConvert }) => {
     prospects.filter(p => p.stage === s).reduce((sum, p) => sum + (p.deal_value || 0), 0);
 
   if (!loaded) {
-    return <div className="text-xs text-[#666] py-8 text-center">Loading prospects...</div>;
+    return <div className="text-xs text-[#5a5a5a] py-8 text-center">Loading prospects...</div>;
   }
 
   return (
@@ -159,16 +159,16 @@ const CRMBoard: React.FC<CRMBoardProps> = ({ storagePrefix, onConvert }) => {
       {/* Pipeline summary */}
       <div className="flex items-center gap-6 mb-4 flex-wrap">
         <div className="flex items-center gap-2">
-          <span className="text-xs font-semibold uppercase tracking-wider text-[#555]">Total Pipeline</span>
+          <span className="text-xs font-semibold uppercase tracking-wider text-[#5a5a5a]">Total Pipeline</span>
           <span className="text-lg font-bold" style={{ color: '#fde68a' }}>{formatMoney(totalPipeline)}</span>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-xs font-semibold uppercase tracking-wider text-[#555]">Closed Won</span>
-          <span className="text-lg font-bold" style={{ color: '#86efac' }}>{formatMoney(wonRevenue)}</span>
+          <span className="text-xs font-semibold uppercase tracking-wider text-[#5a5a5a]">Closed Won</span>
+          <span className="text-lg font-bold" style={{ color: '#6dd49a' }}>{formatMoney(wonRevenue)}</span>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-xs font-semibold uppercase tracking-wider text-[#555]">Active Prospects</span>
-          <span className="text-lg font-bold text-[#ECECEC]">
+          <span className="text-xs font-semibold uppercase tracking-wider text-[#5a5a5a]">Active Prospects</span>
+          <span className="text-lg font-bold text-[#f4f4f4]">
             {prospects.filter(p => p.stage !== 'Closed Lost' && p.stage !== 'Closed Won').length}
           </span>
         </div>
@@ -183,7 +183,7 @@ const CRMBoard: React.FC<CRMBoardProps> = ({ storagePrefix, onConvert }) => {
           return (
             <div
               key={stage}
-              className="flex-shrink-0 rounded-xl flex flex-col"
+              className="flex-shrink-0 rounded-none-none flex flex-col"
               style={{
                 width: 240,
                 background: isDragOver ? '#252525' : '#1c1c1c',
@@ -195,9 +195,9 @@ const CRMBoard: React.FC<CRMBoardProps> = ({ storagePrefix, onConvert }) => {
             >
               <div className="flex items-center justify-between px-3 pt-3 pb-2">
                 <div className="flex items-center gap-2 min-w-0">
-                  <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: STAGE_COLORS[stage] }} />
-                  <span className="text-xs font-semibold truncate" style={{ color: '#ECECEC' }}>{stage}</span>
-                  <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full" style={{ background: '#2a2a2a', color: '#777' }}>
+                  <div className="w-2 h-2 rounded-none-full flex-shrink-0" style={{ background: STAGE_COLORS[stage] }} />
+                  <span className="text-xs font-semibold truncate" style={{ color: '#f4f4f4' }}>{stage}</span>
+                  <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-none-full" style={{ background: '#0d0d0d', color: '#777' }}>
                     {stageCount(stage)}
                   </span>
                 </div>
@@ -231,8 +231,8 @@ const CRMBoard: React.FC<CRMBoardProps> = ({ storagePrefix, onConvert }) => {
 
               <button
                 onClick={() => addProspect(stage)}
-                className="flex items-center gap-1 px-3 py-2 text-[11px] font-medium rounded-b-xl transition-colors"
-                style={{ color: '#666' }}
+                className="flex items-center gap-1 px-3 py-2 text-[11px] font-medium rounded-none-none transition-colors"
+                style={{ color: '#5a5a5a' }}
                 onMouseEnter={e => (e.currentTarget.style.color = '#999')}
                 onMouseLeave={e => (e.currentTarget.style.color = '#666')}
               >
@@ -270,14 +270,14 @@ const ProspectCard: React.FC<ProspectCardProps> = ({
 
   if (isEditing) {
     return (
-      <div className="rounded-lg p-3 space-y-2" style={{ background: '#232323', border: '1px solid #3a3a3a' }}>
+      <div className="rounded-none p-3 space-y-2" style={{ background: '#232323', border: '1px solid #242424' }}>
         <input
           ref={titleRef}
           value={prospect.name}
           onChange={e => onUpdate({ name: e.target.value })}
           placeholder="Prospect name..."
           className="w-full bg-transparent text-xs font-semibold outline-none"
-          style={{ color: '#ECECEC' }}
+          style={{ color: '#f4f4f4' }}
           onKeyDown={e => { if (e.key === 'Enter') onClose(); }}
         />
         <input
@@ -302,14 +302,14 @@ const ProspectCard: React.FC<ProspectCardProps> = ({
           style={{ color: '#aaa' }}
         />
         <div className="flex items-center gap-1">
-          <DollarSign size={11} style={{ color: '#86efac' }} />
+          <DollarSign size={11} style={{ color: '#6dd49a' }} />
           <input
             type="number"
             value={prospect.deal_value || ''}
             onChange={e => onUpdate({ deal_value: parseFloat(e.target.value) || 0 })}
             placeholder="Deal value"
             className="w-24 bg-transparent text-[11px] outline-none"
-            style={{ color: '#86efac' }}
+            style={{ color: '#6dd49a' }}
           />
         </div>
         <textarea
@@ -332,8 +332,8 @@ const ProspectCard: React.FC<ProspectCardProps> = ({
           {!confirmDelete ? (
             <button
               onClick={() => setConfirmDelete(true)}
-              className="text-[10px] px-2 py-1 rounded-md transition-colors"
-              style={{ color: '#fca5a5' }}
+              className="text-[10px] px-2 py-1 rounded-none-none transition-colors"
+              style={{ color: '#d46d6d' }}
             >
               Delete
             </button>
@@ -341,15 +341,15 @@ const ProspectCard: React.FC<ProspectCardProps> = ({
             <div className="flex gap-1">
               <button
                 onClick={onDelete}
-                className="text-[10px] px-2 py-1 rounded-md"
-                style={{ background: '#3a1a1a', color: '#fca5a5' }}
+                className="text-[10px] px-2 py-1 rounded-none-none"
+                style={{ background: '#3a1a1a', color: '#d46d6d' }}
               >
                 Confirm
               </button>
               <button
                 onClick={() => setConfirmDelete(false)}
-                className="text-[10px] px-2 py-1 rounded-md"
-                style={{ color: '#888' }}
+                className="text-[10px] px-2 py-1 rounded-none-none"
+                style={{ color: '#909090' }}
               >
                 Cancel
               </button>
@@ -359,8 +359,8 @@ const ProspectCard: React.FC<ProspectCardProps> = ({
             {onConvert && prospect.stage === 'Closed Won' && (
               <button
                 onClick={onConvert}
-                className="flex items-center gap-1 text-[10px] px-2 py-1 rounded-md transition-colors"
-                style={{ background: '#86efac22', color: '#86efac' }}
+                className="flex items-center gap-1 text-[10px] px-2 py-1 rounded-none-none transition-colors"
+                style={{ background: '#86efac22', color: '#6dd49a' }}
                 title="Convert to client"
               >
                 <ArrowRight size={10} /> Convert
@@ -368,8 +368,8 @@ const ProspectCard: React.FC<ProspectCardProps> = ({
             )}
             <button
               onClick={onClose}
-              className="text-[10px] px-2 py-1 rounded-md transition-colors"
-              style={{ background: '#2a2a2a', color: '#ECECEC' }}
+              className="text-[10px] px-2 py-1 rounded-none-none transition-colors"
+              style={{ background: '#0d0d0d', color: '#f4f4f4' }}
             >
               Done
             </button>
@@ -386,7 +386,7 @@ const ProspectCard: React.FC<ProspectCardProps> = ({
       onDragOver={onCardDragOver}
       onDragEnd={onDragEnd}
       onClick={onEdit}
-      className="rounded-lg p-2.5 cursor-grab active:cursor-grabbing group transition-all"
+      className="rounded-none p-2.5 cursor-grab active:cursor-grabbing group transition-all"
       style={{
         background: '#232323',
         border: isDragOver ? '1px solid #555' : '1px solid #2a2a2a',
@@ -394,31 +394,31 @@ const ProspectCard: React.FC<ProspectCardProps> = ({
         opacity: isDragging ? 0.4 : 1,
       }}
       onMouseEnter={e => { if (!isDragOver) e.currentTarget.style.borderColor = '#3a3a3a'; }}
-      onMouseLeave={e => { if (!isDragOver) e.currentTarget.style.borderColor = '#2a2a2a'; }}
+      onMouseLeave={e => { if (!isDragOver) e.currentTarget.style.borderColor = '#1a1a1a'; }}
     >
       <div className="flex items-start gap-1.5">
-        <GripVertical size={12} className="mt-0.5 opacity-0 group-hover:opacity-40 transition-opacity flex-shrink-0" style={{ color: '#888' }} />
+        <GripVertical size={12} className="mt-0.5 opacity-0 group-hover:opacity-40 transition-opacity flex-shrink-0" style={{ color: '#909090' }} />
         <div className="flex-1 min-w-0">
           <p className="text-[11px] font-semibold truncate" style={{ color: prospect.name ? '#ECECEC' : '#666' }}>
             {prospect.name || 'Unnamed prospect'}
           </p>
           {prospect.company && (
-            <p className="text-[10px] mt-0.5 truncate flex items-center gap-1" style={{ color: '#888' }}>
+            <p className="text-[10px] mt-0.5 truncate flex items-center gap-1" style={{ color: '#909090' }}>
               <Building2 size={9} /> {prospect.company}
             </p>
           )}
           {prospect.email && (
-            <p className="text-[10px] mt-0.5 truncate flex items-center gap-1" style={{ color: '#888' }}>
+            <p className="text-[10px] mt-0.5 truncate flex items-center gap-1" style={{ color: '#909090' }}>
               <Mail size={9} /> {prospect.email}
             </p>
           )}
           {prospect.phone && (
-            <p className="text-[10px] mt-0.5 truncate flex items-center gap-1" style={{ color: '#888' }}>
+            <p className="text-[10px] mt-0.5 truncate flex items-center gap-1" style={{ color: '#909090' }}>
               <Phone size={9} /> {prospect.phone}
             </p>
           )}
           {prospect.deal_value > 0 && (
-            <p className="text-[10px] mt-1 font-medium" style={{ color: '#86efac' }}>
+            <p className="text-[10px] mt-1 font-medium" style={{ color: '#6dd49a' }}>
               {formatMoney(prospect.deal_value)}
             </p>
           )}
@@ -432,7 +432,7 @@ const ProspectCard: React.FC<ProspectCardProps> = ({
           onClick={e => { e.stopPropagation(); onDelete(); }}
           className="opacity-0 group-hover:opacity-60 hover:!opacity-100 transition-opacity"
         >
-          <X size={12} style={{ color: '#888' }} />
+          <X size={12} style={{ color: '#909090' }} />
         </button>
       </div>
     </div>

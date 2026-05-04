@@ -46,7 +46,7 @@ interface TeamMemberRow {
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const STATUS_OPTIONS: { id: ProfileStatus; label: string; color: string; bg: string }[] = [
-  { id: 'active',     label: 'Active',     color: '#86efac', bg: 'rgba(134,239,172,0.12)' },
+  { id: 'active',     label: 'Active',     color: '#6dd49a', bg: 'rgba(134,239,172,0.12)' },
   { id: 'onboarding', label: 'Onboarding', color: '#fbbf24', bg: 'rgba(251,191,36,0.12)' },
   { id: 'paused',     label: 'Paused',     color: '#fde68a', bg: 'rgba(253,230,138,0.12)' },
   { id: 'archived',   label: 'Archived',   color: '#a1a1aa', bg: 'rgba(161,161,170,0.12)' },
@@ -362,7 +362,7 @@ const FunnelProfile: React.FC<Props> = ({ funnelId, funnelName, storagePrefix })
 
   if (loading) {
     return (
-      <div className="flex-1 min-h-0 flex items-center justify-center text-[#666]">
+      <div className="flex-1 min-h-0 flex items-center justify-center text-[#5a5a5a]">
         <Loader2 className="animate-spin" size={18} />
       </div>
     );
@@ -374,12 +374,12 @@ const FunnelProfile: React.FC<Props> = ({ funnelId, funnelName, storagePrefix })
         {/* Save indicator */}
         <div className="flex items-center justify-end mb-2 h-5">
           {saveStatus === 'saving' && (
-            <span className="flex items-center gap-1.5 text-[10px] text-[#666]">
+            <span className="flex items-center gap-1.5 text-[10px] text-[#5a5a5a]">
               <Loader2 size={10} className="animate-spin" /> Saving…
             </span>
           )}
           {saveStatus === 'saved' && (
-            <span className="flex items-center gap-1.5 text-[10px] text-[#86efac]">
+            <span className="flex items-center gap-1.5 text-[10px] text-[#6dd49a]">
               <Check size={10} /> Saved
             </span>
           )}
@@ -389,26 +389,26 @@ const FunnelProfile: React.FC<Props> = ({ funnelId, funnelName, storagePrefix })
         </div>
 
         {setupHint && (
-          <div className="mb-3 text-[11px] text-[#fbbf24] bg-[rgba(251,191,36,0.08)] border border-[rgba(251,191,36,0.2)] rounded-lg px-3 py-2">
+          <div className="mb-3 text-[11px] text-[#fbbf24] bg-[rgba(251,191,36,0.08)] border border-[rgba(251,191,36,0.2)] rounded-none-none px-3 py-2">
             {setupHint}
           </div>
         )}
 
         {/* Hero card ───────────────────────────────────────────── */}
-        <div className="bg-[#141414] border border-[#2a2a2a] rounded-2xl p-5 mb-4">
+        <div className="bg-[#141414] border border-[#1a1a1a] rounded-none-none p-5 mb-4">
           <div className="flex items-start gap-4">
             {/* Avatar */}
             <div className="relative flex-shrink-0">
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="group relative w-16 h-16 rounded-2xl overflow-hidden border border-[#2a2a2a] bg-[#1a1a1a] flex items-center justify-center"
+                className="group relative w-16 h-16 rounded-none-none overflow-hidden border border-[#1a1a1a] bg-[#1a1a1a] flex items-center justify-center"
                 title="Change photo"
               >
                 {profile.photo_url ? (
                   <img src={profile.photo_url} alt={profile.display_name} className="w-full h-full object-cover" />
                 ) : (
-                  <span className="text-[#ECECEC] text-base font-semibold">{initials}</span>
+                  <span className="text-[#f4f4f4] text-base font-semibold">{initials}</span>
                 )}
                 <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                   {uploadingPhoto ? (
@@ -433,13 +433,13 @@ const FunnelProfile: React.FC<Props> = ({ funnelId, funnelName, storagePrefix })
                 value={profile.display_name}
                 onChange={e => updateField('display_name', e.target.value)}
                 placeholder="Client name"
-                className="w-full bg-transparent text-[#ECECEC] text-lg font-semibold outline-none placeholder:text-[#444]"
+                className="w-full bg-transparent text-[#f4f4f4] text-lg font-semibold outline-none placeholder:text-[#3a3a3a]"
               />
               <input
                 value={profile.tagline}
                 onChange={e => updateField('tagline', e.target.value)}
                 placeholder="One-line description (e.g. 'Live webinar funnel selling AIF Toolkit at $97')"
-                className="w-full bg-transparent text-[#999] text-xs outline-none mt-1 placeholder:text-[#444]"
+                className="w-full bg-transparent text-[#999] text-xs outline-none mt-1 placeholder:text-[#3a3a3a]"
               />
 
               <div className="flex items-center gap-3 mt-3 flex-wrap">
@@ -448,7 +448,7 @@ const FunnelProfile: React.FC<Props> = ({ funnelId, funnelName, storagePrefix })
                   <select
                     value={profile.status}
                     onChange={e => updateField('status', e.target.value as ProfileStatus)}
-                    className="appearance-none cursor-pointer text-[10px] font-medium px-2.5 py-1 rounded-full border outline-none pr-6"
+                    className="appearance-none cursor-pointer text-[10px] font-medium px-2.5 py-1 rounded-none-full border outline-none pr-6"
                     style={{
                       color: statusMeta.color,
                       backgroundColor: statusMeta.bg,
@@ -456,7 +456,7 @@ const FunnelProfile: React.FC<Props> = ({ funnelId, funnelName, storagePrefix })
                     }}
                   >
                     {STATUS_OPTIONS.map(s => (
-                      <option key={s.id} value={s.id} style={{ background: '#1a1a1a', color: '#ECECEC' }}>
+                      <option key={s.id} value={s.id} style={{ background: '#1a1a1a', color: '#f4f4f4' }}>
                         {s.label}
                       </option>
                     ))}
@@ -468,14 +468,14 @@ const FunnelProfile: React.FC<Props> = ({ funnelId, funnelName, storagePrefix })
                 </div>
 
                 {/* Start date */}
-                <label className="flex items-center gap-1.5 text-[10px] text-[#666] cursor-pointer">
+                <label className="flex items-center gap-1.5 text-[10px] text-[#5a5a5a] cursor-pointer">
                   <Calendar size={11} />
                   <span>Started</span>
                   <input
                     type="date"
                     value={profile.start_date ?? ''}
                     onChange={e => updateField('start_date', e.target.value || null)}
-                    className="bg-transparent text-[#ECECEC] outline-none text-[10px]"
+                    className="bg-transparent text-[#f4f4f4] outline-none text-[10px]"
                   />
                 </label>
               </div>
@@ -521,7 +521,7 @@ const FunnelProfile: React.FC<Props> = ({ funnelId, funnelName, storagePrefix })
             value={profile.overview}
             onChange={e => updateField('overview', e.target.value)}
             placeholder={`Why does ${profile.display_name || 'this project'} exist? What does success look like? What's the strategy?`}
-            className="w-full min-h-[120px] bg-[#0e0e0e] border border-[#2a2a2a] rounded-xl px-3 py-2.5 text-[#ECECEC] text-xs leading-relaxed outline-none focus:border-[#3a3a3a] resize-y placeholder:text-[#444]"
+            className="w-full min-h-[120px] bg-[#0e0e0e] border border-[#1a1a1a] rounded-none-none px-3 py-2.5 text-[#f4f4f4] text-xs leading-relaxed outline-none focus:border-[#242424] resize-y placeholder:text-[#3a3a3a]"
           />
         </Section>
 
@@ -532,28 +532,28 @@ const FunnelProfile: React.FC<Props> = ({ funnelId, funnelName, storagePrefix })
           hint={team.length === 0 ? 'Add people in the Team section first to assign them here' : 'Tap to assign / remove'}
         >
           {team.length === 0 ? (
-            <div className="text-[11px] text-[#555] italic px-1 py-2">
+            <div className="text-[11px] text-[#5a5a5a] italic px-1 py-2">
               No team members yet — head to the Team page to add people.
             </div>
           ) : (
             <>
               <div className="flex flex-wrap gap-2 mb-3">
                 {selectedTeam.length === 0 ? (
-                  <span className="text-[11px] text-[#555] italic px-1">Nobody assigned yet.</span>
+                  <span className="text-[11px] text-[#5a5a5a] italic px-1">Nobody assigned yet.</span>
                 ) : (
                   selectedTeam.map(m => (
                     <div
                       key={m.id}
-                      className="flex items-center gap-2 bg-[#1a1a1a] border border-[#2a2a2a] rounded-full pl-1 pr-2.5 py-1"
+                      className="flex items-center gap-2 bg-[#1a1a1a] border border-[#1a1a1a] rounded-none-full pl-1 pr-2.5 py-1"
                     >
                       <Avatar member={m} size={20} />
                       <div className="leading-tight">
-                        <div className="text-[11px] text-[#ECECEC] font-medium">{m.name}</div>
-                        <div className="text-[9px] text-[#666]">{m.role}</div>
+                        <div className="text-[11px] text-[#f4f4f4] font-medium">{m.name}</div>
+                        <div className="text-[9px] text-[#5a5a5a]">{m.role}</div>
                       </div>
                       <button
                         onClick={() => toggleTeamMember(m.id)}
-                        className="ml-1 text-[#666] hover:text-[#fca5a5]"
+                        className="ml-1 text-[#5a5a5a] hover:text-[#d46d6d]"
                         title="Remove"
                       >
                         <X size={11} />
@@ -563,7 +563,7 @@ const FunnelProfile: React.FC<Props> = ({ funnelId, funnelName, storagePrefix })
                 )}
               </div>
 
-              <div className="text-[10px] uppercase tracking-wider text-[#555] mb-1.5">All team</div>
+              <div className="text-[10px] uppercase tracking-wider text-[#5a5a5a] mb-1.5">All team</div>
               <div className="flex flex-wrap gap-1.5">
                 {team.map(m => {
                   const selected = profile.team_member_ids.includes(m.id);
@@ -571,10 +571,10 @@ const FunnelProfile: React.FC<Props> = ({ funnelId, funnelName, storagePrefix })
                     <button
                       key={m.id}
                       onClick={() => toggleTeamMember(m.id)}
-                      className={`flex items-center gap-1.5 rounded-full pl-0.5 pr-2 py-0.5 text-[10px] border transition-colors ${
+                      className={`flex items-center gap-1.5 rounded-none-full pl-0.5 pr-2 py-0.5 text-[10px] border transition-colors ${
                         selected
-                          ? 'bg-[#1a1a1a] border-[#3a3a3a] text-[#ECECEC]'
-                          : 'bg-transparent border-[#222] text-[#666] hover:text-[#999] hover:border-[#333]'
+                          ? 'bg-[#1a1a1a] border-[#242424] text-[#f4f4f4]'
+                          : 'bg-transparent border-[#1a1a1a] text-[#5a5a5a] hover:text-[#999] hover:border-[#242424]'
                       }`}
                       title={selected ? 'Remove from project' : 'Add to project'}
                     >
@@ -596,36 +596,36 @@ const FunnelProfile: React.FC<Props> = ({ funnelId, funnelName, storagePrefix })
           actions={
             <button
               onClick={addLink}
-              className="flex items-center gap-1 px-2 py-1 rounded-md text-[10px] text-[#999] hover:text-[#ECECEC] bg-[#1a1a1a] hover:bg-[#222] border border-[#2a2a2a]"
+              className="flex items-center gap-1 px-2 py-1 rounded-none-none text-[10px] text-[#999] hover:text-[#f4f4f4] bg-[#1a1a1a] hover:bg-[#222] border border-[#1a1a1a]"
             >
               <Plus size={10} /> Add link
             </button>
           }
         >
           {profile.links.length === 0 ? (
-            <div className="text-[11px] text-[#555] italic px-1 py-2">No links yet.</div>
+            <div className="text-[11px] text-[#5a5a5a] italic px-1 py-2">No links yet.</div>
           ) : (
             <div className="space-y-1.5">
               {profile.links.map(link => (
-                <div key={link.id} className="flex items-center gap-2 bg-[#0e0e0e] border border-[#2a2a2a] rounded-lg px-2 py-1.5">
+                <div key={link.id} className="flex items-center gap-2 bg-[#0e0e0e] border border-[#1a1a1a] rounded-none-none px-2 py-1.5">
                   <input
                     value={link.label}
                     onChange={e => updateLink(link.id, { label: e.target.value })}
                     placeholder="Label (e.g. Drive folder)"
-                    className="w-40 flex-shrink-0 bg-transparent text-[#ECECEC] text-[11px] outline-none placeholder:text-[#444]"
+                    className="w-40 flex-shrink-0 bg-transparent text-[#f4f4f4] text-[11px] outline-none placeholder:text-[#3a3a3a]"
                   />
                   <input
                     value={link.url}
                     onChange={e => updateLink(link.id, { url: e.target.value })}
                     placeholder="https://…"
-                    className="flex-1 min-w-0 bg-transparent text-[#999] text-[11px] outline-none placeholder:text-[#444]"
+                    className="flex-1 min-w-0 bg-transparent text-[#999] text-[11px] outline-none placeholder:text-[#3a3a3a]"
                   />
                   {link.url && (
                     <a
                       href={link.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-[#666] hover:text-[#ECECEC]"
+                      className="text-[#5a5a5a] hover:text-[#f4f4f4]"
                       title="Open"
                     >
                       <ExternalLink size={12} />
@@ -633,7 +633,7 @@ const FunnelProfile: React.FC<Props> = ({ funnelId, funnelName, storagePrefix })
                   )}
                   <button
                     onClick={() => removeLink(link.id)}
-                    className="text-[#666] hover:text-[#fca5a5]"
+                    className="text-[#5a5a5a] hover:text-[#d46d6d]"
                     title="Remove"
                   >
                     <Trash2 size={12} />
@@ -650,12 +650,12 @@ const FunnelProfile: React.FC<Props> = ({ funnelId, funnelName, storagePrefix })
             value={profile.notes}
             onChange={e => updateField('notes', e.target.value)}
             placeholder="Anything worth remembering — meetings, blockers, decisions, ideas…"
-            className="w-full min-h-[100px] bg-[#0e0e0e] border border-[#2a2a2a] rounded-xl px-3 py-2.5 text-[#ECECEC] text-xs leading-relaxed outline-none focus:border-[#3a3a3a] resize-y placeholder:text-[#444]"
+            className="w-full min-h-[100px] bg-[#0e0e0e] border border-[#1a1a1a] rounded-none-none px-3 py-2.5 text-[#f4f4f4] text-xs leading-relaxed outline-none focus:border-[#242424] resize-y placeholder:text-[#3a3a3a]"
           />
         </Section>
 
         {profile.start_date && (
-          <div className="text-[10px] text-[#444] text-center mt-4">
+          <div className="text-[10px] text-[#3a3a3a] text-center mt-4">
             Started {formatDate(profile.start_date)}
           </div>
         )}
@@ -673,12 +673,12 @@ const Section: React.FC<{
   actions?: React.ReactNode;
   children: React.ReactNode;
 }> = ({ icon, title, hint, actions, children }) => (
-  <div className="bg-[#141414] border border-[#2a2a2a] rounded-2xl p-4 mb-3">
+  <div className="bg-[#141414] border border-[#1a1a1a] rounded-none-none p-4 mb-3">
     <div className="flex items-center justify-between mb-2.5">
       <div className="flex items-center gap-2 text-[#999]">
         {icon}
-        <h3 className="text-[11px] font-medium uppercase tracking-wider text-[#ECECEC]">{title}</h3>
-        {hint && <span className="text-[10px] text-[#555] font-normal normal-case tracking-normal">— {hint}</span>}
+        <h3 className="text-[11px] font-medium uppercase tracking-wider text-[#f4f4f4]">{title}</h3>
+        {hint && <span className="text-[10px] text-[#5a5a5a] font-normal normal-case tracking-normal">— {hint}</span>}
       </div>
       {actions}
     </div>
@@ -693,8 +693,8 @@ const SnapshotField: React.FC<{
   value: string;
   onChange: (v: string) => void;
 }> = ({ icon, label, placeholder, value, onChange }) => (
-  <div className="bg-[#141414] border border-[#2a2a2a] rounded-2xl p-3.5">
-    <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-[#666] mb-1.5">
+  <div className="bg-[#141414] border border-[#1a1a1a] rounded-none-none p-3.5">
+    <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-[#5a5a5a] mb-1.5">
       {icon}
       <span>{label}</span>
     </div>
@@ -702,7 +702,7 @@ const SnapshotField: React.FC<{
       value={value}
       onChange={e => onChange(e.target.value)}
       placeholder={placeholder}
-      className="w-full bg-transparent text-[#ECECEC] text-xs outline-none placeholder:text-[#444]"
+      className="w-full bg-transparent text-[#f4f4f4] text-xs outline-none placeholder:text-[#3a3a3a]"
     />
   </div>
 );
@@ -720,7 +720,7 @@ const Avatar: React.FC<{ member: TeamMemberRow; size: number }> = ({ member, siz
   }
   return (
     <div
-      className={`${member.color} rounded-full flex items-center justify-center text-white font-semibold flex-shrink-0`}
+      className={`${member.color} rounded-none-full flex items-center justify-center text-white font-semibold flex-shrink-0`}
       style={{ width: size, height: size, fontSize: Math.max(8, size * 0.42) }}
     >
       {member.initials}

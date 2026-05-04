@@ -91,20 +91,20 @@ const CustomTooltip = ({ active, payload, label, contentItemsByDate }: any) => {
       return true;
     });
     return (
-      <div className="bg-[#2f2f2f] border border-[#3a3a3a] p-3 rounded-lg shadow-xl backdrop-blur-md bg-opacity-90 max-w-xs">
-        <p className="text-[#9B9B9B] text-xs mb-1">{label}</p>
+      <div className="bg-[#0d0d0d] border border-[#242424] p-3 rounded-none-none shadow-xl backdrop-blur-md bg-opacity-90 max-w-xs">
+        <p className="text-[#909090] text-xs mb-1">{label}</p>
         {filteredPayload.map((entry: any, index: number) => (
           <p key={index} className="text-sm font-medium" style={{ color: entry.color }}>
             {entry.name}: {typeof entry.value === 'number' && isCurrencySeries(entry.name) ? `$${entry.value.toLocaleString()}` : entry.value}
           </p>
         ))}
         {items.length > 0 && (
-          <div className="mt-2 pt-2 border-t border-[#3a3a3a]">
-            <p className="text-[#9B9B9B] text-[10px] uppercase tracking-wider mb-1">Scheduled</p>
-            <ul className="text-xs text-[#ECECEC] space-y-0.5 max-h-32 overflow-y-auto">
+          <div className="mt-2 pt-2 border-t border-[#242424]">
+            <p className="text-[#909090] text-[10px] uppercase tracking-wider mb-1">Scheduled</p>
+            <ul className="text-xs text-[#f4f4f4] space-y-0.5 max-h-32 overflow-y-auto">
               {items.map((item: ContentItemForTooltip, i: number) => (
                 <li key={i} className="truncate" title={item.title}>
-                  <span className="text-[#9B9B9B]">{item.platform}</span> — {item.title}
+                  <span className="text-[#909090]">{item.platform}</span> — {item.title}
                 </li>
               ))}
             </ul>
@@ -333,41 +333,41 @@ const AnalyticsChart: React.FC<AnalyticsChartProps> = ({ view, onChangeView, rev
   };
 
   return (
-    <div className="bg-[#2f2f2f] border border-[#3a3a3a] rounded-xl p-6 shadow-sm relative overflow-hidden">
+    <div className="bg-[#0d0d0d] border border-[#242424] rounded-none-none p-6 shadow-sm relative overflow-hidden">
 
       <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4 relative z-10">
         <div>
-          <h2 className="text-lg font-semibold text-[#ECECEC]">Performance Overview</h2>
-          <p className="text-sm text-[#9B9B9B]">Track your key performance indicators over time.</p>
+          <h2 className="text-lg font-semibold text-[#f4f4f4]">Performance Overview</h2>
+          <p className="text-sm text-[#909090]">Track your key performance indicators over time.</p>
         </div>
 
-        <div className="bg-[#212121] p-1 rounded-xl border border-[#3a3a3a] flex items-center">
+        <div className="bg-[#000] p-1 rounded-none-none border border-[#242424] flex items-center">
           <button
             onClick={() => onChangeView(ChartViewType.REVENUE)}
-            className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-none ${
+            className={`px-4 py-1.5 rounded-none-none text-sm font-medium transition-none ${
               view === ChartViewType.REVENUE
-                ? 'bg-[#3a3a3a] text-[#ECECEC] shadow-sm'
-                : 'text-[#9B9B9B] hover:text-[#ECECEC]'
+                ? 'bg-[#3a3a3a] text-[#f4f4f4] shadow-sm'
+                : 'text-[#909090] hover:text-[#f4f4f4]'
             }`}
           >
             Revenue
           </button>
           <button
             onClick={() => onChangeView(ChartViewType.CONTENT_SCHEDULE)}
-            className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-none ${
+            className={`px-4 py-1.5 rounded-none-none text-sm font-medium transition-none ${
               view === ChartViewType.CONTENT_SCHEDULE
-                ? 'bg-[#3a3a3a] text-[#ECECEC] shadow-sm'
-                : 'text-[#9B9B9B] hover:text-[#ECECEC]'
+                ? 'bg-[#3a3a3a] text-[#f4f4f4] shadow-sm'
+                : 'text-[#909090] hover:text-[#f4f4f4]'
             }`}
           >
             Content
           </button>
           <button
             onClick={() => onChangeView(ChartViewType.TEAM_SPEND)}
-            className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-none ${
+            className={`px-4 py-1.5 rounded-none-none text-sm font-medium transition-none ${
               view === ChartViewType.TEAM_SPEND
-                ? 'bg-[#3a3a3a] text-[#ECECEC] shadow-sm'
-                : 'text-[#9B9B9B] hover:text-[#ECECEC]'
+                ? 'bg-[#3a3a3a] text-[#f4f4f4] shadow-sm'
+                : 'text-[#909090] hover:text-[#f4f4f4]'
             }`}
           >
             Team

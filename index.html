@@ -4,29 +4,33 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Aureum</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Cormorant+Garamond:ital,wght@1,400;1,600&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="icon" type="image/svg+xml" href="/aureum-logo.svg" />
     <style>
       body {
-        font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-        background-color: #212121;
-        color: #ECECEC;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        background-color: #000000;
+        color: #f4f4f4;
+        -webkit-font-smoothing: antialiased;
       }
+      .mono { font-family: 'JetBrains Mono', ui-monospace, monospace; }
+      ::selection { background: rgba(255,255,255,0.18); color: #f4f4f4; }
       /* Custom scrollbar for dark theme */
       ::-webkit-scrollbar {
         width: 8px;
         height: 8px;
       }
       ::-webkit-scrollbar-track {
-        background: #212121;
+        background: transparent;
       }
       ::-webkit-scrollbar-thumb {
-        background: #3a3a3a;
+        background: #23272d;
         border-radius: 4px;
       }
       ::-webkit-scrollbar-thumb:hover {
-        background: #4a4a4a;
+        background: #2f3338;
       }
     </style>
   <script type="importmap">

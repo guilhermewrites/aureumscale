@@ -359,12 +359,12 @@ const TheresaDataTab: React.FC = () => {
     <div className="flex flex-col gap-4 min-h-full pb-8">
       {/* header row */}
       <div className="flex items-center justify-between flex-shrink-0">
-        <div className="flex items-center gap-3 text-xs text-[#666]">
+        <div className="flex items-center gap-3 text-xs text-[#5a5a5a]">
           {loadError ? (
             <span className="text-rose-400">Error: {loadError}</span>
           ) : lastLoadedAt ? (
-            <span className="flex items-center gap-1.5 text-[#888]">
-              <CheckCircle2 size={12} className="text-emerald-500" />
+            <span className="flex items-center gap-1.5 text-[#909090]">
+              <CheckCircle2 size={12} className="text-[#6dd49a]" />
               Loaded {formatRelative(lastLoadedAt)} · {leads.length} leads
             </span>
           ) : (
@@ -375,7 +375,7 @@ const TheresaDataTab: React.FC = () => {
           type="button"
           onClick={refresh}
           disabled={refreshing || loading}
-          className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#2a2a2a] hover:bg-[#333] text-[#ECECEC] text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex items-center gap-2 px-3 py-1.5 rounded-none-none bg-[#0d0d0d] hover:bg-[#333] text-[#f4f4f4] text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <RefreshCw size={12} className={refreshing ? 'animate-spin' : ''} />
           {refreshing ? 'Refreshing…' : 'Refresh now'}
@@ -384,13 +384,13 @@ const TheresaDataTab: React.FC = () => {
 
       {/* date range */}
       <div className="flex items-center justify-end flex-shrink-0">
-        <div className="flex gap-1 bg-[#1a1a1a] rounded-lg p-1">
+        <div className="flex gap-1 bg-[#1a1a1a] rounded-none-none p-1">
           {DATE_RANGES.map((r) => (
             <button
               key={r.key}
               onClick={() => setDateRange(r.key)}
-              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
-                dateRange === r.key ? 'bg-[#2a2a2a] text-[#ECECEC]' : 'text-[#666] hover:text-[#999]'
+              className={`px-3 py-1.5 rounded-none-none text-xs font-medium transition-colors ${
+                dateRange === r.key ? 'bg-[#0d0d0d] text-[#f4f4f4]' : 'text-[#5a5a5a] hover:text-[#999]'
               }`}
             >
               {r.label}
@@ -455,29 +455,29 @@ const TheresaDataTab: React.FC = () => {
       {/* search + export */}
       <div className="flex items-center gap-2 flex-shrink-0">
         <div className="relative flex-1">
-          <Search size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#555]" />
+          <Search size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#5a5a5a]" />
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder={`Search ${activeBucketDef ? activeBucketDef.label.toLowerCase() : 'everyone'}…`}
-            className="w-full pl-8 pr-3 py-1.5 bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg text-xs text-[#ECECEC] placeholder:text-[#555] focus:outline-none focus:border-[#3a3a3a]"
+            className="w-full pl-8 pr-3 py-1.5 bg-[#1a1a1a] border border-[#1a1a1a] rounded-none-none text-xs text-[#f4f4f4] placeholder:text-[#5a5a5a] focus:outline-none focus:border-[#242424]"
           />
         </div>
-        <span className="text-xs text-[#555]">{filtered.length} of {counts.all}</span>
+        <span className="text-xs text-[#5a5a5a]">{filtered.length} of {counts.all}</span>
         <button
           type="button"
           onClick={exportCsv}
           disabled={filtered.length === 0}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#2a2a2a] hover:bg-[#333] text-[#ECECEC] text-xs font-medium disabled:opacity-40"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-none-none bg-[#0d0d0d] hover:bg-[#333] text-[#f4f4f4] text-xs font-medium disabled:opacity-40"
         >
           <Download size={12} /> CSV
         </button>
       </div>
 
       {/* table */}
-      <div className="max-h-[60vh] overflow-auto rounded-lg border border-[#222]">
+      <div className="max-h-[60vh] overflow-auto rounded-none-none border border-[#1a1a1a]">
         <table className="w-full text-xs text-left">
-          <thead className="sticky top-0 bg-[#181818] border-b border-[#222] text-[#666]">
+          <thead className="sticky top-0 bg-[#181818] border-b border-[#1a1a1a] text-[#5a5a5a]">
             <tr>
               <Th>Name</Th>
               <Th>Email</Th>
@@ -495,11 +495,11 @@ const TheresaDataTab: React.FC = () => {
           </thead>
           <tbody className="text-[#bdbdbd]">
             {loading ? (
-              <tr><td colSpan={12} className="p-6 text-center text-[#555]">
+              <tr><td colSpan={12} className="p-6 text-center text-[#5a5a5a]">
                 <Loader2 size={14} className="inline-block animate-spin mr-2" /> Loading…
               </td></tr>
             ) : filtered.length === 0 ? (
-              <tr><td colSpan={12} className="p-6 text-center text-[#555]">
+              <tr><td colSpan={12} className="p-6 text-center text-[#5a5a5a]">
                 {leads.length === 0
                   ? 'No leads yet. The table populates as people start the quiz.'
                   : 'No rows match this filter.'}
@@ -507,40 +507,40 @@ const TheresaDataTab: React.FC = () => {
             ) : (
               filtered.slice(0, 500).map((l) => (
                 <tr key={l.id} className="border-b border-[#1a1a1a] hover:bg-[#141414]">
-                  <Td>{l.first_name || <span className="text-[#444]">—</span>}</Td>
-                  <Td><span className="text-[#888]">{l.email || <span className="text-[#444]">—</span>}</span></Td>
+                  <Td>{l.first_name || <span className="text-[#3a3a3a]">—</span>}</Td>
+                  <Td><span className="text-[#909090]">{l.email || <span className="text-[#3a3a3a]">—</span>}</span></Td>
                   <Td>
                     {l.loved_one_name ? (
                       <span>
                         <span className="text-[#bdbdbd]">{l.loved_one_name}</span>
                         {l.loved_one_relationship && (
-                          <span className="text-[#555]"> · {l.loved_one_relationship}</span>
+                          <span className="text-[#5a5a5a]"> · {l.loved_one_relationship}</span>
                         )}
                       </span>
-                    ) : <span className="text-[#444]">—</span>}
+                    ) : <span className="text-[#3a3a3a]">—</span>}
                   </Td>
                   <Td>
                     {l.message_topic ? (
-                      <span className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-[#1a1a1a] border border-[#2a2a2a] text-[#bdbdbd]">
+                      <span className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded-none bg-[#1a1a1a] border border-[#1a1a1a] text-[#bdbdbd]">
                         {l.message_topic}
                       </span>
-                    ) : <span className="text-[#444]">—</span>}
+                    ) : <span className="text-[#3a3a3a]">—</span>}
                   </Td>
-                  <Td>{l.quiz_started_at ? <span className="text-[#888]">{formatDate(l.quiz_started_at)}</span> : <Flag on={false} />}</Td>
-                  <Td>{l.quiz_completed_at ? <span className="text-emerald-500">{formatDate(l.quiz_completed_at)}</span> : <Flag on={false} />}</Td>
+                  <Td>{l.quiz_started_at ? <span className="text-[#909090]">{formatDate(l.quiz_started_at)}</span> : <Flag on={false} />}</Td>
+                  <Td>{l.quiz_completed_at ? <span className="text-[#6dd49a]">{formatDate(l.quiz_completed_at)}</span> : <Flag on={false} />}</Td>
                   <Td><Flag on={!!l.reveal_viewed_at} /></Td>
                   <Td><Flag on={!!l.offer_viewed_at} /></Td>
                   <Td>{l.checkout_clicked_at ? (
-                    <span className="text-amber-400">{formatDate(l.checkout_clicked_at)}</span>
+                    <span className="text-[#e0c870]">{formatDate(l.checkout_clicked_at)}</span>
                   ) : <Flag on={false} />}</Td>
                   <Td>{l.purchased_at ? (
-                    <span className="text-emerald-500">{formatDate(l.purchased_at)}</span>
+                    <span className="text-[#6dd49a]">{formatDate(l.purchased_at)}</span>
                   ) : <Flag on={false} />}</Td>
                   <Td><CheckoutOutcome lead={l} /></Td>
                   <Td>
                     {l.utm_source ? (
-                      <span className="text-[#888]">{l.utm_source}</span>
-                    ) : <span className="text-[#444]">—</span>}
+                      <span className="text-[#909090]">{l.utm_source}</span>
+                    ) : <span className="text-[#3a3a3a]">—</span>}
                   </Td>
                 </tr>
               ))
@@ -548,15 +548,15 @@ const TheresaDataTab: React.FC = () => {
           </tbody>
         </table>
         {filtered.length > 500 && (
-          <div className="py-2 text-center text-[11px] text-[#555] bg-[#101010]">
+          <div className="py-2 text-center text-[11px] text-[#5a5a5a] bg-[#101010]">
             Showing first 500 of {filtered.length} — use search to narrow, or export full CSV.
           </div>
         )}
       </div>
 
       {/* meta-ads hint */}
-      <div className="flex-shrink-0 p-3 rounded-lg bg-[#111] border border-[#1f1f1f] text-xs text-[#777] flex items-start gap-2">
-        <CircleDollarSign size={14} className="flex-shrink-0 mt-0.5 text-[#555]" />
+      <div className="flex-shrink-0 p-3 rounded-none-none bg-[#111] border border-[#1a1a1a] text-xs text-[#5a5a5a] flex items-start gap-2">
+        <CircleDollarSign size={14} className="flex-shrink-0 mt-0.5 text-[#5a5a5a]" />
         <div>
           <p className="text-[#bdbdbd]">Meta Ads pixel: 1612698409151497</p>
           <p className="mt-0.5">
@@ -586,13 +586,13 @@ const RevenueCard: React.FC<{ label: string; value: string; sub: string; emphasi
   label, value, sub, emphasized,
 }) => (
   <div
-    className={`rounded-lg p-3 border ${
-      emphasized ? 'bg-[#151515] border-[#2a2a2a]' : 'bg-[#121212] border-[#1f1f1f]'
+    className={`rounded-none p-3 border ${
+      emphasized ? 'bg-[#151515] border-[#1a1a1a]' : 'bg-[#121212] border-[#1a1a1a]'
     }`}
   >
-    <p className="text-[10px] uppercase tracking-wider text-[#555] mb-1">{label}</p>
-    <p className={`font-semibold ${emphasized ? 'text-[#ECECEC] text-xl' : 'text-[#bdbdbd] text-lg'}`}>{value}</p>
-    <p className="text-[10px] text-[#555] mt-0.5">{sub}</p>
+    <p className="text-[10px] uppercase tracking-wider text-[#5a5a5a] mb-1">{label}</p>
+    <p className={`font-semibold ${emphasized ? 'text-[#f4f4f4] text-xl' : 'text-[#bdbdbd] text-lg'}`}>{value}</p>
+    <p className="text-[10px] text-[#5a5a5a] mt-0.5">{sub}</p>
   </div>
 );
 
@@ -608,27 +608,27 @@ const KpiCard: React.FC<{
     type="button"
     onClick={onClick}
     title={hint}
-    className={`text-left rounded-lg p-3 border transition-colors ${
+    className={`text-left rounded-none-none p-3 border transition-colors ${
       active
-        ? 'bg-[#1c1c1c] border-[#444]'
-        : 'bg-[#121212] border-[#1f1f1f] hover:border-[#2a2a2a]'
+        ? 'bg-[#0a0a0a] border-[#444]'
+        : 'bg-[#121212] border-[#1a1a1a] hover:border-[#1a1a1a]'
     }`}
   >
-    <div className="flex items-center gap-1.5 mb-1.5 text-[#666]">
+    <div className="flex items-center gap-1.5 mb-1.5 text-[#5a5a5a]">
       <Icon size={11} />
       <span className="text-[10px] uppercase tracking-wider">{label}</span>
     </div>
-    <p className={`text-lg font-semibold ${active ? 'text-[#ECECEC]' : 'text-[#bdbdbd]'}`}>{value}</p>
+    <p className={`text-lg font-semibold ${active ? 'text-[#f4f4f4]' : 'text-[#bdbdbd]'}`}>{value}</p>
   </button>
 );
 
 const FunnelDropoff: React.FC<{ steps: FunnelStep[]; counts: number[] }> = ({ steps, counts }) => {
   const top = counts[0] || 0;
   return (
-    <div className="rounded-lg border border-[#1f1f1f] bg-[#111] p-3 flex-shrink-0">
+    <div className="rounded-none border border-[#1a1a1a] bg-[#111] p-3 flex-shrink-0">
       <div className="flex items-center justify-between mb-2">
-        <p className="text-[10px] uppercase tracking-wider text-[#555]">Funnel drop-off</p>
-        <p className="text-[10px] text-[#555]">
+        <p className="text-[10px] uppercase tracking-wider text-[#5a5a5a]">Funnel drop-off</p>
+        <p className="text-[10px] text-[#5a5a5a]">
           {top > 0
             ? `${(((counts[counts.length - 1] || 0) / top) * 100).toFixed(2)}% landed → paid`
             : 'No data yet'}
@@ -643,18 +643,18 @@ const FunnelDropoff: React.FC<{ steps: FunnelStep[]; counts: number[] }> = ({ st
           return (
             <div key={s.key} className="flex items-center gap-2 text-[11px]">
               <span className="w-28 text-[#bdbdbd] truncate">{s.label}</span>
-              <div className="flex-1 h-4 bg-[#1a1a1a] rounded overflow-hidden relative">
+              <div className="flex-1 h-4 bg-[#1a1a1a] rounded-none overflow-hidden relative">
                 <div
                   className="h-full bg-gradient-to-r from-emerald-800/80 to-emerald-600/80"
                   style={{ width: `${pct}%` }}
                 />
-                <span className="absolute inset-y-0 left-2 flex items-center text-[#ECECEC] font-medium">
+                <span className="absolute inset-y-0 left-2 flex items-center text-[#f4f4f4] font-medium">
                   {n.toLocaleString()}
                 </span>
               </div>
-              <span className="w-14 text-right text-[#888] tabular-nums">{pct.toFixed(1)}%</span>
+              <span className="w-14 text-right text-[#909090] tabular-nums">{pct.toFixed(1)}%</span>
               <span className={`w-16 text-right text-[10px] tabular-nums ${
-                i === 0 ? 'text-[#444]' : dropPct > 50 ? 'text-rose-400' : dropPct > 20 ? 'text-amber-400' : 'text-[#666]'
+                i === 0 ? 'text-[#3a3a3a]' : dropPct > 50 ? 'text-rose-400' : dropPct > 20 ? 'text-[#e0c870]' : 'text-[#5a5a5a]'
               }`}>
                 {i === 0 ? '—' : `-${dropPct.toFixed(0)}%`}
               </span>
@@ -669,22 +669,22 @@ const FunnelDropoff: React.FC<{ steps: FunnelStep[]; counts: number[] }> = ({ st
 const BreakdownBlock: React.FC<{ title: string; entries: [string, number][]; emptyLabel?: string }> = ({
   title, entries, emptyLabel,
 }) => (
-  <div className="rounded-lg border border-[#1f1f1f] bg-[#111] p-3">
-    <p className="text-[10px] uppercase tracking-wider text-[#555] mb-2">{title}</p>
+  <div className="rounded-none border border-[#1a1a1a] bg-[#111] p-3">
+    <p className="text-[10px] uppercase tracking-wider text-[#5a5a5a] mb-2">{title}</p>
     {entries.length === 0 ? (
-      <p className="text-[11px] text-[#444]">{emptyLabel || 'No data yet'}</p>
+      <p className="text-[11px] text-[#3a3a3a]">{emptyLabel || 'No data yet'}</p>
     ) : (
       <div className="flex flex-wrap gap-1">
         {entries.slice(0, 12).map(([label, count]) => (
           <span
             key={label}
-            className="text-[11px] px-2 py-0.5 rounded bg-[#1a1a1a] border border-[#2a2a2a] text-[#bdbdbd]"
+            className="text-[11px] px-2 py-0.5 rounded-none bg-[#1a1a1a] border border-[#1a1a1a] text-[#bdbdbd]"
           >
-            {label} <span className="text-[#666]">· {count}</span>
+            {label} <span className="text-[#5a5a5a]">· {count}</span>
           </span>
         ))}
         {entries.length > 12 && (
-          <span className="text-[11px] text-[#555] px-2 py-0.5">+ {entries.length - 12} more</span>
+          <span className="text-[11px] text-[#5a5a5a] px-2 py-0.5">+ {entries.length - 12} more</span>
         )}
       </div>
     )}
@@ -698,7 +698,7 @@ const Td: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <td className="px-3 py-2 whitespace-nowrap">{children}</td>
 );
 const Flag: React.FC<{ on: boolean }> = ({ on }) => (
-  on ? <span className="text-emerald-500">yes</span> : <span className="text-[#444]">—</span>
+  on ? <span className="text-[#6dd49a]">yes</span> : <span className="text-[#3a3a3a]">—</span>
 );
 
 // At-a-glance label for the checkout cohort. Three states:
@@ -711,16 +711,16 @@ const CheckoutOutcome: React.FC<{ lead: Lead }> = ({ lead }) => {
   const clicked = !!lead.checkout_clicked_at;
   const paid = !!lead.purchased_at;
   if (paid && clicked) {
-    return <span className="text-emerald-500 font-medium">Paid</span>;
+    return <span className="text-[#6dd49a] font-medium">Paid</span>;
   }
   if (paid && !clicked) {
     // Bought without our click being captured (pre-keepalive-fix or backfilled).
-    return <span className="text-emerald-500/80 font-medium">Paid <span className="text-[#666] font-normal">(no click)</span></span>;
+    return <span className="text-[#6dd49a]/80 font-medium">Paid <span className="text-[#5a5a5a] font-normal">(no click)</span></span>;
   }
   if (clicked && !paid) {
-    return <span className="text-amber-400 font-medium">No payment</span>;
+    return <span className="text-[#e0c870] font-medium">No payment</span>;
   }
-  return <span className="text-[#444]">—</span>;
+  return <span className="text-[#3a3a3a]">—</span>;
 };
 
 // ---------------------------------------------------------------- formatters
@@ -768,20 +768,20 @@ const LeadProfilesSection: React.FC<{ leads: Lead[]; bucketLabel: string }> = ({
     <section className="pt-8 mt-2 border-t border-[#1a1a1a]">
       <div className="flex items-end justify-between mb-5 gap-4 flex-wrap">
         <div>
-          <h2 className="text-xl font-semibold text-[#ECECEC] tracking-tight">
+          <h2 className="text-xl font-semibold text-[#f4f4f4] tracking-tight">
             Lead profiles
           </h2>
-          <p className="text-xs text-[#666] mt-1">
+          <p className="text-xs text-[#5a5a5a] mt-1">
             Full quiz answers for everyone in{' '}
             <span className="text-[#999] lowercase">{bucketLabel}</span>{' '}
-            <span className="text-[#444]">·</span> {ranked.length.toLocaleString()} {ranked.length === 1 ? 'person' : 'people'}
+            <span className="text-[#3a3a3a]">·</span> {ranked.length.toLocaleString()} {ranked.length === 1 ? 'person' : 'people'}
           </p>
         </div>
         {ranked.length > 50 && (
           <button
             type="button"
             onClick={() => setShowAll((s) => !s)}
-            className="text-xs px-3 py-1.5 rounded-md bg-[#1a1a1a] border border-[#2a2a2a] hover:border-[#3a3a3a] text-[#bdbdbd] transition-colors"
+            className="text-xs px-3 py-1.5 rounded-none-none bg-[#1a1a1a] border border-[#1a1a1a] hover:border-[#242424] text-[#bdbdbd] transition-colors"
           >
             {showAll ? `Show first 50` : `Show all ${ranked.length}`}
           </button>
@@ -789,7 +789,7 @@ const LeadProfilesSection: React.FC<{ leads: Lead[]; bucketLabel: string }> = ({
       </div>
 
       {ranked.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-[#222] bg-[#0d0d0d] py-16 text-center text-sm text-[#555]">
+        <div className="rounded-none border border-dashed border-[#1a1a1a] bg-[#0d0d0d] py-16 text-center text-sm text-[#5a5a5a]">
           No one matches this filter yet.
         </div>
       ) : (
@@ -815,16 +815,16 @@ const LeadProfileCard: React.FC<{ lead: Lead }> = ({ lead }) => {
 
   // Status pill — what's the most advanced thing this lead did?
   const status: { label: string; klass: string } = lead.purchased_at
-    ? { label: 'Paid', klass: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/40' }
+    ? { label: 'Paid', klass: 'bg-emerald-500/15 text-[#6dd49a] border-emerald-500/40' }
     : lead.checkout_clicked_at
       ? { label: 'Clicked checkout', klass: 'bg-amber-500/15 text-amber-300 border-amber-500/40' }
       : lead.offer_viewed_at
         ? { label: 'Saw offer', klass: 'bg-sky-500/10 text-sky-300 border-sky-500/30' }
         : lead.quiz_completed_at
-          ? { label: 'Completed quiz', klass: 'bg-[#1a1a1a] text-[#bdbdbd] border-[#2a2a2a]' }
+          ? { label: 'Completed quiz', klass: 'bg-[#1a1a1a] text-[#bdbdbd] border-[#1a1a1a]' }
           : lead.quiz_started_at
-            ? { label: 'Started quiz', klass: 'bg-[#1a1a1a] text-[#888] border-[#2a2a2a]' }
-            : { label: 'Just landed', klass: 'bg-[#1a1a1a] text-[#666] border-[#222]' };
+            ? { label: 'Started quiz', klass: 'bg-[#1a1a1a] text-[#909090] border-[#1a1a1a]' }
+            : { label: 'Just landed', klass: 'bg-[#1a1a1a] text-[#5a5a5a] border-[#1a1a1a]' };
 
   // BR funnel: time-since-loss codes from the quiz.
   const timeSinceLossLabel = (() => {
@@ -839,16 +839,16 @@ const LeadProfileCard: React.FC<{ lead: Lead }> = ({ lead }) => {
   })();
 
   return (
-    <article className="rounded-xl border border-[#1f1f1f] bg-gradient-to-b from-[#0e0e0e] to-[#0a0a0a] p-5 md:p-6 transition-colors hover:border-[#2a2a2a]">
+    <article className="rounded-none border border-[#1a1a1a] bg-gradient-to-b from-[#0e0e0e] to-[#0a0a0a] p-5 md:p-6 transition-colors hover:border-[#1a1a1a]">
       {/* Identity + status */}
       <header className="flex items-start justify-between gap-4 mb-5 pb-4 border-b border-[#1a1a1a]">
         <div className="min-w-0 flex-1">
-          <h3 className="text-lg font-semibold text-[#ECECEC] truncate capitalize">
+          <h3 className="text-lg font-semibold text-[#f4f4f4] truncate capitalize">
             {displayName}
           </h3>
           <div className="mt-1 flex flex-col gap-0.5">
             {contactBits.length === 0 ? (
-              <span className="text-xs text-[#555]">No contact info</span>
+              <span className="text-xs text-[#5a5a5a]">No contact info</span>
             ) : (
               contactBits.map((c, i) => (
                 <span key={i} className="text-xs text-[#999] truncate font-mono">
@@ -859,7 +859,7 @@ const LeadProfileCard: React.FC<{ lead: Lead }> = ({ lead }) => {
           </div>
         </div>
         <span
-          className={`text-[10px] uppercase tracking-wider px-2.5 py-1 rounded-full border whitespace-nowrap font-medium ${status.klass}`}
+          className={`text-[10px] uppercase tracking-wider px-2.5 py-1 rounded-none-full border whitespace-nowrap font-medium ${status.klass}`}
         >
           {status.label}
         </span>
@@ -869,13 +869,13 @@ const LeadProfileCard: React.FC<{ lead: Lead }> = ({ lead }) => {
         {/* Who they want to hear from */}
         {(lead.loved_one_name || lead.loved_one_relationship) && (
           <ProfileField label="Wants to hear from">
-            <p className="text-sm text-[#ECECEC]">
+            <p className="text-sm text-[#f4f4f4]">
               <span className="font-medium">{lead.loved_one_name || '(no name)'}</span>
               {lead.loved_one_relationship && (
-                <span className="text-[#888]"> · {lead.loved_one_relationship}</span>
+                <span className="text-[#909090]"> · {lead.loved_one_relationship}</span>
               )}
               {timeSinceLossLabel && (
-                <span className="text-[#666]"> · lost {timeSinceLossLabel}</span>
+                <span className="text-[#5a5a5a]"> · lost {timeSinceLossLabel}</span>
               )}
             </p>
           </ProfileField>
@@ -884,7 +884,7 @@ const LeadProfileCard: React.FC<{ lead: Lead }> = ({ lead }) => {
         {/* Topic (BR funnel) */}
         {lead.message_topic && (
           <ProfileField label="Message topic (BR)">
-            <span className="inline-block text-xs uppercase tracking-wider px-2 py-1 rounded bg-[#1a1a1a] border border-[#2a2a2a] text-[#ddd]">
+            <span className="inline-block text-xs uppercase tracking-wider px-2 py-1 rounded-none bg-[#1a1a1a] border border-[#1a1a1a] text-[#ddd]">
               {lead.message_topic}
             </span>
           </ProfileField>
@@ -893,7 +893,7 @@ const LeadProfileCard: React.FC<{ lead: Lead }> = ({ lead }) => {
         {/* The big one — what they actually wrote */}
         {lead.question_for_deceased && (
           <ProfileField label="Their question / message">
-            <blockquote className="text-sm text-[#ddd] italic leading-relaxed bg-[#0a0a0a] rounded-md p-3.5 border border-[#1a1a1a]">
+            <blockquote className="text-sm text-[#ddd] italic leading-relaxed bg-[#0a0a0a] rounded-none-none p-3.5 border border-[#1a1a1a]">
               "{lead.question_for_deceased}"
             </blockquote>
           </ProfileField>
@@ -906,7 +906,7 @@ const LeadProfileCard: React.FC<{ lead: Lead }> = ({ lead }) => {
               {lead.signs_noticed.map((s, i) => (
                 <span
                   key={i}
-                  className="text-xs px-2 py-0.5 rounded-full bg-[#1a1a1a] border border-[#2a2a2a] text-[#bdbdbd]"
+                  className="text-xs px-2 py-0.5 rounded-none-full bg-[#1a1a1a] border border-[#1a1a1a] text-[#bdbdbd]"
                 >
                   {s}
                 </span>
@@ -918,7 +918,7 @@ const LeadProfileCard: React.FC<{ lead: Lead }> = ({ lead }) => {
         {/* Path A — future-focused (less common in BR, kept for EN funnel) */}
         {lead.focus_area && (
           <ProfileField label="Focus area">
-            <span className="text-sm text-[#ECECEC]">{lead.focus_area}</span>
+            <span className="text-sm text-[#f4f4f4]">{lead.focus_area}</span>
           </ProfileField>
         )}
         {lead.decision_weighing && (
@@ -932,7 +932,7 @@ const LeadProfileCard: React.FC<{ lead: Lead }> = ({ lead }) => {
               {lead.signs_future.map((s, i) => (
                 <span
                   key={i}
-                  className="text-xs px-2 py-0.5 rounded-full bg-[#1a1a1a] border border-[#2a2a2a] text-[#bdbdbd]"
+                  className="text-xs px-2 py-0.5 rounded-none-full bg-[#1a1a1a] border border-[#1a1a1a] text-[#bdbdbd]"
                 >
                   {s}
                 </span>
@@ -946,7 +946,7 @@ const LeadProfileCard: React.FC<{ lead: Lead }> = ({ lead }) => {
               {lead.tried_so_far.map((s, i) => (
                 <span
                   key={i}
-                  className="text-xs px-2 py-0.5 rounded-full bg-[#1a1a1a] border border-[#2a2a2a] text-[#bdbdbd]"
+                  className="text-xs px-2 py-0.5 rounded-none-full bg-[#1a1a1a] border border-[#1a1a1a] text-[#bdbdbd]"
                 >
                   {s}
                 </span>
@@ -970,7 +970,7 @@ const LeadProfileCard: React.FC<{ lead: Lead }> = ({ lead }) => {
 
       {/* Source footer */}
       {(lead.utm_source || lead.utm_campaign || lead.fbclid) && (
-        <footer className="mt-5 pt-4 border-t border-[#1a1a1a] text-[11px] text-[#666] flex flex-wrap gap-x-4 gap-y-1">
+        <footer className="mt-5 pt-4 border-t border-[#1a1a1a] text-[11px] text-[#5a5a5a] flex flex-wrap gap-x-4 gap-y-1">
           {lead.utm_source && (
             <span>
               Source ·{' '}
@@ -986,7 +986,7 @@ const LeadProfileCard: React.FC<{ lead: Lead }> = ({ lead }) => {
             </span>
           )}
           {lead.fbclid && (
-            <span className="text-emerald-500/70">From a Meta ad click</span>
+            <span className="text-[#6dd49a]/70">From a Meta ad click</span>
           )}
         </footer>
       )}
@@ -999,7 +999,7 @@ const ProfileField: React.FC<{ label: string; children: React.ReactNode }> = ({
   children,
 }) => (
   <div>
-    <p className="text-[10px] uppercase tracking-[0.12em] text-[#666] mb-1.5 font-medium">
+    <p className="text-[10px] uppercase tracking-[0.12em] text-[#5a5a5a] mb-1.5 font-medium">
       {label}
     </p>
     {children}
@@ -1020,16 +1020,16 @@ const FunnelStage: React.FC<{
     : 'bg-[#222]';
   const textColor = ts
     ? tone === 'emerald'
-      ? 'text-emerald-300'
+      ? 'text-[#6dd49a]'
       : tone === 'amber'
         ? 'text-amber-300'
         : 'text-[#bdbdbd]'
-    : 'text-[#444]';
+    : 'text-[#3a3a3a]';
   return (
     <span className={`inline-flex items-center gap-1.5 ${textColor}`}>
-      <span className={`w-1.5 h-1.5 rounded-full ${dotColor}`} />
+      <span className={`w-1.5 h-1.5 rounded-none-full ${dotColor}`} />
       {label}
-      {ts && <span className="text-[#555] font-mono ml-1">{formatTime(ts)}</span>}
+      {ts && <span className="text-[#5a5a5a] font-mono ml-1">{formatTime(ts)}</span>}
     </span>
   );
 };

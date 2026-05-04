@@ -24,7 +24,7 @@ import TheresaTheReaderFunnel from './components/TheresaTheReaderFunnel';
 import TheresaDataTab from './components/TheresaDataTab';
 import CalendarManager from './components/CalendarManager';
 import MentorManager from './components/MentorManager';
-import AIBubble from './components/AIBubble';
+import StudyManager from './components/StudyManager';
 import { ChartViewType, NavigationItem, FinanceItem, InvoiceStatus, RevenueDataPoint, ContentDataPoint, ContentItem, AdMetric, ContentStatus, Platform } from './types';
 import { AD_METRICS } from './constants';
 import { Bell, Search, Calendar, Save, Check, Loader2, Settings, Filter, TrendingUp, TrendingDown, Users, DollarSign, ArrowUpRight, ArrowDownRight } from 'lucide-react';
@@ -53,6 +53,7 @@ const routeToNav: Record<string, NavigationItem> = {
   '/theresa-the-reader/data': NavigationItem.THERESA_THE_READER_DATA,
   '/calendar': NavigationItem.CALENDAR,
   '/mentor': NavigationItem.MENTOR,
+  '/study': NavigationItem.STUDY,
 };
 
 const App: React.FC = () => {
@@ -62,12 +63,12 @@ const App: React.FC = () => {
     return (
       <div style={{
         minHeight: '100vh',
-        background: '#131313',
+        background: '#000',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
       }}>
-        <Loader2 size={32} style={{ color: '#555', animation: 'spin 1s linear infinite' }} />
+        <Loader2 size={32} style={{ color: 'var(--au-text-3)', animation: 'spin 1s linear infinite' }} />
         <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
       </div>
     );
@@ -109,72 +110,6 @@ const CRMPage: React.FC<{ storagePrefix: string }> = ({ storagePrefix }) => {
     }
   };
   return <CRMBoard storagePrefix={storagePrefix} onConvert={handleConvert} />;
-};
-
-// Wrapper that passes current client context to AIBubble based on URL
-const AIBubbleWithClient: React.FC<{ storagePrefix: string }> = ({ storagePrefix }) => {
-  const location = useLocation();
-  const [clientInfo, setClientInfo] = React.useState<{ id: string; name: string; service: string; handle: string; bio: string } | null>(null);
-  const [pageContext, setPageContext] = React.useState<Record<string, any> | undefined>(undefined);
-
-  React.useEffect(() => {
-    const match = location.pathname.match(/^\/clients\/(.+)$/);
-    if (!match) { setClientInfo(null); setPageContext(undefined); return; }
-    const clientId = match[1];
-    if (!supabase) return;
-
-    // Load full client data for AI context
-    (async () => {
-      const { data: client } = await supabase.from('clients').select('id, name, service, status, payment_status, amount').eq('id', clientId).eq('user_id', storagePrefix).single();
-      if (!client) { setClientInfo(null); setPageContext(undefined); return; }
-
-      const { data: det } = await supabase.from('client_details').select('*').eq('client_id', clientId).eq('user_id', storagePrefix).single();
-      const { data: mems } = await supabase.from('ai_memory').select('id, content, category').eq('user_id', storagePrefix);
-      const { data: tweets } = await supabase.from('client_tweets').select('text').eq('client_id', clientId).eq('user_id', storagePrefix).order('created_at', { ascending: false }).limit(5);
-
-      const socials = (det?.social_platforms as any) || {};
-      const activeTab = localStorage.getItem(`aureum_tab_${clientId}`) || 'Overview';
-
-      setClientInfo({
-        id: client.id,
-        name: client.name || '',
-        service: client.service || '',
-        handle: socials.twitter || '',
-        bio: det?.twitter_bio || '',
-      });
-
-      setPageContext({
-        activeTab,
-        clientStatus: client.status || 'Happy',
-        paymentStatus: client.payment_status || 'Pending',
-        amount: client.amount || 0,
-        strategyOverview: det?.strategy_overview || '',
-        funnelNotes: det?.funnel_notes || '',
-        funnelUrl: det?.funnel_url || '',
-        notes: det?.notes || '',
-        adPerformanceNotes: det?.ad_performance_notes || '',
-        contentDrafts: det?.content_drafts || '',
-        scriptedAds: det?.scripted_ads || [],
-        adsPerformance: det?.ads_performance || {},
-        twitterBio: det?.twitter_bio || '',
-        twitterFollowers: det?.twitter_followers || 0,
-        recentTweets: tweets?.map(t => t.text).filter(Boolean).join('\n---\n') || '',
-        memories: mems || [],
-      });
-    })();
-  }, [location.pathname, storagePrefix]);
-
-  return (
-    <AIBubble
-      storagePrefix={storagePrefix}
-      clientId={clientInfo?.id}
-      clientName={clientInfo?.name}
-      clientService={clientInfo?.service}
-      clientHandle={clientInfo?.handle}
-      clientBio={clientInfo?.bio}
-      pageContext={pageContext}
-    />
-  );
 };
 
 const AuthenticatedApp: React.FC<{ user: User; signOut: () => Promise<void> }> = ({ user, signOut }) => {
@@ -675,8 +610,11 @@ const AuthenticatedApp: React.FC<{ user: User; signOut: () => Promise<void> }> =
     } catch (err) { console.error('Finance delete error:', err); }
   }, [storagePrefix]);
 
+  // Mono uppercase date for the topbar (e.g. "SUN, MAY 3, 2026")
+  const topbarDate = new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }).toUpperCase();
+
   return (
-    <div className="flex h-screen overflow-hidden bg-[#212121] text-[#ECECEC] font-sans selection:bg-[#444444]">
+    <div className="flex h-screen overflow-hidden" style={{ background: '#000', color: 'var(--au-text)', fontFamily: 'Inter, sans-serif' }}>
       <Sidebar
         activeUserId={user.id}
         onUserChange={() => {}}
@@ -687,139 +625,192 @@ const AuthenticatedApp: React.FC<{ user: User; signOut: () => Promise<void> }> =
         storagePrefix={storagePrefix}
       />
 
-      <main key={user.id} className={`flex-1 ${sidebarCollapsed ? 'ml-16' : 'ml-64'} flex flex-col overflow-hidden`}>
-        {/* Header */}
-        <header className="flex-shrink-0 flex justify-between items-center px-8 pt-8 pb-6">
-          <div>
-            <h1 className="text-2xl font-bold text-[#ECECEC] mb-1">{activeNav}</h1>
-            <p className="text-[#9B9B9B] text-sm flex items-center gap-2">
-               <Calendar size={14} /> {today}
-            </p>
+      <main
+        key={user.id}
+        className="flex-1 flex flex-col overflow-hidden"
+        style={{ marginLeft: sidebarCollapsed ? 56 : 220 }}
+      >
+        {/* Topbar — slim, monospace breadcrumb + date + ghost actions */}
+        <header
+          className="flex-shrink-0 flex items-center"
+          style={{ height: 48, padding: '0 22px', borderBottom: '1px solid var(--au-line)', gap: 14, background: '#000', position: 'relative' }}
+        >
+          <span className="au-eyebrow">— {activeNav}</span>
+          <span className="au-eyebrow" style={{ color: 'var(--au-text-4)' }}>{topbarDate}</span>
+          <div style={{ flex: 1 }} />
+
+          {/* Search */}
+          <div
+            style={{
+              display: 'flex', alignItems: 'center', gap: 8,
+              background: 'transparent',
+              border: '1px solid var(--au-line-2)',
+              borderRadius: 0,
+              padding: '6px 12px',
+              color: 'var(--au-text-3)',
+              fontSize: 11,
+              fontFamily: 'JetBrains Mono, monospace',
+              letterSpacing: '0.06em',
+              minWidth: 220,
+            }}
+          >
+            <Search size={12} />
+            <input
+              type="text"
+              placeholder="SEARCH"
+              style={{
+                flex: 1,
+                background: 'transparent',
+                border: 'none',
+                outline: 'none',
+                color: 'var(--au-text)',
+                fontFamily: 'JetBrains Mono, monospace',
+                fontSize: 11,
+                letterSpacing: '0.06em',
+                textTransform: 'uppercase',
+              }}
+            />
           </div>
 
-          <div className="relative flex items-center gap-4">
-            <div className="relative hidden md:block">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[#666666]" size={16} />
-              <input
-                type="text"
-                placeholder="Search analytics..."
-                className="bg-[#2f2f2f] border border-[#3a3a3a] rounded-full pl-10 pr-4 py-2 text-sm text-[#ECECEC] focus:outline-none focus:ring-1 focus:ring-[#555555] w-64 placeholder-[#666666]"
-              />
-            </div>
-            <button
-              onClick={handleSyncToCloud}
-              disabled={isSyncing}
-              className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-[#9B9B9B] hover:text-[#ECECEC] transition-none rounded-lg hover:bg-[rgba(255,255,255,0.05)] disabled:opacity-50"
-              title="Save data to cloud"
-            >
-              {isSyncing ? (
-                <Loader2 size={16} className="animate-spin" />
-              ) : syncResult?.success ? (
-                <Check size={16} className="text-[#86efac]" />
-              ) : (
-                <Save size={16} />
-              )}
-              <span className="hidden lg:inline">
-                {isSyncing ? 'Saving...' : syncResult?.success ? 'Saved!' : 'Save'}
-              </span>
-            </button>
-            {/* Save notification toast */}
-            {syncResult && (
-              <div className={`absolute top-full right-0 mt-2 px-4 py-2 rounded-lg text-sm font-medium shadow-lg border whitespace-nowrap z-50 ${
-                syncResult.success
-                  ? 'bg-[#2f2f2f] border-[#86efac]/30 text-[#86efac]'
-                  : 'bg-[#2f2f2f] border-[#fca5a5]/30 text-[#fca5a5]'
-              }`}>
-                {syncResult.success ? 'Saved successfully!' : syncResult.message}
-              </div>
+          <button
+            onClick={handleSyncToCloud}
+            disabled={isSyncing}
+            title="Save data to cloud"
+            className="au-btn-ghost"
+            style={{ opacity: isSyncing ? 0.5 : 1 }}
+          >
+            {isSyncing ? (
+              <Loader2 size={11} className="animate-spin" />
+            ) : syncResult?.success ? (
+              <Check size={11} style={{ color: 'var(--au-good)' }} />
+            ) : (
+              <Save size={11} />
             )}
-            <button className="relative p-2 text-[#9B9B9B] hover:text-[#ECECEC] transition-none rounded-full hover:bg-[rgba(255,255,255,0.05)]">
-              <Bell size={20} />
-            </button>
-          </div>
+            <span>{isSyncing ? 'Saving' : syncResult?.success ? 'Saved' : 'Save'}</span>
+          </button>
+
+          {syncResult && (
+            <div
+              style={{
+                position: 'absolute',
+                top: '100%',
+                right: 22,
+                marginTop: 6,
+                padding: '8px 12px',
+                background: '#000',
+                border: '1px solid ' + (syncResult.success ? 'rgba(109,212,154,0.4)' : 'rgba(212,109,109,0.4)'),
+                color: syncResult.success ? 'var(--au-good)' : 'var(--au-bad)',
+                fontSize: 11,
+                fontFamily: 'JetBrains Mono, monospace',
+                letterSpacing: '0.06em',
+                whiteSpace: 'nowrap',
+                zIndex: 50,
+                borderRadius: 0,
+              }}
+            >
+              {syncResult.success ? 'SAVED' : syncResult.message.toUpperCase()}
+            </div>
+          )}
+
+          <button
+            className="au-btn-ghost"
+            style={{ padding: '6px 8px' }}
+            title="Notifications"
+          >
+            <Bell size={11} />
+          </button>
         </header>
 
-        <div className="flex-1 overflow-y-auto px-8 pb-8 min-h-0">
+        <div className="flex-1 overflow-y-auto px-8 pb-8 min-h-0" style={{ background: '#000' }}>
         <Routes>
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="/dashboard" element={
-          <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
+          <div style={{ paddingTop: 36, paddingBottom: 80, maxWidth: 1280, margin: '0 auto' }}>
 
-            {/* ── Top Stat Cards ── */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-               {/* Monthly Revenue */}
-               <div className="bg-[#1c1c1c] p-5 rounded-2xl">
-                  <div className="flex items-center justify-between mb-3">
-                    <p className="text-[#666] text-xs font-medium uppercase tracking-wider">This Month</p>
-                    <div className="p-1.5 rounded-lg" style={{ background: 'rgba(134,239,172,0.1)' }}><DollarSign size={14} className="text-[#86efac]" /></div>
-                  </div>
-                  <h3 className="text-2xl font-bold text-[#ECECEC] mb-1">${projectedMonthlyRevenue.toLocaleString()}</h3>
-                  <div className="flex items-center gap-2 text-xs">
-                     <span className="text-[#86efac] font-medium">${paidThisMonth.toLocaleString()} collected</span>
-                     {pendingThisMonth > 0 && <span className="text-[#555]">· ${pendingThisMonth.toLocaleString()} pending</span>}
-                  </div>
-               </div>
+            {/* ── Page header ── */}
+            <div style={{ display: 'flex', alignItems: 'flex-end', gap: 16, marginBottom: 32, paddingBottom: 22, borderBottom: '1px solid var(--au-line)' }}>
+              <div style={{ flex: 1 }}>
+                <div className="au-eyebrow" style={{ marginBottom: 10 }}>— Index · 001 · Subject · Operations</div>
+                <h1 style={{ margin: 0, fontSize: 38, fontWeight: 600, letterSpacing: '-0.025em', color: 'var(--au-text)', lineHeight: 1 }}>The dashboard.</h1>
+                <p style={{ margin: '10px 0 0', fontSize: 13.5, color: 'var(--au-text-2)', maxWidth: 460 }}>Revenue, invoices, clients. The numbers that matter today.</p>
+              </div>
+            </div>
 
-               {/* Total Revenue */}
-               <div className="bg-[#1c1c1c] p-5 rounded-2xl">
-                  <div className="flex items-center justify-between mb-3">
-                    <p className="text-[#666] text-xs font-medium uppercase tracking-wider">Total Revenue</p>
-                    <div className="p-1.5 rounded-lg" style={{ background: 'rgba(134,239,172,0.1)' }}><TrendingUp size={14} className="text-[#86efac]" /></div>
-                  </div>
-                  <h3 className="text-2xl font-bold text-[#ECECEC] mb-1">${totalRevenue.toLocaleString()}</h3>
-                  <div className="flex items-center gap-1.5 text-xs">
-                    {momGrowth !== 0 && (
-                      <span className={`flex items-center gap-0.5 font-medium ${momGrowth > 0 ? 'text-[#86efac]' : 'text-[#fca5a5]'}`}>
-                        {momGrowth > 0 ? <ArrowUpRight size={12} /> : <ArrowDownRight size={12} />}
-                        {Math.abs(momGrowth)}%
-                      </span>
-                    )}
-                    <span className="text-[#555]">vs last month</span>
-                  </div>
-               </div>
+            {/* ── Top Stat Cards (hairline grid) ── */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', border: '1px solid var(--au-line)', borderRight: 'none', marginBottom: 36 }}>
+              {/* This Month */}
+              <div style={{ padding: '20px 22px', borderRight: '1px solid var(--au-line)' }}>
+                <div className="au-label" style={{ marginBottom: 12 }}>— This month</div>
+                <div style={{ fontSize: 28, fontWeight: 600, color: 'var(--au-text)', letterSpacing: '-0.025em', lineHeight: 1, fontFamily: 'JetBrains Mono, monospace' }}>${projectedMonthlyRevenue.toLocaleString()}</div>
+                <div style={{ fontSize: 11.5, color: 'var(--au-text-3)', marginTop: 8, fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.05em' }}>
+                  <span style={{ color: 'var(--au-good)' }}>${paidThisMonth.toLocaleString()} COLLECTED</span>
+                  {pendingThisMonth > 0 && <span> · ${pendingThisMonth.toLocaleString()} PENDING</span>}
+                </div>
+              </div>
 
-               {/* Outstanding */}
-               <div className="bg-[#1c1c1c] p-5 rounded-2xl">
-                  <div className="flex items-center justify-between mb-3">
-                    <p className="text-[#666] text-xs font-medium uppercase tracking-wider">Outstanding</p>
-                    <div className="p-1.5 rounded-lg" style={{ background: outstandingAmount > 0 ? 'rgba(252,165,165,0.12)' : 'rgba(255,255,255,0.04)' }}>
-                      <DollarSign size={14} className={outstandingAmount > 0 ? 'text-[#fca5a5]' : 'text-[#555]'} />
-                    </div>
-                  </div>
-                  <h3 className={`text-2xl font-bold mb-1 ${outstandingAmount > 0 ? 'text-[#fca5a5]' : 'text-[#ECECEC]'}`}>${outstandingAmount.toLocaleString()}</h3>
-                  <div className="flex items-center gap-2 text-xs">
-                    {overdueAmount > 0 && <span className="text-[#fca5a5] font-medium">${overdueAmount.toLocaleString()} overdue</span>}
-                    {overdueAmount === 0 && outstandingAmount > 0 && <span className="text-[#555]">All within due dates</span>}
-                    {outstandingAmount === 0 && <span className="text-[#86efac] font-medium">All paid</span>}
-                  </div>
-               </div>
+              {/* Total Revenue */}
+              <div style={{ padding: '20px 22px', borderRight: '1px solid var(--au-line)' }}>
+                <div className="au-label" style={{ marginBottom: 12 }}>— Total revenue</div>
+                <div style={{ fontSize: 28, fontWeight: 600, color: 'var(--au-text)', letterSpacing: '-0.025em', lineHeight: 1, fontFamily: 'JetBrains Mono, monospace' }}>${totalRevenue.toLocaleString()}</div>
+                <div style={{ fontSize: 11.5, color: 'var(--au-text-3)', marginTop: 8, fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.05em', display: 'flex', alignItems: 'center', gap: 6 }}>
+                  {momGrowth !== 0 && (
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 2, color: momGrowth > 0 ? 'var(--au-good)' : 'var(--au-bad)' }}>
+                      {momGrowth > 0 ? <ArrowUpRight size={11} /> : <ArrowDownRight size={11} />}
+                      {Math.abs(momGrowth)}%
+                    </span>
+                  )}
+                  <span>VS LAST MONTH</span>
+                </div>
+              </div>
 
-               {/* Active Clients */}
-               <div className="bg-[#1c1c1c] p-5 rounded-2xl">
-                  <div className="flex items-center justify-between mb-3">
-                    <p className="text-[#666] text-xs font-medium uppercase tracking-wider">Clients</p>
-                    <div className="p-1.5 rounded-lg" style={{ background: 'rgba(255,255,255,0.04)' }}><Users size={14} className="text-[#888]" /></div>
-                  </div>
-                  <h3 className="text-2xl font-bold text-[#ECECEC] mb-1">{activeClients}</h3>
-                  <div className="flex items-center gap-2 text-xs">
-                    <span className="text-[#555]">Avg/mo: ${avgMonthlyRevenue.toLocaleString()}</span>
-                  </div>
-               </div>
+              {/* Outstanding */}
+              <div style={{ padding: '20px 22px', borderRight: '1px solid var(--au-line)' }}>
+                <div className="au-label" style={{ marginBottom: 12 }}>— Outstanding</div>
+                <div style={{ fontSize: 28, fontWeight: 600, color: outstandingAmount > 0 ? 'var(--au-bad)' : 'var(--au-text)', letterSpacing: '-0.025em', lineHeight: 1, fontFamily: 'JetBrains Mono, monospace' }}>${outstandingAmount.toLocaleString()}</div>
+                <div style={{ fontSize: 11.5, color: 'var(--au-text-3)', marginTop: 8, fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.05em' }}>
+                  {overdueAmount > 0 && <span style={{ color: 'var(--au-bad)' }}>${overdueAmount.toLocaleString()} OVERDUE</span>}
+                  {overdueAmount === 0 && outstandingAmount > 0 && <span>WITHIN DUE DATES</span>}
+                  {outstandingAmount === 0 && <span style={{ color: 'var(--au-good)' }}>ALL PAID</span>}
+                </div>
+              </div>
+
+              {/* Clients */}
+              <div style={{ padding: '20px 22px', borderRight: '1px solid var(--au-line)' }}>
+                <div className="au-label" style={{ marginBottom: 12 }}>— Clients</div>
+                <div style={{ fontSize: 28, fontWeight: 600, color: 'var(--au-text)', letterSpacing: '-0.025em', lineHeight: 1, fontFamily: 'JetBrains Mono, monospace' }}>{String(activeClients).padStart(2, '0')}</div>
+                <div style={{ fontSize: 11.5, color: 'var(--au-text-3)', marginTop: 8, fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.05em' }}>AVG/MO ${avgMonthlyRevenue.toLocaleString()}</div>
+              </div>
             </div>
 
             {/* ── Revenue Growth Chart ── */}
-            <div className="bg-[#1c1c1c] rounded-2xl p-6">
-              <div className="flex items-center justify-between mb-6">
-                <div>
-                  <h2 className="text-sm font-bold text-[#ECECEC]">Revenue Growth</h2>
-                  <p className="text-[11px] text-[#555] mt-0.5">
+            <div style={{ border: '1px solid var(--au-line)', padding: 24, marginBottom: 36 }}>
+              <div style={{ display: 'flex', alignItems: 'center', marginBottom: 22, gap: 12 }}>
+                <div style={{ flex: 1 }}>
+                  <div className="au-label" style={{ marginBottom: 6 }}>— Revenue growth</div>
+                  <div style={{ fontSize: 13, color: 'var(--au-text-2)' }}>
                     {dashView === 'today' ? "Today's revenue" : dashView === 'week' ? 'This week' : dashView === 'month' ? 'This month' : new Date().getFullYear() + ' progress'}
-                  </p>
+                  </div>
                 </div>
-                <div className="flex bg-[#161616] rounded-lg p-0.5 border border-[#252525]">
+                <div style={{ display: 'flex', border: '1px solid var(--au-line-2)' }}>
                   {(['today', 'week', 'month', 'year'] as const).map(v => (
-                    <button key={v} onClick={() => setDashView(v)} className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${dashView === v ? 'bg-[#252525] text-[#ECECEC]' : 'text-[#555] hover:text-[#888]'}`}>
-                      {v === 'today' ? 'Today' : v === 'week' ? 'Week' : v === 'month' ? 'Month' : 'Year'}
+                    <button
+                      key={v}
+                      onClick={() => setDashView(v)}
+                      style={{
+                        padding: '6px 12px',
+                        background: dashView === v ? 'var(--au-text)' : 'transparent',
+                        color: dashView === v ? '#000' : 'var(--au-text-3)',
+                        border: 'none',
+                        borderRight: '1px solid var(--au-line-2)',
+                        fontFamily: 'JetBrains Mono, monospace',
+                        fontSize: 10.5,
+                        fontWeight: 600,
+                        letterSpacing: '0.14em',
+                        textTransform: 'uppercase',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      {v}
                     </button>
                   ))}
                 </div>
@@ -829,26 +820,26 @@ const AuthenticatedApp: React.FC<{ user: User; signOut: () => Promise<void> }> =
                   <AreaChart data={chartData}>
                     <defs>
                       <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#86efac" stopOpacity={0.25} />
-                        <stop offset="100%" stopColor="#86efac" stopOpacity={0} />
+                        <stop offset="0%" stopColor="#6dd49a" stopOpacity={0.18} />
+                        <stop offset="100%" stopColor="#6dd49a" stopOpacity={0} />
                       </linearGradient>
                     </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#252525" vertical={false} />
-                    <XAxis dataKey="name" tick={{ fill: '#555', fontSize: 11 }} axisLine={false} tickLine={false} />
-                    <YAxis domain={[0, 100000]} tick={{ fill: '#555', fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={(v: number) => v >= 1000 ? `$${(v / 1000).toFixed(0)}k` : `$${v}`} ticks={[0, 25000, 50000, 75000, 100000]} />
+                    <CartesianGrid strokeDasharray="2 4" stroke="#1a1a1a" vertical={false} />
+                    <XAxis dataKey="name" tick={{ fill: '#5a5a5a', fontSize: 10, fontFamily: 'JetBrains Mono, monospace' }} axisLine={false} tickLine={false} />
+                    <YAxis domain={[0, 100000]} tick={{ fill: '#5a5a5a', fontSize: 10, fontFamily: 'JetBrains Mono, monospace' }} axisLine={false} tickLine={false} tickFormatter={(v: number) => v >= 1000 ? `$${(v / 1000).toFixed(0)}K` : `$${v}`} ticks={[0, 25000, 50000, 75000, 100000]} />
                     <Tooltip
-                      contentStyle={{ background: '#1c1c1c', border: '1px solid #252525', borderRadius: 12, fontSize: 12, color: '#ECECEC' }}
-                      formatter={(value: number) => [`$${value.toLocaleString()}`, 'Revenue']}
-                      labelStyle={{ color: '#888' }}
+                      contentStyle={{ background: '#000', border: '1px solid #242424', borderRadius: 0, fontSize: 11, color: '#f4f4f4', fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.04em' }}
+                      formatter={(value: number) => [`$${value.toLocaleString()}`, 'REVENUE']}
+                      labelStyle={{ color: '#909090' }}
                     />
                     <Area
                       type="monotone"
                       dataKey="revenue"
-                      stroke="#86efac"
-                      strokeWidth={1.5}
+                      stroke="#6dd49a"
+                      strokeWidth={1.25}
                       fill="url(#revenueGradient)"
                       dot={false}
-                      activeDot={{ r: 3, fill: '#86efac', stroke: '#1c1c1c', strokeWidth: 1.5 }}
+                      activeDot={{ r: 3, fill: '#6dd49a', stroke: '#000', strokeWidth: 1.5 }}
                     />
                   </AreaChart>
                 </ResponsiveContainer>
@@ -856,92 +847,90 @@ const AuthenticatedApp: React.FC<{ user: User; signOut: () => Promise<void> }> =
             </div>
 
             {/* ── Billing History ── */}
-            <div className="bg-[#1c1c1c] rounded-2xl p-6">
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <h2 className="text-sm font-bold text-[#ECECEC]">Billing History</h2>
-                  <p className="text-[11px] text-[#555] mt-0.5">Individual invoices across all clients</p>
-                </div>
-                <span className="text-[11px] text-[#555]">{billingInvoices.length} invoices</span>
+            <div style={{ marginBottom: 36 }}>
+              <div className="au-label" style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+                <span>— Billing history</span>
+                <span style={{ flex: 1, height: 1, background: 'var(--au-line)' }} />
+                <span>{String(billingInvoices.length).padStart(2, '0')} INVOICES</span>
               </div>
-              {billingInvoices.length === 0 ? (
-                <p className="text-center text-[#444] text-sm py-8">No invoices yet. Create invoices in client billing tabs.</p>
-              ) : (
-                <div className="space-y-1">
-                  {/* Header */}
-                  <div className="grid grid-cols-12 gap-3 px-3 py-2 text-[10px] font-medium uppercase tracking-wider text-[#555]">
-                    <div className="col-span-3">Client</div>
-                    <div className="col-span-2">Service</div>
-                    <div className="col-span-2 text-right">Amount</div>
-                    <div className="col-span-2 text-center">Status</div>
-                    <div className="col-span-3 text-right">Date</div>
+              <div style={{ border: '1px solid var(--au-line)' }}>
+                {billingInvoices.length === 0 ? (
+                  <div style={{ padding: '60px 20px', textAlign: 'center', color: 'var(--au-text-3)', fontSize: 13 }}>
+                    No invoices yet. Create invoices in client billing tabs.
                   </div>
-                  {[...billingInvoices].sort((a, b) => {
-                    const da = new Date(a.date_paid || a.date_due || a.date_sent || '');
-                    const db = new Date(b.date_paid || b.date_due || b.date_sent || '');
-                    return db.getTime() - da.getTime();
-                  }).map(inv => {
-                    const cl = dashClients.find(c => c.id === inv.client_id);
-                    const isOverdue = inv.status === 'Overdue';
-                    const statusColor = inv.status === 'Paid' ? 'text-[#7dd8a8]' : inv.status === 'Cancelled' ? 'text-[#555]' : isOverdue ? 'text-[#e0a870]' : 'text-[#8bb0d0]';
-                    const statusBg = inv.status === 'Paid' ? 'rgba(125,216,168,0.08)' : inv.status === 'Cancelled' ? 'rgba(255,255,255,0.04)' : isOverdue ? 'rgba(224,168,112,0.08)' : 'rgba(139,176,208,0.08)';
-                    const dateStr = inv.date_paid || inv.date_due || inv.date_sent || '';
-                    const formattedDate = dateStr ? new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' }) : '—';
-                    return (
-                      <div key={inv.id} className="grid grid-cols-12 gap-3 items-center px-3 py-2.5 rounded-xl hover:bg-[rgba(255,255,255,0.03)] transition-colors">
-                        <div className="col-span-3 flex items-center gap-2.5 min-w-0">
-                          {cl?.photo_url ? (
-                            <img src={cl.photo_url} alt="" className="w-7 h-7 rounded-full object-cover flex-shrink-0" />
-                          ) : (
-                            <div className="w-7 h-7 rounded-full bg-[#252525] flex items-center justify-center flex-shrink-0 text-[10px] font-bold text-[#888]">{cl?.name?.charAt(0) || '?'}</div>
-                          )}
-                          <div className="min-w-0">
-                            <p className="text-[13px] font-medium text-[#ECECEC] truncate">{cl?.name || 'Unknown'}</p>
-                            {inv.invoice_number && <p className="text-[10px] text-[#444] truncate">#{inv.invoice_number}</p>}
+                ) : (
+                  <>
+                    <div style={{ display: 'grid', gridTemplateColumns: '3fr 2fr 2fr 2fr 3fr', gap: 14, padding: '14px 18px', background: '#060606', borderBottom: '1px solid var(--au-line)', fontFamily: 'JetBrains Mono, monospace', fontSize: 9.5, fontWeight: 500, color: 'var(--au-text-3)', letterSpacing: '0.22em', textTransform: 'uppercase' }}>
+                      <div>Client</div>
+                      <div>Service</div>
+                      <div style={{ textAlign: 'right' }}>Amount</div>
+                      <div style={{ textAlign: 'center' }}>Status</div>
+                      <div style={{ textAlign: 'right' }}>Date</div>
+                    </div>
+                    {[...billingInvoices].sort((a, b) => {
+                      const da = new Date(a.date_paid || a.date_due || a.date_sent || '');
+                      const db = new Date(b.date_paid || b.date_due || b.date_sent || '');
+                      return db.getTime() - da.getTime();
+                    }).map(inv => {
+                      const cl = dashClients.find(c => c.id === inv.client_id);
+                      const isOverdue = inv.status === 'Overdue';
+                      const statusColor = inv.status === 'Paid' ? 'var(--au-good)' : inv.status === 'Cancelled' ? 'var(--au-text-3)' : isOverdue ? 'var(--au-bad)' : 'var(--au-text-2)';
+                      const dateStr = inv.date_paid || inv.date_due || inv.date_sent || '';
+                      const formattedDate = dateStr ? new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' }).toUpperCase() : '—';
+                      return (
+                        <div key={inv.id} style={{ display: 'grid', gridTemplateColumns: '3fr 2fr 2fr 2fr 3fr', gap: 14, padding: '14px 18px', borderBottom: '1px solid var(--au-line)', alignItems: 'center', fontSize: 13 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+                            {cl?.photo_url ? (
+                              <img src={cl.photo_url} alt="" style={{ width: 24, height: 24, objectFit: 'cover', flexShrink: 0 }} />
+                            ) : (
+                              <div style={{ width: 24, height: 24, background: '#0a0a0a', border: '1px solid var(--au-line-2)', display: 'grid', placeItems: 'center', flexShrink: 0, fontSize: 10, fontWeight: 600, color: 'var(--au-text-2)', fontFamily: 'JetBrains Mono, monospace' }}>{cl?.name?.charAt(0) || '?'}</div>
+                            )}
+                            <div style={{ minWidth: 0 }}>
+                              <div style={{ color: 'var(--au-text)', fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{cl?.name || 'Unknown'}</div>
+                              {inv.invoice_number && <div style={{ color: 'var(--au-text-4)', fontSize: 10, fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.05em' }}>#{inv.invoice_number}</div>}
+                            </div>
                           </div>
+                          <div style={{ color: 'var(--au-text-2)', fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{inv.service || cl?.service || '—'}</div>
+                          <div style={{ textAlign: 'right', fontSize: 13, color: 'var(--au-text)', fontFamily: 'JetBrains Mono, monospace' }}>${(inv.amount || 0).toLocaleString()}</div>
+                          <div style={{ textAlign: 'center' }}>
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontFamily: 'JetBrains Mono, monospace', fontSize: 10, color: statusColor, letterSpacing: '0.18em', textTransform: 'uppercase' }}>
+                              {inv.status}
+                            </span>
+                          </div>
+                          <div style={{ textAlign: 'right', fontSize: 11, color: 'var(--au-text-3)', fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.05em' }}>{formattedDate}</div>
                         </div>
-                        <div className="col-span-2 text-[12px] text-[#888] truncate">{inv.service || cl?.service || '—'}</div>
-                        <div className="col-span-2 text-right text-[13px] font-semibold text-[#ECECEC]">${(inv.amount || 0).toLocaleString()}</div>
-                        <div className="col-span-2 text-center">
-                          <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full ${statusColor}`} style={{ background: statusBg }}>{inv.status}</span>
-                        </div>
-                        <div className="col-span-3 text-right text-[12px] text-[#666]">{formattedDate}</div>
-                      </div>
-                    );
-                  })}
-                  {/* Totals row */}
-                  <div className="grid grid-cols-12 gap-3 px-3 py-2.5 mt-1" style={{ borderTop: '1px solid #252525' }}>
-                    <div className="col-span-5 text-[12px] font-semibold text-[#888]">Total</div>
-                    <div className="col-span-2 text-right text-[13px] font-bold text-[#ECECEC]">
-                      ${billingInvoices.filter(i => i.status !== 'Cancelled').reduce((s, i) => s + (i.amount || 0), 0).toLocaleString()}
+                      );
+                    })}
+                    {/* Totals row */}
+                    <div style={{ display: 'grid', gridTemplateColumns: '3fr 2fr 2fr 2fr 3fr', gap: 14, padding: '14px 18px', background: '#060606' }}>
+                      <div style={{ gridColumn: '1 / 3', fontFamily: 'JetBrains Mono, monospace', fontSize: 10, color: 'var(--au-text-3)', letterSpacing: '0.18em', textTransform: 'uppercase' }}>— Total</div>
+                      <div style={{ textAlign: 'right', fontSize: 13, color: 'var(--au-text)', fontFamily: 'JetBrains Mono, monospace', fontWeight: 600 }}>${billingInvoices.filter(i => i.status !== 'Cancelled').reduce((s, i) => s + (i.amount || 0), 0).toLocaleString()}</div>
+                      <div style={{ textAlign: 'center', fontFamily: 'JetBrains Mono, monospace', fontSize: 10, color: 'var(--au-text-3)', letterSpacing: '0.18em', textTransform: 'uppercase' }}>{billingInvoices.filter(i => i.status === 'Paid').length} PAID</div>
+                      <div />
                     </div>
-                    <div className="col-span-2 text-center text-[11px] text-[#555]">
-                      {billingInvoices.filter(i => i.status === 'Paid').length} paid
-                    </div>
-                    <div className="col-span-3" />
-                  </div>
-                </div>
-              )}
+                  </>
+                )}
+              </div>
             </div>
 
-            {/* ── Growth & Client Status Summary ── */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {/* ── Status grids ── */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 0, border: '1px solid var(--au-line)', borderRight: 'none' }}>
               {/* Payment Status Breakdown */}
-              <div className="bg-[#1c1c1c] rounded-2xl p-6">
-                <h2 className="text-sm font-bold text-[#ECECEC] mb-4">Payment Status</h2>
-                <div className="space-y-3">
+              <div style={{ padding: 24, borderRight: '1px solid var(--au-line)' }}>
+                <div className="au-label" style={{ marginBottom: 18 }}>— Payment status</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                   {(['Paid', 'Pending', 'Late', 'Missing Invoice'] as const).map(status => {
                     const count = dashClients.filter(c => c.active !== false && c.payment_status === status).length;
                     const pct = activeClients > 0 ? Math.round((count / activeClients) * 100) : 0;
-                    const color = status === 'Paid' ? '#86efac' : status === 'Pending' ? '#fde68a' : status === 'Late' ? '#fca5a5' : '#666';
+                    const color = status === 'Paid' ? 'var(--au-good)' : status === 'Pending' ? '#e0c870' : status === 'Late' ? 'var(--au-bad)' : 'var(--au-text-3)';
                     return (
                       <div key={status}>
-                        <div className="flex items-center justify-between mb-1.5">
-                          <span className="text-xs text-[#ECECEC]">{status}</span>
-                          <span className="text-xs text-[#666]">{count} clients · {pct}%</span>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                          <span style={{ fontSize: 12, color: 'var(--au-text)' }}>{status}</span>
+                          <span style={{ fontSize: 10.5, color: 'var(--au-text-3)', fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.05em' }}>{String(count).padStart(2, '0')} · {pct}%</span>
                         </div>
-                        <div className="h-1.5 rounded-full bg-[#161616] overflow-hidden">
-                          <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: color }} />
+                        <div style={{ height: 1, background: 'var(--au-line-2)', overflow: 'hidden' }}>
+                          <div style={{ height: '100%', width: `${pct}%`, background: color, transition: 'width 0.3s' }} />
                         </div>
                       </div>
                     );
@@ -950,21 +939,21 @@ const AuthenticatedApp: React.FC<{ user: User; signOut: () => Promise<void> }> =
               </div>
 
               {/* Client Satisfaction */}
-              <div className="bg-[#1c1c1c] rounded-2xl p-6">
-                <h2 className="text-sm font-bold text-[#ECECEC] mb-4">Client Satisfaction</h2>
-                <div className="space-y-3">
+              <div style={{ padding: 24, borderRight: '1px solid var(--au-line)' }}>
+                <div className="au-label" style={{ marginBottom: 18 }}>— Client satisfaction</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                   {(['Happy', 'Moderate', 'Frustrated'] as const).map(status => {
                     const count = dashClients.filter(c => c.active !== false && c.status === status).length;
                     const pct = activeClients > 0 ? Math.round((count / activeClients) * 100) : 0;
-                    const color = status === 'Happy' ? '#86efac' : status === 'Moderate' ? '#fde68a' : '#fca5a5';
+                    const color = status === 'Happy' ? 'var(--au-good)' : status === 'Moderate' ? '#e0c870' : 'var(--au-bad)';
                     return (
                       <div key={status}>
-                        <div className="flex items-center justify-between mb-1.5">
-                          <span className="text-xs text-[#ECECEC]">{status}</span>
-                          <span className="text-xs text-[#666]">{count} clients · {pct}%</span>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                          <span style={{ fontSize: 12, color: 'var(--au-text)' }}>{status}</span>
+                          <span style={{ fontSize: 10.5, color: 'var(--au-text-3)', fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.05em' }}>{String(count).padStart(2, '0')} · {pct}%</span>
                         </div>
-                        <div className="h-1.5 rounded-full bg-[#161616] overflow-hidden">
-                          <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: color }} />
+                        <div style={{ height: 1, background: 'var(--au-line-2)', overflow: 'hidden' }}>
+                          <div style={{ height: '100%', width: `${pct}%`, background: color, transition: 'width 0.3s' }} />
                         </div>
                       </div>
                     );
@@ -993,7 +982,7 @@ const AuthenticatedApp: React.FC<{ user: User; signOut: () => Promise<void> }> =
           <Route path="/branding" element={<BrandingManager storagePrefix={storagePrefix} />} />
           <Route path="/general-room" element={<GeneralRoom storagePrefix={storagePrefix} projectedRevenue={projectedMonthlyRevenue} avgRevenue={avgMonthlyRevenue} />} />
           <Route path="/contracts" element={
-            <div className="h-96 flex flex-col items-center justify-center text-[#666666] border-2 border-dashed border-[#3a3a3a] rounded-xl">
+            <div className="h-96 flex flex-col items-center justify-center text-[#666666] border-2 border-dashed border-[#242424] rounded-none">
               <p className="text-lg font-medium mb-2">Work in Progress</p>
               <p className="text-sm max-w-md text-center">
                 The contracts view is currently under development. Please return to the Dashboard.
@@ -1006,8 +995,8 @@ const AuthenticatedApp: React.FC<{ user: User; signOut: () => Promise<void> }> =
           <Route path="/luke-alexander/data" element={
             <div className="h-full flex flex-col">
               <div className="mb-3 flex-shrink-0">
-                <h1 className="text-lg font-semibold text-[#ECECEC]">Luke Alexander — Data</h1>
-                <p className="text-xs text-[#555] mt-0.5">Leads, buyers, attendance, Calendly, profit & failed payments</p>
+                <h1 className="text-lg font-semibold text-[#f4f4f4]">Luke Alexander — Data</h1>
+                <p className="text-xs text-[#5a5a5a] mt-0.5">Leads, buyers, attendance, Calendly, profit & failed payments</p>
               </div>
               <LukeDataTab />
             </div>
@@ -1016,21 +1005,19 @@ const AuthenticatedApp: React.FC<{ user: User; signOut: () => Promise<void> }> =
           <Route path="/theresa-the-reader/data" element={
             <div className="h-full flex flex-col">
               <div className="mb-3 flex-shrink-0">
-                <h1 className="text-lg font-semibold text-[#ECECEC]">Theresa The Reader — Data</h1>
-                <p className="text-xs text-[#555] mt-0.5">Quiz starts, completions, reveals, offer views & purchases</p>
+                <h1 className="text-lg font-semibold text-[#f4f4f4]">Theresa The Reader — Data</h1>
+                <p className="text-xs text-[#5a5a5a] mt-0.5">Quiz starts, completions, reveals, offer views & purchases</p>
               </div>
               <TheresaDataTab />
             </div>
           } />
           <Route path="/calendar" element={<CalendarManager storagePrefix={storagePrefix} />} />
           <Route path="/mentor" element={<MentorManager storagePrefix={storagePrefix} />} />
+          <Route path="/study" element={<StudyManager />} />
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
         </div>
       </main>
-
-      {/* Floating AI bubble — always visible, passes current client context from URL */}
-      <AIBubbleWithClient storagePrefix={storagePrefix} />
     </div>
   );
 };
